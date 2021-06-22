@@ -1,0 +1,45 @@
+<router-outlet></router-outlet>
+
+<ng-container *ngIf="visible$ | async">
+  <div *ngIf="autoScrollerService.activated" class="top-overlay auto-mode-container">
+    <span class="uppercase">Auto</span> ({{ autoScrollerService.multiplier }}x)
+  </div>
+
+  <div class="top-overlay action-icon-container">
+    <label class="no-margin">
+      <fa-icon class="action-icon"
+               [icon]="faFileImport"></fa-icon>
+      <input type="file" accept=".htmlz,.epub" (change)="onInputChange(inputRef)" hidden #inputRef>
+    </label>
+    <fa-icon class="action-icon margin-icon"
+             [icon]="faBookmark"
+             (click)="bookmarManagerService.saveScrollPosition()"></fa-icon>
+    <fa-icon class="action-icon margin-icon"
+             [icon]="faCog"
+             (click)="setShowSettingsDialog(true)"></fa-icon>
+  </div>
+</ng-container>
+
+<div class="overlay-container loading-container"
+     *ngIf="loadingDb || (ebookDisplayManagerService.loadingFile$ | async); else notLoadingRef">
+  Loading...
+</div>
+
+<ng-template #notLoadingRef>
+  <label class="overlay-container drop-zone-container label-button" *ngIf="!(visible$ | async)">
+    Drop or select a HTMLZ or EPUB file to continue
+    <input type="file" accept=".htmlz,.epub" (change)="onInputChange(inputRef)" hidden #inputRef>
+  </label>
+</ng-template>
+
+<div class="dialog-overlay"
+     *ngIf="showSettingsDialog"
+     (click)="setShowSettingsDialog(false)">
+  <app-settings-dialog class="settings-dialog"
+                       (closeClick)="setShowSettingsDialog(false)"
+                       (click)="$event.stopPropagation()"></app-settings-dialog>
+</div>
+
+<fa-icon *ngIf="isUpdateAvailable"
+         [icon]="faSyncAlt"
+         class="information-overlay bottom-overlay update-ready-icon"></fa-icon>

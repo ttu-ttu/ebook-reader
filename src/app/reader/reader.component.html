@@ -1,0 +1,5 @@
+<div class="book-content" #contentRef
+     [style.font-size]="(ebookDisplayManagerService.fontSize$ | async) + 'px'"
+     [class.hide-spoiler-image]="ebookDisplayManagerService.hideSpoilerImage$ | async"
+     [class.show-spoiler-image]="!(ebookDisplayManagerService.hideSpoilerImage$ | async)"
+     [class.hide-furigana]="ebookDisplayManagerService.hideFurigana$ | async"></div>

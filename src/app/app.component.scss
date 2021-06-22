@@ -1,0 +1,134 @@
+.top-overlay {
+  position: fixed;
+  color: var(--scroll-info-font-color);
+  z-index: 100;
+  user-select: none;
+  writing-mode: horizontal-tb;
+  top: 0;
+
+  @media screen and (min-height: 625px) {
+    top: 8px;
+  }
+
+  @media screen and (min-height: 725px) {
+    top: 16px;
+  }
+}
+
+.auto-mode-container {
+  left: 8px;
+  font-size: 10px;
+  padding: 2px;
+  font-weight: 500;
+  opacity: .6;
+
+  @media screen and (min-height: 900px) {
+    font-size: 16px;
+  }
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.action-icon-container {
+  display: flex;
+  font-size: 16px;
+  right: 8px;
+
+  @media screen and (min-height: 900px) {
+    font-size: 24px;
+  }
+}
+
+.action-icon {
+  display: block;
+  cursor: pointer;
+  padding: 2px;
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  @media screen and (min-height: 625px) {
+    padding: 4px;
+  }
+
+  @media screen and (min-height: 725px) {
+    padding: 8px;
+  }
+
+}
+
+.margin-icon {
+  margin-left: 16px;
+
+  @media screen and (min-height: 900px) {
+    margin-left: 8px;
+  }
+}
+
+.dialog-overlay {
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(38, 40, 41, .6);
+}
+
+.settings-dialog {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 3px 8px rgba(33, 37, 41, .2);
+}
+
+.overlay-container {
+  position: fixed;
+  writing-mode: horizontal-tb;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  color: #ffffff;
+  background-color: rgba(38, 40, 41, .8);
+}
+
+.loading-container {
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drop-zone-container {
+  z-index: 1001;
+}
+
+.label-button {
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-margin {
+  margin: 0;
+}
+
+.book-library-screen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  writing-mode: horizontal-tb;
+}
+
+.update-ready-icon {
+  left: 8px;
+}

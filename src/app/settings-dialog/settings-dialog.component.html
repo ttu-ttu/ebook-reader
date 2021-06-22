@@ -1,0 +1,42 @@
+<div class="dialog-padding">
+  <header class="dialog-header">Settings</header>
+  <div>
+    <div class="item-header">Theme</div>
+    <div class="button-row">
+      <button (click)="onThemeUpdateClick(i)"
+              *ngFor="let theme of themeManagerService.availableThemes; index as i"
+              [class.active]="themeManagerService.themeIndex === i"
+              class="button button-styling theme-button {{ theme }}">
+        ぁあ
+      </button>
+    </div>
+
+    <div class="item-header">Font Size</div>
+    <div class="button-row">
+      <fa-icon (click)="onFontSizeUpdateClick(-1)"
+               [icon]="faMinus"
+               class="button button-styling icon-button"></fa-icon>
+      <span class="label-button button-styling">{{ ebookDisplayManagerService.fontSize$ | async }}px</span>
+      <fa-icon (click)="onFontSizeUpdateClick(1)"
+               [icon]="faPlus"
+               class="button button-styling icon-button"></fa-icon>
+    </div>
+
+    <div class="item-header">Blur Images (In case of spoiler)</div>
+    <div class="button-row">
+    <span class="label-button button-styling clickable-button"
+          (click)="onHideSpoilerImageClick()"
+          [class.active]="ebookDisplayManagerService.hideSpoilerImage$ | async">ON</span>
+    </div>
+
+    <div class="item-header">Hide furigana</div>
+    <div class="button-row">
+    <span class="label-button button-styling clickable-button"
+          (click)="onHideFuriganaClick()"
+          [class.active]="ebookDisplayManagerService.hideFurigana$ | async">ON</span>
+    </div>
+  </div>
+  <footer class="dialog-footer">
+    <button (click)="closeClick.emit()" class="button label-button button-styling" type="button">Close</button>
+  </footer>
+</div>

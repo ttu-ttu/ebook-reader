@@ -1,0 +1,146 @@
+@mixin setHeight($heightProperty) {
+  #{$heightProperty}: 90vh;
+
+  @media screen and (min-height: 625px) {
+    #{$heightProperty}: 550px;
+  }
+
+  @media screen and (min-height: 725px) {
+    #{$heightProperty}: 650px;
+  }
+
+  @media screen and (min-height: 825px) {
+    #{$heightProperty}: 750px;
+  }
+
+  @media screen and (min-height: 875px) {
+    #{$heightProperty}: 800px;
+  }
+}
+
+
+.book-content {
+  @include setHeight("height");
+  margin: auto;
+  font-family: var(--book-font-family);
+  color: var(--font-color);
+  background: var(--background-color);
+  line-height: 1.75;
+}
+
+::ng-deep {
+  body {
+    overflow-y: hidden; // Because Chrome doesn't break down '　　', and overflow the container
+  }
+}
+
+:host ::ng-deep {
+  *::selection {
+    background: var(--selection-background-color);
+    color: var(--selection-font-color);
+  }
+
+  a:link {
+    color: var(--font-color) !important;
+    opacity: .8;
+  }
+
+  a:hover {
+    opacity: .95;
+  }
+
+  img {
+    @include setHeight("max-height");
+  }
+
+  ruby > rt {
+    user-select: none;
+  }
+
+  .placeholder-br {
+    visibility: hidden;
+  }
+}
+
+.hide-spoiler-image {
+  ::ng-deep {
+    [data-ttu-spoiler-img] {
+      display: block;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+
+      & .spoiler-label {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #dcddde;
+        background-color: rgba(0,0,0,.6);
+        display: inline-block;
+        padding: 12px 8px;
+        border-radius: 20px;
+        font-size: 15px;
+        font-family: "Noto Sans JP", sans-serif;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      @media (hover: hover) {
+        &:hover .spoiler-label {
+          color: #ffffff;
+          background-color: rgba(0,0,0,.9);
+        }
+      }
+
+      & img,
+      & svg, {
+        filter: blur(44px);
+      }
+    }
+  }
+}
+
+.show-spoiler-image {
+  ::ng-deep {
+    [data-ttu-spoiler-img] {
+      .spoiler-label {
+        display: none;
+      }
+    }
+  }
+}
+
+.hide-furigana {
+  ::ng-deep {
+    ruby {
+      text-shadow: var(--highlight-shadow-color) 1px 0 10px !important;
+    }
+
+    rb {
+      text-shadow: inherit !important;
+    }
+
+    ruby {
+      rt {
+        visibility: hidden;
+      }
+
+      @media (hover: hover) {
+        &:hover {
+          rt {
+            visibility: visible;
+          }
+        }
+      }
+
+      &.reveal-rt {
+        text-shadow: none !important;
+
+        rt {
+          visibility: visible;
+        }
+      }
+    }
+  }
+}
