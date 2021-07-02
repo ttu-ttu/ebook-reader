@@ -8,8 +8,14 @@
   <div class="top-overlay action-icon-container">
     <label class="no-margin">
       <fa-icon class="action-icon"
-               [icon]="faFileImport"></fa-icon>
-      <input type="file" accept=".htmlz,.epub" (change)="onInputChange(inputRef)" hidden #inputRef>
+               [icon]="faFileMedical"></fa-icon>
+      <input type="file" accept=".htmlz,.epub" multiple (change)="onInputChange(inputRef)" hidden #inputRef>
+    </label>
+    <label class="no-margin" *ngIf="!isMobileDevice">
+      <fa-icon class="action-icon margin-icon"
+               [icon]="faFolderPlus"></fa-icon>
+      <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)"
+        hidden #inputDirRef>
     </label>
     <fa-icon class="action-icon margin-icon"
              [icon]="faBookmark"
@@ -25,11 +31,23 @@
   Loading...
 </div>
 
+<div class="overlay-container loading-container drop-zone-container darker"
+     *ngIf="(ebookDisplayManagerService.loadingFiles$ | async)">
+  <div class="progress-container">
+    <div class="truncate">{{ebookDisplayManagerService.loadingFiles$.value?.title}}</div>
+    <div class="progress">
+      <span [style.width]="ebookDisplayManagerService.loadingFiles$.value?.progress"></span>
+    </div>
+  </div>
+</div>
+
 <ng-template #notLoadingRef>
-  <label class="overlay-container drop-zone-container label-button" *ngIf="!(visible$ | async)">
-    Drop or select a HTMLZ or EPUB file to continue
-    <input type="file" accept=".htmlz,.epub" (change)="onInputChange(inputRef)" hidden #inputRef>
+  <label class="overlay-container drop-zone-container label-button" *ngIf="!(visible$ | async)" (click)="zoneInputRef.click();"
+    (contextmenu)="$event.preventDefault();zoneInputDirRef.click();">
+    {{dropZoneLabel}}
   </label>
+  <input type="file" accept=".htmlz,.epub" multiple hidden #zoneInputRef (change)="onInputChange(zoneInputRef)">
+  <input type="file" webkitdirectory directory multiple hidden #zoneInputDirRef (change)="onInputChange(zoneInputDirRef)">
 </ng-template>
 
 <div class="dialog-overlay"

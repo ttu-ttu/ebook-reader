@@ -276,8 +276,14 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.bookmarManagerService.identifier = data.id!;
     this.bookmarManagerService.el.hidden = true;
 
+    const urls: Array<string> = [];
+
     for (const [key, value] of Object.entries(blobs)) {
-      elementHtml = elementHtml.replaceAll(`ttu:${key}`, URL.createObjectURL(value));
+      const url = URL.createObjectURL(value);
+      urls.push(url);
+      elementHtml = elementHtml.
+        replaceAll(`data:image/gif;ttu:${key};base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==`, url).
+        replaceAll(`ttu:${key}`, url);
     }
 
     const element = document.createElement('div');
@@ -286,5 +292,10 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.scrollInformationService.initWatchParagraphs(element);
     this.ebookDisplayManagerService.updateContent(element, styleSheet);
     window.scrollTo(0, 0);
+    setTimeout(() => {
+      for (let index = 0, length = urls.length; index < length; index++) {
+        URL.revokeObjectURL(urls[index]);
+      }
+    });
   }
 }
