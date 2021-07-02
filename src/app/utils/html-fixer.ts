@@ -47,7 +47,7 @@ export function getFormattedElementHtmlz(data: Record<string, string | Blob>) {
   let html = regexResult[1];
   for (const [key, value] of Object.entries(data)) {
     if (value instanceof Blob) {
-      html = html.replaceAll(key, `data:image/gif;ttu:${key};base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==`);
+      html = html.replaceAll(key, buildDummyBookImage(key));
     }
   }
   const result = document.createElement('div');
@@ -129,7 +129,7 @@ export function getFormattedElementEpub(data: Record<string, string | Blob>, con
     const regexResult = /.*<body[^>]*>((.|\s)+)<\/body>.*/.exec(data[htmlHref] as string)!;
     let innerHtml: string = regexResult[1];
     for (const blobKey of blobsAvailable) {
-      innerHtml = innerHtml.replaceAll(relative(htmlHref, blobKey), `data:image/gif;ttu:${blobKey};base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==`);
+      innerHtml = innerHtml.replaceAll(relative(htmlHref, blobKey), buildDummyBookImage(blobKey));
     }
     const childDiv = document.createElement('div');
     childDiv.innerHTML = innerHtml;
@@ -220,4 +220,8 @@ function relative(fromPath: string, toPath: string): string {
   }
 
   return path.join(toParts.slice(fromParts.length - toParts.length).join('/'), toFilename);
+}
+
+export function buildDummyBookImage(key: string) {
+  return `data:image/gif;ttu:${key};base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==`;
 }

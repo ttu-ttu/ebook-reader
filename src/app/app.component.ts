@@ -53,8 +53,8 @@ export class AppComponent implements OnInit {
   loadingDb = true;
   isMobileDevice = this.isMobile();
   dropZoneLabel = this.isMobileDevice ?
-    'Select supported Files (HTMLZ & EPUB) to continue.' :
-    'Drop / select supported Files (HTMLZ & EPUB) or Directories (Right Click) containing them to continue.';
+    'Select supported Files (.htmlz or .epub) to continue.' :
+    'Drop or select a single file (.htmlz or .epub) or a folder that contains those files to continue';
   dropzoneHighlight = false;
   showSettingsDialog = false;
   faFileMedical = faFileMedical;
@@ -149,10 +149,10 @@ export class AppComponent implements OnInit {
 
   isMobile() {
     let isMobileDevice = false;
-    if ('maxTouchPoints' in navigator as any) {
-      isMobileDevice = 0 < navigator.maxTouchPoints;
-    } else if ('msMaxTouchPoints' in navigator as any) {
-      isMobileDevice = 0 < navigator.msMaxTouchPoints;
+    if ('maxTouchPoints' in window.navigator as any) {
+      isMobileDevice = 0 < window.navigator.maxTouchPoints;
+    } else if ('msMaxTouchPoints' in window.navigator as any) {
+      isMobileDevice = 0 < window.navigator.msMaxTouchPoints;
     } else {
       const mQ = window.matchMedia?.('(pointer:coarse)');
       if (mQ?.media === '(pointer:coarse)') {
@@ -160,7 +160,7 @@ export class AppComponent implements OnInit {
       } else if ('orientation' in window) {
         isMobileDevice = true;
       } else {
-        const UA = navigator.userAgent;
+        const UA = window.navigator.userAgent;
         isMobileDevice = (
           /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(UA) ||
           /\b(Android|Windows Phone|iPad|iPod)\b/i.test(UA)
@@ -177,7 +177,7 @@ export class AppComponent implements OnInit {
       if (validFiles.length) {
         this.onFileChange(validFiles);
       } else {
-        alert('Only HTMLZ and EPUB Files are supported');
+        alert('Only .htmlz and .epub Files are supported');
       }
     }
   }
@@ -218,8 +218,17 @@ export class AppComponent implements OnInit {
     const addFilesFromDirectory = async (entry: any, fileMap: Map<string, File>): Promise<void> => {
       if (entry.isDirectory) {
         const dirReader = entry.createReader();
-        const entries = await new Promise<any>((resolve) => dirReader.readEntries(resolve)).catch(() => []);
 
+        const entries = await new Promise<any>(async (resolve) => {
+          const allEntries = [];
+          let dirEntries = await new Promise<any>((innerResolve) => dirReader.readEntries(innerResolve)).catch(() => []);
+
+          while (dirEntries.length) {
+            allEntries.push(...dirEntries);
+            dirEntries = await new Promise<any>((innerResolve) => dirReader.readEntries(innerResolve)).catch(() => []);
+          }
+          resolve(allEntries);
+        }).catch(() => []);
         for (let index = 0, length = entries.length; index < length; index++) {
           await addFilesFromDirectory(entries[index], fileMap).catch(() => { });
         }
@@ -249,7 +258,7 @@ export class AppComponent implements OnInit {
     }
 
     if (!files.size) {
-      return alert('Only HTMLZ and EPUB Files are supported');
+      return alert('Only .htmlz and .epub Files are supported');
     }
 
     this.onFileChange(Array.from(files.values()));
@@ -362,7 +371,7 @@ export class AppComponent implements OnInit {
           return dataId;
         }
       } catch (ex) {
-        console.error(ex);
+        console.error(`${file.name}: ${ex.message}`);
         return undefined;
       }
     });
