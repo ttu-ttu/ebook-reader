@@ -18,6 +18,7 @@ import { DatabaseService } from '../database.service';
 import { EbookDisplayManagerService } from '../ebook-display-manager.service';
 import { OverlayCoverManagerService } from '../overlay-cover-manager.service';
 import { ScrollInformationService } from '../scroll-information.service';
+import { buildDummyBookImage } from '../utils/html-fixer';
 import { SmoothScroll } from '../utils/smooth-scroll';
 
 const enum DeltaMode {
@@ -64,7 +65,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.contentElRef.nativeElement.appendChild(this.ebookDisplayManagerService.contentEl);
     this.zone.runOutsideAngular(() => {
       const wheelEventFn = SmoothScroll(document.documentElement, 4);
-      fromEvent<WheelEvent>(document, 'wheel', {passive: false})
+      fromEvent<WheelEvent>(document, 'wheel', { passive: false })
         .pipe(
           filter(() => this.ebookDisplayManagerService.allowScroll),
           takeUntil(this.destroy$),
@@ -282,7 +283,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
       const url = URL.createObjectURL(value);
       urls.push(url);
       elementHtml = elementHtml.
-        replaceAll(`data:image/gif;ttu:${key};base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==`, url).
+        replaceAll(buildDummyBookImage(key), url).
         replaceAll(`ttu:${key}`, url);
     }
 
