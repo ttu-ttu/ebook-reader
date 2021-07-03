@@ -148,26 +148,26 @@ export class AppComponent implements OnInit {
   }
 
   isMobile() {
-    let isMobileDevice = false;
     if ('maxTouchPoints' in window.navigator as any) {
-      isMobileDevice = 0 < window.navigator.maxTouchPoints;
-    } else if ('msMaxTouchPoints' in window.navigator as any) {
-      isMobileDevice = 0 < window.navigator.msMaxTouchPoints;
-    } else {
-      const mQ = window.matchMedia?.('(pointer:coarse)');
-      if (mQ?.media === '(pointer:coarse)') {
-        isMobileDevice = !!mQ.matches;
-      } else if ('orientation' in window) {
-        isMobileDevice = true;
-      } else {
-        const UA = window.navigator.userAgent;
-        isMobileDevice = (
-          /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(UA) ||
-          /\b(Android|Windows Phone|iPad|iPod)\b/i.test(UA)
-        );
-      }
+      return 0 < window.navigator.maxTouchPoints;
     }
-    return isMobileDevice;
+    
+    if ('msMaxTouchPoints' in window.navigator as any) {
+      return 0 < window.navigator.msMaxTouchPoints;
+    } 
+
+    const mQ = window.matchMedia?.('(pointer:coarse)');
+    if (mQ?.media === '(pointer: coarse)') {
+      return !!mQ.matches;
+    }
+
+    if ('orientation' in window) {
+      return true;
+    }
+
+    const UA = window.navigator.userAgent;
+    const userAgentRegex = /\b(BlackBerry|webOS|iPhone|IEMobile|Android|Windows Phone|iPad|iPod)\b/i
+    return userAgentRegex.test(UA)    
   }
 
   onInputChange(el: HTMLInputElement) {
