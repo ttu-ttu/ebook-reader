@@ -27,14 +27,14 @@ function childNodesAfterContents(el: HTMLElement) {
 function clearBadImageRef(el: HTMLElement) {
   for (const tag of el.getElementsByTagName('image')) {
     const hrefAttr = tag.getAttribute('href');
-    if (hrefAttr && !hrefAttr.startsWith('ttu:')) {
+    if (hrefAttr && !(hrefAttr.startsWith('ttu:') || hrefAttr.startsWith('data:image/gif;ttu:'))) {
       tag.setAttribute('data-ttu-href', hrefAttr);
       tag.removeAttribute('href');
     }
   }
   for (const tag of el.getElementsByTagName('img')) {
     const srcAttr = tag.getAttribute('src');
-    if (srcAttr && !srcAttr.startsWith('ttu:')) {
+    if (srcAttr && !(srcAttr.startsWith('ttu:') || srcAttr.startsWith('data:image/gif;ttu:'))) {
       tag.setAttribute('data-ttu-src', srcAttr);
       tag.removeAttribute('src');
     }
@@ -47,7 +47,7 @@ export function getFormattedElementHtmlz(data: Record<string, string | Blob>) {
   let html = regexResult[1];
   for (const [key, value] of Object.entries(data)) {
     if (value instanceof Blob) {
-      html = html.replaceAll(key, `ttu:${key}`);
+      html = html.replaceAll(key, buildDummyBookImage(key));
     }
   }
   const result = document.createElement('div');
@@ -129,7 +129,7 @@ export function getFormattedElementEpub(data: Record<string, string | Blob>, con
     const regexResult = /.*<body[^>]*>((.|\s)+)<\/body>.*/.exec(data[htmlHref] as string)!;
     let innerHtml: string = regexResult[1];
     for (const blobKey of blobsAvailable) {
-      innerHtml = innerHtml.replaceAll(relative(htmlHref, blobKey), `ttu:${blobKey}`);
+      innerHtml = innerHtml.replaceAll(relative(htmlHref, blobKey), buildDummyBookImage(blobKey));
     }
     const childDiv = document.createElement('div');
     childDiv.innerHTML = innerHtml;
@@ -220,4 +220,8 @@ function relative(fromPath: string, toPath: string): string {
   }
 
   return path.join(toParts.slice(fromParts.length - toParts.length).join('/'), toFilename);
+}
+
+export function buildDummyBookImage(key: string) {
+  return `data:image/gif;ttu:${key};base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==`;
 }
