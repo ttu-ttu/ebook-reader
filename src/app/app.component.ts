@@ -12,9 +12,11 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { faBookmark } from '@fortawesome/free-regular-svg-icons/faBookmark';
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
-import { faFileImport } from '@fortawesome/free-solid-svg-icons/faFileImport';
+import { faFileMedical } from '@fortawesome/free-solid-svg-icons/faFileMedical';
+import { faFolderPlus } from '@fortawesome/free-solid-svg-icons/faFolderPlus';
 import { faSyncAlt } from '@fortawesome/free-solid-svg-icons/faSyncAlt';
 import * as parser from 'fast-xml-parser';
+import { IDBPDatabase } from 'idb';
 import { fromEvent, of } from 'rxjs';
 import { filter, map, shareReplay, switchMap, take, withLatestFrom } from 'rxjs/operators';
 import { AutoScrollerService } from './auto-scroller.service';
@@ -49,13 +51,19 @@ export class AppComponent implements OnInit {
     shareReplay(1),
   );
   loadingDb = true;
+  isMobileDevice = this.isMobile();
+  dropZoneLabel = this.isMobileDevice ?
+    'Select supported Files (.htmlz or .epub) to continue.' :
+    'Drop or select a single file (.htmlz or .epub) or a folder that contains those files to continue';
   dropzoneHighlight = false;
   showSettingsDialog = false;
-  faFileImport = faFileImport;
+  faFileMedical = faFileMedical;
+  faFolderPlus = faFolderPlus;
   faCog = faCog;
   faBookmark = faBookmark;
   faSyncAlt = faSyncAlt;
   isUpdateAvailable = false;
+  filePattern = /\.(?:htmlz|epub)$/;
 
   constructor(
     public autoScrollerService: AutoScrollerService,
@@ -79,7 +87,13 @@ export class AppComponent implements OnInit {
     fromEvent<DragEvent>(document.body, 'dragenter').subscribe((ev) => this.onDragEnter(ev));
     fromEvent<DragEvent>(document.body, 'dragover').subscribe((ev) => this.onDragOver(ev));
     fromEvent<DragEvent>(document.body, 'dragend').subscribe((ev) => this.onDragEnd(ev));
-    fromEvent<DragEvent>(document.body, 'drop').subscribe((ev) => this.onDrop(ev));
+    fromEvent<DragEvent>(document.body, 'drop').pipe(
+      withLatestFrom(this.ebookDisplayManagerService.loadingFiles$)).subscribe(([ev, loadingFiles$]) => {
+        ev.preventDefault();
+        if (!loadingFiles$) {
+          this.onDrop(ev);
+        }
+      });
     fromEvent<KeyboardEvent>(window, 'keydown').pipe(
       withLatestFrom(this.ebookDisplayManagerService.loadingFile$, this.visible$),
     ).subscribe(([ev, loadingFile, visible]) => {
@@ -133,11 +147,37 @@ export class AppComponent implements OnInit {
     });
   }
 
+  isMobile() {
+    let isMobileDevice = false;
+    if ('maxTouchPoints' in window.navigator as any) {
+      isMobileDevice = 0 < window.navigator.maxTouchPoints;
+    } else if ('msMaxTouchPoints' in window.navigator as any) {
+      isMobileDevice = 0 < window.navigator.msMaxTouchPoints;
+    } else {
+      const mQ = window.matchMedia?.('(pointer:coarse)');
+      if (mQ?.media === '(pointer:coarse)') {
+        isMobileDevice = !!mQ.matches;
+      } else if ('orientation' in window) {
+        isMobileDevice = true;
+      } else {
+        const UA = window.navigator.userAgent;
+        isMobileDevice = (
+          /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(UA) ||
+          /\b(Android|Windows Phone|iPad|iPod)\b/i.test(UA)
+        );
+      }
+    }
+    return isMobileDevice;
+  }
+
   onInputChange(el: HTMLInputElement) {
-    if (el.files) {
-      const file = el.files.item(0);
-      if (file) {
-        this.onFileChange(file);
+    if (el.files?.length) {
+      const validFiles = Array.from(el.files).filter((file) => this.filePattern.test(file.name));
+
+      if (validFiles.length) {
+        this.onFileChange(validFiles);
+      } else {
+        alert('Only .htmlz and .epub Files are supported');
       }
     }
   }
@@ -153,33 +193,75 @@ export class AppComponent implements OnInit {
   }
 
   onDrop(ev: DragEvent) {
-    ev.preventDefault();
     this.dropzoneHighlight = false;
 
-    const dropFile = (file: File) => {
-      if (/\.(?:htmlz|epub)$/.test(file.name)) {
-        this.onFileChange(file);
+    if (!ev?.dataTransfer?.items) {
+      return;
+    }
+
+    const items = [];
+
+    for (const item of ev.dataTransfer.items) {
+      if ('file' !== item.kind) {
+        continue;
+      }
+
+      items.push(item.webkitGetAsEntry());
+    }
+
+    if (items.length) {
+      this.handleDropResult(items);
+    }
+  }
+
+  async handleDropResult(items: any[]) {
+    const addFilesFromDirectory = async (entry: any, fileMap: Map<string, File>): Promise<void> => {
+      if (entry.isDirectory) {
+        const dirReader = entry.createReader();
+
+        const entries = await new Promise<any>(async (resolve) => {
+          const allEntries = [];
+          let dirEntries = await new Promise<any>((innerResolve) => dirReader.readEntries(innerResolve)).catch(() => []);
+
+          while (dirEntries.length) {
+            allEntries.push(...dirEntries);
+            dirEntries = await new Promise<any>((innerResolve) => dirReader.readEntries(innerResolve)).catch(() => []);
+          }
+          resolve(allEntries);
+        }).catch(() => []);
+        for (let index = 0, length = entries.length; index < length; index++) {
+          await addFilesFromDirectory(entries[index], fileMap).catch(() => { });
+        }
       } else {
-        alert('Only HTMLZ and EPUB files are supported');
+        const file = await new Promise<File>((resolve) => entry.file(resolve)).catch(() => { });
+
+        if (file && this.filePattern.test(file.name)) {
+          fileMap.set(file.name, file);
+        }
       }
     };
 
-    if (ev.dataTransfer) {
-      if (ev.dataTransfer.items) {
-        const item = ev.dataTransfer.items[0];
-        if (item) {
-          const file = item.getAsFile();
-          if (file) {
-            dropFile(file);
-          }
-        }
-      } else {
-        const file = ev.dataTransfer.files.item(0);
+    const files = new Map<string, File>();
+
+    for (let index = 0, length = items.length; index < length; index++) {
+      const entry = items[index];
+
+      if (entry.isDirectory) {
+        await addFilesFromDirectory(entry, files);
+      } else if (this.filePattern.test(entry.name)) {
+
+        const file = await new Promise<File>((resolve) => entry.file(resolve)).catch(() => { });
         if (file) {
-          dropFile(file);
+          files.set(file.name, file);
         }
       }
     }
+
+    if (!files.size) {
+      return alert('Only .htmlz and .epub Files are supported');
+    }
+
+    this.onFileChange(Array.from(files.values()));
   }
 
   onDragEnter(ev: DragEvent) {
@@ -197,14 +279,80 @@ export class AppComponent implements OnInit {
     this.dropzoneHighlight = false;
   }
 
-  private onFileChange(file: File) {
-    this.autoScrollerService.stop();
-    this.ebookDisplayManagerService.loadingFile$.next(true);
-    this.zone.runOutsideAngular(async () => {
-      try {
+  private async onFileChange(files: Array<File>) {
+    const multiFiles = 1 < files.length;
 
+    let dataId = 0;
+    let importFailures = 0;
+
+    this.autoScrollerService.stop();
+
+    if (!multiFiles) {
+      this.ebookDisplayManagerService.loadingFile$.next(true);
+    }
+
+    const db = await this.databaseService.db.catch(() => {
+      if (!multiFiles) {
+        this.ebookDisplayManagerService.loadingFile$.next(false);
+      }
+      return undefined;
+    });
+
+    if (!db) {
+      return alert('Failure accessing Database');
+    }
+
+    for (let index = 0, length = files.length; index < length; index++) {
+      const file = files[index];
+
+      if (multiFiles) {
+        this.ebookDisplayManagerService.loadingFiles$.next({
+          title: file.name,
+          progress: `${Math.round(index / length * 100)}%`
+        });
+      }
+
+      const lastDataId = await this.storeFileInDB(db, file);
+
+      if (lastDataId) {
+        dataId = lastDataId;
+      } else {
+        importFailures++;
+      }
+    }
+
+    if (importFailures) {
+      alert(`${importFailures} Import(s) failed`);
+    }
+
+    if (multiFiles) {
+      this.ebookDisplayManagerService.loadingFiles$.next(undefined);
+    }
+
+    if (!dataId) {
+      if (!multiFiles) {
+        this.ebookDisplayManagerService.loadingFile$.next(false);
+      }
+
+      return;
+    }
+
+    void db.put('lastItem', {
+      dataId,
+    }, 0).catch(() => { });
+    await this.zone.run(async () => {
+      this.ebookDisplayManagerService.loadingFile$.next(true);
+      const changedIdentifier = await this.router.navigate(['b', dataId]);
+      if (!changedIdentifier) {
+        this.ebookDisplayManagerService.revalidateFile.next();
+      }
+    }).catch(() => this.ebookDisplayManagerService.loadingFile$.next(false));
+  }
+
+  private storeFileInDB(db: IDBPDatabase<BooksDb>, file: File): Promise<number | undefined> {
+    return this.zone.runOutsideAngular(async () => {
+      try {
         const storeData = file.name.endsWith('.epub') ? await processEpub(file) : await processHtmlz(file);
-        const db = await this.databaseService.db;
         let dataId: number;
         {
           const tx = db.transaction('data', 'readwrite');
@@ -220,19 +368,11 @@ export class AppComponent implements OnInit {
             dataId = await store.add(storeData);
           }
           await tx.done;
+          return dataId;
         }
-        void db.put('lastItem', {
-          dataId,
-        }, 0);
-        await this.zone.run(async () => {
-          const changedIdentifier = await this.router.navigate(['b', dataId]);
-          if (!changedIdentifier) {
-            this.ebookDisplayManagerService.revalidateFile.next();
-          }
-        });
       } catch (ex) {
-        console.error(ex);
-        alert('Import failed, please try a different file format');
+        console.error(`${file.name}: ${ex.message}`);
+        return undefined;
       }
     });
   }

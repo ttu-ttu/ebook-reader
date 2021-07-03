@@ -18,6 +18,7 @@ import { DatabaseService } from '../database.service';
 import { EbookDisplayManagerService } from '../ebook-display-manager.service';
 import { OverlayCoverManagerService } from '../overlay-cover-manager.service';
 import { ScrollInformationService } from '../scroll-information.service';
+import { buildDummyBookImage } from '../utils/html-fixer';
 import { SmoothScroll } from '../utils/smooth-scroll';
 
 const enum DeltaMode {
@@ -64,7 +65,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.contentElRef.nativeElement.appendChild(this.ebookDisplayManagerService.contentEl);
     this.zone.runOutsideAngular(() => {
       const wheelEventFn = SmoothScroll(document.documentElement, 4);
-      fromEvent<WheelEvent>(document, 'wheel', {passive: false})
+      fromEvent<WheelEvent>(document, 'wheel', { passive: false })
         .pipe(
           filter(() => this.ebookDisplayManagerService.allowScroll),
           takeUntil(this.destroy$),
@@ -276,8 +277,14 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.bookmarManagerService.identifier = data.id!;
     this.bookmarManagerService.el.hidden = true;
 
+    const urls: Array<string> = [];
+
     for (const [key, value] of Object.entries(blobs)) {
-      elementHtml = elementHtml.replaceAll(`ttu:${key}`, URL.createObjectURL(value));
+      const url = URL.createObjectURL(value);
+      urls.push(url);
+      elementHtml = elementHtml.
+        replaceAll(buildDummyBookImage(key), url).
+        replaceAll(`ttu:${key}`, url);
     }
 
     const element = document.createElement('div');
@@ -286,5 +293,10 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.scrollInformationService.initWatchParagraphs(element);
     this.ebookDisplayManagerService.updateContent(element, styleSheet);
     window.scrollTo(0, 0);
+    setTimeout(() => {
+      for (let index = 0, length = urls.length; index < length; index++) {
+        URL.revokeObjectURL(urls[index]);
+      }
+    });
   }
 }

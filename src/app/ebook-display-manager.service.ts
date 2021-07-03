@@ -14,12 +14,18 @@ import { skip } from 'rxjs/operators';
 // https://www.unicode.org/Public/UCD/latest/ucd/PropList.txt
 const isNotJapaneseRegex = /[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Ideographic}\p{Radical}\p{Unified_Ideograph}]+/gmiu;
 
+type loadingProgress = {
+  title: string;
+  progress: string;
+};
+
 @Injectable({
   providedIn: 'root'
 })
 export class EbookDisplayManagerService {
 
   loadingFile$ = new BehaviorSubject<boolean>(false);
+  loadingFiles$ = new BehaviorSubject<loadingProgress | undefined>(undefined);
   contentEl = document.createElement('div');
   contentChanged = new Subject<void>();
   revalidateFile = new Subject<void>();
