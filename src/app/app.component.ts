@@ -53,8 +53,8 @@ export class AppComponent implements OnInit {
   loadingDb = true;
   isMobileDevice = this.isMobile();
   dropZoneLabel = this.isMobileDevice ?
-    'Select supported Files (.htmlz or .epub) to continue.' :
-    'Drop or select a single file (.htmlz or .epub) or a folder that contains those files to continue';
+    'Select supported files (.htmlz or .epub) to continue' :
+    'Drop or select files (.htmlz or .epub) or a folder that contains those files to continue';
   dropzoneHighlight = false;
   showSettingsDialog = false;
   faFileMedical = faFileMedical;
