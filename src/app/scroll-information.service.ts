@@ -31,11 +31,7 @@ export class ScrollInformationService {
     this.zone.runOutsideAngular(() => {
       let visible = true;
       this.el.addEventListener('click', () => {
-        if (visible) {
-          this.el.style.opacity = '0';
-        } else {
-          this.el.style.removeProperty('opacity');
-        }
+        this.setOpacity(visible);
         visible = !visible;
       });
     });
@@ -53,11 +49,12 @@ export class ScrollInformationService {
   }
 
   initWatchParagraphs(el: HTMLElement) {
+    this.setOpacity(false);
     this.paragraphs = el.getElementsByTagName('p');
 
     if (this.paragraphs.length === 0) {
-      const potentialParagraphs = Array.from(el.querySelectorAll( '*' ))
-        .filter( (p): p is HTMLElement => p instanceof HTMLElement
+      const potentialParagraphs = Array.from(el.querySelectorAll('*'))
+        .filter((p): p is HTMLElement => p instanceof HTMLElement
           && !p.attributes.getNamedItem('aria-hidden')
           && p.parentElement?.tagName !== 'RUBY')
         .filter((p) => {
@@ -93,6 +90,18 @@ export class ScrollInformationService {
       charCount,
     );
     return this.paragraphPos[index];
+  }
+
+  getCurrentProgress() {
+    return this.el.innerText.match(/\((.+)\)/)?.[1] || '0.00%';
+  }
+
+  setOpacity(shallHide: boolean = true) {
+    if (shallHide) {
+      this.el.style.opacity = '0';
+    } else {
+      this.el.style.removeProperty('opacity');
+    }
   }
 }
 

@@ -17,12 +17,18 @@
       <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)"
         hidden #inputDirRef>
     </label>
+    <fa-icon class="action-icon margin-icon" [icon]="faTrash" (click)="bookManagerService.deleteCurrentBook()"></fa-icon>
+    <fa-icon class="action-icon margin-icon"
+              [icon]="faClone" (click)="setShowBookManagerDialog(true);"></fa-icon>
     <fa-icon class="action-icon margin-icon"
              [icon]="faBookmark"
              (click)="bookmarManagerService.saveScrollPosition()"></fa-icon>
     <fa-icon class="action-icon margin-icon"
              [icon]="faCog"
              (click)="setShowSettingsDialog(true)"></fa-icon>
+  </div>
+  <div class="overlay-container book-manager" [hidden]="!showBookManagerDialog">
+    <app-book-manager (closeClick)="setShowBookManagerDialog(false)"></app-book-manager>
   </div>
 </ng-container>
 

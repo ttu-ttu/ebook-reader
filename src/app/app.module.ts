@@ -12,13 +12,16 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { BookManagerComponent } from './book-manager/book-manager.component';
 import { ReaderComponent } from './reader/reader.component';
 import { SettingsDialogComponent } from './settings-dialog/settings-dialog.component';
+import { SwiperModule } from 'swiper/angular';
 import { environment } from '../environments/environment';
 
 @NgModule({
   declarations: [
     AppComponent,
+    BookManagerComponent,
     ReaderComponent,
     SettingsDialogComponent,
   ],
@@ -32,6 +35,7 @@ import { environment } from '../environments/environment';
       // or after 30 seconds (whichever comes first).
       registrationStrategy: 'registerWhenStable:30000'
     }),
+    SwiperModule
   ],
   providers: [],
   bootstrap: [AppComponent]
