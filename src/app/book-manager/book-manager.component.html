@@ -1,0 +1,32 @@
+<div class="modal">
+  <div class="content">
+    <div class="controls">
+      <span>
+        {{selectedBooks}} / {{bookIds.length}} Book(s) selected
+        <fa-icon class="pointer margin-icon" [icon]="faPlusCircle" (click)="processBookSelection(true)"></fa-icon>
+        <ng-container *ngIf="selectedBooks">
+          <fa-icon class="pointer margin-icon" [icon]="faMinusCircle" (click)="processBookSelection(false)"></fa-icon>
+          <fa-icon class="pointer margin-icon" [icon]="faTrash" (click)="executeDelete()"></fa-icon>
+        </ng-container>
+      </span>
+      <span class="pointer" (click)="closeManager()">X</span>
+    </div>
+    <div class="sw-container">
+      <div class="swiper-container" #swiper>
+        <div class="swiper-wrapper">
+          <div class="swiper-slide image-slide" [style.left]="coverData.offset + 'px'"
+            *ngFor="let book of coverData.slides">
+            <img [ngClass]="{dashed: book.useFallback, selected: book.isSelected}" [src]=book.cover
+              class="pointer swiper-lazy" [alt]=book.name (load)="setImageToLoaded(book)" />
+            <span class="progress" [ngClass]="{'hide': !book.coverLoaded}">{{book.progress}}</span>
+            <div [ngClass]="{'hide': book.coverLoaded}" class="preloader">
+              <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
+            </div>
+            <span class="pointer title" [ngClass]="{current: book.id === currentBookId}"
+              (click)="navigateTo(book.id)">{{book.name}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

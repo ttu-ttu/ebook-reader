@@ -237,16 +237,27 @@ export class ReaderComponent implements OnInit, OnDestroy {
       this.ebookDisplayManagerService.loadingFile$.next(true);
       let canLoad = false;
       const identifier = paramMap.get('identifier');
+      const db = await this.databaseService.db;
+
       if (identifier) {
-        const db = await this.databaseService.db;
-        const displayData = await db.get('data', +identifier || 0);
+
+        const displayData = await db.get('data', +identifier || 0).catch(() => undefined);
         if (displayData) {
           canLoad = true;
           this.loadData(displayData);
         }
       }
 
-      if (!canLoad) {
+      if (canLoad) {
+        return;
+      }
+
+      const { dataId: lastDataId } = (await db.get('lastItem', 0).catch(() => ({ dataId: '' }))) || { dataId: '' };
+
+      if (lastDataId) {
+        await this.router.navigate(['b', lastDataId]);
+        this.ebookDisplayManagerService.revalidateFile.next();
+      } else {
         this.ebookDisplayManagerService.loadingFile$.next(false);
         await this.router.navigate(['']);
       }

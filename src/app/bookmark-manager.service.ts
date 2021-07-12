@@ -25,7 +25,7 @@ export class BookmarkManagerService {
   ) {
     this.el = document.createElement('div');
     this.el.classList.add('bookmark-cover');
-    this.el.hidden = true;
+    this.setHideState(true);
   }
 
   async scrollToSavedPosition(offsetWidth: number) {
@@ -48,7 +48,7 @@ export class BookmarkManagerService {
       }
       window.scrollTo(targetScrollX, 0);
       this.el.style.right = `${-targetScrollX}px`;
-      this.el.hidden = false;
+      this.setHideState();
     }
   }
 
@@ -58,8 +58,13 @@ export class BookmarkManagerService {
       dataId: this.identifier,
       scrollX: window.scrollX,
       exploredCharCount: this.scrollInformationService.exploredCharCount,
+      progress: this.scrollInformationService.getCurrentProgress()
     });
     this.el.style.right = `${-window.scrollX}px`;
-    this.el.hidden = false;
+    this.setHideState();
+  }
+
+  setHideState(state: boolean = false) {
+    this.el.hidden = state;
   }
 }

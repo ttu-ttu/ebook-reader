@@ -11,15 +11,18 @@ import { Component, NgZone, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { faBookmark } from '@fortawesome/free-regular-svg-icons/faBookmark';
+import { faClone } from '@fortawesome/free-regular-svg-icons';
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
 import { faFileMedical } from '@fortawesome/free-solid-svg-icons/faFileMedical';
 import { faFolderPlus } from '@fortawesome/free-solid-svg-icons/faFolderPlus';
 import { faSyncAlt } from '@fortawesome/free-solid-svg-icons/faSyncAlt';
+import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
 import * as parser from 'fast-xml-parser';
 import { IDBPDatabase } from 'idb';
 import { fromEvent, of } from 'rxjs';
 import { filter, map, shareReplay, switchMap, take, withLatestFrom } from 'rxjs/operators';
 import { AutoScrollerService } from './auto-scroller.service';
+import { BookManagerService } from './book-manager.service';
 import { BookmarkManagerService } from './bookmark-manager.service';
 import { BooksDb, DatabaseService } from './database.service';
 import { EbookDisplayManagerService } from './ebook-display-manager.service';
@@ -43,7 +46,14 @@ export class AppComponent implements OnInit {
     switchMap(() => {
       if (this.route.firstChild) {
         return this.route.firstChild.paramMap.pipe(
-          map((paramMap) => paramMap.has('identifier'))
+          map((paramMap) => {
+            const id = paramMap.get('identifier');
+            const hasId = !!id;
+            if (hasId) {
+              this.bookManagerService.currentBookId$.next(parseInt(id || '0', 10));
+            }
+            return hasId;
+          })
         );
       }
       return of(false);
@@ -56,17 +66,21 @@ export class AppComponent implements OnInit {
     'Select supported files (.htmlz or .epub) to continue' :
     'Drop or select files (.htmlz or .epub) or a folder that contains those files to continue';
   dropzoneHighlight = false;
+  showBookManagerDialog = false;
   showSettingsDialog = false;
   faFileMedical = faFileMedical;
   faFolderPlus = faFolderPlus;
+  faClone = faClone;
   faCog = faCog;
   faBookmark = faBookmark;
   faSyncAlt = faSyncAlt;
+  faTrash = faTrash;
   isUpdateAvailable = false;
   filePattern = /\.(?:htmlz|epub)$/;
 
   constructor(
     public autoScrollerService: AutoScrollerService,
+    public bookManagerService: BookManagerService,
     public bookmarManagerService: BookmarkManagerService,
     public ebookDisplayManagerService: EbookDisplayManagerService,
     private overlayCoverManagerService: OverlayCoverManagerService,
@@ -88,16 +102,17 @@ export class AppComponent implements OnInit {
     fromEvent<DragEvent>(document.body, 'dragover').subscribe((ev) => this.onDragOver(ev));
     fromEvent<DragEvent>(document.body, 'dragend').subscribe((ev) => this.onDragEnd(ev));
     fromEvent<DragEvent>(document.body, 'drop').pipe(
-      withLatestFrom(this.ebookDisplayManagerService.loadingFiles$)).subscribe(([ev, loadingFiles$]) => {
+      withLatestFrom(this.ebookDisplayManagerService.loadingFiles$, this.bookManagerService.managerIsOpen$))
+      .subscribe(([ev, loadingFiles$, managerIsOpen$]) => {
         ev.preventDefault();
-        if (!loadingFiles$) {
+        if (!loadingFiles$ && !managerIsOpen$) {
           this.onDrop(ev);
         }
       });
     fromEvent<KeyboardEvent>(window, 'keydown').pipe(
-      withLatestFrom(this.ebookDisplayManagerService.loadingFile$, this.visible$),
-    ).subscribe(([ev, loadingFile, visible]) => {
-      if (!loadingFile && visible) {
+      withLatestFrom(this.ebookDisplayManagerService.loadingFile$, this.bookManagerService.managerIsOpen$, this.visible$),
+    ).subscribe(([ev, loadingFile, managerIsOpen, visible]) => {
+      if (!managerIsOpen && !loadingFile && visible) {
         switch (ev.code) {
           case 'Escape':
             this.setShowSettingsDialog(false);
@@ -114,6 +129,12 @@ export class AppComponent implements OnInit {
             break;
           case 'KeyB':
             this.bookmarManagerService.saveScrollPosition();
+            break;
+          case 'KeyM':
+            this.setShowBookManagerDialog(true);
+            break;
+          case 'KeyX':
+            this.bookManagerService.deleteCurrentBook();
             break;
           case 'PageDown':
             window.scrollBy({
@@ -151,10 +172,10 @@ export class AppComponent implements OnInit {
     if ('maxTouchPoints' in window.navigator as any) {
       return 0 < window.navigator.maxTouchPoints;
     }
-    
+
     if ('msMaxTouchPoints' in window.navigator as any) {
       return 0 < window.navigator.msMaxTouchPoints;
-    } 
+    }
 
     const mQ = window.matchMedia?.('(pointer:coarse)');
     if (mQ?.media === '(pointer: coarse)') {
@@ -166,8 +187,8 @@ export class AppComponent implements OnInit {
     }
 
     const UA = window.navigator.userAgent;
-    const userAgentRegex = /\b(BlackBerry|webOS|iPhone|IEMobile|Android|Windows Phone|iPad|iPod)\b/i
-    return userAgentRegex.test(UA)    
+    const userAgentRegex = /\b(BlackBerry|webOS|iPhone|IEMobile|Android|Windows Phone|iPad|iPod)\b/i;
+    return userAgentRegex.test(UA);
   }
 
   onInputChange(el: HTMLInputElement) {
@@ -182,8 +203,22 @@ export class AppComponent implements OnInit {
     }
   }
 
-  setShowSettingsDialog(b: boolean) {
-    this.showSettingsDialog = b;
+  setShowSettingsDialog(showDialog: boolean) {
+    this.showSettingsDialog = showDialog;
+    this.applyDialogSettings(showDialog);
+  }
+
+  setShowBookManagerDialog(showDialog: boolean) {
+    this.bookManagerService.managerIsOpen$.next(showDialog);
+    this.showBookManagerDialog = showDialog;
+    this.applyDialogSettings(showDialog);
+
+    if (showDialog) {
+      this.ebookDisplayManagerService.loadingFile$.next(true);
+    }
+  }
+
+  applyDialogSettings(b: boolean) {
     this.ebookDisplayManagerService.allowScroll = !b;
     if (b) {
       document.body.style.overflow = 'hidden';

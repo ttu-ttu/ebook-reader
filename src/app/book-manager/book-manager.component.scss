@@ -1,0 +1,138 @@
+@import '~swiper/swiper';
+@import '~swiper/components/effect-coverflow/effect-coverflow.scss';
+@import '~swiper/components/lazy/lazy.scss';
+
+.content,
+.sw-container,
+.controls,
+.image-slide {
+  display: flex;
+}
+
+.content {
+  flex-direction: column;
+  width: 100vw;
+  height: 80vh;
+
+  @media screen and (min-width: 1200px) {
+    height: 50vh;
+  }
+}
+
+.controls {
+  padding: 0rem 1.5rem;
+
+  @media screen and (min-width: 700px) and (min-height: 650px) {
+    padding: 0rem 2.5rem;
+    margin-bottom: 5rem;
+  }
+
+  > span:first-child{
+    flex: 1;
+  }
+}
+
+.sw-container {
+  flex: 1;
+
+  .image-slide {
+    flex-direction: column;
+    writing-mode: horizontal-tb;
+    justify-content: center;
+    align-items: center;
+
+    span {
+      &.title {
+        padding: 0rem 0.75rem;
+      }
+
+      &.title:hover:not(.current) {
+        color: lightcoral;
+      }
+
+      &.current {
+        cursor: initial;
+      }
+    }
+  }
+
+  .progress {
+    align-self: center;
+    position: relative;
+    top: -1.5rem;
+    width: 100px;
+    text-align: center;
+    background-color: lightslategrey;
+    color: black;
+
+    @media screen and (min-width: 700px) and (min-height: 650px) {
+      width: 100%;
+      max-width: 30vw;
+      top: -1.5rem;
+    }
+
+    @media screen and (min-width: 1200px) and (min-height: 650px) {
+      max-width: 200px;
+    }
+  }
+
+  .preloader {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+  }
+
+  img {
+    max-width: 100px;
+    height: auto;
+    align-self: center;
+    width: 100%;
+
+    @media screen and (min-width: 700px) and (min-height: 650px) {
+      max-width: 30vw;
+    }
+
+    @media screen and (min-width: 1200px) and (min-height: 650px) {
+      max-height: 300px;
+      max-width: 200px;
+      width: auto;
+    }
+
+    &.border:not(.selected) {
+      border: 1px dotted white;
+    }
+
+    &.dashed {
+      border: 3px dashed;
+      max-height: 100px;
+
+      @media screen and (min-width: 700px) and (min-height: 650px) {
+        max-height: 300px;
+      }
+
+      @media screen and (min-width: 1200px) and (min-height: 650px) {
+        width: 100%;
+      }
+    }
+
+    &.selected {
+      border: 3px dashed lightcoral;
+    }
+  }
+}
+
+.hide {
+  display: none;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.margin-icon {
+  margin-left: 0.5rem;
+
+  @media screen and (min-width: 700px) {
+    margin-left: 2rem;
+  }
+}

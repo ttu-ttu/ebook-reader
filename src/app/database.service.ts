@@ -42,6 +42,7 @@ interface BooksDbV3 extends DBSchema {
       dataId: number;
       scrollX: number;
       exploredCharCount?: number;
+      progress?: string;
     };
     indexes: {
       dataId: number;
