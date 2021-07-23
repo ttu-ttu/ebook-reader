@@ -12,7 +12,7 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import ResizeObserver from 'resize-observer-polyfill';
 import { combineLatest, fromEvent, merge, ReplaySubject, Subject } from 'rxjs';
-import { debounceTime, filter, map, startWith, switchMap, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, filter, map, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators';
 import { BookmarkManagerService } from '../bookmark-manager.service';
 import { DatabaseService } from '../database.service';
 import { EbookDisplayManagerService } from '../ebook-display-manager.service';
@@ -91,7 +91,6 @@ export class ReaderComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       ).subscribe(() => {
         this.scrollInformationService.updateScrollPercent(
-          0,
           this.ebookDisplayManagerService.totalCharCount,
         );
       });
@@ -104,14 +103,16 @@ export class ReaderComponent implements OnInit, OnDestroy {
       });
       this.observer.observe(this.contentElRef.nativeElement);
       resizeObs$.pipe(
-        debounceTime(200),
+        withLatestFrom(this.ebookDisplayManagerService.loadingFile$),
+        filter(([, loadingFile]) => !loadingFile),
+        debounceTime(1),
         takeUntil(this.destroy$),
       ).subscribe(() => {
         this.scrollInformationService.updateParagraphPos();
         this.scrollInformationService.updateScrollPercent(
-          0,
           this.ebookDisplayManagerService.totalCharCount,
         );
+        void this.bookmarManagerService.refreshBookmarkBarPosition();
       });
     });
 
@@ -208,11 +209,8 @@ export class ReaderComponent implements OnInit, OnDestroy {
     ).subscribe(async (elementsArray) => {
       if (elementsArray.every((imgEl) => imgEl.complete)) {
         this.scrollInformationService.updateParagraphPos();
-        await this.bookmarManagerService.scrollToSavedPosition(
-          0,
-        );
+        await this.bookmarManagerService.scrollToSavedPosition();
         this.scrollInformationService.updateScrollPercent(
-          0,
           this.ebookDisplayManagerService.totalCharCount,
         );
         this.ebookDisplayManagerService.loadingFile$.next(false);
