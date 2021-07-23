@@ -36,7 +36,11 @@ const added = false;
 export class ReaderComponent implements OnInit, OnDestroy {
 
   @ViewChild('contentRef', { static: true }) contentElRef!: ElementRef<HTMLElement>;
-
+  private latestScrollStats?: {
+    containerWidth: number;
+    exploredCharCount: number;
+  };
+  private updatingFontSize = false;
   private observer!: ResizeObserver;
   private destroy$ = new Subject<void>();
 
@@ -60,6 +64,18 @@ export class ReaderComponent implements OnInit, OnDestroy {
 
     this.contentElRef.nativeElement.appendChild(this.ebookDisplayManagerService.contentEl);
     this.zone.runOutsideAngular(() => {
+      this.ebookDisplayManagerService.fontSize$.pipe(
+        takeUntil(this.destroy$),
+      ).subscribe((fontSize) => {
+        requestAnimationFrame(() => {
+          this.updatingFontSize = true;
+          this.contentElRef.nativeElement.style.fontSize = `${fontSize}px`;
+          requestAnimationFrame(() => {
+            this.updatingFontSize = false;
+          });
+        });
+      });
+
       const wheelEventFn = SmoothScroll(document.documentElement, 4);
       fromEvent<WheelEvent>(document, 'wheel', { passive: false })
         .pipe(
@@ -90,9 +106,17 @@ export class ReaderComponent implements OnInit, OnDestroy {
       fromEvent(window, 'scroll').pipe(
         takeUntil(this.destroy$),
       ).subscribe(() => {
-        this.scrollInformationService.updateScrollPercent(
+        const charCount = this.scrollInformationService.calcExploredCharCount();
+        this.scrollInformationService.updateScrollPercentByCharCount(
           this.ebookDisplayManagerService.totalCharCount,
+          charCount,
         );
+        if (!this.updatingFontSize) {
+          this.latestScrollStats = {
+            containerWidth: this.contentElRef.nativeElement.offsetWidth,
+            exploredCharCount: charCount,
+          };
+        }
       });
       const resizeObs$ = new ReplaySubject<void>(1);
       window.addEventListener('resize', () => {
@@ -105,10 +129,14 @@ export class ReaderComponent implements OnInit, OnDestroy {
       resizeObs$.pipe(
         withLatestFrom(this.ebookDisplayManagerService.loadingFile$),
         filter(([, loadingFile]) => !loadingFile),
-        debounceTime(1),
+        switchMap(() => new Promise(requestAnimationFrame)),
         takeUntil(this.destroy$),
       ).subscribe(() => {
         this.scrollInformationService.updateParagraphPos();
+        if (this.latestScrollStats && Math.abs(this.latestScrollStats.containerWidth - this.contentElRef.nativeElement.offsetWidth) > 100) {
+          const scrollPos = this.scrollInformationService.getScrollPos(this.latestScrollStats.exploredCharCount);
+          window.scrollTo(scrollPos, 0);
+        }
         this.scrollInformationService.updateScrollPercent(
           this.ebookDisplayManagerService.totalCharCount,
         );
