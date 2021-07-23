@@ -1,21 +1,10 @@
 @mixin setHeight($heightProperty) {
   #{$heightProperty}: 90vh;
 
-  @media screen and (min-height: 625px) {
-    #{$heightProperty}: 550px;
+  @media screen and (min-height: 780px) {
+    #{$heightProperty}: calc(100vh - 155px);
   }
 
-  @media screen and (min-height: 725px) {
-    #{$heightProperty}: 650px;
-  }
-
-  @media screen and (min-height: 825px) {
-    #{$heightProperty}: 750px;
-  }
-
-  @media screen and (min-height: 875px) {
-    #{$heightProperty}: 800px;
-  }
 }
 
 
@@ -26,6 +15,8 @@
   color: var(--font-color);
   background: var(--background-color);
   line-height: 1.75;
+  padding-left: 30px;
+  padding-right: 30px;
 }
 
 ::ng-deep {
