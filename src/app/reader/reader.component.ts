@@ -16,7 +16,6 @@ import { debounceTime, filter, map, startWith, switchMap, take, takeUntil } from
 import { BookmarkManagerService } from '../bookmark-manager.service';
 import { DatabaseService } from '../database.service';
 import { EbookDisplayManagerService } from '../ebook-display-manager.service';
-import { OverlayCoverManagerService } from '../overlay-cover-manager.service';
 import { ScrollInformationService } from '../scroll-information.service';
 import { buildDummyBookImage } from '../utils/html-fixer';
 import { SmoothScroll } from '../utils/smooth-scroll';
@@ -44,7 +43,6 @@ export class ReaderComponent implements OnInit, OnDestroy {
   constructor(
     private title: Title,
     public ebookDisplayManagerService: EbookDisplayManagerService,
-    private overlayCoverManagerService: OverlayCoverManagerService,
     private scrollInformationService: ScrollInformationService,
     private bookmarManagerService: BookmarkManagerService,
     private databaseService: DatabaseService,
@@ -57,10 +55,8 @@ export class ReaderComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (!added) {
       document.body.appendChild(this.bookmarManagerService.el);
-      document.body.appendChild(this.overlayCoverManagerService.el);
       document.body.appendChild(this.scrollInformationService.el);
     }
-    this.overlayCoverManagerService.updateOverlaySize();
 
     this.contentElRef.nativeElement.appendChild(this.ebookDisplayManagerService.contentEl);
     this.zone.runOutsideAngular(() => {
@@ -85,7 +81,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
               scrollDistance = ev.deltaY * this.ebookDisplayManagerService.fontSize$.value * 1.75;
               break;
             default:
-              scrollDistance = ev.deltaY * (window.innerWidth - (this.overlayCoverManagerService.borderSize * 2));
+              scrollDistance = ev.deltaY * window.innerWidth;
           }
 
           wheelEventFn(-scrollDistance);
@@ -95,13 +91,12 @@ export class ReaderComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       ).subscribe(() => {
         this.scrollInformationService.updateScrollPercent(
-          this.overlayCoverManagerService.borderSize,
+          0,
           this.ebookDisplayManagerService.totalCharCount,
         );
       });
       const resizeObs$ = new ReplaySubject<void>(1);
       window.addEventListener('resize', () => {
-        this.overlayCoverManagerService.updateOverlaySize();
         resizeObs$.next();
       });
       this.observer = new ResizeObserver(() => {
@@ -114,7 +109,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
       ).subscribe(() => {
         this.scrollInformationService.updateParagraphPos();
         this.scrollInformationService.updateScrollPercent(
-          this.overlayCoverManagerService.borderSize,
+          0,
           this.ebookDisplayManagerService.totalCharCount,
         );
       });
@@ -145,10 +140,6 @@ export class ReaderComponent implements OnInit, OnDestroy {
     ).subscribe((el) => {
       const targetEl = document.getElementById(el.hash.substring(1));
       if (targetEl) {
-        const borderSize = this.overlayCoverManagerService.borderSize;
-        if (borderSize) {
-          targetEl.style.setProperty('scroll-margin-right', `${borderSize}px`);
-        }
         targetEl.scrollIntoView();
       }
     });
@@ -218,10 +209,10 @@ export class ReaderComponent implements OnInit, OnDestroy {
       if (elementsArray.every((imgEl) => imgEl.complete)) {
         this.scrollInformationService.updateParagraphPos();
         await this.bookmarManagerService.scrollToSavedPosition(
-          this.overlayCoverManagerService.borderSize,
+          0,
         );
         this.scrollInformationService.updateScrollPercent(
-          this.overlayCoverManagerService.borderSize,
+          0,
           this.ebookDisplayManagerService.totalCharCount,
         );
         this.ebookDisplayManagerService.loadingFile$.next(false);
