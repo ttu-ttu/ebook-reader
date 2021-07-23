@@ -74,9 +74,18 @@ export class ScrollInformationService {
     }
   }
 
-  updateScrollPercent(totalCharCount: number) {
+  calcExploredCharCount() {
     const scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
-    this.exploredCharCount = this.getCharCount(Math.abs(scrollLeft));
+    return this.getCharCount(Math.abs(scrollLeft));
+  }
+
+  updateScrollPercent(totalCharCount: number) {
+    this.exploredCharCount = this.calcExploredCharCount();
+    this.el.innerText = `${this.exploredCharCount}/${totalCharCount} (${((this.exploredCharCount / totalCharCount) * 100).toFixed(2)}%)`;
+  }
+
+  updateScrollPercentByCharCount(totalCharCount: number, charCount: number) {
+    this.exploredCharCount = charCount;
     this.el.innerText = `${this.exploredCharCount}/${totalCharCount} (${((this.exploredCharCount / totalCharCount) * 100).toFixed(2)}%)`;
   }
 
