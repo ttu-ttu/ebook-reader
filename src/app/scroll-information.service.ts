@@ -74,9 +74,9 @@ export class ScrollInformationService {
     }
   }
 
-  updateScrollPercent(offsetWidth: number, totalCharCount: number) {
+  updateScrollPercent(totalCharCount: number) {
     const scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
-    this.exploredCharCount = this.getCharCount(Math.abs(scrollLeft) + offsetWidth);
+    this.exploredCharCount = this.getCharCount(Math.abs(scrollLeft));
     this.el.innerText = `${this.exploredCharCount}/${totalCharCount} (${((this.exploredCharCount / totalCharCount) * 100).toFixed(2)}%)`;
   }
 
@@ -92,7 +92,7 @@ export class ScrollInformationService {
       this.charCount.length - 1,
       charCount,
     );
-    return this.paragraphPos[index];
+    return -this.paragraphPos[index];
   }
 }
 
