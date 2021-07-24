@@ -26,7 +26,6 @@ import { BookManagerService } from './book-manager.service';
 import { BookmarkManagerService } from './bookmark-manager.service';
 import { BooksDb, DatabaseService } from './database.service';
 import { EbookDisplayManagerService } from './ebook-display-manager.service';
-import { OverlayCoverManagerService } from './overlay-cover-manager.service';
 import { ScrollInformationService } from './scroll-information.service';
 import { ThemeManagerService } from './theme-manager.service';
 import parseCss from './utils/css-parser';
@@ -83,7 +82,6 @@ export class AppComponent implements OnInit {
     public bookManagerService: BookManagerService,
     public bookmarManagerService: BookmarkManagerService,
     public ebookDisplayManagerService: EbookDisplayManagerService,
-    private overlayCoverManagerService: OverlayCoverManagerService,
     private scrollInformationService: ScrollInformationService,
     private themeManagerService: ThemeManagerService,
     private databaseService: DatabaseService,
@@ -138,13 +136,13 @@ export class AppComponent implements OnInit {
             break;
           case 'PageDown':
             window.scrollBy({
-              left: (window.innerWidth - (this.overlayCoverManagerService.borderSize * 2)) * -.9,
+              left: window.innerWidth * -.9,
               behavior: 'smooth',
             });
             break;
           case 'PageUp':
             window.scrollBy({
-              left: (window.innerWidth - (this.overlayCoverManagerService.borderSize * 2)) * .9,
+              left: window.innerWidth * .9,
               behavior: 'smooth',
             });
             break;
@@ -179,7 +177,7 @@ export class AppComponent implements OnInit {
 
     const mQ = window.matchMedia?.('(pointer:coarse)');
     if (mQ?.media === '(pointer: coarse)') {
-      return !!mQ.matches;
+      return mQ.matches;
     }
 
     if ('orientation' in window) {

@@ -28,24 +28,9 @@ export class BookmarkManagerService {
     this.setHideState(true);
   }
 
-  async scrollToSavedPosition(offsetWidth: number) {
-    const db = await this.databaseService.db;
-    const bookmark = await db.get('bookmark', this.identifier);
-    if (bookmark) {
-      if ('scrollRestoration' in window.history) {
-        window.history.scrollRestoration = 'manual';
-      }
-
-      let targetScrollX: number;
-      if (bookmark.exploredCharCount) {
-        if (this.scrollInformationService.getCharCount(Math.abs(bookmark.scrollX) + offsetWidth) === bookmark.exploredCharCount) {
-          targetScrollX = bookmark.scrollX;
-        } else {
-          targetScrollX = -this.scrollInformationService.getScrollPos(bookmark.exploredCharCount) + offsetWidth;
-        }
-      } else {
-        targetScrollX = bookmark.scrollX;
-      }
+  async scrollToSavedPosition() {
+    const targetScrollX = await this.getBookmarkPosition();
+    if (targetScrollX !== undefined) {
       window.scrollTo(targetScrollX, 0);
       this.el.style.right = `${-targetScrollX}px`;
       this.setHideState();
@@ -66,5 +51,31 @@ export class BookmarkManagerService {
 
   setHideState(state: boolean = false) {
     this.el.hidden = state;
+  }
+
+  async refreshBookmarkBarPosition() {
+    const targetScrollX = await this.getBookmarkPosition();
+    if (targetScrollX !== undefined) {
+      this.el.style.right = `${-targetScrollX}px`;
+    }
+  }
+
+  private async getBookmarkPosition() {
+    const db = await this.databaseService.db;
+    const bookmark = await db.get('bookmark', this.identifier);
+    if (bookmark) {
+      let targetScrollX: number;
+      if (bookmark.exploredCharCount) {
+        if (this.scrollInformationService.getCharCount(Math.abs(bookmark.scrollX)) === bookmark.exploredCharCount) {
+          targetScrollX = bookmark.scrollX;
+        } else {
+          targetScrollX = this.scrollInformationService.getScrollPos(bookmark.exploredCharCount);
+        }
+      } else {
+        targetScrollX = bookmark.scrollX;
+      }
+      return targetScrollX;
+    }
+    return undefined;
   }
 }

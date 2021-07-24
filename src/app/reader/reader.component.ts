@@ -12,11 +12,10 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import ResizeObserver from 'resize-observer-polyfill';
 import { combineLatest, fromEvent, merge, ReplaySubject, Subject } from 'rxjs';
-import { debounceTime, filter, map, startWith, switchMap, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, filter, map, startWith, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators';
 import { BookmarkManagerService } from '../bookmark-manager.service';
 import { DatabaseService } from '../database.service';
 import { EbookDisplayManagerService } from '../ebook-display-manager.service';
-import { OverlayCoverManagerService } from '../overlay-cover-manager.service';
 import { ScrollInformationService } from '../scroll-information.service';
 import { buildDummyBookImage } from '../utils/html-fixer';
 import { SmoothScroll } from '../utils/smooth-scroll';
@@ -37,14 +36,17 @@ const added = false;
 export class ReaderComponent implements OnInit, OnDestroy {
 
   @ViewChild('contentRef', { static: true }) contentElRef!: ElementRef<HTMLElement>;
-
+  private latestScrollStats?: {
+    containerWidth: number;
+    exploredCharCount: number;
+  };
+  private updatingFontSize = false;
   private observer!: ResizeObserver;
   private destroy$ = new Subject<void>();
 
   constructor(
     private title: Title,
     public ebookDisplayManagerService: EbookDisplayManagerService,
-    private overlayCoverManagerService: OverlayCoverManagerService,
     private scrollInformationService: ScrollInformationService,
     private bookmarManagerService: BookmarkManagerService,
     private databaseService: DatabaseService,
@@ -57,13 +59,23 @@ export class ReaderComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (!added) {
       document.body.appendChild(this.bookmarManagerService.el);
-      document.body.appendChild(this.overlayCoverManagerService.el);
       document.body.appendChild(this.scrollInformationService.el);
     }
-    this.overlayCoverManagerService.updateOverlaySize();
 
     this.contentElRef.nativeElement.appendChild(this.ebookDisplayManagerService.contentEl);
     this.zone.runOutsideAngular(() => {
+      this.ebookDisplayManagerService.fontSize$.pipe(
+        takeUntil(this.destroy$),
+      ).subscribe((fontSize) => {
+        requestAnimationFrame(() => {
+          this.updatingFontSize = true;
+          this.contentElRef.nativeElement.style.fontSize = `${fontSize}px`;
+          requestAnimationFrame(() => {
+            this.updatingFontSize = false;
+          });
+        });
+      });
+
       const wheelEventFn = SmoothScroll(document.documentElement, 4);
       fromEvent<WheelEvent>(document, 'wheel', { passive: false })
         .pipe(
@@ -85,7 +97,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
               scrollDistance = ev.deltaY * this.ebookDisplayManagerService.fontSize$.value * 1.75;
               break;
             default:
-              scrollDistance = ev.deltaY * (window.innerWidth - (this.overlayCoverManagerService.borderSize * 2));
+              scrollDistance = ev.deltaY * window.innerWidth;
           }
 
           wheelEventFn(-scrollDistance);
@@ -94,14 +106,20 @@ export class ReaderComponent implements OnInit, OnDestroy {
       fromEvent(window, 'scroll').pipe(
         takeUntil(this.destroy$),
       ).subscribe(() => {
-        this.scrollInformationService.updateScrollPercent(
-          this.overlayCoverManagerService.borderSize,
+        const charCount = this.scrollInformationService.calcExploredCharCount();
+        this.scrollInformationService.updateScrollPercentByCharCount(
           this.ebookDisplayManagerService.totalCharCount,
+          charCount,
         );
+        if (!this.updatingFontSize) {
+          this.latestScrollStats = {
+            containerWidth: this.contentElRef.nativeElement.offsetWidth,
+            exploredCharCount: charCount,
+          };
+        }
       });
       const resizeObs$ = new ReplaySubject<void>(1);
       window.addEventListener('resize', () => {
-        this.overlayCoverManagerService.updateOverlaySize();
         resizeObs$.next();
       });
       this.observer = new ResizeObserver(() => {
@@ -109,14 +127,20 @@ export class ReaderComponent implements OnInit, OnDestroy {
       });
       this.observer.observe(this.contentElRef.nativeElement);
       resizeObs$.pipe(
-        debounceTime(200),
+        withLatestFrom(this.ebookDisplayManagerService.loadingFile$),
+        filter(([, loadingFile]) => !loadingFile),
+        switchMap(() => new Promise(requestAnimationFrame)),
         takeUntil(this.destroy$),
       ).subscribe(() => {
         this.scrollInformationService.updateParagraphPos();
+        if (this.latestScrollStats && Math.abs(this.latestScrollStats.containerWidth - this.contentElRef.nativeElement.offsetWidth) > 100) {
+          const scrollPos = this.scrollInformationService.getScrollPos(this.latestScrollStats.exploredCharCount);
+          window.scrollTo(scrollPos, 0);
+        }
         this.scrollInformationService.updateScrollPercent(
-          this.overlayCoverManagerService.borderSize,
           this.ebookDisplayManagerService.totalCharCount,
         );
+        void this.bookmarManagerService.refreshBookmarkBarPosition();
       });
     });
 
@@ -145,10 +169,6 @@ export class ReaderComponent implements OnInit, OnDestroy {
     ).subscribe((el) => {
       const targetEl = document.getElementById(el.hash.substring(1));
       if (targetEl) {
-        const borderSize = this.overlayCoverManagerService.borderSize;
-        if (borderSize) {
-          targetEl.style.setProperty('scroll-margin-right', `${borderSize}px`);
-        }
         targetEl.scrollIntoView();
       }
     });
@@ -217,11 +237,8 @@ export class ReaderComponent implements OnInit, OnDestroy {
     ).subscribe(async (elementsArray) => {
       if (elementsArray.every((imgEl) => imgEl.complete)) {
         this.scrollInformationService.updateParagraphPos();
-        await this.bookmarManagerService.scrollToSavedPosition(
-          this.overlayCoverManagerService.borderSize,
-        );
+        await this.bookmarManagerService.scrollToSavedPosition();
         this.scrollInformationService.updateScrollPercent(
-          this.overlayCoverManagerService.borderSize,
           this.ebookDisplayManagerService.totalCharCount,
         );
         this.ebookDisplayManagerService.loadingFile$.next(false);
