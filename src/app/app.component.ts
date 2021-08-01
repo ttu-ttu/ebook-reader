@@ -52,7 +52,7 @@ export class AppComponent implements OnInit {
   );
   loadingDb = true;
   isMobileDevice = this.isMobile();
-  supportsFullScreen = this.fullscreenEnabled();
+  supportsFullscreen = this.fullscreenEnabled();
   dropZoneLabel = this.isMobileDevice ?
     'Select supported files (.htmlz or .epub) to continue' :
     'Drop or select files (.htmlz or .epub) or a folder that contains those files to continue';
