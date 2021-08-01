@@ -50,6 +50,10 @@ export class AppComponent implements OnInit {
     }),
     shareReplay(1),
   );
+  // Mostly for apps that uses this webapp as their component (e.g. jidoujisho)
+  minimalUi$ = this.route.queryParamMap.pipe(
+    map((paramMap) => paramMap.has('min')),
+  );
   loadingDb = true;
   isMobileDevice = this.isMobile();
   supportsFullscreen = this.fullscreenEnabled();
@@ -140,7 +144,9 @@ export class AppComponent implements OnInit {
           const lastItem = await db.get('lastItem', 0);
           if (lastItem) {
             this.ebookDisplayManagerService.loadingFile$.next(true); // otherwise may get NG0100 (if modified while init ReaderComponent)
-            await this.router.navigate(['b', lastItem.dataId]);
+            await this.router.navigate(['b', lastItem.dataId], {
+              queryParamsHandling: 'merge',
+            });
           }
         }
         this.loadingDb = false;
@@ -357,7 +363,9 @@ export class AppComponent implements OnInit {
     }, 0).catch(() => { });
     await this.zone.run(async () => {
       this.ebookDisplayManagerService.loadingFile$.next(true);
-      const changedIdentifier = await this.router.navigate(['b', dataId]);
+      const changedIdentifier = await this.router.navigate(['b', dataId], {
+        queryParamsHandling: 'merge',
+      });
       if (!changedIdentifier) {
         this.ebookDisplayManagerService.revalidateFile.next();
       }
