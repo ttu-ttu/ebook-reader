@@ -17,10 +17,10 @@ export class ThemeManagerService {
 
   readonly availableThemes = [
     'light-theme',
-    'gray-theme',
-    'dark-theme',
     'ecru-theme',
     'water-theme',
+    'gray-theme',
+    'dark-theme',
     'black-theme',
   ];
 
