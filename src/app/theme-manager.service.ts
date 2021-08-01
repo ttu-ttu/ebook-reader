@@ -21,6 +21,7 @@ export class ThemeManagerService {
     'dark-theme',
     'ecru-theme',
     'water-theme',
+    'black-theme',
   ];
 
   constructor() {
