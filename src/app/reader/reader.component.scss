@@ -41,7 +41,7 @@
   }
 
   img {
-    @include setHeight("max-height");
+    max-height: 100%;
   }
 
   ruby > rt {
