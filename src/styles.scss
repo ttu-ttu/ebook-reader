@@ -35,7 +35,7 @@
   --background-color: #ffffff;
 }
 
-.dark-theme, .gray-theme {
+.dark-theme, .gray-theme, .black-theme {
   --font-color: rgba(255, 255, 255, .6);
   --highlight-shadow-color: #{highlight-shadow-color(#f0f0f0, $dark-theme: true)};
   --background-color: #121212;
@@ -62,6 +62,10 @@
 .gray-theme {
   --background-color: #23272a;
   --font-color: rgba(227, 227, 227, 0.80);
+}
+
+.black-theme {
+  --background-color: #000000;
 }
 
 html {
