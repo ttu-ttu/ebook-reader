@@ -26,7 +26,7 @@
   </div>
   <div class="top-overlay action-icon-container--left">
     <fa-icon class="action-icon margin-icon"
-             *ngIf="supportsFullscreen && !autoScrollerService.activated"
+             *ngIf="!(minimalUi$ | async) && supportsFullscreen && !autoScrollerService.activated"
              [icon]="faExpand"
              (click)="toggleFullscreen()"></fa-icon>
   </div>

@@ -265,7 +265,9 @@ export class ReaderComponent implements OnInit, OnDestroy {
 
       if (!canLoad) {
         this.ebookDisplayManagerService.loadingFile$.next(false);
-        await this.router.navigate(['']);
+        await this.router.navigate([''], {
+          queryParamsHandling: 'merge',
+        });
       }
     });
   }
