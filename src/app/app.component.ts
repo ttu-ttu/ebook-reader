@@ -12,6 +12,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { faBookmark } from '@fortawesome/free-regular-svg-icons/faBookmark';
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
+import { faExpand } from '@fortawesome/free-solid-svg-icons/faExpand';
 import { faFileMedical } from '@fortawesome/free-solid-svg-icons/faFileMedical';
 import { faFolderPlus } from '@fortawesome/free-solid-svg-icons/faFolderPlus';
 import { faSyncAlt } from '@fortawesome/free-solid-svg-icons/faSyncAlt';
@@ -51,6 +52,7 @@ export class AppComponent implements OnInit {
   );
   loadingDb = true;
   isMobileDevice = this.isMobile();
+  supportsFullScreen = this.fullscreenEnabled();
   dropZoneLabel = this.isMobileDevice ?
     'Select supported files (.htmlz or .epub) to continue' :
     'Drop or select files (.htmlz or .epub) or a folder that contains those files to continue';
@@ -61,6 +63,7 @@ export class AppComponent implements OnInit {
   faCog = faCog;
   faBookmark = faBookmark;
   faSyncAlt = faSyncAlt;
+  faExpand = faExpand;
   isUpdateAvailable = false;
   filePattern = /\.(?:htmlz|epub)$/;
 
@@ -187,6 +190,20 @@ export class AppComponent implements OnInit {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.removeProperty('overflow');
+    }
+  }
+
+  fullscreenEnabled() {
+    return document.fullscreenEnabled ?? false;
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
   }
 
