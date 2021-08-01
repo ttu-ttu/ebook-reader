@@ -36,6 +36,7 @@ const added = false;
 export class ReaderComponent implements OnInit, OnDestroy {
 
   @ViewChild('contentRef', { static: true }) contentElRef!: ElementRef<HTMLElement>;
+  private storedObjectUrls: string[] = [];
   private latestScrollStats?: {
     containerWidth: number;
     exploredCharCount: number;
@@ -273,6 +274,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.storedObjectUrls.forEach(URL.revokeObjectURL);
     this.observer.disconnect();
     this.destroy$.next();
     this.destroy$.complete();
@@ -285,6 +287,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
     styleSheet: string;
     blobs: Record<string, Blob>,
   }) {
+    this.storedObjectUrls.forEach(URL.revokeObjectURL);
     let { elementHtml } = data;
     const {
       title,
@@ -296,7 +299,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.bookmarManagerService.identifier = data.id!;
     this.bookmarManagerService.el.hidden = true;
 
-    const urls: Array<string> = [];
+    const urls: string[] = [];
 
     for (const [key, value] of Object.entries(blobs)) {
       const url = URL.createObjectURL(value);
@@ -311,11 +314,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.ebookDisplayManagerService.totalCharCount = this.ebookDisplayManagerService.getCharCount(element);
     this.scrollInformationService.initWatchParagraphs(element);
     this.ebookDisplayManagerService.updateContent(element, styleSheet);
+    this.storedObjectUrls = urls;
     window.scrollTo(0, 0);
-    setTimeout(() => {
-      for (let index = 0, length = urls.length; index < length; index++) {
-        URL.revokeObjectURL(urls[index]);
-      }
-    });
   }
 }
