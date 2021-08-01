@@ -24,6 +24,11 @@
              [icon]="faCog"
              (click)="setShowSettingsDialog(true)"></fa-icon>
   </div>
+  <div class="top-overlay action-icon-container_left">
+    <fa-icon class="action-icon margin-icon" *ngIf="supportsFullScreen"
+             [icon]="faExpand"
+             (click)="toggleFullscreen()"></fa-icon>
+  </div>
 </ng-container>
 
 <div class="overlay-container loading-container"
