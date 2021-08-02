@@ -13,6 +13,7 @@ import { SwUpdate } from '@angular/service-worker';
 import { faBookmark } from '@fortawesome/free-regular-svg-icons/faBookmark';
 import { faClone } from '@fortawesome/free-regular-svg-icons';
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
+import { faExpand } from '@fortawesome/free-solid-svg-icons/faExpand';
 import { faFileMedical } from '@fortawesome/free-solid-svg-icons/faFileMedical';
 import { faFolderPlus } from '@fortawesome/free-solid-svg-icons/faFolderPlus';
 import { faSyncAlt } from '@fortawesome/free-solid-svg-icons/faSyncAlt';
@@ -59,8 +60,13 @@ export class AppComponent implements OnInit {
     }),
     shareReplay(1),
   );
+  // Mostly for apps that uses this webapp as their component (e.g. jidoujisho)
+  minimalUi$ = this.route.queryParamMap.pipe(
+    map((paramMap) => paramMap.has('min')),
+  );
   loadingDb = true;
   isMobileDevice = this.isMobile();
+  supportsFullscreen = this.fullscreenEnabled();
   dropZoneLabel = this.isMobileDevice ?
     'Select supported files (.htmlz or .epub) to continue' :
     'Drop or select files (.htmlz or .epub) or a folder that contains those files to continue';
@@ -74,6 +80,7 @@ export class AppComponent implements OnInit {
   faBookmark = faBookmark;
   faSyncAlt = faSyncAlt;
   faTrash = faTrash;
+  faExpand = faExpand;
   isUpdateAvailable = false;
   filePattern = /\.(?:htmlz|epub)$/;
 
@@ -158,7 +165,9 @@ export class AppComponent implements OnInit {
           const lastItem = await db.get('lastItem', 0);
           if (lastItem) {
             this.ebookDisplayManagerService.loadingFile$.next(true); // otherwise may get NG0100 (if modified while init ReaderComponent)
-            await this.router.navigate(['b', lastItem.dataId]);
+            await this.router.navigate(['b', lastItem.dataId], {
+              queryParamsHandling: 'merge',
+            });
           }
         }
         this.loadingDb = false;
@@ -222,6 +231,20 @@ export class AppComponent implements OnInit {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.removeProperty('overflow');
+    }
+  }
+
+  fullscreenEnabled() {
+    return document.fullscreenEnabled ?? false;
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
   }
 
@@ -375,7 +398,9 @@ export class AppComponent implements OnInit {
     }, 0).catch(() => { });
     await this.zone.run(async () => {
       this.ebookDisplayManagerService.loadingFile$.next(true);
-      const changedIdentifier = await this.router.navigate(['b', dataId]);
+      const changedIdentifier = await this.router.navigate(['b', dataId], {
+        queryParamsHandling: 'merge',
+      });
       if (!changedIdentifier) {
         this.ebookDisplayManagerService.revalidateFile.next();
       }
