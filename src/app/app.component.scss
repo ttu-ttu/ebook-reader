@@ -41,6 +41,16 @@
   }
 }
 
+.action-icon-container--left {
+  display: flex;
+  font-size: 16px;
+  left: 8px;
+
+  @media screen and (min-height: 900px) {
+    font-size: 24px;
+  }
+}
+
 .action-icon {
   display: block;
   cursor: pointer;

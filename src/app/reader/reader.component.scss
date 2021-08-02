@@ -1,8 +1,8 @@
 @mixin setHeight($heightProperty) {
-  #{$heightProperty}: 90vh;
+  #{$heightProperty}: 90%;
 
   @media screen and (min-height: 780px) {
-    #{$heightProperty}: calc(100vh - 155px);
+    #{$heightProperty}: calc(100% - 155px);
   }
 
 }
