@@ -12,6 +12,7 @@ import { faMinus } from '@fortawesome/free-solid-svg-icons/faMinus';
 import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 import { EbookDisplayManagerService } from '../ebook-display-manager.service';
 import { ThemeManagerService } from '../theme-manager.service';
+import { UiSettingsService } from '../ui-settings-service';
 
 
 @Component({
@@ -29,6 +30,7 @@ export class SettingsDialogComponent implements OnInit {
   constructor(
     public themeManagerService: ThemeManagerService,
     public ebookDisplayManagerService: EbookDisplayManagerService,
+    public uiSettingsService: UiSettingsService,
     public cdr: ChangeDetectorRef,
   ) { }
 
@@ -52,6 +54,11 @@ export class SettingsDialogComponent implements OnInit {
 
   onHideFuriganaClick() {
     this.ebookDisplayManagerService.hideFurigana$.next(!this.ebookDisplayManagerService.hideFurigana$.value);
+    this.cdr.markForCheck();
+  }
+
+  onShowTooltipsClick() {
+    this.uiSettingsService.showTooltips$.next(!this.uiSettingsService.showTooltips$.value);
     this.cdr.markForCheck();
   }
 }

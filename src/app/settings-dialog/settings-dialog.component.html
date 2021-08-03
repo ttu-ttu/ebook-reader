@@ -35,6 +35,12 @@
           (click)="onHideFuriganaClick()"
           [class.active]="ebookDisplayManagerService.hideFurigana$ | async">ON</span>
     </div>
+    <div class="item-header">Show Tooltips</div>
+      <div class="button-row">
+      <span class="label-button button-styling clickable-button"
+            (click)="onShowTooltipsClick()"
+            [class.active]="uiSettingsService.showTooltips$ | async">ON</span>
+    </div>
   </div>
   <footer class="dialog-footer">
     <button (click)="closeClick.emit()" class="button label-button button-styling" type="button">Close</button>
