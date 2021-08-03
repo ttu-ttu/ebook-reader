@@ -26,6 +26,7 @@ import { BooksDb, DatabaseService } from './database.service';
 import { EbookDisplayManagerService } from './ebook-display-manager.service';
 import { ScrollInformationService } from './scroll-information.service';
 import { ThemeManagerService } from './theme-manager.service';
+import { UiSettingsService } from './ui-settings-service';
 import parseCss from './utils/css-parser';
 import stringifyCss from './utils/css-stringify';
 import { EpubExtractor, HtmlzExtractor } from './utils/extractor';
@@ -75,6 +76,7 @@ export class AppComponent implements OnInit {
     public autoScrollerService: AutoScrollerService,
     public bookmarManagerService: BookmarkManagerService,
     public ebookDisplayManagerService: EbookDisplayManagerService,
+    public uiSettingsService: UiSettingsService,
     private scrollInformationService: ScrollInformationService,
     private themeManagerService: ThemeManagerService,
     private databaseService: DatabaseService,

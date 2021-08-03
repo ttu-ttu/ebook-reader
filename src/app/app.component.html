@@ -7,25 +7,30 @@
 
   <div class="top-overlay action-icon-container">
     <label class="no-margin">
-      <fa-icon class="action-icon"
+      <fa-icon class="action-icon" data-tooltip="Import File"
+               [ngClass]="{'tooltip bottom-center': uiSettingsService.showTooltips$ | async}"
                [icon]="faFileMedical"></fa-icon>
       <input type="file" accept=".htmlz,.epub" multiple (change)="onInputChange(inputRef)" hidden #inputRef>
     </label>
     <label class="no-margin" *ngIf="!isMobileDevice">
-      <fa-icon class="action-icon margin-icon"
+      <fa-icon class="action-icon margin-icon" data-tooltip="Import Folder"
+               [ngClass]="{'tooltip bottom-center': uiSettingsService.showTooltips$ | async}"
                [icon]="faFolderPlus"></fa-icon>
       <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)"
         hidden #inputDirRef>
     </label>
-    <fa-icon class="action-icon margin-icon"
+    <fa-icon class="action-icon margin-icon" data-tooltip="Bookmark"
+             [ngClass]="{'tooltip bottom-center': uiSettingsService.showTooltips$ | async}"
              [icon]="faBookmark"
              (click)="bookmarManagerService.saveScrollPosition()"></fa-icon>
-    <fa-icon class="action-icon margin-icon"
+    <fa-icon class="action-icon margin-icon" data-tooltip="Settings"
+             [ngClass]="{'tooltip bottom-right': uiSettingsService.showTooltips$ | async}"
              [icon]="faCog"
              (click)="setShowSettingsDialog(true)"></fa-icon>
   </div>
   <div class="top-overlay action-icon-container--left">
-    <fa-icon class="action-icon margin-icon"
+    <fa-icon class="action-icon margin-icon" data-tooltip="Toggle Fullscreen"
+             [ngClass]="{'tooltip bottom-left': uiSettingsService.showTooltips$ | async}"
              *ngIf="!(minimalUi$ | async) && supportsFullscreen && !autoScrollerService.activated"
              [icon]="faExpand"
              (click)="toggleFullscreen()"></fa-icon>

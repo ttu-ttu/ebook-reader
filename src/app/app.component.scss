@@ -206,3 +206,41 @@
 .update-ready-icon {
   left: 8px;
 }
+
+.tooltip {
+  position: relative;
+
+  &:before {
+    content: attr(data-tooltip);
+    position: absolute;
+
+    max-width: 130px;
+    padding :10px;
+    border-radius: 10px;
+    background:#000;
+    color: #fff;
+    text-align: center;
+
+    display: none;
+  }
+
+  &:hover:before {
+    display: block;
+  }
+
+  &.bottom-left:before {
+    top: 100%;
+    left: 0%;
+  }
+
+  &.bottom-center:before {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  &.bottom-right:before {
+    top: 100%;
+    right: 0%;
+  }
+}
