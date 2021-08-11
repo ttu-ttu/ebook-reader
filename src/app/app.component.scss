@@ -211,7 +211,7 @@
   position: relative;
 
   &:before {
-    content: attr(data-tooltip);
+    content: attr(data-ttu-tooltip);
     position: absolute;
 
     max-width: 130px;
