@@ -9,7 +9,9 @@
 
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { skip } from 'rxjs/operators';
+import { 
+  createBooleanLocalStorageBehaviorSubject,
+  createNumberLocalStorageBehaviorSubject } from './utils/local-storage-utils';
 
 // https://www.unicode.org/Public/UCD/latest/ucd/PropList.txt
 const isNotJapaneseRegex = /[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Ideographic}\p{Radical}\p{Unified_Ideograph}]+/gmiu;
@@ -41,50 +43,9 @@ export class EbookDisplayManagerService {
   constructor() {
     document.head.insertBefore(this.bookStyle, document.head.firstChild);
 
-    const storedFontSize = localStorage.getItem('fontSize');
-    let defaultFontSize: number;
-    if (storedFontSize) {
-      defaultFontSize = +storedFontSize;
-    } else {
-      defaultFontSize = 20;
-    }
-    this.fontSize$ = new BehaviorSubject(defaultFontSize);
-
-    this.fontSize$.pipe(
-      skip(1),
-    ).subscribe((fontSize) => {
-      localStorage.setItem('fontSize', `${fontSize}`);
-    });
-
-    const storedHideSpoilerImage = localStorage.getItem('hideSpoilerImage');
-    let defaultHideSpoilerImage: boolean;
-    if (storedHideSpoilerImage) {
-      defaultHideSpoilerImage = !!(+storedHideSpoilerImage);
-    } else {
-      defaultHideSpoilerImage = true;
-    }
-    this.hideSpoilerImage$ = new BehaviorSubject(defaultHideSpoilerImage);
-
-    this.hideSpoilerImage$.pipe(
-      skip(1),
-    ).subscribe((hideSpoilerImage) => {
-      localStorage.setItem('hideSpoilerImage', hideSpoilerImage ? '1' : '0');
-    });
-
-    const storedHideFurigana = localStorage.getItem('hideFurigana');
-    let defaultHideFurigana: boolean;
-    if (storedHideFurigana) {
-      defaultHideFurigana = !!(+storedHideFurigana);
-    } else {
-      defaultHideFurigana = false;
-    }
-    this.hideFurigana$ = new BehaviorSubject(defaultHideFurigana);
-
-    this.hideFurigana$.pipe(
-      skip(1),
-    ).subscribe((hideFurigana) => {
-      localStorage.setItem('hideFurigana', hideFurigana ? '1' : '0');
-    });
+    this.fontSize$ = createNumberLocalStorageBehaviorSubject('fontSize', 20);
+    this.hideSpoilerImage$ = createBooleanLocalStorageBehaviorSubject('hideSpoilerImage', true);
+    this.hideFurigana$ = createBooleanLocalStorageBehaviorSubject('hideFurigana', false);
   }
 
   updateContent(el: HTMLElement, styleString: string) {
