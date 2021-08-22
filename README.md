@@ -77,8 +77,3 @@ the Manager by clicking on the Book you want to open next. Otherwise you can use
 
 In order to quickly select all Books you can click/tap on the centered List Icon. Vice Versa clicking/tapping on the X Icon
 will deselect all Books.
-
-<div style="width: 100%;display: flex;justify-content: center;align-items: center;">
-  <img src="assets/readme/manager.png" style="width: 45%;height: auto; margin-top: 1rem">
-  <img src="assets/readme/manager2.PNG" style="width: 45%;height: auto; margin-top: 1rem; margin-left: 1rem">
-</div>
