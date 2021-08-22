@@ -12,19 +12,18 @@ import { Router } from '@angular/router';
 import { IDBPDatabase } from 'idb';
 import { BehaviorSubject } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { BookmarkManagerService } from './bookmark-manager.service';
 import { DatabaseService, BooksDb } from './database.service';
 import { EbookDisplayManagerService } from './ebook-display-manager.service';
-import { ScrollInformationService } from './scroll-information.service';
 
 export interface BookTitle {
-  id: number | undefined;
-  name: string;
-  cover: string | Blob;
+  id: number;
+  title: string;
+  cover: string;
   progress: string;
   coverLoaded: boolean;
   isSelected: boolean;
   useFallback: boolean;
+  wasVisible: boolean;
 }
 
 @Injectable({
@@ -35,41 +34,120 @@ export class BookManagerService {
   currentBookId$ = new BehaviorSubject<number>(0);
   managerIsOpen$ = new BehaviorSubject<boolean>(false);
   db: IDBPDatabase<BooksDb> | undefined;
+  fallbackCover = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAADICAQAAACQAMHPAAABAElEQVR42u3QAQ0AAAwCoNu/9AtYw'
+    + 'A0ikKOKAjFixIgRI0aMGDFixCBGjBgxYsSIESNGjBjEiBEjRowYMWLEiBGDGDFixIgRI0aMGDFiECNGjBgxYsSIESNGjBjEiBEjRowYMWLEiBGDG'
+    + 'DFixIgRI0aMGDFiECNGjBgxYsSIESNGDGLEiBEjRowYMWLEiEGMGDFixIgRI0aMGDFiECNGjBgxYsSIESNGDGLEiBEjRowYMWLEiEGMGDFixIgRI0'
+    + 'aMGDGIESNGjBgxYsSIESNGDGLEiBEjRowYMWLEiEGMGDFixIgRI0aMGDGIESNGjBgxYsSIESMGMWLEiBEjRoyYbQ8PhQDJHXyppAAAAABJRU5ErkJggg==';
 
   constructor(
-    private bookmarkManagerService: BookmarkManagerService,
     private databaseService: DatabaseService,
     private ebookDisplayManagerService: EbookDisplayManagerService,
     private router: Router,
-    private scrollInformationService: ScrollInformationService,
   ) { }
 
-  deleteCurrentBook() {
-    if (!window.confirm('Do you really want to delete the current Book?')) {
-      return;
-    }
+  async getCoverThumbnail(title: string, blobs: Record<string, Blob>, coverImage?: Blob | string | undefined): Promise<string | Blob> {
 
-    this.ebookDisplayManagerService.loadingFile$.next(true);
-    this.currentBookId$.pipe(take(1)).subscribe(async (currentBookId) => {
-      if (!await this.deleteBook(currentBookId)) {
-        alert('Deletion failed');
-        return this.ebookDisplayManagerService.loadingFile$.next(false);
+    let cover = coverImage;
+
+    if (!cover) {
+      const blobNames = Object.keys(blobs);
+
+      for (let index = 0, length = blobNames.length; index < length; index++) {
+        const blobName = blobNames[index];
+        if (/[\/]*cover/i.test(blobName)) {
+          cover = blobs[blobName];
+          break;
+        }
       }
 
-      this.navigateToNextBook(currentBookId).catch(error => {
-        alert(`Navigation failed: ${error.message}`);
-        this.ebookDisplayManagerService.loadingFile$.next(false);
+      if (!cover) {
+        cover = blobNames.length ? blobs[blobNames[0]] : this.fallbackCover;
+      }
+    }
+
+    let thumbnail = cover;
+
+    if (cover instanceof Blob) {
+
+      const blobUrl = URL.createObjectURL(cover);
+      const img = await this.loadImage(blobUrl);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+
+        canvas.width = 140;
+        canvas.height = 200;
+
+        ctx.drawImage(img, 0, 0, 140, 200);
+
+        thumbnail = await new Promise<Blob>(resolve => {
+          canvas.toBlob(resolve as any, 'image/jpeg', 0.75);
+        }).catch((error) => {
+          console.error(`Error Creating Cover for ${title}: ${error.message}`);
+          return this.getFallbackCover();
+        });
+      }
+    }
+
+    return thumbnail;
+  }
+
+  loadImage(blobUrl: string): Promise<HTMLImageElement> {
+
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+
+      img.src = blobUrl;
+      img.addEventListener('load', () => {
+        URL.revokeObjectURL(blobUrl);
+        resolve(img);
+      });
+
+      img.addEventListener('error', () => {
+        URL.revokeObjectURL(blobUrl);
+        reject(new Error('Error loading Image'));
       });
     });
   }
 
-  async deleteBook(dataId: number): Promise<boolean> {
+  getFallbackCover() {
+    return this.fallbackCover;
+  }
+
+  async getBookCoverData(): Promise<[any, BooksDb['bookmark']['value'][], number]> {
+    this.db = this.db || await this.databaseService.db;
+
+    return Promise.all([this.getKeysAndTitles(), this.db.getAll('bookmark'), new Promise<number>(resolve => {
+      this.currentBookId$.pipe(take(1)).subscribe(resolve);
+    })]);
+  }
+
+  async getKeysAndTitles() {
+    this.db = this.db || await this.databaseService.db;
+
+    const map: any = {};
+    let cursor = await this.db.transaction('data').store.index('title').openKeyCursor();
+
+    while (cursor) {
+      map[cursor.primaryKey] = cursor.key;
+      cursor = await cursor.continue();
+    }
+
+    return map;
+  }
+
+  async deleteBook(dataId: number, deleteLastItem: boolean): Promise<boolean> {
     let tx;
 
     try {
       this.db = this.db || await this.databaseService.db;
 
-      tx = this.db.transaction(['bookmark', 'data'], 'readwrite');
+      tx = this.db.transaction(['bookmark', 'data', 'lastItem'], 'readwrite');
+
+      if (deleteLastItem) {
+        await tx.objectStore('lastItem').delete(0);
+      }
 
       await tx.objectStore('bookmark').delete(dataId);
       await tx.objectStore('data').delete(dataId);
@@ -85,39 +163,28 @@ export class BookManagerService {
     }
   }
 
-  async getBookIds(): Promise<[Array<number>, number]> {
+  async navigateTo(nextId: number, updateLastItem: boolean) {
+    this.ebookDisplayManagerService.loadingFile$.next(true);
     this.db = this.db || await this.databaseService.db;
 
-    return Promise.all([this.db.getAllKeys('data'), new Promise<number>(resolve => {
-      this.currentBookId$.pipe(take(1)).subscribe(resolve);
-    })]);
-  }
+    if (nextId) {
+      if (updateLastItem) {
+        await this.db.put('lastItem', { dataId: nextId }, 0);
+      }
 
-  async navigateToNextBook(previousBookId: number) {
-    let tx;
-    this.db = this.db || await this.databaseService.db;
-
-    tx = this.db.transaction(['data', 'lastItem'], 'readwrite');
-
-    const dataStore = tx.objectStore('data');
-    const nextBookId =
-      (await dataStore.getKey(IDBKeyRange.lowerBound(previousBookId, true))) ||
-      (await dataStore.getKey(IDBKeyRange.upperBound(previousBookId, true)));
-
-    if (nextBookId) {
-      await tx.objectStore('lastItem').put({ dataId: nextBookId }, 0);
+      await this.router.navigate(['b', nextId], {
+        queryParamsHandling: 'merge',
+      });
+      this.ebookDisplayManagerService.revalidateFile.next();
     } else {
-      await tx.objectStore('lastItem').delete(0);
-    }
+      if (updateLastItem) {
+        await this.db.delete('lastItem', 0);
+      }
 
-    if (nextBookId) {
-      await this.router.navigate(['b', nextBookId]).catch(() => { });
-    } else {
-      this.bookmarkManagerService.setHideState(true);
-      this.scrollInformationService.setOpacity(true);
+      await this.router.navigate([''], {
+        queryParamsHandling: 'merge',
+      });
+      this.ebookDisplayManagerService.loadingFile$.next(false);
     }
-    this.ebookDisplayManagerService.revalidateFile.next();
-
-    await tx.done;
   }
 }

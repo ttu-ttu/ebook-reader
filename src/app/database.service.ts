@@ -30,7 +30,8 @@ interface BooksDbV3 extends DBSchema {
       styleSheet: string;
       elementHtml: string;
       blobs: Record<string, Blob>;
-      coverImage?: Blob;
+      coverImage: string | Blob;
+      hasThumb: boolean;
     };
     indexes: {
       title: string;
@@ -42,7 +43,7 @@ interface BooksDbV3 extends DBSchema {
       dataId: number;
       scrollX: number;
       exploredCharCount?: number;
-      progress?: string;
+      progress: string;
     };
     indexes: {
       dataId: number;
@@ -124,6 +125,8 @@ const db = openDB<BooksDb>('books', 3, {
               const dataId = await transaction.objectStore('data').add({
                 ...parsedData,
                 blobs: {},
+                coverImage: '',
+                hasThumb: false
               });
 
               const scrollX = oldValues.scrollX[key];
@@ -131,6 +134,7 @@ const db = openDB<BooksDb>('books', 3, {
                 await transaction.objectStore('bookmark').put({
                   dataId,
                   scrollX: +scrollX,
+                  progress: '0%'
                 });
               }
 
