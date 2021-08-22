@@ -14,15 +14,10 @@
       <fa-icon class="action-icon margin-icon" [icon]="faFolderPlus"></fa-icon>
       <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)" hidden #inputDirRef>
     </label>
-    <fa-icon class="action-icon margin-icon" [icon]="faTrash" (click)="bookManagerService.deleteCurrentBook()">
-    </fa-icon>
-    <fa-icon class="action-icon margin-icon" [icon]="faClone" (click)="setShowBookManagerDialog(true);"></fa-icon>
+    <fa-icon class="action-icon margin-icon" [icon]="faClone" (click)="openBookManager();"></fa-icon>
     <fa-icon class="action-icon margin-icon" [icon]="faBookmark" (click)="bookmarManagerService.saveScrollPosition()">
     </fa-icon>
     <fa-icon class="action-icon margin-icon" [icon]="faCog" (click)="setShowSettingsDialog(true)"></fa-icon>
-  </div>
-  <div class="overlay-container book-manager" [hidden]="!showBookManagerDialog">
-    <app-book-manager (closeClick)="setShowBookManagerDialog(false)"></app-book-manager>
   </div>
   <div class="top-overlay action-icon-container--left">
     <fa-icon class="action-icon margin-icon"
@@ -47,8 +42,9 @@
 </div>
 
 <ng-template #notLoadingRef>
-  <label class="overlay-container drop-zone-container label-button" *ngIf="!(visible$ | async)"
-    (click)="zoneInputRef.click();" (contextmenu)="$event.preventDefault();zoneInputDirRef.click();">
+  <label class="overlay-container drop-zone-container label-button"
+    *ngIf="!(visible$ | async) && !(bookManagerService.managerIsOpen$ | async)" (click)="zoneInputRef.click();"
+    (contextmenu)="$event.preventDefault();zoneInputDirRef.click();">
     {{dropZoneLabel}}
   </label>
   <input type="file" accept=".htmlz,.epub" multiple hidden #zoneInputRef (change)="onInputChange(zoneInputRef)">

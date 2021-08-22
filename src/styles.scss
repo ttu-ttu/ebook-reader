@@ -27,6 +27,7 @@
   --font-family-sans-serif: "Noto Sans JP", sans-serif;
   --font-family-serif: "Noto Serif JP", serif;
   --book-font-family: var(--font-family-serif);
+  --cover-shadow: #777171;
 }
 
 // for settings dialog
@@ -43,6 +44,7 @@
   --selection-background-color: rgba(212, 217, 220, .8);
   --scroll-info-font-color: rgba(227, 227, 227, .6);
   --bookmark-color: #d4d9dc;
+  --cover-shadow: #505050;
 }
 
 .ecru-theme {
@@ -62,6 +64,7 @@
 .gray-theme {
   --background-color: #23272a;
   --font-color: rgba(227, 227, 227, 0.80);
+  --cover-shadow: #000;
 }
 
 .black-theme {
@@ -133,4 +136,10 @@ body {
 
 .calibre {
   margin: 0;
+}
+
+.book-manager .scrollable-content {
+  position: relative!important;
+  width: auto!important;
+  margin: auto!important;
 }

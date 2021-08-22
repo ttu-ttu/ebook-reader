@@ -1,128 +1,46 @@
-@import '~swiper/swiper';
-@import '~swiper/components/effect-coverflow/effect-coverflow.scss';
-@import '~swiper/components/lazy/lazy.scss';
-
-.content,
-.sw-container,
-.controls,
-.image-slide {
+.book-manager {
   display: flex;
-}
-
-.content {
   flex-direction: column;
-  width: 100vw;
-  height: 80vh;
-
-  @media screen and (min-width: 1200px) {
-    height: 50vh;
-  }
-}
-
-.controls {
-  padding: 0rem 1.5rem;
-
-  @media screen and (min-width: 700px) and (min-height: 650px) {
-    padding: 0rem 2.5rem;
-    margin-bottom: 5rem;
-  }
-
-  > span:first-child{
-    flex: 1;
-  }
-}
-
-.sw-container {
   flex: 1;
-
-  .image-slide {
-    flex-direction: column;
-    writing-mode: horizontal-tb;
-    justify-content: center;
-    align-items: center;
-
-    span {
-      &.title {
-        padding: 0rem 0.75rem;
-      }
-
-      &.title:hover:not(.current) {
-        color: lightcoral;
-      }
-
-      &.current {
-        cursor: initial;
-      }
-    }
-  }
-
-  .progress {
-    align-self: center;
-    position: relative;
-    top: -1.5rem;
-    width: 100px;
-    text-align: center;
-    background-color: lightslategrey;
-    color: black;
-
-    @media screen and (min-width: 700px) and (min-height: 650px) {
-      width: 100%;
-      max-width: 30vw;
-      top: -1.5rem;
-    }
-
-    @media screen and (min-width: 1200px) and (min-height: 650px) {
-      max-width: 200px;
-    }
-  }
-
-  .preloader {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-  }
-
-  img {
-    max-width: 100px;
-    height: auto;
-    align-self: center;
-    width: 100%;
-
-    @media screen and (min-width: 700px) and (min-height: 650px) {
-      max-width: 30vw;
-    }
-
-    @media screen and (min-width: 1200px) and (min-height: 650px) {
-      max-height: 300px;
-      max-width: 200px;
-      width: auto;
-    }
-
-    &.border:not(.selected) {
-      border: 1px dotted white;
-    }
-
-    &.dashed {
-      border: 3px dashed;
-      max-height: 100px;
-
-      @media screen and (min-width: 700px) and (min-height: 650px) {
-        max-height: 300px;
-      }
-
-      @media screen and (min-width: 1200px) and (min-height: 650px) {
-        width: 100%;
-      }
-    }
-
-    &.selected {
-      border: 3px dashed lightcoral;
-    }
+  width: 100%;
+  height: 100%;
+  background-color: var(--background-color);
+  color: var(--font-color);
+  writing-mode: horizontal-tb;
+  @media screen and (min-width: 900px) {
+    font-size: larger;
   }
 }
 
-.hide {
-  display: none;
+.top-bar {
+  background-color: #37474F;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 20;
+}
+
+.bar-content {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  padding: 0rem 1rem;
+  position: relative;
+
+  @media screen and (min-width: 1400px) {
+    max-width: 50vw;
+    padding: 0rem;
+  }
+
+  .hidden {
+    visibility: hidden;
+  }
 }
 
 .pointer {
@@ -130,9 +48,192 @@
 }
 
 .margin-icon {
-  margin-left: 0.5rem;
+  margin-left: 0.75rem;
 
   @media screen and (min-width: 700px) {
-    margin-left: 2rem;
+    margin-left: 1.5rem;
+  }
+}
+
+.margin-icon-right {
+  margin-right: 0.75rem;
+
+  @media screen and (min-width: 700px) {
+    margin-right: 1.5rem;
+  }
+}
+
+.centered {
+  position: absolute;
+  left: 50%;
+}
+
+virtual-scroller {
+  display: flex;
+}
+
+.books {
+  width: 100vw;
+  --repeat: auto-fit;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: repeat(var(--repeat, auto-fit), minmax(calc(70px), 1fr) );
+  column-gap: 1.25rem;
+  row-gap: 1.25rem;
+
+  @media screen and (min-width: 700px) {
+    grid-template-columns: repeat(var(--repeat, auto-fit), minmax(calc(140px), 1fr) );
+    column-gap: 2rem;
+    row-gap: 2rem;
+  }
+
+  @media screen and (min-width: 900px) {
+    .books {
+      --repeat: 6;
+    }
+  }
+
+  @media screen and (min-width: 1400px) {
+    width: 50vw;
+  }
+
+  .book {
+    display: flex;
+    position: relative;
+    align-items: flex-end;
+  }
+
+  .cover {
+    position: relative;
+    cursor: pointer;
+
+    img {
+      height: 100px;
+      width: 70px;
+      border: 1px dashed transparent;
+
+      @media screen and (min-width: 700px) {
+        height: 200px;
+        width: 140px;
+      }
+
+      &.fallback {
+        border: 1px dashed;
+      }
+    }
+
+    input {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: scale(1.5);
+      cursor: pointer;
+
+      @media screen and (min-width: 700px) {
+        transform: scale(2);
+      }
+    }
+
+    .title {
+      display: -webkit-box;
+      position: absolute;
+      width: calc(100% - 9px);
+      bottom: 10px;
+      background-color: #37474F;
+      color: white;
+      opacity: 0.8;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      height: 35px;
+      font-size: 10px;
+      border: 4px solid transparent;
+      left: 1px;
+
+      @media screen and (min-width: 700px) {
+        height: 48px;
+        font-size: 14px;
+        left: 0px;
+        width: calc(100% - 16px);
+        border: 8px solid transparent;
+      }
+
+      @media screen and (min-width: 900px) {
+
+      }
+    }
+
+    .prog {
+      box-sizing: content-box;
+      height: 8px;
+      position: absolute;
+      background: rgba(150,150,150,0.75);
+      padding: 1px;
+      box-shadow: inset 0 -1px 1px rgb(255 255 255 / 30%);
+      width: calc(100% - 2px);
+      bottom: 2px;
+
+      > span {
+        display: block;
+        height: 100%;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        border-top-left-radius: 20px;
+        border-bottom-left-radius: 20px;
+        background-color: #d62020;
+        box-shadow: inset 0 2px 9px rgba(255, 255, 255, 0.3),
+          inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+        position: relative;
+        overflow: hidden;
+      }
+    }
+
+    &.loaded {
+
+      img {
+        box-shadow: 5px 4px 3px var(--cover-shadow);
+
+        @media screen and (min-width: 700px) {
+          box-shadow: 8px 7px 6px var(--cover-shadow);
+        }
+      }
+
+      &.current {
+        img {
+          box-shadow: 5px 4px 3px #f08080;
+
+          @media screen and (min-width: 700px) {
+            box-shadow: 8px 7px 6px #f08080;
+          }
+        }
+      }
+
+      .loader {
+        display: none;
+      }
+    }
+  }
+
+  .loader {
+    width: 42px;
+    height: 42px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -21px;
+    margin-top: -21px;
+    z-index: 10;
+    transform-origin: 50%;
+    animation: preloader-spin 1s infinite linear;
+    box-sizing: border-box;
+    border: 4px solid var(--font-color);
+    border-radius: 50%;
+    border-top-color: transparent;
+  }
+
+  @keyframes preloader-spin {
+    100% {
+      transform: rotate(360deg);
+    }
   }
 }

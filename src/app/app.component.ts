@@ -17,10 +17,9 @@ import { faExpand } from '@fortawesome/free-solid-svg-icons/faExpand';
 import { faFileMedical } from '@fortawesome/free-solid-svg-icons/faFileMedical';
 import { faFolderPlus } from '@fortawesome/free-solid-svg-icons/faFolderPlus';
 import { faSyncAlt } from '@fortawesome/free-solid-svg-icons/faSyncAlt';
-import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
 import * as parser from 'fast-xml-parser';
 import { IDBPDatabase } from 'idb';
-import { fromEvent, of } from 'rxjs';
+import { fromEvent, of, combineLatest } from 'rxjs';
 import { filter, map, shareReplay, switchMap, take, withLatestFrom } from 'rxjs/operators';
 import { AutoScrollerService } from './auto-scroller.service';
 import { BookManagerService } from './book-manager.service';
@@ -71,7 +70,6 @@ export class AppComponent implements OnInit {
     'Select supported files (.htmlz or .epub) to continue' :
     'Drop or select files (.htmlz or .epub) or a folder that contains those files to continue';
   dropzoneHighlight = false;
-  showBookManagerDialog = false;
   showSettingsDialog = false;
   faFileMedical = faFileMedical;
   faFolderPlus = faFolderPlus;
@@ -79,7 +77,6 @@ export class AppComponent implements OnInit {
   faCog = faCog;
   faBookmark = faBookmark;
   faSyncAlt = faSyncAlt;
-  faTrash = faTrash;
   faExpand = faExpand;
   isUpdateAvailable = false;
   filePattern = /\.(?:htmlz|epub)$/;
@@ -117,11 +114,8 @@ export class AppComponent implements OnInit {
     fromEvent<KeyboardEvent>(window, 'keydown').pipe(
       withLatestFrom(this.ebookDisplayManagerService.loadingFile$, this.bookManagerService.managerIsOpen$, this.visible$),
     ).subscribe(([ev, loadingFile, managerIsOpen, visible]) => {
-      if (!managerIsOpen && !loadingFile && visible) {
+      if (!this.showSettingsDialog && !managerIsOpen && !loadingFile && visible) {
         switch (ev.code) {
-          case 'Escape':
-            this.setShowSettingsDialog(false);
-            break;
           case 'Space':
             this.autoScrollerService.toggle();
             ev.preventDefault();
@@ -136,10 +130,7 @@ export class AppComponent implements OnInit {
             this.bookmarManagerService.saveScrollPosition();
             break;
           case 'KeyM':
-            this.setShowBookManagerDialog(true);
-            break;
-          case 'KeyX':
-            this.bookManagerService.deleteCurrentBook();
+            this.openBookManager();
             break;
           case 'PageDown':
             window.scrollBy({
@@ -154,24 +145,26 @@ export class AppComponent implements OnInit {
             });
             break;
         }
+      } else if (this.showSettingsDialog && 'Escape' === ev.code) {
+        this.setShowSettingsDialog(false);
       }
     });
 
     this.databaseService.db.then((db) => {
-      this.visible$.pipe(
-        take(1),
-      ).subscribe(async (visible) => {
-        if (!visible) {
-          const lastItem = await db.get('lastItem', 0);
-          if (lastItem) {
-            this.ebookDisplayManagerService.loadingFile$.next(true); // otherwise may get NG0100 (if modified while init ReaderComponent)
-            await this.router.navigate(['b', lastItem.dataId], {
-              queryParamsHandling: 'merge',
-            });
+      combineLatest([this.visible$, this.bookManagerService.managerIsOpen$]).pipe(take(1)).subscribe(
+        async ([visible, managerisOpen]) => {
+          if (!visible && !managerisOpen) {
+            const lastItem = await db.get('lastItem', 0);
+            if (lastItem) {
+              // otherwise may get NG0100 (if modified while init ReaderComponent)
+              this.ebookDisplayManagerService.loadingFile$.next(true);
+              await this.router.navigate(['b', lastItem.dataId], {
+                queryParamsHandling: 'merge',
+              });
+            }
           }
-        }
-        this.loadingDb = false;
-      });
+          this.loadingDb = false;
+        });
     });
   }
 
@@ -210,22 +203,17 @@ export class AppComponent implements OnInit {
     }
   }
 
-  setShowSettingsDialog(showDialog: boolean) {
-    this.showSettingsDialog = showDialog;
-    this.applyDialogSettings(showDialog);
+  async openBookManager() {
+    await this.bookmarManagerService.saveScrollPosition();
+    this.bookmarManagerService.setHideState(true);
+    this.scrollInformationService.setOpacity(true);
+    await this.router.navigate(['manage'], {
+      queryParamsHandling: 'merge',
+    });
   }
 
-  setShowBookManagerDialog(showDialog: boolean) {
-    this.bookManagerService.managerIsOpen$.next(showDialog);
-    this.showBookManagerDialog = showDialog;
-    this.applyDialogSettings(showDialog);
-
-    if (showDialog) {
-      this.ebookDisplayManagerService.loadingFile$.next(true);
-    }
-  }
-
-  applyDialogSettings(b: boolean) {
+  setShowSettingsDialog(b: boolean) {
+    this.showSettingsDialog = b;
     this.ebookDisplayManagerService.allowScroll = !b;
     if (b) {
       document.body.style.overflow = 'hidden';
@@ -397,8 +385,13 @@ export class AppComponent implements OnInit {
       dataId,
     }, 0).catch(() => { });
     await this.zone.run(async () => {
+      this.bookManagerService.currentBookId$.next(dataId);
       this.ebookDisplayManagerService.loadingFile$.next(true);
-      const changedIdentifier = await this.router.navigate(['b', dataId], {
+      if (multiFiles) {
+        this.bookmarManagerService.setHideState(true);
+        this.scrollInformationService.setOpacity(true);
+      }
+      const changedIdentifier = await this.router.navigate(multiFiles ? ['manage'] : ['b', dataId], {
         queryParamsHandling: 'merge',
       });
       if (!changedIdentifier) {
@@ -410,7 +403,8 @@ export class AppComponent implements OnInit {
   private storeFileInDB(db: IDBPDatabase<BooksDb>, file: File): Promise<number | undefined> {
     return this.zone.runOutsideAngular(async () => {
       try {
-        const storeData = file.name.endsWith('.epub') ? await processEpub(file) : await processHtmlz(file);
+        const storeData = file.name.endsWith('.epub') ?
+          await processEpub(file, this.bookManagerService) : await processHtmlz(file, this.bookManagerService);
         let dataId: number;
         {
           const tx = db.transaction('data', 'readwrite');
@@ -437,12 +431,13 @@ export class AppComponent implements OnInit {
 }
 
 const htmlzExtractor = new HtmlzExtractor();
-async function processHtmlz(file: File) {
+async function processHtmlz(file: File, bookManagerService: BookManagerService) {
   const data = await htmlzExtractor.extract(file);
   const element = getFormattedElementHtmlz(data);
   const metadata = parser.parse(data['metadata.opf'] as string)?.package?.metadata;
   const displayData = {
     title: file.name,
+    hasThumb: true,
     styleSheet: fixStyleString(data['style.css'] as string),
   };
   if (metadata && metadata['dc:title']) {
@@ -462,13 +457,13 @@ async function processHtmlz(file: File) {
     ...displayData,
     elementHtml: element.innerHTML,
     blobs: blobDataWithoutCoverImage,
-    coverImage: blobData['cover.jpg'],
+    coverImage: await bookManagerService.getCoverThumbnail(displayData.title, blobData, blobData['cover.jpg']),
   };
   return storeData;
 }
 
 const epubExtractor = new EpubExtractor();
-async function processEpub(file: File) {
+async function processEpub(file: File, bookManagerService: BookManagerService) {
   const {
     contents,
     result: data,
@@ -495,6 +490,7 @@ async function processEpub(file: File) {
   }
   const displayData = {
     title: file.name,
+    hasThumb: true,
     styleSheet,
   };
 
@@ -526,7 +522,7 @@ async function processEpub(file: File) {
     ...displayData,
     elementHtml: element.innerHTML,
     blobs: blobData,
-    coverImage: blobData[coverImageFilename],
+    coverImage: await bookManagerService.getCoverThumbnail(file.name, blobData, blobData[coverImageFilename]),
   };
   return storeData;
 }
