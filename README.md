@@ -32,7 +32,7 @@ You can find following Control Elements in the Reader:
 
 Element | Description
 --- | ---
-<img src="assets/readme/control_fs.png"> | Allows you enter the Fullscreen Mode (Keybind F11)
+<img src="assets/readme/control_fs.PNG"> | Allows you enter the Fullscreen Mode (Keybind F11)
 <img src="assets/readme/control_file.png"> | Allows you to import new Books to your Library
 <img src="assets/readme/control_folder.png"> | Allows you to import new Books from a Folder to your Library (Desktop Only)
 <img src="assets/readme/control_manager.png"> | Opens the Book Manager (Keybind m)
@@ -80,5 +80,5 @@ will deselect all Books.
 
 <div style="width: 100%;display: flex;justify-content: center;align-items: center;">
   <img src="assets/readme/manager.png" style="width: 45%;height: auto; margin-top: 1rem">
-  <img src="assets/readme/manager2.png" style="width: 45%;height: auto; margin-top: 1rem; margin-left: 1rem">
+  <img src="assets/readme/manager2.PNG" style="width: 45%;height: auto; margin-top: 1rem; margin-left: 1rem">
 </div>
