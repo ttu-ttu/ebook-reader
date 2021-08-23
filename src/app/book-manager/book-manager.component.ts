@@ -240,13 +240,19 @@ export class BookManagerComponent implements OnInit, OnDestroy {
   }
 
   async closeManager(updateLastItem = false) {
+    await this.revokeBlobUrls();
+    this.navigateTo(this.currentBookId, updateLastItem);
+  }
+
+  revokeBlobUrls() {
     this.ebookDisplayManagerService.loadingFile$.next(true);
 
-    for (let index = 0, length = this.blobUrls.length; index < length; index++) {
-      URL.revokeObjectURL(this.blobUrls[index]);
-    }
-
-    this.navigateTo(this.currentBookId, updateLastItem);
+    return new Promise((resolve) => {
+      for (let index = 0, length = this.blobUrls.length; index < length; index++) {
+        URL.revokeObjectURL(this.blobUrls[index]);
+      }
+      setTimeout(resolve);
+    });
   }
 
   processBookSelection(shallSelect: boolean) {
@@ -327,9 +333,8 @@ export class BookManagerComponent implements OnInit, OnDestroy {
   }
 
   async navigateTo(nextId: number, updateLastItem = true) {
-    this.ebookDisplayManagerService.loadingFile$.next(true);
-
     try {
+      await this.revokeBlobUrls();
       await this.bookManagerService.navigateTo(nextId, updateLastItem && (this.currentBookId !== nextId || !this.currentBookId));
     } catch (error) {
       alert(`Navigation failed: ${error.message}`);
