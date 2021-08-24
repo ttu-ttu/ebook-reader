@@ -8,6 +8,8 @@
  */
 
 import { Injectable, NgZone } from '@angular/core';
+import { take } from 'rxjs/operators';
+import { BookManagerService } from './book-manager.service';
 import { EbookDisplayManagerService } from './ebook-display-manager.service';
 
 @Injectable({
@@ -25,18 +27,19 @@ export class ScrollInformationService {
   charCount: number[] = Array(this.paragraphs.length);
   exploredCharCount = 0;
 
-  constructor(private ebookDisplayManagerService: EbookDisplayManagerService, private zone: NgZone) {
+  constructor(private bookManagerService: BookManagerService, private ebookDisplayManagerService: EbookDisplayManagerService,
+              private zone: NgZone) {
     this.el.classList.add('information-overlay', 'bottom-overlay', 'scroll-information');
 
     this.zone.runOutsideAngular(() => {
       let visible = true;
       this.el.addEventListener('click', () => {
-        if (visible) {
-          this.el.style.opacity = '0';
-        } else {
-          this.el.style.removeProperty('opacity');
-        }
-        visible = !visible;
+        this.bookManagerService.managerIsOpen$.pipe(take(1)).subscribe((managerIsOpen) => {
+          if (!managerIsOpen) {
+            this.setOpacity(visible);
+            visible = !visible;
+          }
+        });
       });
     });
   }
@@ -53,11 +56,12 @@ export class ScrollInformationService {
   }
 
   initWatchParagraphs(el: HTMLElement) {
+    this.setOpacity(false);
     this.paragraphs = el.getElementsByTagName('p');
 
     if (this.paragraphs.length === 0) {
-      const potentialParagraphs = Array.from(el.querySelectorAll( '*' ))
-        .filter( (p): p is HTMLElement => p instanceof HTMLElement
+      const potentialParagraphs = Array.from(el.querySelectorAll('*'))
+        .filter((p): p is HTMLElement => p instanceof HTMLElement
           && !p.attributes.getNamedItem('aria-hidden')
           && p.parentElement?.tagName !== 'RUBY')
         .filter((p) => {
@@ -102,6 +106,18 @@ export class ScrollInformationService {
       charCount,
     );
     return -this.paragraphPos[index];
+  }
+
+  getCurrentProgress() {
+    return this.el.innerText.match(/\((.+)\)/)?.[1] || '0%';
+  }
+
+  setOpacity(shallHide: boolean = true) {
+    if (shallHide) {
+      this.el.style.opacity = '0';
+    } else {
+      this.el.style.removeProperty('opacity');
+    }
   }
 }
 

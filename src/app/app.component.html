@@ -7,38 +7,32 @@
 
   <div class="top-overlay action-icon-container">
     <label class="no-margin">
-      <fa-icon class="action-icon"
-               [icon]="faFileMedical"></fa-icon>
+      <fa-icon class="action-icon" [icon]="faFileMedical"></fa-icon>
       <input type="file" accept=".htmlz,.epub" multiple (change)="onInputChange(inputRef)" hidden #inputRef>
     </label>
     <label class="no-margin" *ngIf="!isMobileDevice">
-      <fa-icon class="action-icon margin-icon"
-               [icon]="faFolderPlus"></fa-icon>
-      <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)"
-        hidden #inputDirRef>
+      <fa-icon class="action-icon margin-icon" [icon]="faFolderPlus"></fa-icon>
+      <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)" hidden #inputDirRef>
     </label>
-    <fa-icon class="action-icon margin-icon"
-             [icon]="faBookmark"
-             (click)="bookmarManagerService.saveScrollPosition()"></fa-icon>
-    <fa-icon class="action-icon margin-icon"
-             [icon]="faCog"
-             (click)="setShowSettingsDialog(true)"></fa-icon>
+    <fa-icon class="action-icon margin-icon" [icon]="faClone" (click)="openBookManager();"></fa-icon>
+    <fa-icon class="action-icon margin-icon" [icon]="faBookmark" (click)="bookmarManagerService.saveScrollPosition()">
+    </fa-icon>
+    <fa-icon class="action-icon margin-icon" [icon]="faCog" (click)="setShowSettingsDialog(true)"></fa-icon>
   </div>
   <div class="top-overlay action-icon-container--left">
     <fa-icon class="action-icon margin-icon"
-             *ngIf="!(minimalUi$ | async) && supportsFullscreen && !autoScrollerService.activated"
-             [icon]="faExpand"
-             (click)="toggleFullscreen()"></fa-icon>
+      *ngIf="!(minimalUi$ | async) && supportsFullscreen && !autoScrollerService.activated" [icon]="faExpand"
+      (click)="toggleFullscreen()"></fa-icon>
   </div>
 </ng-container>
 
 <div class="overlay-container loading-container"
-     *ngIf="loadingDb || (ebookDisplayManagerService.loadingFile$ | async); else notLoadingRef">
+  *ngIf="loadingDb || (ebookDisplayManagerService.loadingFile$ | async); else notLoadingRef">
   Loading...
 </div>
 
 <div class="overlay-container loading-container drop-zone-container darker"
-     *ngIf="(ebookDisplayManagerService.loadingFiles$ | async)">
+  *ngIf="(ebookDisplayManagerService.loadingFiles$ | async)">
   <div class="progress-container">
     <div class="truncate">{{ebookDisplayManagerService.loadingFiles$.value?.title}}</div>
     <div class="progress">
@@ -48,22 +42,20 @@
 </div>
 
 <ng-template #notLoadingRef>
-  <label class="overlay-container drop-zone-container label-button" *ngIf="!(visible$ | async)" (click)="zoneInputRef.click();"
+  <label class="overlay-container drop-zone-container label-button"
+    *ngIf="!(visible$ | async) && !(bookManagerService.managerIsOpen$ | async)" (click)="zoneInputRef.click();"
     (contextmenu)="$event.preventDefault();zoneInputDirRef.click();">
     {{dropZoneLabel}}
   </label>
   <input type="file" accept=".htmlz,.epub" multiple hidden #zoneInputRef (change)="onInputChange(zoneInputRef)">
-  <input type="file" webkitdirectory directory multiple hidden #zoneInputDirRef (change)="onInputChange(zoneInputDirRef)">
+  <input type="file" webkitdirectory directory multiple hidden #zoneInputDirRef
+    (change)="onInputChange(zoneInputDirRef)">
 </ng-template>
 
-<div class="dialog-overlay"
-     *ngIf="showSettingsDialog"
-     (click)="setShowSettingsDialog(false)">
-  <app-settings-dialog class="settings-dialog"
-                       (closeClick)="setShowSettingsDialog(false)"
-                       (click)="$event.stopPropagation()"></app-settings-dialog>
+<div class="dialog-overlay" *ngIf="showSettingsDialog" (click)="setShowSettingsDialog(false)">
+  <app-settings-dialog class="settings-dialog" (closeClick)="setShowSettingsDialog(false)"
+    (click)="$event.stopPropagation()"></app-settings-dialog>
 </div>
 
-<fa-icon *ngIf="isUpdateAvailable"
-         [icon]="faSyncAlt"
-         class="information-overlay bottom-overlay update-ready-icon"></fa-icon>
+<fa-icon *ngIf="isUpdateAvailable" [icon]="faSyncAlt" class="information-overlay bottom-overlay update-ready-icon">
+</fa-icon>

@@ -9,12 +9,17 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { BookManagerComponent } from './book-manager/book-manager.component';
 import { ReaderComponent } from './reader/reader.component';
 
 const routes: Routes = [
   {
     path: 'b/:identifier',
     component: ReaderComponent,
+  },
+  {
+    path: 'manage',
+    component: BookManagerComponent,
   },
   {
     path: '**',
