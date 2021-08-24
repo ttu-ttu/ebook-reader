@@ -10,16 +10,17 @@
       <div>
         <fa-icon class="pointer centered" [icon]="selectedBooks === books.length ? faCloneSolid : faClone"
           (click)="processBookSelection(true)"></fa-icon>
-        <fa-icon [hidden]="!selectedBooks" class="pointer margin-icon" [icon]="faTrash" (click)="executeDelete()">
+        <fa-icon [ngClass]="{'hidden': !selectedBooks}" class="pointer margin-icon" [icon]="faTrash"
+          (click)="executeDelete()">
         </fa-icon>
-        <fa-icon class="pointer margin-icon" [ngClass]="{'hidden': selectedBooks || !currentBookId}"
-          [icon]="faSignOutAlt" (click)="closeManager()">
+        <fa-icon [hidden]="selectedBooks || !currentBookId" class="pointer margin-icon" [icon]="faSignOutAlt"
+          (click)="closeManager()">
         </fa-icon>
       </div>
     </div>
   </div>
   <virtual-scroller #scroll [items]="books" [scrollAnimationTime]="0" (vsUpdate)="queue$.next($event)">
-    <div class="books" [hidden]="!books.length" #container>
+    <div class="books" [ngClass]="{'floating': books.length > 2}" [hidden]="!books.length" #container>
       <div *ngFor="let book of scroll.viewPortItems;trackBy: trackByFunction" class="book">
         <div class="cover" [ngClass]="{'current': book.id === this.currentBookId, 'loaded': book.coverLoaded}">
           <img [attr.data-id]="book.id" [src]="book.cover" (load)="setImageToLoaded(book)" (click)="navigateTo(book.id)"
