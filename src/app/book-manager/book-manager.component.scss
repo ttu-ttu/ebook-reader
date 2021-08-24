@@ -77,12 +77,13 @@ virtual-scroller {
   --repeat: auto-fit;
   padding: 1rem;
   display: grid;
-  grid-template-columns: repeat(var(--repeat, auto-fit), minmax(calc(70px), 1fr) );
+  grid-template-columns: repeat(var(--repeat, auto-fit), 70px);
   column-gap: 1.25rem;
   row-gap: 1.25rem;
+  justify-content: space-evenly;
 
   @media screen and (min-width: 700px) {
-    grid-template-columns: repeat(var(--repeat, auto-fit), minmax(calc(140px), 1fr) );
+    grid-template-columns: repeat(var(--repeat, auto-fit), 140px);
     column-gap: 2rem;
     row-gap: 2rem;
   }
@@ -101,6 +102,7 @@ virtual-scroller {
     display: flex;
     position: relative;
     align-items: flex-end;
+    justify-content: center;
   }
 
   .cover {
@@ -234,6 +236,15 @@ virtual-scroller {
   @keyframes preloader-spin {
     100% {
       transform: rotate(360deg);
+    }
+  }
+
+  &.floating {
+    grid-template-columns: repeat(var(--repeat, auto-fit), minmax(calc(70px), 1fr));
+    justify-content: flex-start;
+
+    @media screen and (min-width: 700px) {
+      grid-template-columns: repeat(var(--repeat, auto-fit), minmax(calc(140px), 1fr));
     }
   }
 }
