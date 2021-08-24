@@ -30,12 +30,12 @@
   display: flex;
   flex: 1;
   justify-content: space-between;
-  padding: 0rem 1rem;
+  padding: 0 1rem;
   position: relative;
 
   @media screen and (min-width: 1400px) {
-    max-width: 50vw;
-    padding: 0rem;
+    max-width: 50%;
+    padding: 0;
   }
 
   .hidden {
@@ -73,7 +73,7 @@ virtual-scroller {
 }
 
 .books {
-  width: 100vw;
+  width: 100%;
   --repeat: auto-fit;
   padding: 1rem;
   display: grid;
@@ -81,6 +81,7 @@ virtual-scroller {
   column-gap: 1.25rem;
   row-gap: 1.25rem;
   justify-content: space-evenly;
+  margin: auto;
 
   @media screen and (min-width: 700px) {
     grid-template-columns: repeat(var(--repeat, auto-fit), 140px);
@@ -95,7 +96,7 @@ virtual-scroller {
   }
 
   @media screen and (min-width: 1400px) {
-    width: 50vw;
+    width: 50%;
   }
 
   .book {
@@ -155,7 +156,7 @@ virtual-scroller {
       @media screen and (min-width: 700px) {
         height: 48px;
         font-size: 14px;
-        left: 0px;
+        left: 0;
         width: calc(100% - 16px);
         border: 8px solid transparent;
       }
