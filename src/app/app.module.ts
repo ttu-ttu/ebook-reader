@@ -10,8 +10,10 @@ import { NgModule } from '@angular/core';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { BrowserModule } from '@angular/platform-browser';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { VirtualScrollerModule } from 'ngx-virtual-scroller';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { BookManagerComponent } from './book-manager/book-manager.component';
 import { ReaderComponent } from './reader/reader.component';
 import { SettingsDialogComponent } from './settings-dialog/settings-dialog.component';
 import { environment } from '../environments/environment';
@@ -19,6 +21,7 @@ import { environment } from '../environments/environment';
 @NgModule({
   declarations: [
     AppComponent,
+    BookManagerComponent,
     ReaderComponent,
     SettingsDialogComponent,
   ],
@@ -32,6 +35,7 @@ import { environment } from '../environments/environment';
       // or after 30 seconds (whichever comes first).
       registrationStrategy: 'registerWhenStable:30000'
     }),
+    VirtualScrollerModule
   ],
   providers: [],
   bootstrap: [AppComponent]
