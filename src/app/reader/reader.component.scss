@@ -41,7 +41,7 @@
   }
 
   img {
-    max-height: 100%;
+    max-height: var(--content-child-height, 100%);
   }
 
   ruby > rt {

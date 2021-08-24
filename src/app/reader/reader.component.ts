@@ -119,6 +119,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
           };
         }
       });
+      this.updateContentChildHeight();
       const resizeObs$ = new ReplaySubject<void>(1);
       window.addEventListener('resize', () => {
         resizeObs$.next();
@@ -133,6 +134,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
         switchMap(() => new Promise(requestAnimationFrame)),
         takeUntil(this.destroy$),
       ).subscribe(() => {
+        this.updateContentChildHeight();
         this.scrollInformationService.updateParagraphPos();
         if (this.latestScrollStats && Math.abs(this.latestScrollStats.containerWidth - this.contentElRef.nativeElement.offsetWidth) > 100) {
           const scrollPos = this.scrollInformationService.getScrollPos(this.latestScrollStats.exploredCharCount);
@@ -327,5 +329,9 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.ebookDisplayManagerService.updateContent(element, styleSheet);
     this.storedObjectUrls = urls;
     window.scrollTo(0, 0);
+  }
+
+  private updateContentChildHeight() {
+    document.documentElement.style.setProperty('--content-child-height', this.contentElRef.nativeElement.offsetHeight + 'px');
   }
 }
