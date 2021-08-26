@@ -2,7 +2,7 @@
   <div class="top-bar">
     <div class="bar-content">
       <div>
-        <div [hidden]="!selectedBooks">
+        <div *ngIf="selectedBooks">
           <fa-icon class="pointer margin-icon-right" [icon]="faTimes" (click)="processBookSelection(false)"></fa-icon>
           <span>{{selectedBooks}} selected</span>
         </div>
@@ -22,17 +22,17 @@
             </svg>
           </ng-template>
         </div>
-        <fa-icon [ngClass]="{'hidden': !selectedBooks}" class="pointer margin-icon" [icon]="faTrash"
+        <fa-icon *ngIf="selectedBooks" class="pointer margin-icon" [icon]="faTrash"
           (click)="executeDelete()">
         </fa-icon>
-        <fa-icon [hidden]="selectedBooks || !currentBookId" class="pointer margin-icon" [icon]="faSignOutAlt"
+        <fa-icon *ngIf="!selectedBooks && currentBookId" class="pointer margin-icon" [icon]="faSignOutAlt"
           (click)="closeManager()">
         </fa-icon>
       </div>
     </div>
   </div>
   <virtual-scroller #scroll [items]="books" [scrollAnimationTime]="0" (vsUpdate)="queue$.next($event)">
-    <div class="books" [ngClass]="{'floating': books.length > 2}" [hidden]="!books.length" #container>
+    <div class="books" [ngClass]="{'floating': books.length > 2}" *ngIf="books.length" #container>
       <div *ngFor="let book of scroll.viewPortItems;trackBy: trackByFunction" class="book">
         <div class="cover" [ngClass]="{'current': book.id === this.currentBookId, 'loaded': book.coverLoaded}">
           <img [attr.data-id]="book.id" [src]="book.cover" (load)="setImageToLoaded(book)" (click)="navigateTo(book.id)"
