@@ -10,8 +10,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, ApplicationRef } from '@angular/core';
 import { DomSanitizer, Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { faClone } from '@fortawesome/free-regular-svg-icons';
-import { faClone as faCloneSolid } from '@fortawesome/free-solid-svg-icons/faClone';
 import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons/faSignOutAlt';
 import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
@@ -31,8 +29,6 @@ import { EbookDisplayManagerService } from './../ebook-display-manager.service';
 export class BookManagerComponent implements OnInit, OnDestroy {
   @ViewChild('scroll', { static: true }) scroller!: any;
 
-  faClone = faClone;
-  faCloneSolid = faCloneSolid;
   faSignOutAlt = faSignOutAlt;
   faTimes = faTimes;
   faTrash = faTrash;

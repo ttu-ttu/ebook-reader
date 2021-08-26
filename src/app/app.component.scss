@@ -52,7 +52,8 @@
 }
 
 .action-icon {
-  display: block;
+  display: flex;
+  align-items: center;
   cursor: pointer;
   padding: 2px;
   opacity: 0.6;
@@ -77,6 +78,10 @@
   @media screen and (min-height: 900px) {
     margin-left: 8px;
   }
+}
+
+.custom-svg-icon > svg {
+  height: 1em;
 }
 
 .dialog-overlay {
@@ -123,7 +128,7 @@
   width: 100vw;
 
   > div {
-    margin: 0rem 3rem;
+    margin: 0 3rem;
 
     @media screen and (min-width: 1200px) {
       margin: 0;
