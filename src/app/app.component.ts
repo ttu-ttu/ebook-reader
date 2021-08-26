@@ -11,7 +11,6 @@ import { Component, NgZone, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { faBookmark } from '@fortawesome/free-regular-svg-icons/faBookmark';
-import { faClone } from '@fortawesome/free-regular-svg-icons';
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
 import { faExpand } from '@fortawesome/free-solid-svg-icons/faExpand';
 import { faFileMedical } from '@fortawesome/free-solid-svg-icons/faFileMedical';
@@ -73,7 +72,6 @@ export class AppComponent implements OnInit {
   showSettingsDialog = false;
   faFileMedical = faFileMedical;
   faFolderPlus = faFolderPlus;
-  faClone = faClone;
   faCog = faCog;
   faBookmark = faBookmark;
   faSyncAlt = faSyncAlt;

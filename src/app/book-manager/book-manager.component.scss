@@ -68,6 +68,17 @@
   left: 50%;
 }
 
+.custom-svg-icon {
+  display: flex;
+  align-items: center;
+  height: 100%;
+
+  > svg {
+    height: 1em;
+    fill: currentColor;
+  }
+}
+
 virtual-scroller {
   display: flex;
 }

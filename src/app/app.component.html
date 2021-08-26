@@ -14,7 +14,17 @@
       <fa-icon class="action-icon margin-icon" [icon]="faFolderPlus"></fa-icon>
       <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)" hidden #inputDirRef>
     </label>
-    <fa-icon class="action-icon margin-icon" [icon]="faClone" (click)="openBookManager();"></fa-icon>
+    <div class="action-icon margin-icon custom-svg-icon" (click)="openBookManager()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 47 41.5">
+        <g fill="none" stroke="currentColor">
+          <rect x="2.0574" y="2.0847" width="21.995" height="37.363" rx="1.5" ry="1.5" stroke-width="4"/>
+          <rect transform="rotate(-10.818 36.05 21.207)" x="30.414" y="3.7891" width="11.272" height="34.836" rx="1.5" ry="1.5" stroke-width="4.5"/>
+          <line x1="2.6831" x2="24.065" y1="11.579" y2="11.579" stroke-width="3.5"/>
+          <line x1="2.3748" x2="23.756" y1="30.568" y2="30.568" stroke-width="3.5"/>
+          <line x1="13.339" x2="13.339" y1="2.2896" y2="38.56" stroke-width="3.5"/>
+        </g>
+      </svg>
+    </div>
     <fa-icon class="action-icon margin-icon" [icon]="faBookmark" (click)="bookmarManagerService.saveScrollPosition()">
     </fa-icon>
     <fa-icon class="action-icon margin-icon" [icon]="faCog" (click)="setShowSettingsDialog(true)"></fa-icon>
