@@ -15,14 +15,8 @@
       <input type="file" webkitdirectory directory multiple (change)="onInputChange(inputDirRef)" hidden #inputDirRef>
     </label>
     <div class="action-icon margin-icon custom-svg-icon" (click)="openBookManager()">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 47 41.5">
-        <g fill="none" stroke="currentColor">
-          <rect x="2.0574" y="2.0847" width="21.995" height="37.363" rx="1.5" ry="1.5" stroke-width="4"/>
-          <rect transform="rotate(-10.818 36.05 21.207)" x="30.414" y="3.7891" width="11.272" height="34.836" rx="1.5" ry="1.5" stroke-width="4.5"/>
-          <line x1="2.6831" x2="24.065" y1="11.579" y2="11.579" stroke-width="3.5"/>
-          <line x1="2.3748" x2="23.756" y1="30.568" y2="30.568" stroke-width="3.5"/>
-          <line x1="13.339" x2="13.339" y1="2.2896" y2="38.56" stroke-width="3.5"/>
-        </g>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 643.37 560">
+        <path fill="currentColor" d="m336 0H48C21.49 0 0 21.49 0 48v464c0 26.51 21.49 48 48 48h288c26.51 0 48-21.49 48-48V48c0-26.51-21.49-48-48-48zm0 166H209V48h121c3.314 0 6 2.683 6 5.996zm-161 0H48V54a6 6 0 016-6h121zm0 33v160H48V199zm34 0h127v160H209zm0 194h127v113c0 3.314-2.683 6-6 6H209zm-34 0v119H54c-3 0-6-2.683-6-6V393zM518.154 86.973l-110.998 21.174c-26.041 4.968-43.123 30.104-38.156 56.145l68.207 357.552c4.968 26.041 30.104 43.123 56.144 38.156l110.999-21.175c26.04-4.967 43.123-30.103 38.155-56.144l-68.207-357.552c-4.967-26.041-30.103-43.123-56.144-38.156zm76.077 398.809c.621 3.255-1.511 6.396-4.769 7.018l-99.211 18.925c-3.256.621-6.397-1.511-7.018-4.769l-65.958-345.765a6 6 0 014.769-7.018l99.211-18.926c3.255-.621 6.396 1.512 7.018 4.77z"/>
       </svg>
     </div>
     <fa-icon class="action-icon margin-icon" [icon]="faBookmark" (click)="bookmarManagerService.saveScrollPosition()">
