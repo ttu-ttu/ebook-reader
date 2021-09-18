@@ -1,6 +1,6 @@
 {
   "name": "ebook-reader",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "license": "BSD-3-Clause",
   "scripts": {
     "ng": "ng",
@@ -9,6 +9,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "deploy": "firebase deploy",
+    "zip-release": "cd dist/ebook-reader && zip -r ../ebook-reader.zip .",
     "e2e": "ng e2e"
   },
   "private": true,
