@@ -49,6 +49,7 @@ Key Code | Description
 <kbd>A</kbd> | Increase auto-scroll speed
 <kbd>D</kbd> | Decrease auto-scroll speed
 <kbd>B</kbd> | Create bookmark at your current location
+<kbd>R</kbd> | Return to bookmark location
 <kbd>M</kbd> | Open book manager
 <kbd>PageDown</kbd> | Move to next page
 <kbd>PageUp</kbd> | Move to previous page
