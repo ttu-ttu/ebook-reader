@@ -127,6 +127,9 @@ export class AppComponent implements OnInit {
           case 'KeyB':
             this.bookmarManagerService.saveScrollPosition();
             break;
+          case 'KeyR':
+            this.bookmarManagerService.scrollToSavedPosition();
+            break;
           case 'KeyM':
             this.openBookManager();
             break;
