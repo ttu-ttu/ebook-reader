@@ -1,0 +1,8 @@
+<app-pure-book-card-list
+  [bookCards]="(bookCards$ | async) ?? []"
+  [currentBookId]="currentBookId"
+  [selectedBookIds]="selectedBookIds"
+  (bookClick)="bookClick.emit($event)"
+  (removeBookClick)="onRemoveBookClick($event)"
+  (vsUpdate)="onVsUpdate($event)">
+</app-pure-book-card-list>

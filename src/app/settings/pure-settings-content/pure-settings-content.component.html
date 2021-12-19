@@ -1,0 +1,82 @@
+<app-settings-item-group [title]="'Theme'">
+  <app-button-toggle-group
+    [options]="availableThemes | availableThemesToOptions"
+    [selectedOptionId]="selectedTheme"
+    (selectedOptionIdChange)="selectedThemeChange.emit($event)">
+  </app-button-toggle-group>
+</app-settings-item-group>
+
+<app-settings-item-group [title]="'Font settings'">
+  <mat-form-field appearance="fill">
+    <mat-label>Font size</mat-label>
+    <input matInput type="number" step="1" min="1" placeholder="Noto Serif JP" [value]="fontSize" (change)="fontSizeChange.emit(+fontSizeInputRef.value)" #fontSizeInputRef>
+  </mat-form-field>
+  <br>
+  <mat-form-field appearance="fill">
+    <mat-label>Font family (Group 1)</mat-label>
+    <input matInput placeholder="Noto Serif JP" [value]="fontFamilyGroupOne"
+      (change)="fontFamilyGroupOneChange.emit(fontFamilyInputRef.value)" #fontFamilyInputRef>
+  </mat-form-field>
+  <br>
+  <mat-form-field appearance="fill">
+    <mat-label>Font family (Group 2)</mat-label>
+    <input matInput placeholder="Noto Sans JP" [value]="fontFamilyGroupTwo"
+      (change)="fontFamilyGroupTwoChange.emit(fontFamily2InputRef.value)" #fontFamily2InputRef>
+  </mat-form-field>
+</app-settings-item-group>
+
+<app-settings-item-group [title]="'Blur image'">
+  <app-button-toggle-group
+    [options]="optionsForToggle"
+    [selectedOptionId]="blurImage"
+    (selectedOptionIdChange)="blurImageChange.emit($event)">
+  </app-button-toggle-group>
+</app-settings-item-group>
+
+<app-settings-item-group [title]="'Hide furigana'">
+  <app-button-toggle-group
+    [options]="optionsForToggle"
+    [selectedOptionId]="hideFurigana"
+    (selectedOptionIdChange)="hideFuriganaChange.emit($event)">
+  </app-button-toggle-group>
+</app-settings-item-group>
+
+<app-settings-item-group [title]="'Hide furigana style'">
+  <app-button-toggle-group
+    [options]="optionsForFuriganaStyle"
+    [selectedOptionId]="furiganaStyle"
+    (selectedOptionIdChange)="furiganaStyleChange.emit($event)">
+  </app-button-toggle-group>
+</app-settings-item-group>
+
+<app-settings-item-group [title]="'Writing mode'">
+  <app-button-toggle-group
+    [options]="optionsForWritingMode"
+    [selectedOptionId]="writingMode"
+    (selectedOptionIdChange)="writingModeChange.emit($event)">
+  </app-button-toggle-group>
+</app-settings-item-group>
+
+<app-settings-item-group [title]="'Reader size'">
+  <mat-form-field appearance="fill">
+    <mat-label>{{ (writingMode | isWritingModeVertical) ? 'Max height' : 'Max width' }}</mat-label>
+    <input matInput [value]="secondDimensionMaxValue"
+      (change)="secondDimensionMaxValueChange.emit(+secondDimensionInputRef.value)" #secondDimensionInputRef>
+  </mat-form-field>
+  <br>
+  <br>
+  <mat-form-field appearance="fill">
+    <mat-label>{{ (writingMode | isWritingModeVertical) ? 'Left/right margin' : 'Top/bottom margin' }}</mat-label>
+    <input matInput [value]="firstDimensionMargin"
+      (change)="firstDimensionMarginChange.emit(+firstDimensionInputRef.value)" #firstDimensionInputRef>
+  </mat-form-field>
+  <br>
+</app-settings-item-group>
+
+<app-settings-item-group [title]="'Auto position on resize'">
+  <app-button-toggle-group
+    [options]="optionsForToggle"
+    [selectedOptionId]="autoPositionOnResize"
+    (selectedOptionIdChange)="autoPositionOnResizeChange.emit($event)">
+  </app-button-toggle-group>
+</app-settings-item-group>

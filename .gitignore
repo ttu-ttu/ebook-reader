@@ -32,6 +32,7 @@ speed-measure-plugin*.json
 .history/*
 
 # misc
+/.angular/cache
 /.sass-cache
 /connect.lock
 /coverage
@@ -40,7 +41,6 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
-pnpm-lock.yaml
 
 # System Files
 .DS_Store
@@ -51,3 +51,9 @@ test-files/
 .firebase/
 .firebaserc
 firebase.json
+.vscode/
+.devcontainer/
+.pnpm-store/
+cypress/downloads/
+cypress/screenshots/
+cypress/videos/

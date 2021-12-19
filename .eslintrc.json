@@ -1,0 +1,127 @@
+{
+  "root": true,
+  "ignorePatterns": [
+    "projects/**/*"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "*.ts"
+      ],
+      "parserOptions": {
+        "project": [
+          "tsconfig.json",
+          "e2e/tsconfig.json"
+        ],
+        "createDefaultProgram": true
+      },
+      "plugins": [
+        "rxjs-angular",
+        "header"
+      ],
+      "extends": [
+        "airbnb-base",
+        "airbnb-typescript/base",
+        "plugin:@angular-eslint/recommended",
+        "plugin:@angular-eslint/template/process-inline-templates",
+        "plugin:rxjs/recommended",
+        "prettier"
+      ],
+      "rules": {
+        "@angular-eslint/component-selector": [
+          "error",
+          {
+            "prefix": "app",
+            "style": "kebab-case",
+            "type": "element"
+          }
+        ],
+        "@angular-eslint/directive-selector": [
+          "error",
+          {
+            "prefix": "app",
+            "style": "camelCase",
+            "type": "attribute"
+          }
+        ],
+        "@angular-eslint/prefer-on-push-component-change-detection": "error",
+        "max-len": [
+          "error",
+          {
+            "code": 140,
+            "ignoreComments": true,
+            "ignoreTrailingComments": true,
+            "ignoreUrls": true
+          }
+        ],
+        "import/no-namespace": [
+          "error"
+        ],
+        "import/order": [
+          "error",
+          {
+            "newlines-between": "never",
+            "alphabetize": {
+              "order": "asc",
+              "caseInsensitive": true
+            }
+          }
+        ],
+        "import/no-extraneous-dependencies": [
+          "error",
+          {
+            "devDependencies": [
+              "src/test.ts",
+              "**/*.spec.ts",
+              "cypress/**/*.ts"
+            ]
+          }
+        ],
+        "import/prefer-default-export": "off",
+        "no-underscore-dangle": "off",
+        "class-methods-use-this": [
+          "off",
+          {
+            "exceptMethods": [
+              "transform"
+            ]
+          }
+        ],
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "ForInStatement",
+            "message": "for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array."
+          },
+          {
+            "selector": "LabeledStatement",
+            "message": "Labels are a form of GOTO; using them makes code confusing and hard to maintain and understand."
+          },
+          {
+            "selector": "WithStatement",
+            "message": "`with` is disallowed in strict mode because it makes code impossible to predict and optimize."
+          }
+        ],
+        "@typescript-eslint/no-use-before-define": "off",
+        "rxjs-angular/prefer-takeuntil": "error",
+        "no-return-assign": ["error", "except-parens"],
+        "header/header": [ "error", "block", [
+          "*",
+          " * @license BSD-3-Clause",
+          " * Copyright (c) 2021, ッツ Reader Authors",
+          " * All rights reserved.",
+          " "
+        ], 2 ]
+      }
+    },
+    {
+      "files": [
+        "*.html"
+      ],
+      "extends": [
+        "plugin:@angular-eslint/template/recommended"
+      ],
+      "rules": {}
+    }
+  ]
+}

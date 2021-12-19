@@ -1,0 +1,32 @@
+<button class="fixed top-0 inset-x-0 w-full h-8 z-10" (click)="onPlaceholderHeaderClick($event)"></button>
+<app-book-reader-header
+  *ngIf="showHeader"
+  [@headerInOut]
+  class="fixed top-0 inset-x-0 w-full z-10 elevation-4 writing-horizontal-tb"
+  appClickOutside
+  [skippableMouseEvent]="skippableMouseEvent"
+  (clickOutside)="headerMouseClickOutside.emit()"
+  (bookmarkClick)="bookmarkClick.emit()"
+  (leavingPage)="leavingPage.emit()">
+</app-book-reader-header>
+
+<app-book-content
+  class="block px-reader py-8"
+  [htmlContent]="bookContent"
+  (contentResize)="contentResize.emit($event)"
+  (contentLoad)="contentLoad.emit($event)"
+  (contentReady)="contentReady.emit($event)"></app-book-content>
+
+<div *ngIf="verticalMode && bookmarkData && bookmarkData.right" [style.right]="bookmarkData.right"
+  class="absolute inset-y-0 w-12 bg-yellow-600 bg-opacity-10 pointer-events-none">
+</div>
+<div *ngIf="!verticalMode && bookmarkData && bookmarkData.top" [style.top]="bookmarkData.top"
+  class="absolute inset-x-0 h-12 bg-yellow-600 bg-opacity-10 pointer-events-none">
+</div>
+
+<div *ngIf="showFooter"
+     class="fixed bottom-2 right-2 z-10 writing-horizontal-tb text-xs leading-none"
+     [style.color]="footerTextColor">
+  {{ exploredCharCount }} / {{ bookCharCount }} ({{ ((exploredCharCount / bookCharCount) * 100) | number: '1.2-2' }}%)
+</div>
+<button class="fixed bottom-0 inset-x-0 z-10 w-full h-8 cursor-pointer" (click)="footerClick.emit()"></button>

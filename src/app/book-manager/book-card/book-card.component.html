@@ -1,0 +1,23 @@
+<div class="relative cursor-pointer aspect-w-2 aspect-h-3">
+  <span>
+    <img *ngIf="imagePath && ((loadImageFail$ | async) === false); else imageNotFoundTemplate"
+         class="w-full h-full object-cover"
+         [src]="imagePath | imageResolver"
+         (error)="loadImageFail$.next(true)"
+         alt="">
+    <ng-template #imageNotFoundTemplate>
+      <fa-icon [icon]="faImage"
+               class="w-full h-full flex justify-center items-center text-5xl sm:text-7xl dark:text-white">
+      </fa-icon>
+    </ng-template>
+    <div class="absolute bottom-0 inset-x-0">
+      <div class="bg-gray-800 bg-opacity-80 text-white text-justify text-sm p-0.5 px-1.5 h-16 sm:text-base sm:p-1.5 sm:h-21">
+        <span class="line-clamp-3">{{ title }}</span>
+      </div>
+      <div class="h-2.5 bg-gray-400	bg-opacity-80">
+        <div class="bg-gradient-to-b from-red-600 to-red-900 h-full rounded"
+             [style.width]="(progress * 100) + '%'"></div>
+      </div>
+    </div>
+  </span>
+</div>
