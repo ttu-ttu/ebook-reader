@@ -15,8 +15,16 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { NavigationEnd, Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
-import { NEVER } from 'rxjs';
-import { filter, map, pairwise, share, switchMap, take } from 'rxjs/operators';
+import { NEVER, timer } from 'rxjs';
+import {
+  filter,
+  map,
+  pairwise,
+  share,
+  switchMap,
+  take,
+  takeUntil,
+} from 'rxjs/operators';
 import { StoreService } from 'src/app/store.service';
 import { DatabaseService } from './database/books-db/database.service';
 import { UpdateDialogComponent } from './update-dialog/update-dialog.component';
@@ -38,17 +46,23 @@ export class AppComponent implements OnInit {
     updates: SwUpdate,
     @Inject(DOCUMENT) document: Document
   ) {
-    updates.versionUpdates.pipe(take(1)).subscribe(() => {
-      const dialogRef = dialog.open(UpdateDialogComponent, {
-        panelClass: 'writing-horizontal-tb',
+    updates.versionUpdates
+      .pipe(
+        filter((ev) => ev.type === 'VERSION_READY'),
+        take(1),
+        takeUntil(timer(60000 * 5))
+      )
+      .subscribe(() => {
+        const dialogRef = dialog.open(UpdateDialogComponent, {
+          panelClass: 'writing-horizontal-tb',
+        });
+        // eslint-disable-next-line rxjs/no-nested-subscribe
+        dialogRef.afterClosed().subscribe((shouldReload) => {
+          if (shouldReload) {
+            updates.activateUpdate().then(() => document.location.reload());
+          }
+        });
       });
-      // eslint-disable-next-line rxjs/no-nested-subscribe
-      dialogRef.afterClosed().subscribe((shouldReload) => {
-        if (shouldReload) {
-          updates.activateUpdate().then(() => document.location.reload());
-        }
-      });
-    });
   }
 
   ngOnInit() {
