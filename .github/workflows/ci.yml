@@ -1,0 +1,51 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Install dependencies
+        uses: pnpm/action-setup@v2.0.1
+        with:
+          version: latest
+          run_install: true
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test on Jest
+        run: pnpm test
+
+      - name: Test on browser
+        run: pnpm ng run ebook-reader:cypress-run -- --configuration production
+        env:
+          NODE_ENV: production
+
+      # NOTE: screenshots will be generated only if E2E test failed
+      # thus we store screenshots only on failures
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
+      # Test run video was always captured, so this action uses "always()" condition
+      - name: Upload videos
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cypress-videos
+          path: cypress/videos
