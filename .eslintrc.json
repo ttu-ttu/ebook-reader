@@ -1,24 +1,14 @@
 {
   "root": true,
-  "ignorePatterns": [
-    "projects/**/*"
-  ],
+  "ignorePatterns": ["projects/**/*"],
   "overrides": [
     {
-      "files": [
-        "*.ts"
-      ],
+      "files": ["*.ts"],
       "parserOptions": {
-        "project": [
-          "tsconfig.json",
-          "e2e/tsconfig.json"
-        ],
+        "project": ["tsconfig.json", "e2e/tsconfig.json"],
         "createDefaultProgram": true
       },
-      "plugins": [
-        "rxjs-angular",
-        "header"
-      ],
+      "plugins": ["rxjs-angular", "header"],
       "extends": [
         "airbnb-base",
         "airbnb-typescript/base",
@@ -54,9 +44,7 @@
             "ignoreUrls": true
           }
         ],
-        "import/no-namespace": [
-          "error"
-        ],
+        "import/no-namespace": ["error"],
         "import/order": [
           "error",
           {
@@ -71,7 +59,7 @@
           "error",
           {
             "devDependencies": [
-              "src/test.ts",
+              "src/setup-jest.ts",
               "**/*.spec.ts",
               "cypress/**/*.ts"
             ]
@@ -82,9 +70,7 @@
         "class-methods-use-this": [
           "off",
           {
-            "exceptMethods": [
-              "transform"
-            ]
+            "exceptMethods": ["transform"]
           }
         ],
         "no-restricted-syntax": [
@@ -105,22 +91,23 @@
         "@typescript-eslint/no-use-before-define": "off",
         "rxjs-angular/prefer-takeuntil": "error",
         "no-return-assign": ["error", "except-parens"],
-        "header/header": [ "error", "block", [
-          "*",
-          " * @license BSD-3-Clause",
-          " * Copyright (c) 2021, ッツ Reader Authors",
-          " * All rights reserved.",
-          " "
-        ], 2 ]
+        "header/header": [
+          "error",
+          "block",
+          [
+            "*",
+            " * @license BSD-3-Clause",
+            " * Copyright (c) 2021, ッツ Reader Authors",
+            " * All rights reserved.",
+            " "
+          ],
+          2
+        ]
       }
     },
     {
-      "files": [
-        "*.html"
-      ],
-      "extends": [
-        "plugin:@angular-eslint/template/recommended"
-      ],
+      "files": ["*.html"],
+      "extends": ["plugin:@angular-eslint/template/recommended"],
       "rules": {}
     }
   ]
