@@ -1,143 +1,71 @@
-/**
- * @licence
- * Copyright (c) 2021, ッツ Reader Authors
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-@import "normalize";
-
-@function highlight-shadow-color($color, $dark-theme: null) {
-  @if ($dark-theme) {
-    @return scale-color($color, $blue: 7%, $alpha: -30%);
-  }
-  @return scale-color($color, $blue: 7%, $alpha: -70%);
-}
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "./mat";
 
 :root {
-  --selection-font-color: #f5f5f5;
-  --selection-background-color: #979797;
-  --bookmark-color: #979797;
-  --font-color: #222222;
-  --highlight-shadow-color: #{highlight-shadow-color(#222222)};
-  --background-color: #ffffff;
-  --scroll-info-font-color: #626262;
-  --font-family-sans-serif: "Noto Sans JP", sans-serif;
-  --font-family-serif: "Noto Serif JP", serif;
-  --book-font-family: var(--font-family-serif);
-  --cover-shadow: #777171;
+  --font-color: rgba(0, 0, 0, 0.87);
+  --background-color: #eceff1;
 }
 
-// for settings dialog
-.light-theme {
-  --font-color: #222222;
-  --background-color: #ffffff;
-}
-
-.dark-theme, .gray-theme, .black-theme {
-  --font-color: rgba(255, 255, 255, .6);
-  --highlight-shadow-color: #{highlight-shadow-color(#f0f0f0, $dark-theme: true)};
-  --background-color: #121212;
-  --selection-font-color: rgba(85, 90, 92, .6);
-  --selection-background-color: rgba(212, 217, 220, .8);
-  --scroll-info-font-color: rgba(227, 227, 227, .6);
-  --bookmark-color: #d4d9dc;
-  --cover-shadow: #505050;
-}
-
-.ecru-theme {
-  --font-color: #292826;
-  --highlight-shadow-color: #{highlight-shadow-color(#292826)};
-  --background-color: #f7f6eb;
-  --scroll-info-font-color: #6A6967;
-}
-
-.water-theme {
-  --font-color: #262829;
-  --highlight-shadow-color: #{highlight-shadow-color(#262829)};
-  --background-color: #dfecf4;
-  --scroll-info-font-color: #67696A;
-}
-
-.gray-theme {
-  --background-color: #23272a;
-  --font-color: rgba(227, 227, 227, 0.80);
-  --cover-shadow: #000;
-}
-
-.black-theme {
-  --background-color: #000000;
-}
-
-html {
-  font-size: 16px;
-  writing-mode: vertical-rl;
-  font-family: var(--font-family-sans-serif);
-  line-break: normal;
-}
-
-body {
-  color: var(--font-color);
-  background-color: var(--background-color);
-}
-
-.information-overlay {
-  position: fixed;
-  user-select: none;
-  writing-mode: horizontal-tb;
-  color: var(--scroll-info-font-color);
-  font-size: 8px;
-  z-index: 100;
-
-  @media screen and (min-height: 725px) {
-    font-size: 16px;
+@layer base {
+  html {
+    width: 100%;
+    height: 100%;
   }
 
-  @media screen and (min-height: 900px) {
-    font-size: 24px;
+  body {
+    @apply font-sans;
+    color: var(--font-color);
+    background-color: var(--background-color);
+    overflow-wrap: break-word;
+    width: 100%;
+    height: 100%;
   }
 }
 
-.bottom-overlay {
-  bottom: 8px;
-
-  @media screen and (min-height: 725px) {
-    bottom: 16px;
+@layer utilities {
+  .writing-horizontal-tb {
+    writing-mode: horizontal-tb;
   }
-}
 
-.scroll-information {
-  right: 8px;
-}
+  .writing-vertical-rl {
+    writing-mode: vertical-rl;
+  }
 
-.overlay-cover {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  z-index: 1;
-  border: 0 solid var(--background-color);
-  pointer-events: none;
-}
+  .px-screen {
+    @apply px-4 md:px-8 lg:max-w-4xl xl:max-w-none 2xl:max-w-6xl mx-auto;
+  }
 
-.bookmark-cover {
-  position: absolute;
-  pointer-events: none;
-  z-index: 200;
-  top: 0;
-  bottom: 0;
-  width: 50px;
-  background: var(--bookmark-color);
-  opacity: .2;
-}
+  .px-reader {
+    @apply px-4 md:px-8;
+  }
 
-.calibre {
-  margin: 0;
-}
+  .opacity-header-icon {
+    @apply opacity-60 hover:opacity-100 transition-opacity;
+  }
 
-.book-manager .scrollable-content {
-  position: relative!important;
+  .p-header-fa {
+    @apply p-4 xl:p-3;
+  }
+
+  .-translate-x-header-fa {
+    @apply -translate-x-4 xl:-translate-x-3;
+  }
+
+  .translate-x-header-fa {
+    @apply translate-x-4 xl:translate-x-3;
+  }
+
+  .p-header-mat {
+    @apply p-3 xl:p-2.5;
+  }
+
+  .-translate-x-header-mat {
+    @apply -translate-x-3 xl:-translate-x-2.5;
+  }
+
+  .translate-x-header-mat {
+    @apply translate-x-3 xl:translate-x-2.5;
+  }
 }

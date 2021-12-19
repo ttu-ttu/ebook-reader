@@ -1,44 +1,52 @@
 /**
- * @licence
+ * @license BSD-3-Clause
  * Copyright (c) 2021, ッツ Reader Authors
  * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
  */
-import { NgModule } from '@angular/core';
-import { ServiceWorkerModule } from '@angular/service-worker';
+
+import { ErrorHandler, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { VirtualScrollerModule } from 'ngx-virtual-scroller';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { WINDOW } from 'src/app/utils/dom-tokens';
+import { environment } from '../environments/environment';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { BookManagerComponent } from './book-manager/book-manager.component';
-import { ReaderComponent } from './reader/reader.component';
-import { SettingsDialogComponent } from './settings-dialog/settings-dialog.component';
-import { environment } from '../environments/environment';
+import { createBooksDb } from './database/books-db/factory';
+import BOOKS_DB_PROMISE from './database/books-db/token';
+import { ErrorDialogModule } from './log-report-dialog/log-report-dialog.module';
+import { UpdateDialogModule } from './update-dialog/update-dialog.module';
+import { GlobalErrorHandler } from './utils/global-error-handler.service';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    BookManagerComponent,
-    ReaderComponent,
-    SettingsDialogComponent,
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    FontAwesomeModule,
+    BrowserAnimationsModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: environment.production,
       // Register the ServiceWorker as soon as the app is stable
       // or after 30 seconds (whichever comes first).
-      registrationStrategy: 'registerWhenStable:30000'
+      registrationStrategy: 'registerWhenStable:30000',
     }),
-    VirtualScrollerModule
+    ErrorDialogModule,
+    UpdateDialogModule,
   ],
-  providers: [],
-  bootstrap: [AppComponent]
+  providers: [
+    {
+      provide: ErrorHandler,
+      useClass: GlobalErrorHandler,
+    },
+    {
+      provide: BOOKS_DB_PROMISE,
+      useFactory: createBooksDb,
+    },
+    {
+      provide: WINDOW,
+      useValue: window,
+    },
+  ],
+  bootstrap: [AppComponent],
 })
-export class AppModule {
-}
+export class AppModule {}

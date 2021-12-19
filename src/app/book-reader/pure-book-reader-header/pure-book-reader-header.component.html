@@ -1,0 +1,28 @@
+<div class="flex justify-between px-4 md:px-8 h-12 xl:h-10 bg-gray-700 text-white">
+  <div class="flex transform-gpu -translate-x-header-fa">
+    <fa-icon
+      role="button"
+      (click)="bookmarkClick.emit()"
+      class="flex items-center h-full text-xl xl:text-lg p-header-fa opacity-header-icon cursor-pointer"
+      [icon]="faBookmark"></fa-icon>
+    <div class="flex items-center text-xl xl:text-lg px-4 xl:px-3">{{ autoScrollMultiplier }}x</div>
+  </div>
+  <div class="flex transform-gpu translate-x-header-fa">
+    <fa-icon
+      *ngIf="showFullscreenButton"
+      role="button"
+      (click)="fullscreenClick.emit()"
+      class="flex items-center h-full text-xl xl:text-lg p-header-fa opacity-header-icon cursor-pointer"
+      [icon]="faExpand"></fa-icon>
+    <a (click)="leavingPage.emit()" routerLink="/settings">
+      <fa-icon
+        class="flex items-center h-full text-xl xl:text-lg p-header-fa opacity-header-icon cursor-pointer"
+        [icon]="faCog"></fa-icon>
+    </a>
+    <a (click)="bookManagerClick.emit(); leavingPage.emit()" routerLink="/manage">
+      <fa-icon
+        class="flex items-center h-full text-xl xl:text-lg p-header-fa opacity-header-icon cursor-pointer"
+        [icon]="faSignOutAlt"></fa-icon>
+    </a>
+  </div>
+</div>

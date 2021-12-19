@@ -1,604 +1,83 @@
 /**
- * @licence
+ * @license BSD-3-Clause
  * Copyright (c) 2021, ッツ Reader Authors
  * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
  */
 
-import { Component, NgZone, OnInit } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+/* eslint-disable rxjs-angular/prefer-takeuntil */
+import { DOCUMENT } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Inject,
+  OnInit,
+} from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { NavigationEnd, Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
-import { faBookmark } from '@fortawesome/free-regular-svg-icons/faBookmark';
-import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
-import { faExpand } from '@fortawesome/free-solid-svg-icons/faExpand';
-import { faFileMedical } from '@fortawesome/free-solid-svg-icons/faFileMedical';
-import { faFolderPlus } from '@fortawesome/free-solid-svg-icons/faFolderPlus';
-import { faSyncAlt } from '@fortawesome/free-solid-svg-icons/faSyncAlt';
-import * as parser from 'fast-xml-parser';
-import { IDBPDatabase } from 'idb';
-import { fromEvent, of, combineLatest } from 'rxjs';
-import { filter, map, shareReplay, switchMap, take, withLatestFrom } from 'rxjs/operators';
-import { AutoScrollerService } from './auto-scroller.service';
-import { BookManagerService } from './book-manager.service';
-import { BookmarkManagerService } from './bookmark-manager.service';
-import { BooksDb, DatabaseService } from './database.service';
-import { EbookDisplayManagerService } from './ebook-display-manager.service';
-import { ScrollInformationService } from './scroll-information.service';
-import { ThemeManagerService } from './theme-manager.service';
-import parseCss from './utils/css-parser';
-import stringifyCss from './utils/css-stringify';
-import { EpubExtractor, HtmlzExtractor } from './utils/extractor';
-import { getFormattedElementEpub, getFormattedElementHtmlz } from './utils/html-fixer';
+import { NEVER } from 'rxjs';
+import { filter, map, pairwise, share, switchMap, take } from 'rxjs/operators';
+import { StoreService } from 'src/app/store.service';
+import { DatabaseService } from './database/books-db/database.service';
+import { UpdateDialogComponent } from './update-dialog/update-dialog.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
-
-  visible$ = this.router.events.pipe(
-    filter((event) => event instanceof NavigationEnd),
-    switchMap(() => {
-      if (this.route.firstChild) {
-        return this.route.firstChild.paramMap.pipe(
-          map((paramMap) => {
-            const id = paramMap.get('identifier');
-            const hasId = !!id;
-            if (hasId) {
-              this.bookManagerService.currentBookId$.next(parseInt(id || '0', 10));
-            }
-            return hasId;
-          })
-        );
-      }
-      return of(false);
-    }),
-    shareReplay(1),
-  );
-  // Mostly for apps that uses this webapp as their component (e.g. jidoujisho)
-  minimalUi$ = this.route.queryParamMap.pipe(
-    map((paramMap) => paramMap.has('min')),
-  );
-  loadingDb = true;
-  isMobileDevice = this.isMobile();
-  supportsFullscreen = this.fullscreenEnabled();
-  dropZoneLabel = this.isMobileDevice ?
-    'Select supported files (.htmlz or .epub) to continue' :
-    'Drop or select files (.htmlz or .epub) or a folder that contains those files to continue';
-  dropzoneHighlight = false;
-  showSettingsDialog = false;
-  faFileMedical = faFileMedical;
-  faFolderPlus = faFolderPlus;
-  faCog = faCog;
-  faBookmark = faBookmark;
-  faSyncAlt = faSyncAlt;
-  faExpand = faExpand;
-  isUpdateAvailable = false;
-  filePattern = /\.(?:htmlz|epub)$/;
+  isDbLoading$ = this.db.isReady$.pipe(map((x) => !x));
 
   constructor(
-    public autoScrollerService: AutoScrollerService,
-    public bookManagerService: BookManagerService,
-    public bookmarManagerService: BookmarkManagerService,
-    public ebookDisplayManagerService: EbookDisplayManagerService,
-    private scrollInformationService: ScrollInformationService,
-    private themeManagerService: ThemeManagerService,
-    private databaseService: DatabaseService,
+    private db: DatabaseService,
     private router: Router,
-    private route: ActivatedRoute,
-    private zone: NgZone,
+    private store: StoreService,
+    dialog: MatDialog,
     updates: SwUpdate,
+    @Inject(DOCUMENT) document: Document
   ) {
-    updates.available.subscribe(() => {
-      this.isUpdateAvailable = true;
-    });
-  }
-
-  ngOnInit(): void {
-    fromEvent<DragEvent>(document.body, 'dragenter').subscribe((ev) => this.onDragEnter(ev));
-    fromEvent<DragEvent>(document.body, 'dragover').subscribe((ev) => this.onDragOver(ev));
-    fromEvent<DragEvent>(document.body, 'dragend').subscribe((ev) => this.onDragEnd(ev));
-    fromEvent<DragEvent>(document.body, 'drop').pipe(
-      withLatestFrom(this.ebookDisplayManagerService.loadingFiles$, this.bookManagerService.managerIsOpen$))
-      .subscribe(([ev, loadingFiles$, managerIsOpen$]) => {
-        ev.preventDefault();
-        if (!loadingFiles$ && !managerIsOpen$) {
-          this.onDrop(ev);
+    updates.versionUpdates.pipe(take(1)).subscribe(() => {
+      const dialogRef = dialog.open(UpdateDialogComponent, {
+        panelClass: 'writing-horizontal-tb',
+      });
+      // eslint-disable-next-line rxjs/no-nested-subscribe
+      dialogRef.afterClosed().subscribe((shouldReload) => {
+        if (shouldReload) {
+          updates.activateUpdate().then(() => document.location.reload());
         }
       });
-    fromEvent<KeyboardEvent>(window, 'keydown').pipe(
-      withLatestFrom(this.ebookDisplayManagerService.loadingFile$, this.bookManagerService.managerIsOpen$, this.visible$),
-    ).subscribe(([ev, loadingFile, managerIsOpen, visible]) => {
-      if (!this.showSettingsDialog && !managerIsOpen && !loadingFile && visible) {
-        switch (ev.code) {
-          case 'Space':
-            this.autoScrollerService.toggle();
-            ev.preventDefault();
-            break;
-          case 'KeyA':
-            this.autoScrollerService.increaseSpeed();
-            break;
-          case 'KeyD':
-            this.autoScrollerService.decreaseSpeed();
-            break;
-          case 'KeyB':
-            this.bookmarManagerService.saveScrollPosition();
-            break;
-          case 'KeyR':
-            this.bookmarManagerService.scrollToSavedPosition();
-            break;
-          case 'KeyM':
-            this.openBookManager();
-            break;
-          case 'PageDown':
-            window.scrollBy({
-              left: window.innerWidth * -.9,
-              behavior: 'smooth',
-            });
-            break;
-          case 'PageUp':
-            window.scrollBy({
-              left: window.innerWidth * .9,
-              behavior: 'smooth',
-            });
-            break;
-        }
-      } else if (this.showSettingsDialog && 'Escape' === ev.code) {
-        this.setShowSettingsDialog(false);
-      }
     });
+  }
 
-    this.databaseService.db.then((db) => {
-      combineLatest([this.visible$, this.bookManagerService.managerIsOpen$]).pipe(take(1)).subscribe(
-        async ([visible, managerisOpen]) => {
-          if (!visible && !managerisOpen) {
-            const lastItem = await db.get('lastItem', 0);
-            if (lastItem) {
-              // otherwise may get NG0100 (if modified while init ReaderComponent)
-              this.ebookDisplayManagerService.loadingFile$.next(true);
-              await this.router.navigate(['b', lastItem.dataId], {
-                queryParamsHandling: 'merge',
-              });
-            }
+  ngOnInit() {
+    const url$ = this.router.events.pipe(
+      filter((ev): ev is NavigationEnd => ev instanceof NavigationEnd),
+      map((ev) => ev.url),
+      share()
+    );
+
+    url$
+      .pipe(
+        take(1),
+        switchMap((url) => {
+          if (url === '/') {
+            return this.db.lastItem$;
           }
-          this.loadingDb = false;
-        });
-    });
-  }
-
-  isMobile() {
-    if ('maxTouchPoints' in window.navigator as any) {
-      return 0 < window.navigator.maxTouchPoints;
-    }
-
-    if ('msMaxTouchPoints' in window.navigator as any) {
-      return 0 < window.navigator.msMaxTouchPoints;
-    }
-
-    const mQ = window.matchMedia?.('(pointer:coarse)');
-    if (mQ?.media === '(pointer: coarse)') {
-      return mQ.matches;
-    }
-
-    if ('orientation' in window) {
-      return true;
-    }
-
-    const UA = window.navigator.userAgent;
-    const userAgentRegex = /\b(BlackBerry|webOS|iPhone|IEMobile|Android|Windows Phone|iPad|iPod)\b/i;
-    return userAgentRegex.test(UA);
-  }
-
-  onInputChange(el: HTMLInputElement) {
-    if (el.files?.length) {
-      const validFiles = Array.from(el.files).filter((file) => this.filePattern.test(file.name));
-
-      if (validFiles.length) {
-        this.onFileChange(validFiles);
-      } else {
-        alert('Only .htmlz and .epub Files are supported');
-      }
-    }
-  }
-
-  async openBookManager() {
-    await this.bookmarManagerService.saveScrollPosition();
-    this.bookmarManagerService.setHideState(true);
-    this.scrollInformationService.setOpacity(true);
-    await this.router.navigate(['manage'], {
-      queryParamsHandling: 'merge',
-    });
-  }
-
-  setShowSettingsDialog(b: boolean) {
-    this.showSettingsDialog = b;
-    this.ebookDisplayManagerService.allowScroll = !b;
-    if (b) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.removeProperty('overflow');
-    }
-  }
-
-  fullscreenEnabled() {
-    return document.fullscreenEnabled ?? false;
-  }
-
-  toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
-  }
-
-  onDrop(ev: DragEvent) {
-    this.dropzoneHighlight = false;
-
-    if (!ev?.dataTransfer?.items) {
-      return;
-    }
-
-    const items = [];
-
-    for (const item of ev.dataTransfer.items) {
-      if ('file' !== item.kind) {
-        continue;
-      }
-
-      items.push(item.webkitGetAsEntry());
-    }
-
-    if (items.length) {
-      this.handleDropResult(items);
-    }
-  }
-
-  async handleDropResult(items: any[]) {
-    const addFilesFromDirectory = async (entry: any, fileMap: Map<string, File>): Promise<void> => {
-      if (entry.isDirectory) {
-        const dirReader = entry.createReader();
-
-        const entries = await new Promise<any>(async (resolve) => {
-          const allEntries = [];
-          let dirEntries = await new Promise<any>((innerResolve) => dirReader.readEntries(innerResolve)).catch(() => []);
-
-          while (dirEntries.length) {
-            allEntries.push(...dirEntries);
-            dirEntries = await new Promise<any>((innerResolve) => dirReader.readEntries(innerResolve)).catch(() => []);
-          }
-          resolve(allEntries);
-        }).catch(() => []);
-        for (let index = 0, length = entries.length; index < length; index++) {
-          await addFilesFromDirectory(entries[index], fileMap).catch(() => { });
+          return NEVER;
+        })
+      )
+      .subscribe((lastItem) => {
+        if (lastItem) {
+          this.router.navigate(['b', lastItem.dataId]);
+        } else {
+          this.router.navigate(['manage']);
         }
-      } else {
-        const file = await new Promise<File>((resolve) => entry.file(resolve)).catch(() => { });
-
-        if (file && this.filePattern.test(file.name)) {
-          fileMap.set(file.name, file);
-        }
-      }
-    };
-
-    const files = new Map<string, File>();
-
-    for (let index = 0, length = items.length; index < length; index++) {
-      const entry = items[index];
-
-      if (entry.isDirectory) {
-        await addFilesFromDirectory(entry, files);
-      } else if (this.filePattern.test(entry.name)) {
-
-        const file = await new Promise<File>((resolve) => entry.file(resolve)).catch(() => { });
-        if (file) {
-          files.set(file.name, file);
-        }
-      }
-    }
-
-    if (!files.size) {
-      return alert('Only .htmlz and .epub Files are supported');
-    }
-
-    this.onFileChange(Array.from(files.values()));
-  }
-
-  onDragEnter(ev: DragEvent) {
-    ev.preventDefault();
-    this.dropzoneHighlight = true;
-  }
-
-  onDragOver(ev: DragEvent) {
-    ev.preventDefault();
-    this.dropzoneHighlight = true;
-  }
-
-  onDragEnd(ev: DragEvent) {
-    ev.preventDefault();
-    this.dropzoneHighlight = false;
-  }
-
-  private async onFileChange(files: Array<File>) {
-    const multiFiles = 1 < files.length;
-
-    let dataId = 0;
-    let importFailures = 0;
-
-    this.autoScrollerService.stop();
-
-    if (!multiFiles) {
-      this.ebookDisplayManagerService.loadingFile$.next(true);
-    }
-
-    const db = await this.databaseService.db.catch(() => {
-      if (!multiFiles) {
-        this.ebookDisplayManagerService.loadingFile$.next(false);
-      }
-      return undefined;
-    });
-
-    if (!db) {
-      return alert('Failure accessing Database');
-    }
-
-    for (let index = 0, length = files.length; index < length; index++) {
-      const file = files[index];
-
-      if (multiFiles) {
-        this.ebookDisplayManagerService.loadingFiles$.next({
-          title: file.name,
-          progress: `${Math.round(index / length * 100)}%`
-        });
-      }
-
-      const lastDataId = await this.storeFileInDB(db, file);
-
-      if (lastDataId) {
-        dataId = lastDataId;
-      } else {
-        importFailures++;
-      }
-    }
-
-    if (importFailures) {
-      alert(`${importFailures} Import(s) failed`);
-    }
-
-    if (multiFiles) {
-      this.ebookDisplayManagerService.loadingFiles$.next(undefined);
-    }
-
-    if (!dataId) {
-      if (!multiFiles) {
-        this.ebookDisplayManagerService.loadingFile$.next(false);
-      }
-
-      return;
-    }
-
-    void db.put('lastItem', {
-      dataId,
-    }, 0).catch(() => { });
-    await this.zone.run(async () => {
-      this.bookManagerService.currentBookId$.next(dataId);
-      this.ebookDisplayManagerService.loadingFile$.next(true);
-      if (multiFiles) {
-        this.bookmarManagerService.setHideState(true);
-        this.scrollInformationService.setOpacity(true);
-      }
-      const changedIdentifier = await this.router.navigate(multiFiles ? ['manage'] : ['b', dataId], {
-        queryParamsHandling: 'merge',
       });
-      if (!changedIdentifier) {
-        this.ebookDisplayManagerService.revalidateFile.next();
-      }
-    }).catch(() => this.ebookDisplayManagerService.loadingFile$.next(false));
-  }
 
-  private storeFileInDB(db: IDBPDatabase<BooksDb>, file: File): Promise<number | undefined> {
-    return this.zone.runOutsideAngular(async () => {
-      try {
-        const storeData = file.name.endsWith('.epub') ?
-          await processEpub(file, this.bookManagerService) : await processHtmlz(file, this.bookManagerService);
-        let dataId: number;
-        {
-          const tx = db.transaction('data', 'readwrite');
-          const store = tx.store;
-          const oldId = await store.index('title').getKey(storeData.title);
-
-          if (oldId) {
-            dataId = await store.put({
-              ...storeData,
-              id: oldId,
-            });
-          } else {
-            dataId = await store.add(storeData);
-          }
-          await tx.done;
-          return dataId;
-        }
-      } catch (ex) {
-        console.error(`${file.name}: ${ex.message}`);
-        return undefined;
-      }
+    url$.pipe(pairwise()).subscribe(([previousUrl]) => {
+      this.store.previousUrl$.next(previousUrl);
     });
   }
-}
-
-const htmlzExtractor = new HtmlzExtractor();
-async function processHtmlz(file: File, bookManagerService: BookManagerService) {
-  const data = await htmlzExtractor.extract(file);
-  const element = getFormattedElementHtmlz(data);
-  const metadata = parser.parse(data['metadata.opf'] as string)?.package?.metadata;
-  const displayData = {
-    title: file.name,
-    hasThumb: true,
-    styleSheet: fixStyleString(data['style.css'] as string),
-  };
-  if (metadata && metadata['dc:title']) {
-    displayData.title = metadata['dc:title'];
-  }
-  const blobData = Object.entries(data)
-    .filter((d): d is [string, Blob] => d[1] instanceof Blob)
-    .reduce<Record<string, Blob>>((acc, [k, v]) => {
-      acc[k] = v;
-      return acc;
-    }, {});
-  const blobDataWithoutCoverImage = {
-    ...blobData,
-  };
-  delete blobDataWithoutCoverImage['cover.jpg'];
-  const storeData: BooksDb['data']['value'] = {
-    ...displayData,
-    elementHtml: element.innerHTML,
-    blobs: blobDataWithoutCoverImage,
-    coverImage: await bookManagerService.getCoverThumbnail(displayData.title, blobData, blobData['cover.jpg']),
-  };
-  return storeData;
-}
-
-const epubExtractor = new EpubExtractor();
-async function processEpub(file: File, bookManagerService: BookManagerService) {
-  const {
-    contents,
-    result: data,
-  } = await epubExtractor.extract(file);
-  const element = getFormattedElementEpub(data, contents);
-
-  let styleSheet = '';
-
-  const cssFiles = contents.package.manifest.item
-    .filter((item) => item['@_media-type'] === 'text/css')
-    .map((item) => item['@_href']);
-
-  if (cssFiles.length) {
-    const cssPathsUnique = new Set(cssFiles);
-
-    let combinedDirtyStyleString = '';
-    for (const mainCssFilename of cssPathsUnique) {
-      combinedDirtyStyleString += data[mainCssFilename] as string;
-    }
-
-    if (combinedDirtyStyleString) {
-      styleSheet = fixStyleString(combinedDirtyStyleString);
-    }
-  }
-  const displayData = {
-    title: file.name,
-    hasThumb: true,
-    styleSheet,
-  };
-
-  const metadata = contents.package.metadata;
-  if (metadata) {
-    const dcTitle = metadata['dc:title'];
-    if (typeof dcTitle === 'string') {
-      displayData.title = dcTitle;
-    } else if (dcTitle && dcTitle['#text']) {
-      displayData.title = dcTitle['#text'];
-    }
-  }
-  const blobData = Object.entries(data)
-    .filter((d): d is [string, Blob] => d[1] instanceof Blob)
-    .reduce<Record<string, Blob>>((acc, [k, v]) => {
-      acc[k] = v;
-      return acc;
-    }, {});
-
-  let coverImageFilename = 'cover.jpeg';
-
-  const coverDataItem = contents.package.manifest.item
-    .find((item) => item['@_id'] === 'cover' && item['@_media-type'].startsWith('image/'));
-  if (coverDataItem) {
-    coverImageFilename = coverDataItem['@_href'];
-  }
-
-  const storeData: BooksDb['data']['value'] = {
-    ...displayData,
-    elementHtml: element.innerHTML,
-    blobs: blobData,
-    coverImage: await bookManagerService.getCoverThumbnail(file.name, blobData, blobData[coverImageFilename]),
-  };
-  return storeData;
-}
-
-function fixStyleString(styleString: string): string {
-  const cssAst = parseCss(styleString);
-
-  let newRules: {
-    type: string;
-    selectors?: string[];
-    declarations?: any[];
-  }[] = [];
-  if (cssAst.stylesheet.rules) {
-    for (const rule of cssAst.stylesheet.rules) {
-      if (rule.type === 'rule') {
-        newRules.push(rule);
-      }
-    }
-  }
-
-  newRules = newRules
-    .filter((rule) => rule.selectors
-      ? !rule.selectors.includes('html') && !rule.selectors.includes('body')
-      : true);
-
-  if (cssAst.stylesheet.rules) {
-    for (const rule of newRules) {
-      if (rule.declarations) {
-        const newDeclarations: { [key: string]: string } = {};
-        let hasLineBreakDefined: boolean | undefined;
-        for (const declaration of rule.declarations) {
-          if (declaration.type === 'declaration') {
-            {
-              const regexResult = /(?:(?:-epub-)|(?:-webkit-))(.+)/i.exec(declaration.property);
-              if (regexResult) {
-                newDeclarations[regexResult[1]] = declaration.value;
-              }
-            }
-
-            if (declaration.property === 'font-family') {
-              let newValue: string = declaration.value;
-              if (newValue.includes('sans-serif')) {
-                newValue = `var(--font-family-sans-serif,"Noto Sans JP",${newValue})`;
-              } else if (newValue.includes('serif')) {
-                newValue = `var(--font-family-serif,"Noto Serif JP",${newValue})`;
-              }
-              newDeclarations[declaration.property] = newValue;
-            }
-
-            if (/(?:(?:-epub-)|(?:-webkit-))?word-break$/i.exec(declaration.property) && declaration.value === 'break-all') {
-              if (hasLineBreakDefined === undefined) {
-                hasLineBreakDefined = rule.declarations.some((d) => d.type === 'declaration' && d.property === 'line-break');
-              }
-              if (!hasLineBreakDefined && !newDeclarations['line-break']) {
-                // to allow breaks one long string of periods
-                newDeclarations['line-break'] = 'loose';
-              }
-            }
-          }
-        }
-        for (const [property, value] of Object.entries(newDeclarations)) {
-          rule.declarations.push({
-            type: 'declaration',
-            property,
-            value,
-          });
-        }
-      }
-    }
-  }
-
-  return stringifyCss({
-    stylesheet: {
-      rules: newRules,
-    },
-    type: 'stylesheet',
-  });
 }

@@ -1,0 +1,43 @@
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+@use "@angular/material" as mat;
+// Plus imports for other components in your app.
+
+// Include the common styles for Angular Material. We include this here so that you only
+// have to load a single css file for Angular Material in your app.
+// Be sure that you only ever include this mixin once!
+@include mat.core(mat.define-typography-config($font-family: "Noto Sans JP"));
+
+// Define the palettes for your theme using the Material Design palettes available in palette.scss
+// (imported above). For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+$ebook-reader-primary: mat.define-palette(mat.$blue-grey-palette);
+$ebook-reader-accent: mat.define-palette(mat.$amber-palette);
+
+// The warn palette is optional (defaults to red).
+$ebook-reader-warn: mat.define-palette(mat.$red-palette);
+
+// Create the theme object. A theme consists of configurations for individual
+// theming systems such as "color" or "typography".
+$ebook-reader-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $ebook-reader-primary,
+      accent: $ebook-reader-accent,
+      warn: $ebook-reader-warn,
+    ),
+  )
+);
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+@include mat.ripple-theme($ebook-reader-theme);
+@include mat.button-theme($ebook-reader-theme);
+@include mat.dialog-theme($ebook-reader-theme);
+@include mat.form-field-theme($ebook-reader-theme);
+@include mat.input-theme($ebook-reader-theme);
+
+.mat-form-field-label {
+  overflow: visible !important;
+}

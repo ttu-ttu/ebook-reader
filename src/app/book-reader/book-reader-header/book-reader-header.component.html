@@ -1,0 +1,7 @@
+<app-pure-book-reader-header
+  [autoScrollMultiplier]="(autoScrollMultiplier$ | async) ?? 0"
+  [showFullscreenButton]="showFullscreenButton"
+  (bookmarkClick)="bookmarkClick.emit()"
+  (fullscreenClick)="onFullscreenClick()"
+  (bookManagerClick)="onBookManagerClick()"
+  (leavingPage)="leavingPage.emit()"></app-pure-book-reader-header>

@@ -1,0 +1,8 @@
+<h1 mat-dialog-title>Update Available</h1>
+<div mat-dialog-content>
+  <p class="pb-5">An update is available, reload now?</p>
+</div>
+<div mat-dialog-actions class="flex justify-end">
+  <button mat-button (click)="dialogRef.close()">Later</button>
+  <button mat-button color="primary" cdkFocusInitial (click)="dialogRef.close(1)">Reload</button>
+</div>

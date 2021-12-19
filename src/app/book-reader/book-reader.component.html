@@ -1,0 +1,17 @@
+<app-pure-book-reader
+  [bookContent]="(bookContent$ | async) ?? ''"
+  [exploredCharCount]="(exploredCharCount$ | async) ?? 0"
+  [bookCharCount]="(bookCharCount$ | async) ?? 0"
+  [showFooter]="(showFooter$ | async) ?? false"
+  [bookmarkData]="(bookmarkData$ | async) ?? undefined"
+  [verticalMode]="(verticalMode$ | async) ?? false"
+  [footerTextColor]="(footerTextColor$ | async) ?? ''"
+  [showHeader]="(showHeader$ | async) ?? false"
+  (headerMouseClick)="showHeader$.next(true)"
+  (headerMouseClickOutside)="showHeader$.next(false)"
+  (bookmarkClick)="onBookmarkClick()"
+  (contentResize)="contentResize$.next($event)"
+  (contentLoad)="onContentLoad($event)"
+  (contentReady)="onContentReady()"
+  (footerClick)="showFooter$.next(!showFooter$.getValue())"
+  (leavingPage)="onBookmarkClick()"></app-pure-book-reader>

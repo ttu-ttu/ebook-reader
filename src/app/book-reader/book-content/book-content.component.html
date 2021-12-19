@@ -1,0 +1,18 @@
+<app-pure-book-content
+  [htmlContent]="htmlContent"
+  [fontColor]="(fontColor$ | async) ?? ''"
+  [backgroundColor]="(backgroundColor$ | async) ?? ''"
+  [hintFuriganaFontColor]="(hintFuriganaFontColor$ | async) ?? ''"
+  [hintFuriganaShadowColor]="(hintFuriganaShadowColor$ | async) ?? ''"
+  [verticalMode]="(verticalMode$ | async) ?? false"
+  [fontSize]="(fontSize$ | async) ?? 16"
+  [fontFamilyGroupOne]="(fontFamilyGroupOne$ | async) ?? ''"
+  [fontFamilyGroupTwo]="(fontFamilyGroupTwo$ | async) ?? ''"
+  [hideSpoilerImage]="(hideSpoilerImage$ | async) ?? false"
+  [hideFurigana]="(hideFurigana$ | async) ?? false"
+  [furiganaStyle]="(furiganaStyle$ | async) ?? defaultFuriganaStyle"
+  [secondDimensionMaxValue]="(secondDimensionMaxValue$ | async) ?? 0"
+  [firstDimensionMargin]="(firstDimensionMargin$ | async) ?? 0"
+  (contentResize)="contentResize.emit($event)"
+  (contentLoad)="contentLoad.emit($event)"
+  (contentReady)="contentReady.emit($event)"></app-pure-book-content>

@@ -1,37 +1,44 @@
 /**
- * @licence
+ * @license BSD-3-Clause
  * Copyright (c) 2021, ッツ Reader Authors
  * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
  */
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { BookManagerComponent } from './book-manager/book-manager.component';
-import { ReaderComponent } from './reader/reader.component';
 
 const routes: Routes = [
   {
     path: 'b/:identifier',
-    component: ReaderComponent,
+    loadChildren: () =>
+      import('./book-reader/book-reader.module').then(
+        (m) => m.BookReaderModule
+      ),
   },
   {
     path: 'manage',
-    component: BookManagerComponent,
+    loadChildren: () =>
+      import('./book-manager/book-manager.module').then(
+        (m) => m.BookManagerModule
+      ),
+  },
+  {
+    path: 'settings',
+    loadChildren: () =>
+      import('./settings/settings.module').then((m) => m.SettingsModule),
   },
   {
     path: '**',
-    redirectTo: '',
-  }
+    redirectTo: '/manage',
+  },
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, {
-    initialNavigation: 'enabled',
-  })],
+  imports: [
+    RouterModule.forRoot(routes, {
+      initialNavigation: 'enabled',
+    }),
+  ],
   exports: [RouterModule],
 })
-export class AppRoutingModule {
-}
+export class AppRoutingModule {}

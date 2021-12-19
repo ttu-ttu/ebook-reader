@@ -1,340 +1,125 @@
 /**
- * @licence
+ * @license BSD-3-Clause
  * Copyright (c) 2021, ッツ Reader Authors
  * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
  */
 
-import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, ApplicationRef } from '@angular/core';
-import { DomSanitizer, Title } from '@angular/platform-browser';
+import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons/faSignOutAlt';
-import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
-import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
-import { IDBPDatabase } from 'idb';
-import { Subject, BehaviorSubject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
-import { BookTitle, BookManagerService } from './../book-manager.service';
-import { BooksDb, DatabaseService } from './../database.service';
-import { EbookDisplayManagerService } from './../ebook-display-manager.service';
+import { map, startWith } from 'rxjs/operators';
+import { DatabaseService } from '../database/books-db/database.service';
+import { LogReportDialogComponent } from '../log-report-dialog/log-report-dialog.component';
+import { LogReportDialogData } from '../log-report-dialog/types';
+import BookCard from '../models/book-card.model';
+import { StoreService } from '../store.service';
+import loadEpub from '../utils/file-loaders/epub/load-epub';
+import loadHtmlz from '../utils/file-loaders/htmlz/load-htmlz';
+import formatPageTitle from '../utils/format-page-title';
+import { LoggerService } from '../utils/logger/logger.service';
+
+const supportedExtRegex = /\.(?:htmlz|epub)$/;
 
 @Component({
   selector: 'app-book-manager',
   templateUrl: './book-manager.component.html',
   styleUrls: ['./book-manager.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BookManagerComponent implements OnInit, OnDestroy {
-  @ViewChild('scroll', { static: true }) scroller!: any;
+export class BookManagerComponent {
+  isLoading$ = this.db.dataIds$.pipe(
+    startWith(0),
+    map((x) => x === 0)
+  );
 
-  faSignOutAlt = faSignOutAlt;
-  faTimes = faTimes;
-  faTrash = faTrash;
+  isImporting$ = this.store.isImportingBooks$;
 
-  changeDetection$ = new Subject();
-  queue$ = new BehaviorSubject<BookTitle[]>([]);
-  db: IDBPDatabase<BooksDb> | undefined;
-  handleQueue = false;
-  books: BookTitle[] = [];
-  blobUrls: string[] = [];
-  currentBookId = 0;
-  selectedBooks = 0;
+  bookIds$ = this.db.dataIds$;
 
-  private destroy$ = new Subject<void>();
+  selectedBookIds = new Set<number>();
+
+  selectMode = false;
 
   constructor(
-    private applicationRef: ApplicationRef,
-    private bookManagerService: BookManagerService,
-    private changeDetectorRef: ChangeDetectorRef,
-    private databaseService: DatabaseService,
-    private domSanitizer: DomSanitizer,
-    private ebookDisplayManagerService: EbookDisplayManagerService,
+    private db: DatabaseService,
+    private store: StoreService,
     private router: Router,
-    private title: Title
+    private dialog: MatDialog,
+    private logger: LoggerService,
+    @Inject(DOCUMENT) private document: Document,
+    title: Title
   ) {
-    this.changeDetection$.pipe(takeUntil(this.destroy$), debounceTime(100)).subscribe(() => {
-      // tslint:disable-next-line: no-string-literal
-      if (this.applicationRef['_runningTick']) {
-        return;
-      }
-      applicationRef.tick();
-    });
-    this.queue$.pipe(takeUntil(this.destroy$)).subscribe(this.updateBookItems.bind(this));
-    this.title.setTitle('Book Manager | ッツ Ebook Reader');
-    this.bookManagerService.managerIsOpen$.next(true);
+    title.setTitle(formatPageTitle('Book Manager'));
   }
 
-  async ngOnInit() {
-    this.db = this.db || await this.databaseService.db;
+  async onFilesChange(fileList: FileList | File[]) {
+    this.store.isImportingBooks$.next(true);
+    this.store.importBookProgress$.next(0);
+    const files = Array.from(fileList).filter((f) =>
+      supportedExtRegex.test(f.name)
+    );
+    let latestDataId: number | undefined;
+    let hasError = false;
 
-    if (null === window.localStorage.getItem('covers-created')) {
-      await this.updateCoverData().then(() => {
-        window.localStorage.setItem('covers-created', 'y');
-      }).catch(() => { });
-    }
-
-    this.init();
-  }
-
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.bookManagerService.managerIsOpen$.next(false);
-  }
-
-  async updateBookItems(data: BookTitle[]) {
-
-    if (!this.handleQueue) {
-      return;
-    }
-
-    let firstIndex;
-    let lastIndex;
-
-    for (let index = 0, length = data.length; index < length; index++) {
-      const element = data[index];
-
-      if (!element.wasVisible) {
-        element.wasVisible = true;
-
-        if (!firstIndex) {
-          firstIndex = element.id;
-        } else {
-          lastIndex = element.id;
-        }
-      }
-    }
-
-    if (!firstIndex) {
-      return;
-    }
-
-    if (!lastIndex) {
-      lastIndex = firstIndex;
-    }
-
-    const bookData = await this.db?.getAll('data', IDBKeyRange.bound(firstIndex, lastIndex, false, false));
-
-    if (!bookData) {
-      return;
-    }
-
-    for (let index = 0, length = bookData.length; index < length; index++) {
-      const element = bookData[index];
-      const book = data.find((item) => item.id === element.id);
-
-      if (!book) {
-        continue;
-      }
-
-      if (!(element.coverImage instanceof Blob)) {
-        book.coverLoaded = true;
-        this.queueChangeDetection();
-        continue;
-      }
-
-      const blobUrl = URL.createObjectURL(element.coverImage);
-      this.blobUrls.push(blobUrl);
-
-      book.useFallback = false;
-      book.cover = this.domSanitizer.bypassSecurityTrustUrl(blobUrl) as string;
-      this.queueChangeDetection();
-    }
-  }
-
-  queueChangeDetection() {
-    this.changeDetectorRef.markForCheck();
-    this.changeDetection$.next();
-  }
-
-  async updateCoverData() {
-
-    this.db = this.db || await this.databaseService.db;
-    this.ebookDisplayManagerService.loadingFiles$.next({ title: 'Update Cover Data...', progress: '0%' });
-
-    let errors = 0;
-    const bookIds = await this.db.getAllKeys('data');
-
-    for (let index = 0, length = bookIds.length; index < length; index++) {
-      const bookId = bookIds[index];
-
-      let book;
+    for (let i = 0; i < files.length; i += 1) {
+      const file = files[i];
 
       try {
-        this.ebookDisplayManagerService.loadingFiles$.next({
-          title: 'Update Cover Data...',
-          progress: `${Math.round(index / length * 100)}%`
-        });
+        /* eslint-disable no-await-in-loop */
+        const storeData = file.name.endsWith('.epub')
+          ? await loadEpub(file, this.document)
+          : await loadHtmlz(file, this.document);
 
-        book = await this.db.get('data', bookId);
+        latestDataId = await this.db.upsertData(storeData);
+        /* eslint-enable no-await-in-loop */
+      } catch (ex) {
+        this.logger.error(ex);
+        hasError = true;
+      }
+      this.store.importBookProgress$.next(i / files.length);
+    }
+    this.store.isImportingBooks$.next(false);
 
-        if (!book) {
-          throw new Error('Book needs to be defined');
+    if (hasError) {
+      this.dialog.open<LogReportDialogComponent, LogReportDialogData>(
+        LogReportDialogComponent,
+        {
+          data: {
+            message: 'Failed to import some books',
+          },
         }
+      );
+    }
 
-        if (book.hasThumb) {
-          continue;
-        }
+    if (files.length === 1 && latestDataId !== undefined) {
+      this.navigateToBookId(latestDataId);
+    }
+  }
 
-        book.coverImage = await this.bookManagerService.getCoverThumbnail(book.title, book.blobs);
-        book.hasThumb = true;
+  onOpenBookClick(bookCard: BookCard) {
+    this.db.putLastItem(bookCard.id);
+    this.navigateToBookId(bookCard.id);
+  }
 
-        await this.db.put('data', book);
-      } catch (error) {
+  async onRemoveClick(bookIds: number[]) {
+    this.db.deleteData(bookIds);
+  }
 
-        errors++;
-        console.error(`Cover Import failed${book ? ` for ${book.title}` : ''}: ${error.message}...`);
+  onBugReportClick() {
+    this.dialog.open<LogReportDialogComponent, LogReportDialogData>(
+      LogReportDialogComponent,
+      {
+        data: {
+          title: 'Bug Report',
+          message: 'Please include the attached file for your report',
+        },
       }
-    }
-
-    if (errors) {
-      alert(`${errors} Cover Import(s) failed...`);
-    }
-
-    this.ebookDisplayManagerService.loadingFiles$.next(undefined);
+    );
   }
 
-  async init() {
-    try {
-      const fallbackCover = this.bookManagerService.getFallbackCover();
-      const [keysAndTitles, bookmarks, currentBookId] = await this.bookManagerService.getBookCoverData();
-      const entries = Object.entries(keysAndTitles);
-
-      if (!entries.length) {
-        return this.closeManager();
-      }
-
-      let bookIndex = 0;
-
-      this.currentBookId = currentBookId;
-
-      for (const [key, bookTitle] of entries) {
-        const bookId = parseInt(key, 10);
-        const progress = bookmarks.find(bookmark => bookmark.dataId === bookId)?.progress || '0%';
-
-        this.books.push({
-          id: bookId, cover: fallbackCover, title: bookTitle as string, progress, coverLoaded: false, isSelected: false,
-          useFallback: true, wasVisible: false
-        });
-
-        if (bookId === this.currentBookId) {
-          bookIndex = this.books.length - 1;
-        }
-      }
-
-      this.handleQueue = true;
-      this.queueChangeDetection();
-      this.scroller.scrollToIndex(bookIndex, true, 0, 0, () => {
-        this.ebookDisplayManagerService.loadingFile$.next(false);
-      });
-    } catch (error) {
-      alert(`Error opening Books: ${error.message}`);
-      this.ebookDisplayManagerService.loadingFile$.next(false);
-    }
-  }
-
-  async closeManager(updateLastItem = false) {
-    await this.revokeBlobUrls();
-    this.navigateTo(this.currentBookId, updateLastItem);
-  }
-
-  revokeBlobUrls() {
-    this.ebookDisplayManagerService.loadingFile$.next(true);
-
-    return new Promise((resolve) => {
-      for (let index = 0, length = this.blobUrls.length; index < length; index++) {
-        URL.revokeObjectURL(this.blobUrls[index]);
-      }
-      setTimeout(resolve);
-    });
-  }
-
-  processBookSelection(shallSelect: boolean) {
-    for (let index = 0, length = this.books.length; index < length; index++) {
-      this.books[index].isSelected = shallSelect;
-    }
-
-    this.selectedBooks = shallSelect ? this.books.length : 0;
-  }
-
-  trackByFunction(_INDEX: number, book: BookTitle) {
-    return book.id;
-  }
-
-  async executeDelete() {
-    const targetBooks: number[] = [];
-
-    targetBooks.push(...this.books.reduce(this.getSelectedBooksForDeletion, []));
-
-    if (!window.confirm(`Do you really want to delete the selected ${targetBooks.length} Book(s)?`)) {
-      return;
-    }
-
-    let currentBookDeleted = false;
-
-    try {
-      this.ebookDisplayManagerService.loadingFile$.next(true);
-
-      let errors = 0;
-
-      for (let index = 0, length = targetBooks.length; index < length; index++) {
-        const toBeDeleted = targetBooks[index];
-        const isCurrentBook = toBeDeleted === this.currentBookId;
-        if (!(await this.bookManagerService.deleteBook(targetBooks[index], isCurrentBook))) {
-          errors++;
-        } else if (isCurrentBook) {
-          currentBookDeleted = true;
-          this.currentBookId = 0;
-        }
-      }
-
-      if (errors) {
-        alert(`${errors} Deletion(s) failed`);
-      }
-
-      this.selectedBooks = 0;
-      this.books = this.books.filter(book => !targetBooks.includes(book.id));
-
-      if (this.books.length) {
-        this.queueChangeDetection();
-        this.ebookDisplayManagerService.loadingFile$.next(false);
-      } else {
-        this.closeManager(true);
-      }
-    } catch (error) {
-      alert(`Error on Deletion: ${error.message}`);
-      this.ebookDisplayManagerService.loadingFile$.next(false);
-    }
-  }
-
-  getSelectedBooksForDeletion(bookIds: number[], book: BookTitle) {
-    if (book.isSelected && book.id) {
-      bookIds.push(book.id);
-    }
-    return bookIds;
-  }
-
-  setImageToLoaded(book: BookTitle) {
-    if (book.wasVisible && !book.coverLoaded) {
-      book.coverLoaded = true;
-    }
-  }
-
-  handleSelection(event: any, book: any) {
-    book.isSelected = !book.isSelected;
-    this.selectedBooks += book.isSelected ? 1 : -1;
-    event.target.blur();
-  }
-
-  async navigateTo(nextId: number, updateLastItem = true) {
-    try {
-      await this.revokeBlobUrls();
-      await this.bookManagerService.navigateTo(nextId, updateLastItem && (this.currentBookId !== nextId || !this.currentBookId));
-    } catch (error) {
-      alert(`Navigation failed: ${error.message}`);
-      this.ebookDisplayManagerService.loadingFile$.next(false);
-    }
+  private navigateToBookId(bookId: number) {
+    this.router.navigate(['b', bookId]);
   }
 }

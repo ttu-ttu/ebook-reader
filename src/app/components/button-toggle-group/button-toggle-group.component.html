@@ -1,0 +1,11 @@
+<div class="-m-1">
+  <button
+    *ngFor="let option of options"
+    class="m-1 text-lg p-2 border rounded-md border-gray-400 bg-white"
+    [class.border-blue-300]="option.id === selectedOptionId"
+    [ngStyle]="option.style ?? {}"
+    (click)="selectedOptionIdChange.emit(option.id)"
+    mat-ripple>
+    {{ option.text }}
+  </button>
+</div>
