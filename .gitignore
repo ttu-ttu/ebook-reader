@@ -50,7 +50,6 @@ Thumbs.db
 test-files/
 .firebase/
 .firebaserc
-firebase.json
 .vscode/
 .devcontainer/
 .pnpm-store/
