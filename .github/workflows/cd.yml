@@ -6,6 +6,10 @@ on:
 jobs:
   build-and-deploy:
     name: Build and deploy
+    if: >-
+      startsWith(github.event.head_commit.message, 'feat') ||
+      startsWith(github.event.head_commit.message, 'fix') ||
+      startsWith(github.event.head_commit.message, 'perf')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
