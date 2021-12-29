@@ -4,33 +4,16 @@
  * All rights reserved.
  */
 
-import isElementGaiji from './is-element-gaiji';
+const isNotJapaneseRegex =
+  /[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]+/gimu;
 
-const isNotJapaneseRegex = /[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]+/gimu;
-
-export default function getCharacterCount(el: HTMLElement) {
-  const totalLength = countUnicodeCharacters(
-    el.innerText.replace(isNotJapaneseRegex, '')
+export default function getCharacterCount(node: Node) {
+  if (!node.textContent) {
+    return 0;
+  }
+  return countUnicodeCharacters(
+    node.textContent.replace(isNotJapaneseRegex, '')
   );
-  let totalRtLength = 0;
-  for (const rtTag of el.getElementsByTagName('rt')) {
-    totalRtLength += countUnicodeCharacters(
-      rtTag.innerText.replace(isNotJapaneseRegex, '')
-    );
-  }
-  let totalCustomCharLength = 0;
-  for (const spoilerEl of el.getElementsByClassName('spoiler-label')) {
-    totalCustomCharLength += countUnicodeCharacters(
-      (spoilerEl as HTMLElement).innerText.replace(isNotJapaneseRegex, '')
-    );
-  }
-  let imageTextCount = 0;
-  for (const imgTag of el.getElementsByTagName('img')) {
-    if (isElementGaiji(imgTag)) {
-      imageTextCount += 1;
-    }
-  }
-  return totalLength - totalRtLength - totalCustomCharLength + imageTextCount;
 }
 
 /**
