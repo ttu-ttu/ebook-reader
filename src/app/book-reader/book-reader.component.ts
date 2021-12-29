@@ -189,7 +189,8 @@ export class BookReaderComponent implements OnInit, OnDestroy {
         const calculator = new CharacterStatsCalculator(
           ev.value,
           verticalMode,
-          this.document.documentElement
+          this.document.documentElement,
+          this.document
         );
         this.calculator$.next(calculator);
         this.exploredCharCount$.next(0);
