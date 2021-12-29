@@ -30,9 +30,6 @@ export default class CharacterStatsCalculator {
       if (n.nodeName === 'RT') {
         return false;
       }
-      if (!n.textContent?.replace(/\s/g, '').length) {
-        return false;
-      }
       const isHidden =
         n instanceof HTMLElement &&
         (n.attributes.getNamedItem('aria-hidden') ||
@@ -41,6 +38,14 @@ export default class CharacterStatsCalculator {
         return false;
       }
       return true;
+    }).filter((n) => {
+      if (isNodeGaiji(n)) {
+        return true;
+      }
+      if (n.textContent?.replace(/\s/g, '').length) {
+        return true;
+      }
+      return false;
     });
 
     this.paragraphPos = Array(this.paragraphs.length);
@@ -113,7 +118,7 @@ export default class CharacterStatsCalculator {
 
   getNodeBoundingRect(node: Node) {
     const range = this.document.createRange();
-    range.selectNodeContents(node);
+    range.selectNode(node);
     return range.getBoundingClientRect();
   }
 }
@@ -122,7 +127,7 @@ function getTextNodeOrGaijiNodes(
   node: Node,
   filterFn: (n: Node) => boolean
 ): Node[] {
-  if (!node.hasChildNodes || !filterFn(node)) {
+  if (!node.hasChildNodes() || !filterFn(node)) {
     return [];
   }
 
