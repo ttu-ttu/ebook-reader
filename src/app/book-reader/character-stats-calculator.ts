@@ -7,54 +7,47 @@
 import binarySearch from '../utils/binary-search';
 import formatScrollPos from '../utils/format-scroll-pos';
 import getCharacterCount from '../utils/get-character-count';
+import isElementGaiji from '../utils/is-element-gaiji';
 
 export default class CharacterStatsCalculator {
   readonly charCount: number;
 
-  private readonly paragraphs: HTMLElement[];
+  private readonly paragraphs: Node[];
 
   private readonly paragraphPos: number[];
+
+  private paragraphPosToAccCharCount = new Map<number, number>();
 
   private readonly accumulatedCharCount: number[];
 
   constructor(
     public readonly containerEl: HTMLElement,
     private verticalMode: boolean,
-    private readonly scrollEl: HTMLElement
+    private readonly scrollEl: HTMLElement,
+    private readonly document: Document
   ) {
-    this.paragraphs = Array.from(containerEl.getElementsByTagName('p'));
-
-    if (this.paragraphs.length === 0) {
-      const potentialParagraphs = Array.from(containerEl.querySelectorAll('*'))
-        .filter(
-          (p): p is HTMLElement =>
-            p instanceof HTMLElement &&
-            !p.attributes.getNamedItem('aria-hidden') &&
-            p.parentElement?.tagName !== 'RUBY'
-        )
-        .filter((p) => {
-          for (const pChild of p.childNodes) {
-            if (
-              pChild.nodeType === Node.TEXT_NODE &&
-              pChild.textContent &&
-              pChild.textContent.trim().length > 0
-            ) {
-              return true;
-            }
-          }
-          return false;
-        });
-      const potentialParagraphsSet = new Set(potentialParagraphs);
-      this.paragraphs = potentialParagraphs.filter(
-        (p) => !potentialParagraphsSet.has(p.parentElement!)
-      );
-    }
+    this.paragraphs = getTextNodeOrGaijiNodes(containerEl, (n) => {
+      if (n.nodeName === 'RT') {
+        return false;
+      }
+      if (!n.textContent?.replace(/\s/g, '').length) {
+        return false;
+      }
+      const isHidden =
+        n instanceof HTMLElement &&
+        (n.attributes.getNamedItem('aria-hidden') ||
+          n.attributes.getNamedItem('hidden'));
+      if (isHidden) {
+        return false;
+      }
+      return true;
+    });
 
     this.paragraphPos = Array(this.paragraphs.length);
     this.accumulatedCharCount = [];
     let exploredCharCount = 0;
-    for (const el of this.paragraphs) {
-      exploredCharCount += getCharacterCount(el);
+    for (const node of this.paragraphs) {
+      exploredCharCount += isNodeGaiji(node) ? 1 : getCharacterCount(node);
       this.accumulatedCharCount.push(exploredCharCount);
     }
     this.charCount = exploredCharCount;
@@ -74,13 +67,29 @@ export default class CharacterStatsCalculator {
     const scrollElRight = this.verticalMode
       ? -scrollElRect.right
       : scrollElRect.top;
-    for (let i = 0; i < this.paragraphs.length; i += 1) {
-      const el = this.paragraphs[i];
 
-      const elRect = el.getBoundingClientRect();
-      const elLeft = this.verticalMode ? -elRect.left : elRect.bottom;
-      this.paragraphPos[i] = elLeft - scrollElRight;
+    const paragraphPosToIndices = new Map<number, number[]>();
+    for (let i = 0; i < this.paragraphs.length; i += 1) {
+      const node = this.paragraphs[i];
+
+      const nodeRect = this.getNodeBoundingRect(node);
+      const nodeLeft = this.verticalMode ? -nodeRect.left : nodeRect.bottom;
+      const paragraphPos = nodeLeft - scrollElRight;
+      this.paragraphPos[i] = paragraphPos;
+
+      const indices = paragraphPosToIndices.get(paragraphPos) || [];
+      paragraphPosToIndices.set(paragraphPos, indices);
+      indices.push(i);
     }
+
+    this.paragraphPosToAccCharCount = new Map(
+      Array.from(paragraphPosToIndices.entries()).map(
+        ([paragraphPos, indices]) => [
+          paragraphPos,
+          Math.max(...indices.map((i) => this.accumulatedCharCount[i])),
+        ]
+      )
+    );
   }
 
   calcExploredCharCount() {
@@ -94,11 +103,45 @@ export default class CharacterStatsCalculator {
 
   getCharCountByScrollPos(scrollPos: number) {
     const index = binarySearch(this.paragraphPos, scrollPos, true);
-    return this.accumulatedCharCount[index] || 0;
+    return this.paragraphPosToAccCharCount.get(this.paragraphPos[index]) || 0;
   }
 
   getScrollPosByCharCount(charCount: number) {
     const index = binarySearch(this.accumulatedCharCount, charCount, true);
     return formatScrollPos(this.paragraphPos[index], this.verticalMode);
   }
+
+  getNodeBoundingRect(node: Node) {
+    const range = this.document.createRange();
+    range.selectNodeContents(node);
+    return range.getBoundingClientRect();
+  }
+}
+
+function getTextNodeOrGaijiNodes(
+  node: Node,
+  filterFn: (n: Node) => boolean
+): Node[] {
+  if (!node.hasChildNodes || !filterFn(node)) {
+    return [];
+  }
+
+  return Array.from(node.childNodes)
+    .flatMap((n) => {
+      if (n.nodeType === Node.TEXT_NODE) {
+        return [n];
+      }
+      if (isNodeGaiji(n)) {
+        return [n];
+      }
+      return getTextNodeOrGaijiNodes(n, filterFn);
+    })
+    .filter(filterFn);
+}
+
+function isNodeGaiji(node: Node) {
+  if (!(node instanceof HTMLImageElement)) {
+    return false;
+  }
+  return isElementGaiji(node);
 }
