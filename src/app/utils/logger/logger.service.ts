@@ -96,7 +96,7 @@ function formatArgs(args: any[], onResultUpdate: () => void) {
   for (let i = 0; i < args.length; i += 1) {
     const originalObject = args[i];
     if (originalObject instanceof Error) {
-      result[i] = originalObject.stack || originalObject.message;
+      result[i] = formatErrorAsString(originalObject);
       StackTrace.fromError(originalObject)
         .then((stackFrames) => {
           result[i] = {
@@ -112,4 +112,16 @@ function formatArgs(args: any[], onResultUpdate: () => void) {
     }
   }
   return result;
+}
+
+function formatErrorAsString(error: Error) {
+  if (error.stack) {
+    return error.stack;
+  }
+
+  if (error.name && error.message) {
+    return `${error.name}: ${error.message}`;
+  }
+
+  return error.message || error.name;
 }
