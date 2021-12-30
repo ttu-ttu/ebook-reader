@@ -13,6 +13,8 @@ import { map, startWith } from 'rxjs/operators';
 import { DatabaseService } from '../database/books-db/database.service';
 import { LogReportDialogComponent } from '../log-report-dialog/log-report-dialog.component';
 import { LogReportDialogData } from '../log-report-dialog/types';
+import { MessageDialogComponent } from '../message-dialog/message-dialog.component';
+import { MessageDialogData } from '../message-dialog/types';
 import BookCard from '../models/book-card.model';
 import { StoreService } from '../store.service';
 import loadEpub from '../utils/file-loaders/epub/load-epub';
@@ -60,6 +62,19 @@ export class BookManagerComponent {
     const files = Array.from(fileList).filter((f) =>
       supportedExtRegex.test(f.name)
     );
+
+    if (!files.length) {
+      this.dialog.open<MessageDialogComponent, MessageDialogData>(
+        MessageDialogComponent,
+        {
+          data: {
+            title: 'Upload Failed',
+            message: 'File must be HTMLZ or EPUB',
+          },
+        }
+      );
+    }
+
     let latestDataId: number | undefined;
     let hasError = false;
 
