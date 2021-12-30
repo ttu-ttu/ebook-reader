@@ -6,15 +6,16 @@
 
 import { DOCUMENT } from '@angular/common';
 import {
-  Inject,
-  Component,
   ChangeDetectionStrategy,
-  Output,
+  Component,
   EventEmitter,
+  Inject,
   Input,
+  Output,
 } from '@angular/core';
 import { DatabaseService } from 'src/app/database/books-db/database.service';
 import { StoreService } from 'src/app/store.service';
+import { FullscreenService } from 'src/app/utils/fullscreen.service';
 
 @Component({
   selector: 'app-book-reader-header',
@@ -32,20 +33,21 @@ export class BookReaderHeaderComponent {
   @Output()
   leavingPage = new EventEmitter<void>();
 
-  showFullscreenButton = this.document.fullscreenEnabled ?? false;
+  showFullscreenButton = this.fullscreenService.fullscreenEnabled;
 
   constructor(
     @Inject(DOCUMENT) private document: Document,
     private store: StoreService,
-    private db: DatabaseService
+    private db: DatabaseService,
+    private fullscreenService: FullscreenService
   ) {}
 
   onFullscreenClick() {
-    if (!this.document.fullscreenElement) {
-      this.document.documentElement.requestFullscreen();
+    if (!this.fullscreenService.fullscreenElement) {
+      this.fullscreenService.requestFullscreen(this.document.documentElement);
       return;
     }
-    this.document.exitFullscreen();
+    this.fullscreenService.exitFullscreen();
   }
 
   onBookManagerClick() {
