@@ -62,7 +62,7 @@ specifiers:
   idb: 7.0.0
   jest: 27.4.5
   jest-preset-angular: 11.0.1
-  lint-staged: 12.1.4
+  lint-staged: 12.1.5
   lodash: 4.17.21
   lodash-es: 4.17.21
   path-browserify: 1.0.1
@@ -150,7 +150,7 @@ devDependencies:
   husky: 7.0.4
   jest: 27.4.5_ts-node@10.4.0
   jest-preset-angular: 11.0.1_9c7daf7e63376c675803ed12619fb8ef
-  lint-staged: 12.1.4
+  lint-staged: 12.1.5
   lodash: 4.17.21
   prettier: 2.5.1
   tailwindcss: 2.2.19_ts-node@10.4.0
@@ -7321,8 +7321,8 @@ packages:
   /lines-and-columns/1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
-  /lint-staged/12.1.4:
-    resolution: {integrity: sha512-RgDz9nsFsE0/5eL9Vat0AvCuk0+j5mEuzBIVfrRH5FRtt5wibYe8zTjZs2nuqLFrLAGQGYnj8+HJxolcj08i/A==}
+  /lint-staged/12.1.5:
+    resolution: {integrity: sha512-WyKb+0sNKDTd1LwwAfTBPp0XmdaKkAOEbg4oHE4Kq2+oQVchg/VAcjVQtSqZih1izNsTURjc2EkhG/syRQUXdA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     hasBin: true
     dependencies:

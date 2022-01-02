@@ -86,7 +86,7 @@
     "husky": "7.0.4",
     "jest": "27.4.5",
     "jest-preset-angular": "11.0.1",
-    "lint-staged": "12.1.4",
+    "lint-staged": "12.1.5",
     "lodash": "4.17.21",
     "prettier": "2.5.1",
     "tailwindcss": "2.2.19",
