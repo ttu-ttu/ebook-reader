@@ -35,7 +35,7 @@ specifiers:
   '@tailwindcss/aspect-ratio': 0.4.0
   '@tailwindcss/line-clamp': 0.3.0
   '@types/balanced-match': 1.0.2
-  '@types/jest': ^27.0.3
+  '@types/jest': 27.4.0
   '@types/lodash-es': 4.17.5
   '@types/node': 16.11.17
   '@types/ua-parser-js': 0.7.36
@@ -111,7 +111,7 @@ dependencies:
 
 devDependencies:
   '@angular-builders/custom-webpack': 13.0.0_eef094252798b9c7c30d1d66b1dff6ea
-  '@angular-builders/jest': 13.0.2_bc44f5663be9453ef771eda5099fca41
+  '@angular-builders/jest': 13.0.2_b6867f49b0d4825a5b3a1c31dbd5c8f9
   '@angular-devkit/build-angular': 13.0.4_bf7a72ade81a6036a02c06f6b11df98c
   '@angular-eslint/builder': 13.0.1_eslint@8.6.0+typescript@4.4.4
   '@angular-eslint/eslint-plugin': 13.0.1_eslint@8.6.0+typescript@4.4.4
@@ -128,7 +128,7 @@ devDependencies:
   '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@2.2.19
   '@tailwindcss/line-clamp': 0.3.0_tailwindcss@2.2.19
   '@types/balanced-match': 1.0.2
-  '@types/jest': 27.0.3
+  '@types/jest': 27.4.0
   '@types/lodash-es': 4.17.5
   '@types/node': 16.11.17
   '@types/ua-parser-js': 0.7.36
@@ -149,7 +149,7 @@ devDependencies:
   fake-indexeddb: 3.1.7
   husky: 7.0.4
   jest: 27.4.5_ts-node@10.4.0
-  jest-preset-angular: 11.0.1_bc44f5663be9453ef771eda5099fca41
+  jest-preset-angular: 11.0.1_b6867f49b0d4825a5b3a1c31dbd5c8f9
   lint-staged: 12.1.4
   lodash: 4.17.21
   prettier: 2.5.1
@@ -213,7 +213,7 @@ packages:
       - webpack-cli
     dev: true
 
-  /@angular-builders/jest/13.0.2_bc44f5663be9453ef771eda5099fca41:
+  /@angular-builders/jest/13.0.2_b6867f49b0d4825a5b3a1c31dbd5c8f9:
     resolution: {integrity: sha512-lBr+Aw1PGVev/Cz3jpD+wZzoxIGOujFzxc5IAL2l5+LTzHGHxi+/f+rKIIidBjRm3iORqFwoxJXXm9StSIjbWA==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
@@ -222,7 +222,7 @@ packages:
       '@angular-devkit/architect': 0.1301.1
       '@angular-devkit/core': 13.1.1
       jest: 27.4.5_ts-node@10.4.0
-      jest-preset-angular: 11.0.1_bc44f5663be9453ef771eda5099fca41
+      jest-preset-angular: 11.0.1_b6867f49b0d4825a5b3a1c31dbd5c8f9
       lodash: 4.17.21
     transitivePeerDependencies:
       - '@angular/compiler-cli'
@@ -3788,8 +3788,8 @@ packages:
       '@types/istanbul-lib-report': 3.0.0
     dev: true
 
-  /@types/jest/27.0.3:
-    resolution: {integrity: sha512-cmmwv9t7gBYt7hNKH5Spu7Kuu/DotGa+Ff+JGRKZ4db5eh8PnKS4LuebJ3YLUoyOyIHraTGyULn23YtEAm0VSg==}
+  /@types/jest/27.4.0:
+    resolution: {integrity: sha512-gHl8XuC1RZ8H2j5sHv/JqsaxXkDDM9iDOgu0Wp8sjs4u/snb2PVehyWXJPr+ORA0RPpgw231mnutWI1+0hgjIQ==}
     dependencies:
       jest-diff: 27.4.2
       pretty-format: 27.4.2
@@ -8283,7 +8283,7 @@ packages:
       jest-resolve: 27.4.5
     dev: true
 
-  /jest-preset-angular/11.0.1_bc44f5663be9453ef771eda5099fca41:
+  /jest-preset-angular/11.0.1_b6867f49b0d4825a5b3a1c31dbd5c8f9:
     resolution: {integrity: sha512-7img58VmxvPtwOrkEEczDbV3cjdO/1qzB8Edbde8/e3GJIIk+6LcPnHOLw+dagJxZhcWagYGbqNbR7dxqntOBQ==}
     engines: {node: ^12.20.0 || ^14.15.0 || >=16.10.0}
     peerDependencies:
@@ -8298,7 +8298,7 @@ packages:
       esbuild: 0.13.13
       jest-environment-jsdom: 27.4.4
       pretty-format: 27.4.2
-      ts-jest: 27.1.2_20509568f6864f8cdf9c99ba9b5a4e64
+      ts-jest: 27.1.2_184ac58cde43e8e5bb4f4dd858cc2c7a
     transitivePeerDependencies:
       - '@babel/core'
       - '@types/jest'
@@ -11638,7 +11638,7 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /ts-jest/27.1.2_20509568f6864f8cdf9c99ba9b5a4e64:
+  /ts-jest/27.1.2_184ac58cde43e8e5bb4f4dd858cc2c7a:
     resolution: {integrity: sha512-eSOiJOWq6Hhs6Khzk5wKC5sgWIXgXqOCiIl1+3lfnearu58Hj4QpE5tUhQcA3xtZrELbcvAGCsd6HB8OsaVaTA==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
     hasBin: true
@@ -11659,7 +11659,7 @@ packages:
       esbuild:
         optional: true
     dependencies:
-      '@types/jest': 27.0.3
+      '@types/jest': 27.4.0
       bs-logger: 0.2.6
       esbuild: 0.13.13
       fast-json-stable-stringify: 2.1.0
