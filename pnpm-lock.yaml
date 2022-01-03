@@ -52,7 +52,7 @@ specifiers:
   eslint-config-airbnb-typescript: 16.1.0
   eslint-config-prettier: 8.3.0
   eslint-plugin-header: 3.1.1
-  eslint-plugin-import: 2.25.3
+  eslint-plugin-import: 2.25.4
   eslint-plugin-license-header: 0.3.0
   eslint-plugin-rxjs: 4.0.4
   eslint-plugin-rxjs-angular: 2.0.0
@@ -138,11 +138,11 @@ devDependencies:
   cypress: 9.2.0
   cypress-file-upload: 5.0.8_cypress@9.2.0
   eslint: 8.6.0
-  eslint-config-airbnb-base: 15.0.0_b54597effeb7d09a84a334cc3c3dadae
-  eslint-config-airbnb-typescript: 16.1.0_e19ca65bd6003a244b0428f0da484453
+  eslint-config-airbnb-base: 15.0.0_b5a36b8c1535387c8dd00eff7ec6b551
+  eslint-config-airbnb-typescript: 16.1.0_f71ceeff220d89a77063227e87097572
   eslint-config-prettier: 8.3.0_eslint@8.6.0
   eslint-plugin-header: 3.1.1_eslint@8.6.0
-  eslint-plugin-import: 2.25.3_eslint@8.6.0
+  eslint-plugin-import: 2.25.4_eslint@8.6.0
   eslint-plugin-license-header: 0.3.0
   eslint-plugin-rxjs: 4.0.4_eslint@8.6.0+typescript@4.4.4
   eslint-plugin-rxjs-angular: 2.0.0_eslint@8.6.0+typescript@4.4.4
@@ -5219,7 +5219,7 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /eslint-config-airbnb-base/15.0.0_b54597effeb7d09a84a334cc3c3dadae:
+  /eslint-config-airbnb-base/15.0.0_b5a36b8c1535387c8dd00eff7ec6b551:
     resolution: {integrity: sha512-xaX3z4ZZIcFLvh2oUNvcX5oEofXda7giYmuplVxoOg5A7EXJMrUyqRgR+mhDhPK8LZ4PttFOBvCYDbX3sUoUig==}
     engines: {node: ^10.12.0 || >=12.0.0}
     peerDependencies:
@@ -5228,13 +5228,13 @@ packages:
     dependencies:
       confusing-browser-globals: 1.0.10
       eslint: 8.6.0
-      eslint-plugin-import: 2.25.3_eslint@8.6.0
+      eslint-plugin-import: 2.25.4_eslint@8.6.0
       object.assign: 4.1.2
       object.entries: 1.1.5
       semver: 6.3.0
     dev: true
 
-  /eslint-config-airbnb-typescript/16.1.0_e19ca65bd6003a244b0428f0da484453:
+  /eslint-config-airbnb-typescript/16.1.0_f71ceeff220d89a77063227e87097572:
     resolution: {integrity: sha512-W5Cq20KpEx5ZLC54bnVrC37zq2+WD956Kp/Ma3nYFRjT1v9KM63v+DPkrrmmrVqrlDKaD0ivm/qeYmyHV6qKlw==}
     peerDependencies:
       '@typescript-eslint/eslint-plugin': ^5.0.0
@@ -5242,7 +5242,7 @@ packages:
     dependencies:
       '@typescript-eslint/eslint-plugin': 5.8.1_a616fb7a7745d8242fa892a237c10ebe
       '@typescript-eslint/parser': 5.8.1_eslint@8.6.0+typescript@4.4.4
-      eslint-config-airbnb-base: 15.0.0_b54597effeb7d09a84a334cc3c3dadae
+      eslint-config-airbnb-base: 15.0.0_b5a36b8c1535387c8dd00eff7ec6b551
     transitivePeerDependencies:
       - eslint
       - eslint-plugin-import
@@ -5279,13 +5279,12 @@ packages:
       resolve: 1.20.0
     dev: true
 
-  /eslint-module-utils/2.7.1:
-    resolution: {integrity: sha512-fjoetBXQZq2tSTWZ9yWVl2KuFrTZZH3V+9iD1V1RfpDgxzJR+mPd/KZmMiA8gbPqdBzpNiEHOuT7IYEWxrH0zQ==}
+  /eslint-module-utils/2.7.2:
+    resolution: {integrity: sha512-zquepFnWCY2ISMFwD/DqzaM++H+7PDzOpUvotJWm/y1BAFt5R4oeULgdrTejKqLkz7MA/tgstsUMNYc7wNdTrg==}
     engines: {node: '>=4'}
     dependencies:
       debug: 3.2.7
       find-up: 2.1.0
-      pkg-dir: 2.0.0
     dev: true
 
   /eslint-plugin-header/3.1.1_eslint@8.6.0:
@@ -5296,8 +5295,8 @@ packages:
       eslint: 8.6.0
     dev: true
 
-  /eslint-plugin-import/2.25.3_eslint@8.6.0:
-    resolution: {integrity: sha512-RzAVbby+72IB3iOEL8clzPLzL3wpDrlwjsTBAQXgyp5SeTqqY+0bFubwuo+y/HLhNZcXV4XqTBO4LGsfyHIDXg==}
+  /eslint-plugin-import/2.25.4_eslint@8.6.0:
+    resolution: {integrity: sha512-/KJBASVFxpu0xg1kIBn9AUa8hQVnszpwgE7Ld0lKAlx7Ie87yzEzCgSkekt+le/YVhiaosO4Y14GDAOc41nfxA==}
     engines: {node: '>=4'}
     peerDependencies:
       eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8
@@ -5308,7 +5307,7 @@ packages:
       doctrine: 2.1.0
       eslint: 8.6.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.1
+      eslint-module-utils: 2.7.2
       has: 1.0.3
       is-core-module: 2.8.0
       is-glob: 4.0.3
@@ -8385,13 +8384,6 @@ packages:
       hdr-histogram-percentiles-obj: 3.0.0
     optionalDependencies:
       nice-napi: 1.0.2
-
-  /pkg-dir/2.0.0:
-    resolution: {integrity: sha1-9tXREJ4Z1j7fQo4L1X4Sd3YVM0s=}
-    engines: {node: '>=4'}
-    dependencies:
-      find-up: 2.1.0
-    dev: true
 
   /pkg-dir/4.2.0:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
