@@ -57,7 +57,7 @@ specifiers:
   eslint-plugin-rxjs: 4.0.4
   eslint-plugin-rxjs-angular: 2.0.0
   fake-indexeddb: 3.1.7
-  fast-xml-parser: 3.21.1
+  fast-xml-parser: 4.0.0
   husky: 7.0.4
   idb: 7.0.0
   jest: 27.4.5
@@ -98,7 +98,7 @@ dependencies:
   '@zip.js/zip.js': 2.3.23
   balanced-match: 2.0.0
   core-js: 3.20.2
-  fast-xml-parser: 3.21.1
+  fast-xml-parser: 4.0.0
   idb: 7.0.0
   lodash-es: 4.17.21
   path-browserify: 1.0.1
@@ -5619,11 +5619,11 @@ packages:
     resolution: {integrity: sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=}
     dev: true
 
-  /fast-xml-parser/3.21.1:
-    resolution: {integrity: sha512-FTFVjYoBOZTJekiUsawGsSYV9QL0A+zDYCRj7y34IO6Jg+2IMYEtQa+bbictpdpV8dHxXywqU7C0gRDEOFtBFg==}
+  /fast-xml-parser/4.0.0:
+    resolution: {integrity: sha512-6M/FCTS8IlbR1T9OrDIoPkDtSpq1MXz2hg7eTXbsEVRSfEqCCpLUT93jO1p2Pdxpz9BFdW7SHWCZhIDw7wWD/Q==}
     hasBin: true
     dependencies:
-      strnum: 1.0.4
+      strnum: 1.0.5
     dev: false
 
   /fastq/1.13.0:
@@ -9643,8 +9643,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /strnum/1.0.4:
-    resolution: {integrity: sha512-lMzNMfDpaQOLt4B2mEbfzYS0+T7dvCXeojnlGf6f1AygvWDMcWyXYaLbyICfjVu29sErR8fnRagQfBW/N/hGgw==}
+  /strnum/1.0.5:
+    resolution: {integrity: sha512-J8bbNyKKXl5qYcR36TIO8W3mVGVHrmmxsd5PAItGkmyzwJvybiw2IVq5nqd0i4LSNSkB/sx9VHllbfFdr9k1JA==}
     dev: false
 
   /stylus-loader/6.2.0_stylus@0.55.0+webpack@5.65.0:
