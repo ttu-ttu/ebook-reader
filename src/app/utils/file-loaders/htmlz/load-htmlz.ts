@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-import { parse } from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
 import { LoadData } from '../types';
 import reduceObjToBlobs from '../utils/reduce-obj-to-blobs';
 import extractHtmlz from './extract-htmlz';
@@ -17,7 +17,8 @@ export default async function loadHtmlz(
 ): Promise<LoadData> {
   const data = await extractHtmlz(file);
   const element = getFormattedElementHtmlz(data, document);
-  const metadata = parse(data['metadata.opf'])?.package?.metadata;
+  const parser = new XMLParser();
+  const metadata = parser.parse(data['metadata.opf'])?.package?.metadata;
 
   const displayData = {
     title: file.name,
