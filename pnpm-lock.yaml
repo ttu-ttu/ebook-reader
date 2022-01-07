@@ -70,7 +70,7 @@ specifiers:
   resize-observer: 1.0.4
   rxjs: 7.5.1
   stacktrace-js: 2.0.2
-  tailwindcss: 3.0.8
+  tailwindcss: 3.0.11
   tailwindcss-elevation: 1.0.1
   ts-node: 10.4.0
   tslib: 2.3.1
@@ -94,7 +94,7 @@ dependencies:
   '@fortawesome/fontawesome-svg-core': 1.2.36
   '@fortawesome/free-regular-svg-icons': 5.15.4
   '@fortawesome/free-solid-svg-icons': 5.15.4
-  '@iharbeck/ngx-virtual-scroller': 13.0.3_c95ce8ce5c7ed72745b314038dd50b4b
+  '@iharbeck/ngx-virtual-scroller': 13.0.3_a9160b18908d153bb91ff71954810474
   '@zip.js/zip.js': 2.3.23
   balanced-match: 2.0.0
   core-js: 3.20.2
@@ -110,9 +110,9 @@ dependencies:
   zone.js: 0.11.4
 
 devDependencies:
-  '@angular-builders/custom-webpack': 13.0.0_5184e0c750b8a2e37759c23bedf27022
+  '@angular-builders/custom-webpack': 13.0.0_2fe24dd100c2bad30fa6c8310b716cd2
   '@angular-builders/jest': 13.0.2_194abc3c1a1475a02e429df08f8e029e
-  '@angular-devkit/build-angular': 13.1.2_72e2227f9b8615dcedb89b8fdad8a256
+  '@angular-devkit/build-angular': 13.1.2_bbb44b4faa6081e53c94204636213266
   '@angular-eslint/builder': 13.0.1_eslint@8.6.0+typescript@4.4.4
   '@angular-eslint/eslint-plugin': 13.0.1_eslint@8.6.0+typescript@4.4.4
   '@angular-eslint/eslint-plugin-template': 13.0.1_eslint@8.6.0+typescript@4.4.4
@@ -125,8 +125,8 @@ devDependencies:
   '@cypress/schematic': 1.6.0
   '@ngneat/spectator': 10.0.0_57bdd909d434ce71950943aee83d9e3f
   '@open-wc/webpack-import-meta-loader': 0.4.7
-  '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.8
-  '@tailwindcss/line-clamp': 0.3.0_tailwindcss@3.0.8
+  '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.11
+  '@tailwindcss/line-clamp': 0.3.0_tailwindcss@3.0.11
   '@types/balanced-match': 1.0.2
   '@types/jest': 27.4.0
   '@types/lodash-es': 4.17.5
@@ -153,8 +153,8 @@ devDependencies:
   lint-staged: 12.1.5
   lodash: 4.17.21
   prettier: 2.5.1
-  tailwindcss: 3.0.8_ts-node@10.4.0
-  tailwindcss-elevation: 1.0.1_tailwindcss@3.0.8
+  tailwindcss: 3.0.11_ts-node@10.4.0
+  tailwindcss-elevation: 1.0.1_tailwindcss@3.0.11
   ts-node: 10.4.0_8fee0dbf39ae8459f66ff7817e3967f7
   typescript: 4.4.4
 
@@ -167,12 +167,12 @@ packages:
       '@jridgewell/resolve-uri': 1.0.0
       sourcemap-codec: 1.4.8
 
-  /@angular-builders/custom-webpack/13.0.0_5184e0c750b8a2e37759c23bedf27022:
+  /@angular-builders/custom-webpack/13.0.0_2fe24dd100c2bad30fa6c8310b716cd2:
     resolution: {integrity: sha512-b+xcbPKu7vwKBLwO/dQQsfKB6IsLwo0KWA9ifilf0RGCuLF3a8RcLEedHa6JKUCrDcHg/mcojjQ2Nh3+jncSJA==}
     engines: {node: '>=12.20.0'}
     dependencies:
       '@angular-devkit/architect': 0.1301.1
-      '@angular-devkit/build-angular': 13.1.2_72e2227f9b8615dcedb89b8fdad8a256
+      '@angular-devkit/build-angular': 13.1.2_bbb44b4faa6081e53c94204636213266
       '@angular-devkit/core': 13.1.1
       lodash: 4.17.21
       ts-node: 10.4.0_8fee0dbf39ae8459f66ff7817e3967f7
@@ -258,7 +258,7 @@ packages:
     transitivePeerDependencies:
       - chokidar
 
-  /@angular-devkit/build-angular/13.1.2_72e2227f9b8615dcedb89b8fdad8a256:
+  /@angular-devkit/build-angular/13.1.2_bbb44b4faa6081e53c94204636213266:
     resolution: {integrity: sha512-0FeDqfjWJjgIU42T3136RNYb7Yv2as6Z8rAnfUlX6RjRGZf98+6ZQZ80yREgrLkm7L8G1qWJc1sn3NyVMDwf9A==}
     engines: {node: ^12.20.0 || ^14.15.0 || >=16.10.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
     peerDependencies:
@@ -341,7 +341,7 @@ packages:
       source-map-support: 0.5.21
       stylus: 0.55.0
       stylus-loader: 6.2.0_stylus@0.55.0+webpack@5.65.0
-      tailwindcss: 3.0.8_ts-node@10.4.0
+      tailwindcss: 3.0.11_ts-node@10.4.0
       terser: 5.10.0
       text-table: 0.2.0
       tree-kill: 1.2.2
@@ -2123,12 +2123,12 @@ packages:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
     dev: true
 
-  /@iharbeck/ngx-virtual-scroller/13.0.3_c95ce8ce5c7ed72745b314038dd50b4b:
+  /@iharbeck/ngx-virtual-scroller/13.0.3_a9160b18908d153bb91ff71954810474:
     resolution: {integrity: sha512-7DdXevpIjiZI+aiGymZbhZ+yG3m8c4+p2y+aogqs7vnITL+/zYzhqRUghQ1JtTivKTCnGwJ3E6JttH++IXVCsw==}
     peerDependencies:
       '@angular/core': ^13.0.2
     dependencies:
-      '@angular-devkit/build-angular': 13.1.2_72e2227f9b8615dcedb89b8fdad8a256
+      '@angular-devkit/build-angular': 13.1.2_bbb44b4faa6081e53c94204636213266
       '@angular/core': 13.1.1_rxjs@7.5.1+zone.js@0.11.4
       '@tweenjs/tween.js': 18.6.4
       '@types/tween.js': 18.6.1
@@ -2563,20 +2563,20 @@ packages:
       '@sinonjs/commons': 1.8.3
     dev: true
 
-  /@tailwindcss/aspect-ratio/0.4.0_tailwindcss@3.0.8:
+  /@tailwindcss/aspect-ratio/0.4.0_tailwindcss@3.0.11:
     resolution: {integrity: sha512-WJu0I4PpqNPuutpaA9zDUq2JXR+lorZ7PbLcKNLmb6GL9/HLfC7w3CRsMhJF4BbYd/lkY6CfXOvkYpuGnZfkpQ==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.0.8_ts-node@10.4.0
+      tailwindcss: 3.0.11_ts-node@10.4.0
     dev: true
 
-  /@tailwindcss/line-clamp/0.3.0_tailwindcss@3.0.8:
+  /@tailwindcss/line-clamp/0.3.0_tailwindcss@3.0.11:
     resolution: {integrity: sha512-ffDDclrqr3sy8cpChCozedDUAN8enxqAiWeH8d4dGQ2hcXlxf51+7KleveFi/n/TxEuRVApoL7hICeDOdYPKpg==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.0.8_ts-node@10.4.0
+      tailwindcss: 3.0.11_ts-node@10.4.0
     dev: true
 
   /@testing-library/dom/8.11.1:
@@ -5339,7 +5339,7 @@ packages:
       eslint: ^8.0.0
       typescript: ^4.0.0
     dependencies:
-      '@typescript-eslint/experimental-utils': 5.8.1_eslint@8.6.0+typescript@4.4.4
+      '@typescript-eslint/experimental-utils': 5.9.0_eslint@8.6.0+typescript@4.4.4
       common-tags: 1.8.2
       decamelize: 5.0.1
       eslint: 8.6.0
@@ -8468,12 +8468,13 @@ packages:
     dependencies:
       postcss: 7.0.39
 
-  /postcss-js/3.0.3:
-    resolution: {integrity: sha512-gWnoWQXKFw65Hk/mi2+WTQTHdPD5UJdDXZmX073EY/B3BWnYjO4F4t0VneTCnCGQ5E5GsCdMkzPaTXwl3r5dJw==}
-    engines: {node: '>=10.0'}
+  /postcss-js/4.0.0:
+    resolution: {integrity: sha512-77QESFBwgX4irogGVPgQ5s07vLvFqWr228qZY+w6lW599cRlK/HmnlivnnVUxkjHnCu4J16PDMHcH+e+2HbvTQ==}
+    engines: {node: ^12 || ^14 || >= 16}
+    peerDependencies:
+      postcss: ^8.3.3
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.4.5
     dev: true
 
   /postcss-lab-function/2.0.1:
@@ -8699,15 +8700,6 @@ packages:
       nanoid: 3.1.30
       picocolors: 1.0.0
       source-map-js: 1.0.1
-
-  /postcss/8.4.5:
-    resolution: {integrity: sha512-jBDboWM8qpaqwkMwItqTQTiFikhs/67OYVvblFFTM7MrZjt6yMKd6r2kgXizEbTTljacm4NldIlZnhbjr84QYg==}
-    engines: {node: ^10 || ^12 || >=14}
-    dependencies:
-      nanoid: 3.1.30
-      picocolors: 1.0.0
-      source-map-js: 1.0.1
-    dev: true
 
   /prelude-ls/1.1.2:
     resolution: {integrity: sha1-IZMqVJ9eUv/ZqCf1cOBL5iqX2lQ=}
@@ -9741,17 +9733,17 @@ packages:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
     dev: true
 
-  /tailwindcss-elevation/1.0.1_tailwindcss@3.0.8:
+  /tailwindcss-elevation/1.0.1_tailwindcss@3.0.11:
     resolution: {integrity: sha512-XlUwumrKirdXUrBUMq2zZJryy9sRmkFeScR04RB1u5MNv8/qBqnKaOM0EdSNQRDvR0ZI21reKVSNGcAFD0B47w==}
     peerDependencies:
       tailwindcss: ^2.0.1
     dependencies:
       hex-rgb: 4.3.0
-      tailwindcss: 3.0.8_ts-node@10.4.0
+      tailwindcss: 3.0.11_ts-node@10.4.0
     dev: true
 
-  /tailwindcss/3.0.8_ts-node@10.4.0:
-    resolution: {integrity: sha512-Yww1eRYO1AxITJmW/KduZPxNvYdHuedeKwPju9Oakp7MdiixRi5xkpLhirsc81QCxHL0eoce6qKmxXwYGt4Cjw==}
+  /tailwindcss/3.0.11_ts-node@10.4.0:
+    resolution: {integrity: sha512-JyMsQ2kPqpOvG8ow535XpauXj3wz3nQqcy2tVlXj4FQ0eNlsdzvlAqpRA3q5rPLboWirNG6r2DqKczwjW2uc8Q==}
     engines: {node: '>=12.13.0'}
     hasBin: true
     peerDependencies:
@@ -9771,14 +9763,13 @@ packages:
       is-glob: 4.0.3
       normalize-path: 3.0.0
       object-hash: 2.2.0
-      postcss-js: 3.0.3
+      postcss-js: 4.0.0
       postcss-load-config: 3.1.1_ts-node@10.4.0
       postcss-nested: 5.0.6
       postcss-selector-parser: 6.0.8
       postcss-value-parser: 4.2.0
       quick-lru: 5.1.1
       resolve: 1.20.0
-      tmp: 0.2.1
     transitivePeerDependencies:
       - ts-node
     dev: true
