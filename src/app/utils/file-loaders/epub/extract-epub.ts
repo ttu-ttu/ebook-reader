@@ -11,7 +11,7 @@ import {
   TextWriter,
   ZipReader,
 } from '@zip.js/zip.js';
-import { parse } from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
 import path from 'path-browserify';
 import initZipSettings from '../utils/init-zip-settings';
 import { EpubContent } from './types';
@@ -36,9 +36,10 @@ export default async function extractEpub(blob: Blob) {
     const containerXml = await fileMap['META-INF/container.xml'].getData!(
       new TextWriter()
     );
-    const container = parse(containerXml, {
+    const parser = new XMLParser({
       ignoreAttributes: false,
     });
+    const container = parser.parse(containerXml);
     const rootFiles = container.container.rootfiles.rootfile;
     const rootFile = Array.isArray(rootFiles) ? rootFiles[0] : rootFiles;
 
@@ -51,9 +52,7 @@ export default async function extractEpub(blob: Blob) {
 
     contentsDirectory = path.dirname(contentOpfFilename);
 
-    contents = parse(contentsXml, {
-      ignoreAttributes: false,
-    });
+    contents = parser.parse(contentsXml);
 
     await Promise.all(
       contents.package.manifest.item.map(async (item) => {
