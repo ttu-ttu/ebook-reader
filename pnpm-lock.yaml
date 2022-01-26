@@ -54,7 +54,7 @@ specifiers:
   eslint-plugin-header: 3.1.1
   eslint-plugin-import: 2.25.4
   eslint-plugin-license-header: 0.3.0
-  eslint-plugin-rxjs: 5.0.0
+  eslint-plugin-rxjs: 5.0.2
   eslint-plugin-rxjs-angular: 2.0.0
   fake-indexeddb: 3.1.7
   fast-xml-parser: 4.0.0
@@ -144,7 +144,7 @@ devDependencies:
   eslint-plugin-header: 3.1.1_eslint@8.6.0
   eslint-plugin-import: 2.25.4_eslint@8.6.0
   eslint-plugin-license-header: 0.3.0
-  eslint-plugin-rxjs: 5.0.0_eslint@8.6.0+typescript@4.4.4
+  eslint-plugin-rxjs: 5.0.2_eslint@8.6.0+typescript@4.4.4
   eslint-plugin-rxjs-angular: 2.0.0_eslint@8.6.0+typescript@4.4.4
   fake-indexeddb: 3.1.7
   husky: 7.0.4
@@ -5333,8 +5333,8 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-rxjs/5.0.0_eslint@8.6.0+typescript@4.4.4:
-    resolution: {integrity: sha512-3P4VPSloECace1al8Cg7zR+5c4J6fXpwCivKj5jsdPBioDUtPq6NB44sIfwImjJz+s/pTF44+zP0CnbAy+YPrA==}
+  /eslint-plugin-rxjs/5.0.2_eslint@8.6.0+typescript@4.4.4:
+    resolution: {integrity: sha512-Q2wsEHWInhZ3uz5df+YbD4g/NPQqAeYHjJuEsxqgVS+XAsYCuVE2pj9kADdMFy4GsQy2jt7KP+TOrnq1i6bI5Q==}
     peerDependencies:
       eslint: ^8.0.0
       typescript: ^4.0.0
