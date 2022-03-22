@@ -23,16 +23,16 @@ Alternatively, you can also drag & drop files or folders on the reader if your d
 
 You may find the following controls in the reader:
 
-Control | Description
---- | ---
-![Icon](assets/readme/control-fullscreen.svg) | Allows you to enter fullscreen mode
-![Icon](assets/readme/control-file-upload.svg) | Allows you to import new books to the library
-![Icon](assets/readme/control-folder-upload.svg) | Allows you to import new books from a folder to the library (desktop only)
-![Icon](assets/readme/control-manager.svg) | Opens book manager (keybind <kbd>M</kbd>)
-![Icon](assets/readme/control-bookmark.svg) | Allows you to create a bookmark at your current location (keybind <kbd>B</kbd>)
-![Icon](assets/readme/control-settings.svg) | Prompts settings dialog
-![Image](assets/readme/book-progress.png) | Displays your reading progress, click/tap on it to hide
-![Image](assets/readme/control-update.svg) | Indicates an update is available for the reader, and will be loaded on next refresh
+| Control                                          | Description                                                                         |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| ![Icon](assets/readme/control-fullscreen.svg)    | Allows you to enter fullscreen mode                                                 |
+| ![Icon](assets/readme/control-file-upload.svg)   | Allows you to import new books to the library                                       |
+| ![Icon](assets/readme/control-folder-upload.svg) | Allows you to import new books from a folder to the library (desktop only)          |
+| ![Icon](assets/readme/control-manager.svg)       | Opens book manager (keybind <kbd>M</kbd>)                                           |
+| ![Icon](assets/readme/control-bookmark.svg)      | Allows you to create a bookmark at your current location (keybind <kbd>B</kbd>)     |
+| ![Icon](assets/readme/control-settings.svg)      | Prompts settings dialog                                                             |
+| ![Image](assets/readme/book-progress.png)        | Displays your reading progress, click/tap on it to hide                             |
+| ![Image](assets/readme/control-update.svg)       | Indicates an update is available for the reader, and will be loaded on next refresh |
 
 # Desktop Keybinds
 
@@ -40,19 +40,19 @@ Control | Description
 Explanation from [MDN](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code):
 
 > For example, the code returned is "KeyQ" for the Q key on a QWERTY layout keyboard, but the same code value also
-represents the ' key on Dvorak keyboards and the A key on AZERTY keyboards.
+> represents the ' key on Dvorak keyboards and the A key on AZERTY keyboards.
 
-Key Code | Description
---- | ---
-<kbd>Escape</kbd> | Close settings dialog
-<kbd>Space</kbd> | Toggle auto-scroll
-<kbd>A</kbd> | Increase auto-scroll speed
-<kbd>D</kbd> | Decrease auto-scroll speed
-<kbd>B</kbd> | Create bookmark at your current location
-<kbd>R</kbd> | Return to bookmark location
-<kbd>M</kbd> | Open book manager
-<kbd>PageDown</kbd> | Move to next page
-<kbd>PageUp</kbd> | Move to previous page
+| Key Code            | Description                              |
+| ------------------- | ---------------------------------------- |
+| <kbd>Escape</kbd>   | Close settings dialog                    |
+| <kbd>Space</kbd>    | Toggle auto-scroll                       |
+| <kbd>A</kbd>        | Increase auto-scroll speed               |
+| <kbd>D</kbd>        | Decrease auto-scroll speed               |
+| <kbd>B</kbd>        | Create bookmark at your current location |
+| <kbd>R</kbd>        | Return to bookmark location              |
+| <kbd>M</kbd>        | Open book manager                        |
+| <kbd>PageDown</kbd> | Move to next page                        |
+| <kbd>PageUp</kbd>   | Move to previous page                    |
 
 # Book Manager
 
@@ -61,7 +61,33 @@ You will be presented with a list of covers for all the imported books with thei
 by bookmark location). The book currently opened will be highlighted with a red glowing border.
 
 You may:
+
 - Switch books by clicking/tapping on the book covers
 - Delete books by clicking/tapping on their respective checkbox and trash can icon (**Warning:** Bookmark progress will also get removed along with the book)
 - Click/tap on the centered list icon to select all books
 - Click/tap on the X icon to deselect all books
+
+# Self Host
+
+If for some reason you want to host it yourself, you can use the following approach.
+
+### Using Docker
+
+1. Install and launch [Docker](https://docs.docker.com/get-docker/)
+2. Run the commands below
+
+```sh
+docker build . -t ebook-reader
+docker run --name ebook-reader -d -p 8080:80 ebook-reader
+```
+
+3. Visit [http://localhost:8080](http://localhost:8080) to use the app
+
+### Using HTTP Hosting App
+
+1. Have [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/installation) installed
+2. Run `pnpm install --frozen-lockfile` to have the dependencies installed
+3. Run `pnpm build` to build the app
+4. Have your server (such as [http-server-spa](https://www.npmjs.com/package/http-server-spa)) point towards `dist/ebook-reader`
+
+Note: It's a Single-Page App (SPA) so you may need to redirect HTTP requests to `dist/ebook-reader/index.html`
