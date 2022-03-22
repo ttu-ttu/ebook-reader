@@ -57,7 +57,7 @@ specifiers:
   eslint-plugin-rxjs: 5.0.0
   eslint-plugin-rxjs-angular: 2.0.0
   fake-indexeddb: 3.1.7
-  fast-xml-parser: 4.0.0
+  fast-xml-parser: 4.0.7
   husky: 7.0.4
   idb: 7.0.0
   jest: 27.4.7
@@ -98,7 +98,7 @@ dependencies:
   '@zip.js/zip.js': 2.3.23
   balanced-match: 2.0.0
   core-js: 3.20.2
-  fast-xml-parser: 4.0.0
+  fast-xml-parser: 4.0.7
   idb: 7.0.0
   lodash-es: 4.17.21
   path-browserify: 1.0.1
@@ -5636,8 +5636,8 @@ packages:
     resolution: {integrity: sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=}
     dev: true
 
-  /fast-xml-parser/4.0.0:
-    resolution: {integrity: sha512-6M/FCTS8IlbR1T9OrDIoPkDtSpq1MXz2hg7eTXbsEVRSfEqCCpLUT93jO1p2Pdxpz9BFdW7SHWCZhIDw7wWD/Q==}
+  /fast-xml-parser/4.0.7:
+    resolution: {integrity: sha512-dMtibyus3kC7nbxj1CpVtysLzO13UOAZEFAb5vpQg3T4O6qvetmSePpXKFx5KPNCHKoGwjtgjfF5DOyn7s1ylQ==}
     hasBin: true
     dependencies:
       strnum: 1.0.5
