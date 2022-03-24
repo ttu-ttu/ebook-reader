@@ -35,7 +35,7 @@ specifiers:
   '@tailwindcss/line-clamp': 0.3.1
   '@types/balanced-match': 1.0.2
   '@types/jest': 27.4.1
-  '@types/lodash-es': 4.17.5
+  '@types/lodash-es': 4.17.6
   '@types/node': 16.11.19
   '@types/ua-parser-js': 0.7.36
   '@typescript-eslint/eslint-plugin': 5.16.0
@@ -127,7 +127,7 @@ devDependencies:
   '@tailwindcss/line-clamp': 0.3.1_tailwindcss@3.0.11
   '@types/balanced-match': 1.0.2
   '@types/jest': 27.4.1
-  '@types/lodash-es': 4.17.5
+  '@types/lodash-es': 4.17.6
   '@types/node': 16.11.19
   '@types/ua-parser-js': 0.7.36
   '@typescript-eslint/eslint-plugin': 5.16.0_cb7d5e72c0180c9d3cec59e849451dec
@@ -2848,8 +2848,8 @@ packages:
     resolution: {integrity: sha1-7ihweulOEdK4J7y+UnC86n8+ce4=}
     dev: true
 
-  /@types/lodash-es/4.17.5:
-    resolution: {integrity: sha512-SHBoI8/0aoMQWAgUHMQ599VM6ZiSKg8sh/0cFqqlQQMyY9uEplc0ULU5yQNzcvdR4ZKa0ey8+vFmahuRbOCT1A==}
+  /@types/lodash-es/4.17.6:
+    resolution: {integrity: sha512-R+zTeVUKDdfoRxpAryaQNRKk3105Rrgx2CFRClIgRGaqDTdjsm8h6IYA8ir584W3ePzkZfst5xIgDwYrlh9HLg==}
     dependencies:
       '@types/lodash': 4.14.177
     dev: true

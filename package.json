@@ -64,7 +64,7 @@
     "@tailwindcss/line-clamp": "0.3.1",
     "@types/balanced-match": "1.0.2",
     "@types/jest": "27.4.1",
-    "@types/lodash-es": "4.17.5",
+    "@types/lodash-es": "4.17.6",
     "@types/node": "16.11.19",
     "@types/ua-parser-js": "0.7.36",
     "@typescript-eslint/eslint-plugin": "5.16.0",
