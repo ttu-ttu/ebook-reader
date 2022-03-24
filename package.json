@@ -34,7 +34,7 @@
     "@zip.js/zip.js": "2.3.23",
     "balanced-match": "2.0.0",
     "core-js": "3.20.2",
-    "fast-xml-parser": "4.0.0",
+    "fast-xml-parser": "4.0.7",
     "idb": "7.0.0",
     "lodash-es": "4.17.21",
     "path-browserify": "1.0.1",
