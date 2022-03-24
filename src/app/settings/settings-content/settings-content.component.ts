@@ -4,9 +4,15 @@
  * All rights reserved.
  */
 
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Inject,
+  OnInit,
+} from '@angular/core';
 import { Subject } from 'rxjs';
 import { StoreService } from 'src/app/store.service';
+import { WINDOW } from 'src/app/utils/dom-tokens';
 import { availableThemes } from 'src/app/utils/theme-option';
 import { defaultFuriganaStyle } from '../../models/furigana-style.model';
 import { defaultWritingMode } from '../../models/writing-mode.model';
@@ -55,9 +61,12 @@ export class SettingsContentComponent implements OnInit {
 
   defaultWritingMode = defaultWritingMode;
 
-  private storage = window.navigator.storage;
+  private storage = this.window.navigator.storage;
 
-  constructor(private store: StoreService) {}
+  constructor(
+    private store: StoreService,
+    @Inject(WINDOW) private window: Window
+  ) {}
 
   ngOnInit(): void {
     this.storage.persisted().then((x) => this.persistentStorage$.next(x));
