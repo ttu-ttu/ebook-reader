@@ -62,7 +62,7 @@
     "@ngneat/spectator": "10.0.0",
     "@open-wc/webpack-import-meta-loader": "0.4.7",
     "@tailwindcss/aspect-ratio": "0.4.0",
-    "@tailwindcss/line-clamp": "0.3.0",
+    "@tailwindcss/line-clamp": "0.3.1",
     "@types/balanced-match": "1.0.2",
     "@types/jest": "27.4.0",
     "@types/lodash-es": "4.17.5",
