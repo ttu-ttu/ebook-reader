@@ -2,7 +2,6 @@ lockfileVersion: 5.3
 
 specifiers:
   '@angular-builders/custom-webpack': 13.0.0
-  '@angular-builders/jest': 13.0.3
   '@angular-devkit/build-angular': 13.1.2
   '@angular-eslint/builder': 13.0.1
   '@angular-eslint/eslint-plugin': 13.0.1
@@ -111,7 +110,6 @@ dependencies:
 
 devDependencies:
   '@angular-builders/custom-webpack': 13.0.0_ecc6bf35af355921e73dba7d7c6ecc1d
-  '@angular-builders/jest': 13.0.3_f510af4d71de3e04d7261a95996942c9
   '@angular-devkit/build-angular': 13.1.2_875701445137436986b7e9f047debb78
   '@angular-eslint/builder': 13.0.1_eslint@8.6.0+typescript@4.4.4
   '@angular-eslint/eslint-plugin': 13.0.1_eslint@8.6.0+typescript@4.4.4
@@ -209,33 +207,6 @@ packages:
       - uglify-js
       - utf-8-validate
       - webpack-cli
-    dev: true
-
-  /@angular-builders/jest/13.0.3_f510af4d71de3e04d7261a95996942c9:
-    resolution: {integrity: sha512-HJfN8gCfbg14U/eaE5vEvt6IrecFTUWSibHLvf2gBMzgnRQzqPKNAAoHY5kZ0DL+HwsCW/KlSp2m47ukOdVcYA==}
-    engines: {node: '>=12.20.0'}
-    peerDependencies:
-      jest: '>=27'
-    dependencies:
-      '@angular-devkit/architect': 0.1301.2
-      '@angular-devkit/core': 13.1.2
-      jest: 27.4.7_ts-node@10.4.0
-      jest-preset-angular: 11.1.0_f510af4d71de3e04d7261a95996942c9
-      lodash: 4.17.21
-    transitivePeerDependencies:
-      - '@angular-devkit/build-angular'
-      - '@angular/compiler-cli'
-      - '@angular/core'
-      - '@angular/platform-browser-dynamic'
-      - '@babel/core'
-      - '@types/jest'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - chokidar
-      - supports-color
-      - typescript
-      - utf-8-validate
     dev: true
 
   /@angular-devkit/architect/0.1202.13:
@@ -7145,38 +7116,6 @@ packages:
       - utf-8-validate
     dev: true
 
-  /jest-preset-angular/11.1.0_f510af4d71de3e04d7261a95996942c9:
-    resolution: {integrity: sha512-R4ePMBiQub95ESJlN7TozIpRIyMU7buvIdjm8KXqxZK/w8MYwLOSszVStsoZycDmWq5ifZI1eRvhOCUFktFotw==}
-    engines: {node: ^12.20.0 || ^14.15.0 || >=16.10.0}
-    peerDependencies:
-      '@angular-devkit/build-angular': '>=0.1002.4'
-      '@angular/compiler-cli': '>=10.0.0'
-      '@angular/core': '>=10.0.0'
-      '@angular/platform-browser-dynamic': '>=10.0.0'
-    dependencies:
-      '@angular-devkit/build-angular': 13.1.2_875701445137436986b7e9f047debb78
-      '@angular/compiler-cli': 13.3.0_f8899344b0c18ae928f58cf1c40fef08
-      '@angular/core': 13.3.0_rxjs@7.5.5+zone.js@0.11.5
-      '@angular/platform-browser-dynamic': 13.3.0_522f35f06a6bd1631064e8f0c1b49642
-      bs-logger: 0.2.6
-      esbuild-wasm: 0.14.2
-      jest-environment-jsdom: 27.4.6
-      pretty-format: 27.4.6
-      ts-jest: 27.1.2_9529d0da46a13abfd2838ce24046cd08
-    optionalDependencies:
-      esbuild: 0.14.2
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/jest'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - jest
-      - supports-color
-      - typescript
-      - utf-8-validate
-    dev: true
-
   /jest-regex-util/27.4.0:
     resolution: {integrity: sha512-WeCpMpNnqJYMQoOjm1nTtsgbR4XHAk1u00qDoNBQoykM280+/TmgA5Qh5giC1ecy6a5d4hbSsHzpBtu5yvlbEg==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
@@ -10239,41 +10178,6 @@ packages:
       '@types/jest': 27.4.0
       bs-logger: 0.2.6
       esbuild: 0.13.13
-      fast-json-stable-stringify: 2.1.0
-      jest: 27.4.7_ts-node@10.4.0
-      jest-util: 27.4.2
-      json5: 2.2.0
-      lodash.memoize: 4.1.2
-      make-error: 1.3.6
-      semver: 7.3.5
-      typescript: 4.4.4
-      yargs-parser: 20.2.9
-    dev: true
-
-  /ts-jest/27.1.2_9529d0da46a13abfd2838ce24046cd08:
-    resolution: {integrity: sha512-eSOiJOWq6Hhs6Khzk5wKC5sgWIXgXqOCiIl1+3lfnearu58Hj4QpE5tUhQcA3xtZrELbcvAGCsd6HB8OsaVaTA==}
-    engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
-    hasBin: true
-    peerDependencies:
-      '@babel/core': '>=7.0.0-beta.0 <8'
-      '@types/jest': ^27.0.0
-      babel-jest: '>=27.0.0 <28'
-      esbuild: ~0.14.0
-      jest: ^27.0.0
-      typescript: '>=3.8 <5.0'
-    peerDependenciesMeta:
-      '@babel/core':
-        optional: true
-      '@types/jest':
-        optional: true
-      babel-jest:
-        optional: true
-      esbuild:
-        optional: true
-    dependencies:
-      '@types/jest': 27.4.0
-      bs-logger: 0.2.6
-      esbuild: 0.14.2
       fast-json-stable-stringify: 2.1.0
       jest: 27.4.7_ts-node@10.4.0
       jest-util: 27.4.2

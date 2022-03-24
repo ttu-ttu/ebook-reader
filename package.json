@@ -7,7 +7,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "cross-env NODE_ENV=production ng build",
-    "test": "ng test",
+    "test": "jest",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "deploy": "firebase deploy",
@@ -47,7 +47,6 @@
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "13.0.0",
-    "@angular-builders/jest": "13.0.3",
     "@angular-devkit/build-angular": "13.1.2",
     "@angular-eslint/builder": "13.0.1",
     "@angular-eslint/eslint-plugin": "13.0.1",
