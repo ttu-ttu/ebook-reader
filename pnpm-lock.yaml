@@ -29,7 +29,7 @@ specifiers:
   '@fortawesome/free-regular-svg-icons': 5.15.4
   '@fortawesome/free-solid-svg-icons': 5.15.4
   '@iharbeck/ngx-virtual-scroller': 13.0.3
-  '@ngneat/spectator': 10.0.0
+  '@ngneat/spectator': 10.0.1
   '@open-wc/webpack-import-meta-loader': 0.4.7
   '@tailwindcss/aspect-ratio': 0.4.0
   '@tailwindcss/line-clamp': 0.3.1
@@ -121,7 +121,7 @@ devDependencies:
   '@commitlint/cli': 16.2.3
   '@commitlint/config-conventional': 16.2.1
   '@cypress/schematic': 1.6.0
-  '@ngneat/spectator': 10.0.0_4585f0497f7c96ac3f41e341b3d1bb6b
+  '@ngneat/spectator': 10.0.1_4585f0497f7c96ac3f41e341b3d1bb6b
   '@open-wc/webpack-import-meta-loader': 0.4.7
   '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.11
   '@tailwindcss/line-clamp': 0.3.1_tailwindcss@3.0.11
@@ -2513,8 +2513,8 @@ packages:
       '@jridgewell/resolve-uri': 3.0.5
       '@jridgewell/sourcemap-codec': 1.4.11
 
-  /@ngneat/spectator/10.0.0_4585f0497f7c96ac3f41e341b3d1bb6b:
-    resolution: {integrity: sha512-nMj7RC1KWyvad0FKeLyEBfF+o2ypPJyyYyE8wu18u8CXmRevgrFihWbX06sbo/qL4z4O6acRpS+uF/lKUEDAbg==}
+  /@ngneat/spectator/10.0.1_4585f0497f7c96ac3f41e341b3d1bb6b:
+    resolution: {integrity: sha512-ukyEYoK/wCIpe8IFHR+Lx7NfcBzFuYWsvwyFgRbIAinBDyqmzCarr9DKm1n3UejLIuVR3vJakumfHhdblhEmEw==}
     hasBin: true
     peerDependencies:
       '@angular/animations': '>= 13.0.0'

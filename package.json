@@ -58,7 +58,7 @@
     "@commitlint/cli": "16.2.3",
     "@commitlint/config-conventional": "16.2.1",
     "@cypress/schematic": "1.6.0",
-    "@ngneat/spectator": "10.0.0",
+    "@ngneat/spectator": "10.0.1",
     "@open-wc/webpack-import-meta-loader": "0.4.7",
     "@tailwindcss/aspect-ratio": "0.4.0",
     "@tailwindcss/line-clamp": "0.3.1",
