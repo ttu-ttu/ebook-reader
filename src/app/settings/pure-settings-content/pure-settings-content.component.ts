@@ -96,6 +96,12 @@ export class PureSettingsContentComponent {
   @Output()
   autoPositionOnResizeChange = new EventEmitter<boolean>();
 
+  @Input()
+  persistentStorage = false;
+
+  @Output()
+  persistentStorageChange = new EventEmitter<boolean>();
+
   optionsForToggle: ToggleOption<boolean>[] = [
     {
       id: false,

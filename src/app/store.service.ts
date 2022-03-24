@@ -82,6 +82,11 @@ export class StoreService {
     true
   );
 
+  requestPersistentStorage$ = createBooleanLocalStorageBehaviorSubject(
+    'requestPersistentStorage',
+    true
+  );
+
   pinFooter$ = new BehaviorSubject(true);
 
   bookReaderKeybindMap$ = new BehaviorSubject<BookReaderKeybindMap>({

@@ -21,5 +21,7 @@
   [firstDimensionMargin]="(firstDimensionMargin$ | async) ?? 0"
   (firstDimensionMarginChange)="firstDimensionMargin$.next($event)"
   [autoPositionOnResize]="(autoPositionOnResize$ | async) ?? false"
-  (autoPositionOnResizeChange)="autoPositionOnResize$.next($event)"></app-pure-settings-content>
-
+  (autoPositionOnResizeChange)="autoPositionOnResize$.next($event)"
+  [persistentStorage]="(persistentStorage$ | async) ?? false"
+  (persistentStorageChange)="onPersistentStorageChange($event)"
+></app-pure-settings-content>
