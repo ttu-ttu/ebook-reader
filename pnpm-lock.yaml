@@ -42,7 +42,7 @@ specifiers:
   '@typescript-eslint/parser': 5.16.0
   '@zip.js/zip.js': 2.3.23
   balanced-match: 2.0.0
-  core-js: 3.20.2
+  core-js: 3.21.1
   cross-env: 7.0.3
   cypress: 9.5.2
   cypress-file-upload: 5.0.8
@@ -96,7 +96,7 @@ dependencies:
   '@iharbeck/ngx-virtual-scroller': 13.0.3_fc3db912a55c8d922ad4a091254aff85
   '@zip.js/zip.js': 2.3.23
   balanced-match: 2.0.0
-  core-js: 3.20.2
+  core-js: 3.21.1
   fast-xml-parser: 4.0.7
   idb: 7.0.0
   lodash-es: 4.17.21
@@ -4545,14 +4545,14 @@ packages:
     requiresBuild: true
     dev: true
 
-  /core-js/3.20.2:
-    resolution: {integrity: sha512-nuqhq11DcOAbFBV4zCbKeGbKQsUDRqTX0oqx7AttUBuqe3h20ixsE039QHelbL6P4h+9kytVqyEtyZ6gsiwEYw==}
-    requiresBuild: true
-    dev: false
-
   /core-js/3.20.3:
     resolution: {integrity: sha512-vVl8j8ph6tRS3B8qir40H7yw7voy17xL0piAjlbBUsH7WIfzoedL/ZOr1OV9FyZQLWXsayOJyV4tnRyXR85/ag==}
     requiresBuild: true
+
+  /core-js/3.21.1:
+    resolution: {integrity: sha512-FRq5b/VMrWlrmCzwRrpDYNxyHP9BcAZC+xHJaqTgIE5091ZV1NTmyh0sGOg5XqpnHvR0svdy0sv1gWA1zmhxig==}
+    requiresBuild: true
+    dev: false
 
   /core-util-is/1.0.2:
     resolution: {integrity: sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=}
