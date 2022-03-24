@@ -4,7 +4,8 @@
  * All rights reserved.
  */
 
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
 import { StoreService } from 'src/app/store.service';
 import { availableThemes } from 'src/app/utils/theme-option';
 import { defaultFuriganaStyle } from '../../models/furigana-style.model';
@@ -23,7 +24,7 @@ const availableThemeList = Object.entries(availableThemes).map(
   styleUrls: ['./settings-content.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SettingsContentComponent {
+export class SettingsContentComponent implements OnInit {
   availableThemeList = availableThemeList;
 
   selectedTheme$ = this.store.theme$;
@@ -50,7 +51,23 @@ export class SettingsContentComponent {
 
   autoPositionOnResize$ = this.store.autoPositionOnResize$;
 
+  persistentStorage$ = new Subject<boolean>();
+
   defaultWritingMode = defaultWritingMode;
 
+  private storage = window.navigator.storage;
+
   constructor(private store: StoreService) {}
+
+  ngOnInit(): void {
+    this.storage.persisted().then((x) => this.persistentStorage$.next(x));
+  }
+
+  onPersistentStorageChange(shouldPersist: boolean) {
+    if (!shouldPersist) {
+      return;
+    }
+
+    this.storage.persist().then((x) => this.persistentStorage$.next(x));
+  }
 }

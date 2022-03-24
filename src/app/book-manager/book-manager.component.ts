@@ -75,6 +75,11 @@ export class BookManagerComponent {
       );
     }
 
+    if (this.store.requestPersistentStorage$.getValue()) {
+      await window.navigator.storage.persist();
+      this.store.requestPersistentStorage$.next(false);
+    }
+
     let latestDataId: number | undefined;
     let hasError = false;
 
