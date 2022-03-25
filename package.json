@@ -78,7 +78,7 @@
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.25.4",
-    "eslint-plugin-license-header": "0.3.0",
+    "eslint-plugin-license-header": "0.4.0",
     "eslint-plugin-rxjs": "5.0.2",
     "eslint-plugin-rxjs-angular": "2.0.0",
     "fake-indexeddb": "3.1.7",
