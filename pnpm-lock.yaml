@@ -40,7 +40,7 @@ specifiers:
   '@types/ua-parser-js': 0.7.36
   '@typescript-eslint/eslint-plugin': 5.16.0
   '@typescript-eslint/parser': 5.16.0
-  '@zip.js/zip.js': 2.3.23
+  '@zip.js/zip.js': 2.4.7
   balanced-match: 2.0.0
   core-js: 3.20.2
   cross-env: 7.0.3
@@ -94,7 +94,7 @@ dependencies:
   '@fortawesome/free-regular-svg-icons': 5.15.4
   '@fortawesome/free-solid-svg-icons': 5.15.4
   '@iharbeck/ngx-virtual-scroller': 13.0.3_fc3db912a55c8d922ad4a091254aff85
-  '@zip.js/zip.js': 2.3.23
+  '@zip.js/zip.js': 2.4.7
   balanced-match: 2.0.0
   core-js: 3.20.2
   fast-xml-parser: 4.0.7
@@ -3407,8 +3407,8 @@ packages:
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
     dev: true
 
-  /@zip.js/zip.js/2.3.23:
-    resolution: {integrity: sha512-+3639xbvvzPhgzhuZ/PLRMVWu9jtDZK+8oKMuIKPfOtNWjSmBockMAv04DJmR8il47EsMlbhGy+YhTu+mw6+Dw==}
+  /@zip.js/zip.js/2.4.7:
+    resolution: {integrity: sha512-IbRUgSsPcnVth4fBljrQDfI6nZO5VqW1/49j9rMAShZ7sB8noRYgQR4nY9jeRw5ZrUM6lZrsuUr8OMF4M3mrsw==}
     dev: false
 
   /JSONStream/1.3.5:
