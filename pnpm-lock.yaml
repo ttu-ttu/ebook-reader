@@ -52,7 +52,7 @@ specifiers:
   eslint-config-prettier: 8.3.0
   eslint-plugin-header: 3.1.1
   eslint-plugin-import: 2.25.4
-  eslint-plugin-license-header: 0.3.0
+  eslint-plugin-license-header: 0.4.0
   eslint-plugin-rxjs: 5.0.2
   eslint-plugin-rxjs-angular: 2.0.0
   fake-indexeddb: 3.1.7
@@ -141,7 +141,7 @@ devDependencies:
   eslint-config-prettier: 8.3.0_eslint@8.11.0
   eslint-plugin-header: 3.1.1_eslint@8.11.0
   eslint-plugin-import: 2.25.4_eslint@8.11.0
-  eslint-plugin-license-header: 0.3.0
+  eslint-plugin-license-header: 0.4.0
   eslint-plugin-rxjs: 5.0.2_eslint@8.11.0+typescript@4.4.4
   eslint-plugin-rxjs-angular: 2.0.0_eslint@8.11.0+typescript@4.4.4
   fake-indexeddb: 3.1.7
@@ -5670,8 +5670,8 @@ packages:
       tsconfig-paths: 3.12.0
     dev: true
 
-  /eslint-plugin-license-header/0.3.0:
-    resolution: {integrity: sha512-y/U73ZNFAK4Dcj81GZFvQFX8ekSd9f03t+GMcayW4A0MCbZvnRNkCE5KmcRXSAErE9/bhVPqa7IEUNgwu5FRZQ==}
+  /eslint-plugin-license-header/0.4.0:
+    resolution: {integrity: sha512-KNpyxD+r8d9VoioyaHofUDsrYO+epVv/WjGZKugfO+qVN1KvHi/LwpXXY1618OCOYEaRNXZeRUtbOIb2YvJXTw==}
     dependencies:
       requireindex: 1.2.0
     dev: true
