@@ -1,4 +1,4 @@
-FROM node:16-alpine as builder
+FROM node:17-alpine as builder
 
 RUN wget -qO- https://get.pnpm.io/v6.16.js | node - add --global pnpm
 
