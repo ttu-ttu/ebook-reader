@@ -31,7 +31,7 @@
     "@fortawesome/free-regular-svg-icons": "5.15.4",
     "@fortawesome/free-solid-svg-icons": "5.15.4",
     "@iharbeck/ngx-virtual-scroller": "13.0.3",
-    "@zip.js/zip.js": "2.3.23",
+    "@zip.js/zip.js": "2.4.7",
     "balanced-match": "2.0.0",
     "core-js": "3.20.2",
     "fast-xml-parser": "4.0.7",
