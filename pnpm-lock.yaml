@@ -58,7 +58,7 @@ specifiers:
   fake-indexeddb: 3.1.7
   fast-xml-parser: 4.0.7
   husky: 7.0.4
-  idb: 7.0.0
+  idb: 7.0.1
   jest: 27.5.1
   jest-preset-angular: 11.0.1
   lint-staged: 12.3.7
@@ -98,7 +98,7 @@ dependencies:
   balanced-match: 2.0.0
   core-js: 3.21.1
   fast-xml-parser: 4.0.7
-  idb: 7.0.0
+  idb: 7.0.1
   lodash-es: 4.17.21
   path-browserify: 1.0.1
   resize-observer: 1.0.4
@@ -6588,8 +6588,8 @@ packages:
     dependencies:
       postcss: 8.4.12
 
-  /idb/7.0.0:
-    resolution: {integrity: sha512-jSx0WOY9Nj+QzP6wX5e7g64jqh8ExtDs/IAuOrOEZCD/h6+0HqyrKsDMfdJc0hqhSvh0LsrwqrkDn+EtjjzSRA==}
+  /idb/7.0.1:
+    resolution: {integrity: sha512-UUxlE7vGWK5RfB/fDwEGgRf84DY/ieqNha6msMV99UsEMQhJ1RwbCd8AYBj3QMgnE3VZnfQvm4oKVCJTYlqIgg==}
     dev: false
 
   /ieee754/1.2.1:
