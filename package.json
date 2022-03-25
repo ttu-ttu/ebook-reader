@@ -72,7 +72,7 @@
     "cross-env": "7.0.3",
     "cypress": "9.5.2",
     "cypress-file-upload": "5.0.8",
-    "eslint": "8.6.0",
+    "eslint": "8.11.0",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-config-airbnb-typescript": "16.1.0",
     "eslint-config-prettier": "8.3.0",
