@@ -87,7 +87,7 @@
     "jest-preset-angular": "11.1.1",
     "lint-staged": "12.3.7",
     "lodash": "4.17.21",
-    "prettier": "2.5.1",
+    "prettier": "2.6.2",
     "tailwindcss": "3.0.23",
     "tailwindcss-elevation": "1.0.1",
     "ts-node": "10.4.0",

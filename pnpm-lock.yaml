@@ -65,7 +65,7 @@ specifiers:
   lodash: 4.17.21
   lodash-es: 4.17.21
   path-browserify: 1.0.1
-  prettier: 2.5.1
+  prettier: 2.6.2
   resize-observer: 1.0.4
   rxjs: 7.5.5
   stacktrace-js: 2.0.2
@@ -150,7 +150,7 @@ devDependencies:
   jest-preset-angular: 11.1.1_7cd50e7d7c86d6e9c15291ecd10ea6c3
   lint-staged: 12.3.7
   lodash: 4.17.21
-  prettier: 2.5.1
+  prettier: 2.6.2
   tailwindcss: 3.0.23_ts-node@10.4.0
   tailwindcss-elevation: 1.0.1_tailwindcss@3.0.23
   ts-node: 10.4.0_8fee0dbf39ae8459f66ff7817e3967f7
@@ -9192,8 +9192,8 @@ packages:
     engines: {node: '>= 0.8.0'}
     dev: true
 
-  /prettier/2.5.1:
-    resolution: {integrity: sha512-vBZcPRUR5MZJwoyi3ZoyQlc1rXeEck8KgeC9AwwOn+exuxLxq5toTRDTSaVrXHxelDMHy9zlicw8u66yxoSUFg==}
+  /prettier/2.6.2:
+    resolution: {integrity: sha512-PkUpF+qoXTqhOeWL9fu7As8LXsIUZ1WYaJiY/a7McAQzxjk82OF0tibkFXVCDImZtWxbvojFjerkiLb0/q8mew==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
