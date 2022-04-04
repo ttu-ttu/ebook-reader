@@ -41,10 +41,14 @@ export default function generateEpubHtml(
     const itemIdRef = item['@_idref'];
     const htmlHref = itemIdToHtmlRef[itemIdRef];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const regexResult = /.*<body[^>]*>((.|\s)+)<\/body>.*/.exec(
-      data[htmlHref] as string
-    )!;
-    let innerHtml: string = regexResult[1];
+    const regexResult =
+      /.*<body(?:[^>]*id="(?<id>.+?)")*[^>]*>(?<body>(.|\s)+)<\/body>.*/.exec(
+        data[htmlHref] as string
+      )!;
+
+    const bodyId = regexResult?.groups?.id || '';
+    let innerHtml = regexResult?.groups?.body || '';
+
     for (const blobLocation of blobLocations) {
       innerHtml = innerHtml.replaceAll(
         relative(htmlHref, blobLocation),
@@ -54,6 +58,13 @@ export default function generateEpubHtml(
     const childDiv = document.createElement('div');
     childDiv.innerHTML = innerHtml;
     childDiv.id = `${prependValue}${itemIdRef}`;
+
+    if (bodyId) {
+      const anchorHelper = document.createElement('div');
+      anchorHelper.id = bodyId;
+      childDiv.prepend(anchorHelper);
+    }
+
     result.appendChild(childDiv);
   }
 
