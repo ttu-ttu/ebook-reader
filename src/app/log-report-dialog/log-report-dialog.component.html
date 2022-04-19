@@ -1,7 +1,0 @@
-<h1 mat-dialog-title>{{ data.title || 'Error' }}</h1>
-<div mat-dialog-content>
-  <p class="pb-5">{{ data.message }}</p>
-</div>
-<div mat-dialog-actions class="flex justify-end">
-  <a mat-button [href]="downloadableLog$ | async" download="log.json">Download Report</a>
-</div>

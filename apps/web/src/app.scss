@@ -1,0 +1,27 @@
+/* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */
+/* Write your global styles here, in PostCSS syntax */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-color: rgba(0, 0, 0, 0.87);
+  --background-color: #eceff1;
+}
+
+@layer base {
+  body {
+    color: var(--font-color);
+    background-color: var(--background-color);
+  }
+}
+
+@layer utilities {
+  .writing-horizontal-tb {
+    writing-mode: horizontal-tb;
+  }
+
+  .tap-highlight-transparent {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

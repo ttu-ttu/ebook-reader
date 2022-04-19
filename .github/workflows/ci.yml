@@ -25,27 +25,5 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Test on Jest
-        run: pnpm test
-
-      - name: Test on browser
-        run: pnpm ng run ebook-reader:cypress-run -- --configuration production
-        env:
-          NODE_ENV: production
-
-      # NOTE: screenshots will be generated only if E2E test failed
-      # thus we store screenshots only on failures
-      - name: Upload screenshots
-        uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cypress-screenshots
-          path: cypress/screenshots
-
-      # Test run video was always captured, so this action uses "always()" condition
-      - name: Upload videos
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: cypress-videos
-          path: cypress/videos
+      - name: Test build
+        run: pnpm build
