@@ -1,2 +1,3 @@
-cypress/fixtures/
 pnpm-lock.yaml
+build/
+.svelte-kit/

@@ -1,0 +1,61 @@
+root: true
+parser: '@typescript-eslint/parser'
+parserOptions:
+  project: ./apps/*/tsconfig.eslint.json
+plugins:
+  - header
+  - svelte3
+  - '@typescript-eslint'
+extends:
+  - airbnb-base
+  - airbnb-typescript/base
+  - plugin:import/recommended
+  - plugin:import/typescript
+  - plugin:rxjs/recommended
+  - prettier
+settings:
+  svelte3/typescript: true
+rules:
+  no-return-assign:
+    - error
+    - except-parens
+  no-underscore-dangle: off
+  import/no-unresolved: off
+  import/extensions:
+    - error
+    - ignorePackages
+    - js: always
+      ts: always
+  import/prefer-default-export: off
+  import/named: off
+  import/namespace: off
+  import/default: off
+  import/no-named-as-default-member: off
+  '@typescript-eslint/no-use-before-define': off
+overrides:
+  - files: '**/!(*.d).ts'
+    rules:
+      header/header:
+        - error
+        - block
+        - - '*'
+          - ' * @license BSD-3-Clause'
+          - ' * Copyright (c) 2022, ッツ Reader Authors'
+          - ' * All rights reserved.'
+          - ' '
+        - 1
+        - lineEndings: unix
+  - files: '*.svelte'
+    processor: svelte3/svelte3
+    rules:
+      except-parens: off
+      quotes:
+        - error
+        - single
+        - avoidEscape: true
+          allowTemplateLiterals: true
+      import/first: off
+      import/no-duplicates: off
+      import/no-mutable-exports: off
+      import/no-unresolved: off
+      import/prefer-default-export: off

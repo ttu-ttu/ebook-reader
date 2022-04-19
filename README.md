@@ -2,7 +2,7 @@
 
 ## ッツ Ebook Reader
 
-An online e-book reader that supports Yomichan, which is hosted on [https://ttu-ebook.web.app](https://ttu-ebook.web.app)
+An online e-book reader that supports Yomichan, which is hosted on [https://reader.ttsu.app](https://reader.ttsu.app)
 
 # Features
 
@@ -77,7 +77,7 @@ If for some reason you want to host it yourself, you can use the following appro
 2. Run the commands below
 
 ```sh
-docker build . -t ebook-reader
+docker build -t ebook-reader -f apps/web/Dockerfile .
 docker run --name ebook-reader -d -p 8080:80 ebook-reader
 ```
 
@@ -86,8 +86,12 @@ docker run --name ebook-reader -d -p 8080:80 ebook-reader
 ### Using HTTP Hosting App
 
 1. Have [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/installation) installed
-2. Run `pnpm install --frozen-lockfile` to have the dependencies installed
-3. Run `pnpm build` to build the app
-4. Have your server (such as [http-server-spa](https://www.npmjs.com/package/http-server-spa)) point towards `dist/ebook-reader`
+2. Run the commands below
 
-Note: It's a Single-Page App (SPA) so you may need to redirect HTTP requests to `dist/ebook-reader/index.html`
+```sh
+cd apps/web
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+3. Have your server (such as [http-server](https://www.npmjs.com/package/http-server)) point towards `apps/web/build`

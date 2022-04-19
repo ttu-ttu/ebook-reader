@@ -1,4 +1,5 @@
-node_modules
-dist
 .dockerignore
-Dockerfile
+**/Dockerfile
+**/node_modules
+**/build
+**/.svelte-kit

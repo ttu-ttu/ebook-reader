@@ -1,0 +1,139 @@
+.book-content {
+  font-family: var(--font-family-serif, 'Lora', 'Noto Serif JP', serif);
+  line-height: 1.65;
+}
+
+.book-content--writing-vertical-rl {
+  height: 100%;
+}
+
+.book-content {
+  :global(svg) {
+    margin: auto;
+  }
+
+  :global(a) {
+    color: inherit !important;
+  }
+
+  :global(a:link) {
+    opacity: 0.8;
+  }
+
+  :global(a):hover {
+    opacity: 0.95;
+  }
+
+  :global(ruby > rt) {
+    user-select: none;
+  }
+
+  :global([data-ttu-spoiler-img]) {
+    :global(.spoiler-label) {
+      display: none;
+    }
+  }
+}
+
+.book-content--hide-furigana.book-content--furigana-style-partial {
+  :global(ruby) {
+    :global(rt) {
+      color: var(--book-content-hint-furigana-font-color);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        :global(rt) {
+          color: inherit;
+        }
+      }
+    }
+  }
+  :global(ruby.reveal-rt) {
+    :global(rt) {
+      color: inherit;
+    }
+  }
+}
+
+.book-content--hide-furigana.book-content--furigana-style-full {
+  :global(ruby) {
+    text-shadow: var(--book-content-hint-furigana-shadow-color) 1px 0 10px;
+
+    :global(rt) {
+      visibility: hidden;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        :global(rt) {
+          visibility: visible;
+        }
+      }
+    }
+  }
+
+  :global(ruby.reveal-rt) {
+    text-shadow: none;
+
+    :global(rt) {
+      visibility: visible;
+    }
+  }
+}
+
+.book-content--hide-spoiler-image {
+  :global([data-ttu-spoiler-img]) {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    vertical-align: middle;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+
+    :global(.spoiler-label) {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #dcddde;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: inline-block;
+      padding: 12px 8px;
+      border-radius: 20px;
+      font-size: 15px;
+      font-family: 'Noto Sans JP', sans-serif;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    @media (hover: hover) {
+      &:hover :global(.spoiler-label) {
+        color: #ffffff;
+        background-color: rgba(0, 0, 0, 0.9);
+      }
+    }
+
+    :global(img),
+    :global(svg) {
+      filter: blur(44px);
+    }
+  }
+}
+
+.book-content--writing-horizontal-rl {
+  > :global(*) {
+    margin-bottom: 6rem;
+  }
+
+  :global(.grouped-image) {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+
+    :global(svg) {
+      margin: 0;
+    }
+  }
+}
