@@ -1,8 +1,0 @@
-<app-pure-book-manager
-  [isLoading]="(isLoading$| async) ?? false"
-  [isImporting]="(isImporting$ | async) ?? false"
-  [bookIds]="(bookIds$ | async) ?? []"
-  (filesChange)="onFilesChange($event)"
-  (openBookClick)="onOpenBookClick($event)"
-  (removeClick)="onRemoveClick($event)"
-  (bugReportClick)="onBugReportClick()"></app-pure-book-manager>
