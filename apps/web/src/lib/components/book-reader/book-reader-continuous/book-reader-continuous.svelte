@@ -13,59 +13,86 @@
   import { AutoScrollerContinuous } from './auto-scroller-continuous';
 
   export let htmlContent: string;
+
   export let width: number;
+
   export let height: number;
+
   export let verticalMode: boolean;
+
   export let fontColor: string;
+
   export let backgroundColor: string;
+
   export let hintFuriganaFontColor: string;
+
   export let hintFuriganaShadowColor: string;
+
   export let fontSize: number;
+
   export let fontFamilyGroupOne: string;
+
   export let fontFamilyGroupTwo: string;
+
   export let hideSpoilerImage: boolean;
+
   export let hideFurigana: boolean;
+
   export let furiganaStyle: FuriganaStyle;
+
   export let secondDimensionMaxValue: number;
+
   export let firstDimensionMargin: number;
+
   export let loadingState: boolean;
+
   export let multiplier: number;
+
   export let bookmarkData: Promise<BooksDbBookmarkData | undefined>;
 
-  const destroy$ = new Subject<void>();
+  export let exploredCharCount: number;
 
-  onDestroy(() => {
-    destroy$.next();
-    destroy$.complete();
-  });
+  export let bookCharCount: number;
 
-  let exploredCharCount = 0;
-  let bookCharCount = 0;
+  export let autoScroller: AutoScroller | undefined;
+
+  export let bookmarkManager: BookmarkManager | undefined;
+
+  export let pageManager: PageManager | undefined;
 
   const dispatch = createEventDispatcher<{
     contentChange: HTMLElement;
-    contentReady: void;
-    exploredCharCountChange: number;
-    bookCharCountChange: number;
   }>();
 
   let contentEl: HTMLElement | undefined;
 
   let calculator: CharacterStatsCalculator | undefined;
-  let htmlLoadEvent: Event | undefined;
+
   let contentReadyEvent = {};
-  let dispatchedContentReady = false;
+
+  let autoScrollerConcrete: AutoScrollerContinuous | undefined;
+
+  let bookmarkManagerConcrete: BookmarkManagerContinuous | undefined;
+
+  let bookmarkPos: BookmarkPosData | undefined;
+
+  let scrollWhenReady: boolean;
+
+  const scrollFn = browser
+    ? horizontalMouseWheel(4, document.documentElement, requestAnimationFrame)
+    : () => 0;
+
+  const destroy$ = new Subject<void>();
+
+  $: fullLengthDimension = verticalMode ? 'height' : 'width';
+
+  $: modifyingDimension = verticalMode ? 'width' : 'height';
+
+  $: boundSide = verticalMode ? (['left', 'right'] as const) : (['top', 'bottom'] as const);
+
   $: {
-    if (contentEl && htmlLoadEvent) {
-      dispatchedContentReady = false;
-      calculator = new CharacterStatsCalculator(
-        contentEl,
-        verticalMode,
-        document.documentElement,
-        document
-      );
-      exploredCharCount = 0;
-      bookCharCount = calculator.charCount;
+    if (htmlContent) {
+      scrollWhenReady = true;
     }
   }
 
@@ -78,23 +105,60 @@
     }
   }
 
+  $: {
+    if (autoScrollerConcrete) {
+      autoScrollerConcrete.multiplier = multiplier;
+      autoScrollerConcrete.verticalMode = verticalMode;
+    }
+  }
+
+  $: {
+    if (browser && calculator) {
+      bookmarkManagerConcrete =
+        browser && calculator && new BookmarkManagerContinuous(calculator, window);
+      bookmarkManager = bookmarkManagerConcrete;
+    }
+  }
+
+  $: {
+    if (contentReadyEvent) {
+      bookmarkPos = undefined;
+      bookmarkData.then((data) => {
+        if (!data) return;
+        bookmarkPos = bookmarkManagerConcrete?.getBookmarkBarPosition(data);
+      });
+    }
+  }
+
+  $: {
+    if (browser) {
+      pageManager = new PageManagerContinuous(verticalMode, firstDimensionMargin, window);
+    }
+  }
+
+  onDestroy(() => {
+    destroy$.next();
+    destroy$.complete();
+  });
+
+  if (browser) {
+    autoScrollerConcrete = new AutoScrollerContinuous(multiplier, verticalMode, destroy$, document);
+    autoScroller = autoScrollerConcrete;
+  }
+
   function onContentDisplayChange(_calculator: CharacterStatsCalculator) {
     _calculator.updateParagraphPos();
     exploredCharCount = _calculator.calcExploredCharCount();
 
-    if (!dispatchedContentReady) {
-      dispatch('contentReady');
-      dispatchedContentReady = true;
+    if (scrollWhenReady) {
+      scrollWhenReady = false;
+      bookmarkData.then((data) => {
+        if (!data || !bookmarkManager) return;
+        bookmarkManager.scrollToBookmark(data);
+      });
     }
     contentReadyEvent = {};
   }
-
-  $: dispatch('exploredCharCountChange', exploredCharCount);
-  $: dispatch('bookCharCountChange', bookCharCount);
-
-  const scrollFn = browser
-    ? horizontalMouseWheel(4, document.documentElement, requestAnimationFrame)
-    : () => 0;
 
   function onWheel(ev: WheelEvent) {
     if (verticalMode) {
@@ -110,56 +174,19 @@
     });
   }
 
-  function onHtmlLoad(ev: Event) {
+  function onHtmlLoad() {
     if (!contentEl) return;
 
+    calculator = new CharacterStatsCalculator(
+      contentEl,
+      verticalMode ? 'vertical' : 'horizontal',
+      verticalMode ? 'rtl' : 'ltr',
+      document.documentElement,
+      document
+    );
+    exploredCharCount = 0;
+    bookCharCount = calculator.charCount;
     dispatch('contentChange', contentEl);
-    htmlLoadEvent = ev;
-  }
-
-  $: fullLengthDimension = verticalMode ? 'height' : 'width';
-  $: modifyingDimension = verticalMode ? 'width' : 'height';
-  $: boundSide = verticalMode ? (['left', 'right'] as const) : (['top', 'bottom'] as const);
-
-  export let autoScroller: AutoScroller | undefined;
-  let autoScrollerConcrete: AutoScrollerContinuous | undefined;
-  if (browser) {
-    autoScrollerConcrete = new AutoScrollerContinuous(multiplier, verticalMode, destroy$, document);
-    autoScroller = autoScrollerConcrete;
-  }
-  $: {
-    if (autoScrollerConcrete) {
-      autoScrollerConcrete.multiplier = multiplier;
-      autoScrollerConcrete.verticalMode = verticalMode;
-    }
-  }
-
-  export let bookmarkManager: BookmarkManager | undefined;
-  let bookmarkManagerConcrete: BookmarkManagerContinuous | undefined;
-  $: {
-    if (browser && calculator) {
-      bookmarkManagerConcrete =
-        browser && calculator && new BookmarkManagerContinuous(calculator, window);
-      bookmarkManager = bookmarkManagerConcrete;
-    }
-  }
-
-  let bookmarkPos: BookmarkPosData | undefined;
-  $: {
-    if (contentReadyEvent) {
-      bookmarkPos = undefined;
-      bookmarkData.then((data) => {
-        if (!data) return;
-        bookmarkPos = bookmarkManagerConcrete?.getBookmarkBarPosition(data);
-      });
-    }
-  }
-
-  export let pageManager: PageManager | undefined;
-  $: {
-    if (browser) {
-      pageManager = new PageManagerContinuous(verticalMode, firstDimensionMargin, window);
-    }
   }
 </script>
 
@@ -242,12 +269,29 @@
   }
 
   .book-content--writing-vertical-rl {
+    height: 100%;
     > :global(*) {
       margin-left: 6rem;
     }
 
     :global(img) {
       max-height: var(--book-content-child-height, 100%);
+    }
+  }
+
+  .book-content--writing-horizontal-rl {
+    > :global(*) {
+      margin-bottom: 6rem;
+    }
+
+    :global(.grouped-image) {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: center;
+
+      :global(svg) {
+        margin: 0;
+      }
     }
   }
 </style>

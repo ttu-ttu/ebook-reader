@@ -15,7 +15,8 @@
     hideSpoilerImage$,
     secondDimensionMaxValue$,
     theme$,
-    writingMode$
+    writingMode$,
+    viewMode$
   } from '$lib/data/store';
   import { storage } from '$lib/data/window/navigator/storage';
   import { formatPageTitle } from '$lib/functions/format-page-title';
@@ -75,6 +76,7 @@
       bind:hideFurigana={$hideFurigana$}
       bind:furiganaStyle={$furiganaStyle$}
       bind:writingMode={$writingMode$}
+      bind:viewMode={$viewMode$}
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
       bind:firstDimensionMargin={$firstDimensionMargin$}
       bind:persistentStorage={$persistentStorage$}
