@@ -5,6 +5,7 @@
   import FormField from '$lib/components/form-field/form-field.svelte';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import { FuriganaStyle } from '$lib/data/furigana-style';
+  import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
   import SettingsItemGroup from './settings-item-group.svelte';
 
@@ -23,6 +24,8 @@
   export let furiganaStyle: FuriganaStyle;
 
   export let writingMode: WritingMode;
+
+  export let viewMode: ViewMode;
 
   export let secondDimensionMaxValue: number;
 
@@ -77,6 +80,17 @@
     }
   ];
 
+  const optionsForViewMode: ToggleOption<ViewMode>[] = [
+    {
+      id: ViewMode.Continuous,
+      text: 'Continuous'
+    },
+    {
+      id: ViewMode.Paginated,
+      text: 'Paginated'
+    }
+  ];
+
   $: verticalMode = writingMode === 'vertical-rl';
 </script>
 
@@ -122,21 +136,36 @@
   <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
 </SettingsItemGroup>
 
-<SettingsItemGroup title="Reader size">
-  <FormField title={verticalMode ? 'Max height' : 'Max width'}>
-    <input
-      type="number"
-      class={inputClasses}
-      step="1"
-      min="0"
-      bind:value={secondDimensionMaxValue}
-    />
-  </FormField>
-
-  <FormField title={verticalMode ? 'Left/right margin' : 'Top/bottom margin'} marginBottom={false}>
-    <input type="number" class={inputClasses} step="1" min="0" bind:value={firstDimensionMargin} />
-  </FormField>
+<SettingsItemGroup title="View mode">
+  <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
 </SettingsItemGroup>
+
+{#if viewMode === ViewMode.Continuous}
+  <SettingsItemGroup title="Reader size">
+    <FormField title={verticalMode ? 'Max height' : 'Max width'}>
+      <input
+        type="number"
+        class={inputClasses}
+        step="1"
+        min="0"
+        bind:value={secondDimensionMaxValue}
+      />
+    </FormField>
+
+    <FormField
+      title={verticalMode ? 'Left/right margin' : 'Top/bottom margin'}
+      marginBottom={false}
+    >
+      <input
+        type="number"
+        class={inputClasses}
+        step="1"
+        min="0"
+        bind:value={firstDimensionMargin}
+      />
+    </FormField>
+  </SettingsItemGroup>
+{/if}
 
 <SettingsItemGroup title="Persistent storage">
   <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />

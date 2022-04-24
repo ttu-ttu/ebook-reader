@@ -15,6 +15,7 @@ import { writableNumberLocalStorageSubject } from './internal/writable-number-lo
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
 import type { WritingMode } from './writing-mode';
 import { BookReaderAvailableKeybind, type BookReaderKeybindMap } from './book-reader-keybind';
+import { ViewMode } from './view-mode';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const multiplier$ = writableNumberLocalStorageSubject()('autoScrollMultiplier', 20);
@@ -27,13 +28,22 @@ export const furiganaStyle$ = writableStringLocalStorageSubject<FuriganaStyle>()
   'furiganaStyle',
   FuriganaStyle.Partial
 );
-export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()('', 'vertical-rl');
+export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()(
+  'writingMode',
+  'vertical-rl'
+);
 export const verticalMode$ = writingMode$.pipe(map((writingMode) => writingMode === 'vertical-rl'));
+export const viewMode$ = writableStringLocalStorageSubject<ViewMode>()(
+  'viewMode',
+  ViewMode.Continuous
+);
+
 export const secondDimensionMaxValue$ = writableNumberLocalStorageSubject()(
   'secondDimensionMaxValue',
   0
 );
 export const firstDimensionMargin$ = writableNumberLocalStorageSubject()('firstDimensionMargin', 0);
+
 export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(
   'requestPersistentStorage',
   true

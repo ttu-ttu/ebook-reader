@@ -16,8 +16,8 @@ export function onKeydownReader(
   bookmarkPage: () => void,
   scrollToBookmark: () => void,
   multiplierOffsetFn: (offset: number) => void,
-  autoScroller: AutoScroller,
-  pageManager: PageManager
+  autoScroller: AutoScroller | undefined,
+  pageManager: PageManager | undefined
 ) {
   const action = bookReaderKeybindMap[ev.code];
 
@@ -30,7 +30,7 @@ export function onKeydownReader(
       scrollToBookmark();
       return true;
     case BookReaderAvailableKeybind.AUTO_SCROLL_TOGGLE:
-      autoScroller.toggle();
+      autoScroller?.toggle();
       return true;
     case BookReaderAvailableKeybind.AUTO_SCROLL_INCREASE:
       multiplierOffsetFn(1);
@@ -39,10 +39,10 @@ export function onKeydownReader(
       multiplierOffsetFn(-1);
       return true;
     case BookReaderAvailableKeybind.NEXT_PAGE:
-      pageManager.nextPage();
+      pageManager?.nextPage();
       return true;
     case BookReaderAvailableKeybind.PREV_PAGE:
-      pageManager.prevPage();
+      pageManager?.prevPage();
       return true;
     default:
       return false;

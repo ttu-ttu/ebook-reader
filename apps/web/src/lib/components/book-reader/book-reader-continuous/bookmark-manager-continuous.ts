@@ -5,7 +5,7 @@
  */
 
 import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
-import { formatScrollPos } from '$lib/functions/format-scroll-pos';
+import { formatPos } from '$lib/functions/format-pos';
 import type { BookmarkManager } from '../types';
 import type { CharacterStatsCalculator } from './character-stats-calculator';
 
@@ -24,7 +24,7 @@ export class BookmarkManagerContinuous implements BookmarkManager {
     const exploredCharCount = this.calculator.calcExploredCharCount();
     const bookCharCount = this.calculator.charCount;
 
-    const verticalMode = this.calculator.getVerticalMode();
+    const { verticalMode } = this.calculator;
     const scrollAxis = verticalMode ? 'scrollX' : 'scrollY';
 
     return {
@@ -45,7 +45,7 @@ export class BookmarkManagerContinuous implements BookmarkManager {
   private getBookmarkPosition(bookmark: BooksDbBookmarkData): TargetScroll | undefined {
     if (!bookmark.exploredCharCount) return undefined;
 
-    const verticalMode = this.calculator.getVerticalMode();
+    const { verticalMode } = this.calculator;
 
     const targetScrollByScrollPos = this.getBookmarkTargetPosByScrollValue(bookmark);
     if (targetScrollByScrollPos) return targetScrollByScrollPos;
@@ -63,13 +63,12 @@ export class BookmarkManagerContinuous implements BookmarkManager {
 
   private getBookmarkTargetPosByScrollValue(bookmarkData: BooksDbBookmarkData) {
     const { exploredCharCount } = bookmarkData;
-    const verticalMode = this.calculator.getVerticalMode();
 
     const getTargetPos = (scrollAxis: 'scrollX' | 'scrollY') => {
       const scrollPos = bookmarkData[scrollAxis];
       if (!scrollPos) return undefined;
 
-      const formattedScrollPos = formatScrollPos(scrollPos, verticalMode);
+      const formattedScrollPos = formatPos(scrollPos, this.calculator.direction);
       if (this.calculator.getCharCountByScrollPos(formattedScrollPos) === exploredCharCount) {
         return {
           [scrollAxis]: scrollPos
@@ -78,7 +77,7 @@ export class BookmarkManagerContinuous implements BookmarkManager {
       return undefined;
     };
 
-    return verticalMode ? getTargetPos('scrollX') : getTargetPos('scrollY');
+    return this.calculator.verticalMode ? getTargetPos('scrollX') : getTargetPos('scrollY');
   }
 }
 

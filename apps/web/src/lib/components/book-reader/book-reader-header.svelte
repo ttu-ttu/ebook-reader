@@ -1,8 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
-  import { faBookmark } from '@fortawesome/free-regular-svg-icons';
-  import { faExpand, faCog, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+  import { faBookmark as farBookmark } from '@fortawesome/free-regular-svg-icons';
+  import {
+    faBookmark as fasBookmark,
+    faExpand,
+    faCog,
+    faSignOutAlt
+  } from '@fortawesome/free-solid-svg-icons';
   import {
     nTranslateXHeaderFa,
     opacityHeaderIcon,
@@ -12,6 +17,8 @@
 
   export let autoScrollMultiplier: number;
   export let showFullscreenButton: boolean;
+
+  export let isBookmarkScreen: boolean;
 
   const dispatch = createEventDispatcher<{
     bookmarkClick: void;
@@ -28,7 +35,7 @@
       on:click={() => dispatch('bookmarkClick')}
       role="button"
     >
-      <Fa icon={faBookmark} />
+      <Fa icon={isBookmarkScreen ? fasBookmark : farBookmark} />
     </div>
     <div class="flex items-center px-4 text-xl xl:px-3 xl:text-lg">{autoScrollMultiplier}x</div>
   </div>

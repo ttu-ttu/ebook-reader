@@ -57,7 +57,7 @@ export default function generateEpubHtml(
     childDiv.id = `${prependValue}${itemIdRef}`;
 
     if (bodyId) {
-      const anchorHelper = document.createElement('div');
+      const anchorHelper = document.createElement('span');
       anchorHelper.id = bodyId;
       childDiv.prepend(anchorHelper);
     }
