@@ -5,78 +5,61 @@
  */
 
 import { binarySearchNoNegative } from '$lib/functions/binary-search';
-import { formatScrollPos } from '$lib/functions/format-scroll-pos';
+import { formatPos } from '$lib/functions/format-pos';
 import { getCharacterCount } from '$lib/functions/get-character-count';
-import { isElementGaiji } from '$lib/functions/is-element-gaiji';
+import { getParagraphNodes } from '../get-paragraph-nodes';
 
 export class CharacterStatsCalculator {
   readonly charCount: number;
 
-  private readonly paragraphs: Node[];
+  readonly accumulatedCharCount: number[];
 
-  private readonly paragraphPos: number[];
+  readonly paragraphPos: number[];
+
+  private readonly paragraphs: Node[];
 
   private paragraphPosToAccCharCount = new Map<number, number>();
 
-  private readonly accumulatedCharCount: number[];
-
   constructor(
     public readonly containerEl: HTMLElement,
-    private verticalMode: boolean,
+    private readonly axis: 'horizontal' | 'vertical',
+    public readonly direction: 'ltr' | 'rtl',
     private readonly scrollEl: HTMLElement,
     private readonly document: Document
   ) {
-    this.paragraphs = getTextNodeOrGaijiNodes(containerEl, (n) => {
-      if (n.nodeName === 'RT') {
-        return false;
-      }
-      const isHidden =
-        n instanceof HTMLElement &&
-        (n.attributes.getNamedItem('aria-hidden') || n.attributes.getNamedItem('hidden'));
-      if (isHidden) {
-        return false;
-      }
-      return true;
-    }).filter((n) => {
-      if (isNodeGaiji(n)) {
-        return true;
-      }
-      if (n.textContent?.replace(/\s/g, '').length) {
-        return true;
-      }
-      return false;
-    });
+    this.paragraphs = getParagraphNodes(containerEl);
 
     this.paragraphPos = Array(this.paragraphs.length);
     this.accumulatedCharCount = [];
     let exploredCharCount = 0;
     this.paragraphs.forEach((node) => {
-      exploredCharCount += isNodeGaiji(node) ? 1 : getCharacterCount(node);
+      exploredCharCount += getCharacterCount(node);
       this.accumulatedCharCount.push(exploredCharCount);
     });
     this.charCount = exploredCharCount;
   }
 
-  getVerticalMode() {
-    return this.verticalMode;
+  get verticalMode() {
+    return this.axis === 'vertical';
   }
 
-  setVerticalMode(verticalMode: boolean) {
-    this.verticalMode = verticalMode;
-    this.updateParagraphPos();
-  }
-
-  updateParagraphPos() {
+  updateParagraphPos(scrollPos = this.scrollPos) {
     const scrollElRect = this.scrollEl.getBoundingClientRect();
-    const scrollElRight = this.verticalMode ? -scrollElRect.right : scrollElRect.top;
+    const scrollElRight = formatPos(
+      this.verticalMode ? scrollElRect.right : scrollElRect.top,
+      this.direction
+    );
 
     const paragraphPosToIndices = new Map<number, number[]>();
     for (let i = 0; i < this.paragraphs.length; i += 1) {
       const node = this.paragraphs[i];
 
       const nodeRect = this.getNodeBoundingRect(node);
-      const nodeLeft = this.verticalMode ? -nodeRect.left : nodeRect.bottom;
-      const paragraphPos = nodeLeft - scrollElRight;
+      const nodeLeft = formatPos(
+        this.verticalMode ? nodeRect.left : nodeRect.bottom,
+        this.direction
+      );
+      const paragraphPos = nodeLeft - scrollElRight + scrollPos;
       this.paragraphPos[i] = paragraphPos;
 
       const indices = paragraphPosToIndices.get(paragraphPos) || [];
@@ -93,8 +76,7 @@ export class CharacterStatsCalculator {
   }
 
   calcExploredCharCount() {
-    const scrollPos = this.verticalMode ? this.scrollEl.scrollLeft : this.scrollEl.scrollTop;
-    return this.getCharCountByScrollPos(formatScrollPos(scrollPos, this.verticalMode));
+    return this.getCharCountByScrollPos(this.scrollPos);
   }
 
   getCharCountByScrollPos(scrollPos: number) {
@@ -104,7 +86,7 @@ export class CharacterStatsCalculator {
 
   getScrollPosByCharCount(charCount: number) {
     const index = binarySearchNoNegative(this.accumulatedCharCount, charCount);
-    return formatScrollPos(this.paragraphPos[index], this.verticalMode);
+    return formatPos(this.paragraphPos[index], this.direction);
   }
 
   getNodeBoundingRect(node: Node) {
@@ -112,29 +94,12 @@ export class CharacterStatsCalculator {
     range.selectNode(node);
     return range.getBoundingClientRect();
   }
-}
 
-function getTextNodeOrGaijiNodes(node: Node, filterFn: (n: Node) => boolean): Node[] {
-  if (!node.hasChildNodes() || !filterFn(node)) {
-    return [];
+  private get scrollPos() {
+    return formatPos(this.scrollEl[this.scrollPosProp], this.direction);
   }
 
-  return Array.from(node.childNodes)
-    .flatMap((n) => {
-      if (n.nodeType === Node.TEXT_NODE) {
-        return [n];
-      }
-      if (isNodeGaiji(n)) {
-        return [n];
-      }
-      return getTextNodeOrGaijiNodes(n, filterFn);
-    })
-    .filter(filterFn);
-}
-
-function isNodeGaiji(node: Node) {
-  if (!(node instanceof HTMLImageElement)) {
-    return false;
+  private get scrollPosProp() {
+    return this.verticalMode ? 'scrollLeft' : 'scrollTop';
   }
-  return isElementGaiji(node);
 }

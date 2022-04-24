@@ -3,10 +3,6 @@
   line-height: 1.65;
 }
 
-.book-content--writing-vertical-rl {
-  height: 100%;
-}
-
 .book-content {
   :global(svg) {
     margin: auto;
@@ -118,22 +114,6 @@
     :global(img),
     :global(svg) {
       filter: blur(44px);
-    }
-  }
-}
-
-.book-content--writing-horizontal-rl {
-  > :global(*) {
-    margin-bottom: 6rem;
-  }
-
-  :global(.grouped-image) {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: center;
-
-    :global(svg) {
-      margin: 0;
     }
   }
 }

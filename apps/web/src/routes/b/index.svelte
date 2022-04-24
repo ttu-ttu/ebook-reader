@@ -37,7 +37,8 @@
     secondDimensionMaxValue$,
     theme$,
     verticalMode$,
-    writingMode$
+    writingMode$,
+    viewMode$
   } from '$lib/data/store';
   import { availableThemes } from '$lib/data/theme-option';
   import { fullscreenManager } from '$lib/data/fullscreen-manager';
@@ -138,10 +139,6 @@
   let pageManager: PageManager | undefined;
 
   function onKeydown(ev: KeyboardEvent) {
-    let bookId: number | undefined;
-    bookId$.subscribe((x) => (bookId = x));
-    if (!bookId || !autoScroller || !bookmarkManager || !pageManager) return;
-
     const result = onKeydownReader(
       ev,
       bookReaderKeybindMap$.getValue(),
@@ -182,6 +179,9 @@
   }
 
   let showHeader = true;
+
+  let isBookmarkScreen = false;
+
   const autoHideHeader$ = timer(2500).pipe(
     tap(() => (showHeader = false)),
     reduceToEmptyString()
@@ -220,6 +220,7 @@
     <BookReaderHeader
       showFullscreenButton={fullscreenManager.fullscreenEnabled}
       autoScrollMultiplier={$multiplier$}
+      bind:isBookmarkScreen
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
       on:bookManagerClick={onBookManagerClick}
@@ -245,15 +246,17 @@
     hideSpoilerImage={$hideSpoilerImage$}
     hideFurigana={$hideFurigana$}
     furiganaStyle={$furiganaStyle$}
+    viewMode={$viewMode$}
     secondDimensionMaxValue={$secondDimensionMaxValue$}
     firstDimensionMargin={$firstDimensionMargin$}
     multiplier={$multiplier$}
+    bind:exploredCharCount
+    bind:bookCharCount
+    bind:isBookmarkScreen
     bind:bookmarkData
     bind:autoScroller
     bind:bookmarkManager
     bind:pageManager
-    on:exploredCharCountChange={(ev) => (exploredCharCount = ev.detail)}
-    on:bookCharCountChange={(ev) => (bookCharCount = ev.detail)}
   />
   {$initBookmarkData$ ?? ''}
   {$setBackgroundColor$ ?? ''}
