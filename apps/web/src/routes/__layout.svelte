@@ -1,23 +1,12 @@
 <script lang="ts">
   import { MetaTags } from 'svelte-meta-tags';
-  import { takeUntil, timer } from 'rxjs';
   import { page } from '$app/stores';
   import { basePath } from '$lib/data/env';
-  import UpdateDialog from '$lib/components/update-dialog.svelte';
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
-  import { swUpdateReady$ } from './service-worker-manager';
   import '../app.scss';
 
   let path = '';
   page.subscribe((p) => (path = p.url.pathname));
-
-  swUpdateReady$.pipe(takeUntil(timer(60000 * 5))).subscribe(() => {
-    dialogManager.dialogs$.next([
-      {
-        component: UpdateDialog
-      }
-    ]);
-  });
 
   let dialogs: Dialog[] = [];
   dialogManager.dialogs$.subscribe((d) => (dialogs = d));
