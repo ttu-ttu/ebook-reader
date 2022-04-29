@@ -23,7 +23,9 @@ export default function formatStyleSheet(bookData: BooksDbBookData, parentSelect
     const newDeclarations: Record<string, string> = {};
 
     // eslint-disable-next-line no-param-reassign
-    rule.declarations = rule.declarations.filter((d) => !/line-height$/.test(d.property));
+    rule.declarations = rule.declarations.filter(
+      (d) => !/line-height$/.test(d.property) && !/text-indent$/.test(d.property)
+    );
 
     const lineBreakFormatter = new LineBreakFormatter(rule.declarations, newDeclarations);
 
