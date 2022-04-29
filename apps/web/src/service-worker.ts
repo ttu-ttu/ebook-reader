@@ -7,6 +7,8 @@ import { toSearchParams } from '$lib/functions/to-search-params';
 const worker = self as unknown as ServiceWorkerGlobalScope;
 const BUILD_CACHE_NAME = `build:${version}`;
 
+const prerenderedSet = new Set(prerendered);
+
 const assetsToCache = build.concat(files).concat(prerendered);
 const cachedAssets = new Set(assetsToCache);
 
@@ -37,7 +39,14 @@ worker.addEventListener('fetch', (event) => {
   const isBuildAsset = isSelfHost && cachedAssets.has(url.pathname);
   const skipBecauseUncached = event.request.cache === 'only-if-cached' && !isBuildAsset;
 
-  if (isHttp && !isDevServerRequest && !skipBecauseUncached && isSelfHost) {
+  if (!isHttp || isDevServerRequest || skipBecauseUncached) return;
+
+  if (isSelfHost && prerenderedSet.has(url.pathname)) {
+    event.respondWith(networkFirstRaceCache(event.request, BUILD_CACHE_NAME));
+    return;
+  }
+
+  if (isSelfHost) {
     const response = isBuildAsset
       ? caches.match(url.pathname).then((r) => r ?? fetch(event.request))
       : selfHostParameterizedUrlResponse(event.request);
@@ -46,6 +55,43 @@ worker.addEventListener('fetch', (event) => {
     }
   }
 });
+
+async function networkFirstRaceCache(request: Request, fallbackCacheName?: string) {
+  const cache = await caches.open(`other:${version}`);
+  const controller = new AbortController();
+
+  let cachedResponse: Response | undefined;
+
+  let done = false;
+  let attempted = false;
+  const retrieveFromCache = async () => {
+    const response = await cache.match(request);
+    if (response) return response;
+    if (!fallbackCacheName) return undefined;
+    return caches.match(request, { cacheName: fallbackCacheName });
+  };
+
+  try {
+    const handle = setTimeout(async () => {
+      cachedResponse = await retrieveFromCache();
+      attempted = true;
+      if (!cachedResponse || done) return;
+      controller.abort();
+    }, 50);
+    const response = await fetch(request, { signal: controller.signal });
+    done = true; // avoid Cache.put() was aborted exception
+    clearTimeout(handle);
+    cache.put(request, response.clone());
+    return response;
+  } catch (err) {
+    if (!attempted) {
+      cachedResponse = await retrieveFromCache();
+    }
+    if (cachedResponse) return cachedResponse;
+
+    throw err;
+  }
+}
 
 function selfHostParameterizedUrlResponse(request: Request) {
   const url = new URL(request.url);
