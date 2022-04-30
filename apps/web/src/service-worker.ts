@@ -82,7 +82,7 @@ async function networkFirstRaceCache(request: Request, fallbackCacheName?: strin
       attempted = true;
       if (!cachedResponse || done) return;
       controller.abort();
-    }, 50);
+    }, 1000);
     const response = await fetch(request, { signal: controller.signal });
     done = true; // avoid Cache.put() was aborted exception
     clearTimeout(handle);
