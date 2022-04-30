@@ -105,7 +105,7 @@ const darkTheme = updateHintFuriganaFontColor({
     r: 240,
     g: 240,
     b: 241,
-    a: 0.7
+    a: 0.3
   },
   tooltipTextFontColor: {
     r: 0xff,

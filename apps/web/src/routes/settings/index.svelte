@@ -67,7 +67,7 @@
 </div>
 
 <div class="{pxScreen} h-full pt-16 xl:pt-14">
-  <div class="max-w-md">
+  <div class="max-w-5xl">
     <SettingsContent
       bind:selectedTheme={$theme$}
       bind:fontSize={$fontSize$}
