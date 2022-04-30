@@ -117,6 +117,8 @@
 
   $: height$.next(height);
 
+  $: maxHeight = verticalMode && secondDimensionMaxValue ? secondDimensionMaxValue : undefined;
+
   $: {
     if (htmlContent) {
       scrollWhenReady = true;
@@ -248,9 +250,7 @@
   style:max-width={!verticalMode && secondDimensionMaxValue
     ? `${secondDimensionMaxValue}px`
     : undefined}
-  style:max-height={verticalMode && secondDimensionMaxValue
-    ? `${secondDimensionMaxValue}px`
-    : undefined}
+  style:max-height={maxHeight ? `${maxHeight}px` : undefined}
   style:padding-left={verticalMode && firstDimensionMargin
     ? `${firstDimensionMargin}px`
     : undefined}
@@ -267,7 +267,7 @@
   style:--font-family-sans-serif={fontFamilyGroupTwo}
   style:--book-content-hint-furigana-font-color={hintFuriganaFontColor}
   style:--book-content-hint-furigana-shadow-color={hintFuriganaShadowColor}
-  style:--book-content-child-height="{height}px"
+  style:--book-content-child-height="{maxHeight || height}px"
   class:book-content--writing-vertical-rl={verticalMode}
   class:book-content--writing-horizontal-rl={!verticalMode}
   class:book-content--hide-furigana={hideFurigana}
