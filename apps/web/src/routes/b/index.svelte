@@ -24,6 +24,7 @@
   import StyleSheetRenderer from '$lib/components/style-sheet-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import {
+    autoPositionOnResize$,
     bookReaderKeybindMap$,
     database,
     firstDimensionMargin$,
@@ -249,6 +250,7 @@
     viewMode={$viewMode$}
     secondDimensionMaxValue={$secondDimensionMaxValue$}
     firstDimensionMargin={$firstDimensionMargin$}
+    autoPositionOnResize={$autoPositionOnResize$}
     multiplier={$multiplier$}
     bind:exploredCharCount
     bind:bookCharCount

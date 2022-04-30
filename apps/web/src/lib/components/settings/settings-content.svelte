@@ -31,6 +31,8 @@
 
   export let firstDimensionMargin: number;
 
+  export let autoPositionOnResize: boolean;
+
   export let persistentStorage: boolean;
 
   const availableThemes = Array.from(availableThemesMap.entries()).map(([theme, option]) => ({
@@ -164,6 +166,10 @@
         bind:value={firstDimensionMargin}
       />
     </FormField>
+  </SettingsItemGroup>
+
+  <SettingsItemGroup title="Auto position on resize">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoPositionOnResize} />
   </SettingsItemGroup>
 {/if}
 

@@ -6,6 +6,7 @@
   import SettingsHeader from '$lib/components/settings/settings-header.svelte';
   import { pxScreen } from '$lib/css-classes';
   import {
+    autoPositionOnResize$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -79,6 +80,7 @@
       bind:viewMode={$viewMode$}
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
       bind:firstDimensionMargin={$firstDimensionMargin$}
+      bind:autoPositionOnResize={$autoPositionOnResize$}
       bind:persistentStorage={$persistentStorage$}
     />
   </div>

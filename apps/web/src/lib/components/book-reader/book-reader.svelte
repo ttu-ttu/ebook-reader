@@ -58,6 +58,8 @@
 
   export let firstDimensionMargin: number;
 
+  export let autoPositionOnResize: boolean;
+
   export let viewMode: ViewMode;
 
   export let exploredCharCount: number;
@@ -142,6 +144,7 @@
       {furiganaStyle}
       {secondDimensionMaxValue}
       {firstDimensionMargin}
+      {autoPositionOnResize}
       {multiplier}
       loadingState={$imageLoadingState$ ?? true}
       bind:exploredCharCount

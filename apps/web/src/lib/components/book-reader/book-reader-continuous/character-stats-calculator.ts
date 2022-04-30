@@ -43,7 +43,7 @@ export class CharacterStatsCalculator {
     return this.axis === 'vertical';
   }
 
-  updateParagraphPos(scrollPos = this.scrollPos) {
+  updateParagraphPos(scrollPos = 0) {
     const scrollElRect = this.scrollEl.getBoundingClientRect();
     const scrollElRight = formatPos(
       this.verticalMode ? scrollElRect.right : scrollElRect.top,
