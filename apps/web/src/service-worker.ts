@@ -52,7 +52,12 @@ worker.addEventListener('fetch', (event) => {
       : selfHostParameterizedUrlResponse(event.request);
     if (response) {
       event.respondWith(response);
+      return;
     }
+  }
+
+  if (url.host === 'fonts.googleapis.com') {
+    event.respondWith(networkFirstRaceCache(event.request));
   }
 });
 
