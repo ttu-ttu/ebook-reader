@@ -1,6 +1,6 @@
 # Run from pnpm workspace root (e.g. docker build -t ebook-reader -f apps/web/Dockerfile .)
 
-FROM node:16-alpine as builder
+FROM node:18-alpine as builder
 
 RUN wget -qO- https://get.pnpm.io/v6.16.js | node - add --global pnpm
 
