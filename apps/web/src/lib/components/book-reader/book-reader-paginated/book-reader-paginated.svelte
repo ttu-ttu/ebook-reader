@@ -369,6 +369,11 @@
       max-width: var(--book-content-child-width, 100vw);
       max-height: var(--book-content-child-height, 100vh);
     }
+    :global(p) {
+      -webkit-column-break-inside: avoid;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
   }
 
   .book-content--writing-vertical-rl {
