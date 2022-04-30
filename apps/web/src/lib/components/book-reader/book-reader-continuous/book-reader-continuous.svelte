@@ -1,6 +1,17 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy } from 'svelte';
-  import { Subject } from 'rxjs';
+  import {
+    animationFrameScheduler,
+    combineLatest,
+    debounceTime,
+    distinctUntilChanged,
+    filter,
+    map,
+    observeOn,
+    skip,
+    Subject,
+    takeUntil
+  } from 'rxjs';
   import { browser } from '$app/env';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
@@ -44,6 +55,8 @@
 
   export let firstDimensionMargin: number;
 
+  export let autoPositionOnResize: boolean;
+
   export let loadingState: boolean;
 
   export let multiplier: number;
@@ -74,13 +87,23 @@
 
   let bookmarkManagerConcrete: BookmarkManagerContinuous | undefined;
 
+  let pageManagerConcrete: PageManagerContinuous | undefined;
+
   let bookmarkPos: BookmarkPosData | undefined;
 
   let scrollWhenReady: boolean;
 
+  let prevIntendedCharCount = 0;
+
+  let isResizeScroll = false;
+
   const scrollFn = browser
     ? horizontalMouseWheel(4, document.documentElement, requestAnimationFrame)
     : () => 0;
+
+  const width$ = new Subject<number>();
+
+  const height$ = new Subject<number>();
 
   const destroy$ = new Subject<void>();
 
@@ -89,6 +112,10 @@
   $: modifyingDimension = verticalMode ? 'width' : 'height';
 
   $: boundSide = verticalMode ? (['left', 'right'] as const) : (['top', 'bottom'] as const);
+
+  $: width$.next(width);
+
+  $: height$.next(height);
 
   $: {
     if (htmlContent) {
@@ -132,7 +159,8 @@
 
   $: {
     if (browser) {
-      pageManager = new PageManagerContinuous(verticalMode, firstDimensionMargin, window);
+      pageManagerConcrete = new PageManagerContinuous(verticalMode, firstDimensionMargin, window);
+      pageManager = pageManagerConcrete;
     }
   }
 
@@ -145,6 +173,24 @@
     autoScrollerConcrete = new AutoScrollerContinuous(multiplier, verticalMode, destroy$, document);
     autoScroller = autoScrollerConcrete;
   }
+
+  combineLatest([width$, height$])
+    .pipe(
+      filter(() => autoPositionOnResize),
+      skip(1),
+      map(([w, h]) => (verticalMode ? h : w)),
+      distinctUntilChanged(),
+      debounceTime(10),
+      observeOn(animationFrameScheduler),
+      takeUntil(destroy$)
+    )
+    .subscribe(() => {
+      if (!calculator || !pageManagerConcrete) return;
+
+      const scrollPos = calculator.getScrollPosByCharCount(prevIntendedCharCount);
+      isResizeScroll = true;
+      pageManagerConcrete.scrollTo(scrollPos);
+    });
 
   function onContentDisplayChange(_calculator: CharacterStatsCalculator) {
     _calculator.updateParagraphPos();
@@ -171,6 +217,10 @@
       if (!calculator) return;
 
       exploredCharCount = calculator.calcExploredCharCount();
+      if (!isResizeScroll) {
+        prevIntendedCharCount = exploredCharCount;
+      }
+      isResizeScroll = false;
     });
   }
 
@@ -185,6 +235,7 @@
       document
     );
     exploredCharCount = 0;
+    prevIntendedCharCount = exploredCharCount;
     bookCharCount = calculator.charCount;
     dispatch('contentChange', contentEl);
   }

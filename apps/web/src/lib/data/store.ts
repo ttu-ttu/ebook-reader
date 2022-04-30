@@ -44,6 +44,11 @@ export const secondDimensionMaxValue$ = writableNumberLocalStorageSubject()(
 );
 export const firstDimensionMargin$ = writableNumberLocalStorageSubject()('firstDimensionMargin', 0);
 
+export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
+  'autoPositionOnResize',
+  true
+);
+
 export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(
   'requestPersistentStorage',
   true

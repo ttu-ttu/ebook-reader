@@ -21,6 +21,12 @@ export class PageManagerContinuous implements PageManager {
     this.scrollByPercent(-0.9);
   }
 
+  scrollTo(pos: number) {
+    this.window.scrollTo({
+      [this.verticalMode ? 'left' : 'top']: pos
+    });
+  }
+
   private scrollByPercent(value: number) {
     let windowSize = this.window.innerHeight;
     let scrollSide: 'left' | 'top' = 'top';
