@@ -3,6 +3,22 @@
   import DialogTemplate from '$lib/components/dialog-template.svelte';
   import Ripple from '$lib/components/ripple.svelte';
   import { logger } from '$lib/data/logger';
+  import {
+    autoPositionOnResize$,
+    firstDimensionMargin$,
+    fontFamilyGroupOne$,
+    fontFamilyGroupTwo$,
+    fontSize$,
+    furiganaStyle$,
+    hideFurigana$,
+    hideSpoilerImage$,
+    multiplier$,
+    requestPersistentStorage$,
+    secondDimensionMaxValue$,
+    theme$,
+    viewMode$,
+    writingMode$
+  } from '$lib/data/store';
 
   export let title = 'Error';
 
@@ -12,6 +28,27 @@
     JSON.stringify(
       {
         userAgent: navigator.userAgent,
+        viewport: {
+          visualViewport: !!window.visualViewport,
+          width: window.visualViewport?.width ?? window.innerWidth,
+          height: window.visualViewport?.height ?? window.innerHeight
+        },
+        settings: {
+          theme: theme$.getValue(),
+          multiplier: multiplier$.getValue(),
+          fontSize: fontSize$.getValue(),
+          fontFamilyGroupOne: fontFamilyGroupOne$.getValue(),
+          fontFamilyGroupTwo: fontFamilyGroupTwo$.getValue(),
+          hideSpoilerImage: hideSpoilerImage$.getValue(),
+          hideFurigana: hideFurigana$.getValue(),
+          furiganaStyle: furiganaStyle$.getValue(),
+          writingMode: writingMode$.getValue(),
+          viewMode: viewMode$.getValue(),
+          secondDimensionMaxValue: secondDimensionMaxValue$.getValue(),
+          firstDimensionMargin: firstDimensionMargin$.getValue(),
+          autoPositionOnResize: autoPositionOnResize$.getValue(),
+          requestPersistentStorage: requestPersistentStorage$.getValue()
+        },
         log: logger.history
       },
       null,
