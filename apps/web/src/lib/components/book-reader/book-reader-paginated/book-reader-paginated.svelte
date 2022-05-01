@@ -241,11 +241,11 @@
   iffBrowser(() => fromEvent<WheelEvent>(document.body, 'wheel', { passive: true }))
     .pipe(throttleTime(50), takeUntil(destroy$))
     .subscribe((ev) => {
-      let multiplier: 1 | -1 = ev.deltaX < 0 ? -1 : 1;
+      let multiplier = (ev.deltaX < 0 ? -1 : 1) * (verticalMode ? -1 : 1);
       if (!ev.deltaX) {
         multiplier = ev.deltaY < 0 ? -1 : 1;
       }
-      concretePageManager?.flipPage(multiplier);
+      concretePageManager?.flipPage(multiplier as -1 | 1);
     });
 
   function onHtmlLoad() {
