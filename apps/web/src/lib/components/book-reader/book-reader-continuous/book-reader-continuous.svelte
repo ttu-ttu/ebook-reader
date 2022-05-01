@@ -274,6 +274,7 @@
   class:book-content--hide-spoiler-image={hideSpoilerImage}
   class:book-content--furigana-style-partial={furiganaStyle === FuriganaStyle.Partial}
   class:book-content--furigana-style-full={furiganaStyle === FuriganaStyle.Full}
+  class:book-content--furigana-style-toggle={furiganaStyle === FuriganaStyle.Toggle}
   class="book-content m-auto"
 >
   <HtmlRenderer html={htmlContent} on:load={onHtmlLoad} />

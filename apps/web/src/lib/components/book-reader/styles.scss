@@ -52,8 +52,10 @@
   }
 }
 
-.book-content--hide-furigana.book-content--furigana-style-full {
+.book-content--hide-furigana.book-content--furigana-style-full,
+.book-content--hide-furigana.book-content--furigana-style-toggle {
   :global(ruby) {
+    cursor: pointer;
     text-shadow: var(--book-content-hint-furigana-shadow-color) 1px 0 10px;
 
     :global(rt) {
@@ -74,6 +76,18 @@
 
     :global(rt) {
       visibility: visible;
+    }
+  }
+}
+
+.book-content--hide-furigana.book-content--furigana-style-toggle {
+  :global(ruby) {
+    @media (hover: hover) {
+      &:not(.reveal-rt):hover {
+        :global(rt) {
+          visibility: hidden;
+        }
+      }
     }
   }
 }

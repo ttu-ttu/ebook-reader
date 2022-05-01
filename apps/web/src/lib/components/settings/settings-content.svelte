@@ -68,6 +68,10 @@
     {
       id: FuriganaStyle.Full,
       text: 'Full'
+    },
+    {
+      id: FuriganaStyle.Toggle,
+      text: 'Toggle'
     }
   ];
 
@@ -100,7 +104,7 @@
   <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
 </SettingsItemGroup>
 
-<SettingsItemGroup title="Font settings">
+<SettingsItemGroup title="Font settings" asGrid>
   <FormField title="Font size">
     <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
   </FormField>
@@ -122,57 +126,54 @@
   </FormField>
 </SettingsItemGroup>
 
-<SettingsItemGroup title="Blur image">
-  <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
-</SettingsItemGroup>
-
-<SettingsItemGroup title="Hide furigana">
-  <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
-</SettingsItemGroup>
-
-<SettingsItemGroup title="Hide furigana style">
-  <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
-</SettingsItemGroup>
-
-<SettingsItemGroup title="Writing mode">
-  <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
-</SettingsItemGroup>
-
-<SettingsItemGroup title="View mode">
-  <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
-</SettingsItemGroup>
-
-{#if viewMode === ViewMode.Continuous}
-  <SettingsItemGroup title="Reader size">
-    <FormField title={verticalMode ? 'Max height' : 'Max width'}>
-      <input
-        type="number"
-        class={inputClasses}
-        step="1"
-        min="0"
-        bind:value={secondDimensionMaxValue}
-      />
-    </FormField>
-
-    <FormField
-      title={verticalMode ? 'Left/right margin' : 'Top/bottom margin'}
-      marginBottom={false}
-    >
-      <input
-        type="number"
-        class={inputClasses}
-        step="1"
-        min="0"
-        bind:value={firstDimensionMargin}
-      />
-    </FormField>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:gap-y-2 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-10">
+  <SettingsItemGroup title="View mode">
+    <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
   </SettingsItemGroup>
-
-  <SettingsItemGroup title="Auto position on resize">
-    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoPositionOnResize} />
+  <SettingsItemGroup title="Writing mode">
+    <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
   </SettingsItemGroup>
-{/if}
+  <SettingsItemGroup title="Blur image">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Hide furigana">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Hide furigana style">
+    <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Persistent storage">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
+  </SettingsItemGroup>
+  {#if viewMode === ViewMode.Continuous}
+    <SettingsItemGroup title="Auto position on resize">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoPositionOnResize} />
+    </SettingsItemGroup>
+    <div class="lg:col-span-2">
+      <SettingsItemGroup title="Reader size" asGrid columns={2}>
+        <FormField title={verticalMode ? 'Max height' : 'Max width'}>
+          <input
+            type="number"
+            class={inputClasses}
+            step="1"
+            min="0"
+            bind:value={secondDimensionMaxValue}
+          />
+        </FormField>
 
-<SettingsItemGroup title="Persistent storage">
-  <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
-</SettingsItemGroup>
+        <FormField
+          title={verticalMode ? 'Left/right margin' : 'Top/bottom margin'}
+          marginBottom={false}
+        >
+          <input
+            type="number"
+            class={inputClasses}
+            step="1"
+            min="0"
+            bind:value={firstDimensionMargin}
+          />
+        </FormField>
+      </SettingsItemGroup>
+    </div>
+  {/if}
+</div>

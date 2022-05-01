@@ -24,6 +24,12 @@ const config = {
     plugin(({ addUtilities }) => {
       addUtilities(require('./tailwindcss/material-elevation.cjs'));
     })
+  ],
+  safelist: [
+    {
+      pattern: /grid-cols-(2|3)/,
+      variants: ['md']
+    }
   ]
 };
 

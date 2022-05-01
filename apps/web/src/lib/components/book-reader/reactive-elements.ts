@@ -6,14 +6,16 @@
 
 import { fromEvent, merge, take, tap } from 'rxjs';
 
-export function reactiveElements(document: Document) {
+import { FuriganaStyle } from '../../data/furigana-style';
+
+export function reactiveElements(document: Document, furiganaStyle: FuriganaStyle) {
   const anchorTagDocumentListener = anchorTagListener(document);
   const spoilerImageDocumentListener = spoilerImageListener(document);
 
   return (contentEl: HTMLElement) =>
     merge(
       anchorTagDocumentListener(contentEl),
-      rubyTagListener(contentEl),
+      rubyTagListener(contentEl, furiganaStyle),
       spoilerImageDocumentListener(contentEl)
     );
 }
@@ -40,13 +42,22 @@ function anchorTagListener(document: Document) {
   };
 }
 
-function rubyTagListener(contentEl: HTMLElement) {
+function rubyTagListener(contentEl: HTMLElement, furiganaStyle: FuriganaStyle) {
+  const isToggle = furiganaStyle === FuriganaStyle.Toggle;
   const rubyTags = Array.from(contentEl.getElementsByTagName('ruby'));
   const obs$ = rubyTags.map((el) =>
-    fromClickEvent(el).pipe(
-      take(1),
-      tap(() => el.classList.add('reveal-rt'))
-    )
+    isToggle
+      ? fromClickEvent(el).pipe(
+          tap(() => {
+            el.classList.toggle('reveal-rt');
+          })
+        )
+      : fromClickEvent(el).pipe(
+          take(1),
+          tap(() => {
+            el.classList.add('reveal-rt');
+          })
+        )
   );
   return merge(...obs$);
 }
