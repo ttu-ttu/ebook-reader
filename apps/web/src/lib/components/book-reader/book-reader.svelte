@@ -105,7 +105,7 @@
 
   const reactiveElements$ = iffBrowser(() => of(document)).pipe(
     mergeMap((document) => {
-      const reactiveElementsFn = reactiveElements(document);
+      const reactiveElementsFn = reactiveElements(document, furiganaStyle);
       return contentEl$.pipe(mergeMap((contentEl) => reactiveElementsFn(contentEl)));
     }),
     reduceToEmptyString()
