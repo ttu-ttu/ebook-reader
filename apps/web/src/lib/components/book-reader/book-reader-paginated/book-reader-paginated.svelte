@@ -112,11 +112,11 @@
 
   const cssClassOverflowHidden = 'overflow-hidden';
 
+  const gap = 20;
+
   const destroy$ = new Subject<void>();
 
   $: bookmarkData.then(updateBookmarkScreen);
-
-  $: gap = verticalMode ? 0 : 20;
 
   $: if (width) width$.next(width);
 
@@ -380,7 +380,6 @@
   .book-content--writing-vertical-rl {
     .book-content-container {
       column-width: var(--book-content-child-height, 100vh);
-      column-gap: 0;
       width: 100%;
       height: auto;
     }
