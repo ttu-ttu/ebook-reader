@@ -5,6 +5,7 @@
  */
 
 import type { BehaviorSubject } from 'rxjs';
+import { dev } from '$app/env';
 import { binarySearchNoNegative } from '$lib/functions/binary-search';
 import { formatPos } from '$lib/functions/format-pos';
 import { getCharacterCount } from '$lib/functions/get-character-count';
@@ -60,6 +61,10 @@ export class SectionCharacterStatsCalculator {
   }
 
   calcExploredCharCount() {
+    if (dev && this.getPageGap() === 0) {
+      // Scroll position must be beyond text size for character count increment
+      throw new Error('Formula assumes non-zero page gap');
+    }
     const offset = this.verticalMode ? 0 : -this.screenSize;
     return this.getCharCountByScrollPos(this.virtualScrollPos$.getValue() + offset);
   }
@@ -96,8 +101,8 @@ export class SectionCharacterStatsCalculator {
     const scrollPos = paragraphPos[bestFitIndex(index + 1, accumulatedCharCount.length - 1)];
 
     const { screenSize } = this;
-    const offsetCount = this.verticalMode ? 0 : 1;
-    const screenPos = screenSize * (Math.floor(scrollPos / screenSize) + offsetCount);
+    const offsetCount = this.verticalMode ? -1 : 0;
+    const screenPos = screenSize * (Math.ceil(scrollPos / screenSize) + offsetCount);
     return formatPos(screenPos, this.calculator.direction);
   }
 
