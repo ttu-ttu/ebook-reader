@@ -122,6 +122,8 @@
 
   $: if (height) height$.next(height);
 
+  $: columnCount = verticalMode ? 1 : Math.ceil(width / 1000);
+
   $: {
     if (htmlContent) {
       scrollWhenReady = true;
@@ -316,7 +318,10 @@
   style:--book-content-hint-furigana-shadow-color={hintFuriganaShadowColor}
   style:--book-content-child-width="{width}px"
   style:--book-content-child-height="{height}px"
-  style:--book-content-column-count={Math.ceil(width / 1000)}
+  style:--book-content-column-count={columnCount}
+  style:--book-content-image-max-width="{verticalMode
+    ? width
+    : (width + gap) / columnCount - gap}px"
   class:book-content--writing-vertical-rl={verticalMode}
   class:book-content--writing-horizontal-rl={!verticalMode}
   class:book-content--hide-furigana={hideFurigana}
@@ -367,12 +372,12 @@
   .book-content {
     :global(svg),
     :global(img) {
-      max-width: var(--book-content-child-width, 100vw);
+      max-width: var(--book-content-image-max-width, 100vw);
       max-height: var(--book-content-child-height, 100vh);
     }
-    :global(p) {
-      -webkit-column-break-inside: avoid;
-      page-break-inside: avoid;
+
+    :global(.ttu-img-container) {
+      // Needed for Blink rendering engine
       break-inside: avoid;
     }
   }

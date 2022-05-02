@@ -16,6 +16,7 @@ export default function formatBookDataHtml(bookData: BooksDbBookData, document: 
       const element = document.createElement('div');
       element.innerHTML = elementHtml;
 
+      addImageContainerClass(element);
       // combineImagePairs(element);
       removeSvgDimensions(element);
       addSpoilerTags(element, document);
@@ -45,6 +46,14 @@ function getHtmlWithImageSource(bookData: BooksDbBookData) {
       objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   });
+}
+
+function addImageContainerClass(el: HTMLElement) {
+  Array.from(el.getElementsByTagName('img'))
+    .map((imgEl) => imgEl.parentElement)
+    .forEach((parentEl) => {
+      parentEl?.classList.add('ttu-img-container');
+    });
 }
 
 function removeSvgDimensions(el: HTMLElement) {
