@@ -26,7 +26,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Install dependencies
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.1
         with:
           version: latest
           run_install: true
