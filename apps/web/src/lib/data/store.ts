@@ -5,6 +5,7 @@
  */
 
 import { map } from 'rxjs';
+import { writable } from 'svelte/store';
 import { browser } from '$app/env';
 import { writableSubject } from '$lib/functions/svelte/store';
 import { DatabaseService } from './database/books-db/database.service';
@@ -49,6 +50,10 @@ export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
   true
 );
 
+export const avoidPageBreak$ = writableBooleanLocalStorageSubject()('avoidPageBreak', true);
+
+export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0);
+
 export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(
   'requestPersistentStorage',
   true
@@ -67,3 +72,35 @@ export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
 const db = browser ? createBooksDb() : import('fake-indexeddb/auto.js').then(() => createBooksDb());
 
 export const database = new DatabaseService(db);
+
+/* eslint-disable no-param-reassign */
+function popoverStore() {
+  const { subscribe, set, update } = writable([]);
+
+  return {
+    subscribe,
+    set,
+    update,
+    add(instance: never) {
+      this.update((instances) => {
+        instances.push(instance);
+        return instances;
+      });
+    },
+    replace(instance: never) {
+      this.update((instances) => {
+        instances = [instance];
+        return instances;
+      });
+    },
+    remove(instance: string) {
+      this.update((instances) => {
+        instances = instances.filter((item) => item !== instance);
+        return instances;
+      });
+    }
+  };
+}
+/* eslint-enable no-param-reassign */
+
+export const popovers = popoverStore();

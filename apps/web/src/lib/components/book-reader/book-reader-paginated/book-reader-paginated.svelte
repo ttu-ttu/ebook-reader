@@ -68,6 +68,12 @@
 
   export let isBookmarkScreen = false;
 
+  export let avoidPageBreak = true;
+
+  export let pageColumns: number;
+
+  export let firstDimensionMargin: number;
+
   const dispatch = createEventDispatcher<{
     contentChange: HTMLElement;
   }>();
@@ -122,7 +128,7 @@
 
   $: if (height) height$.next(height);
 
-  $: columnCount = verticalMode ? 1 : Math.ceil(width / 1000);
+  $: columnCount = verticalMode ? 1 : pageColumns || Math.ceil(width / 1000);
 
   $: {
     if (htmlContent) {
@@ -312,6 +318,20 @@
   bind:this={scrollEl}
   style:color={fontColor}
   style:font-size="{fontSize}px"
+  style:padding-top={!verticalMode && firstDimensionMargin
+    ? `${firstDimensionMargin}px`
+    : undefined}
+  style:padding-bottom={!verticalMode && firstDimensionMargin
+    ? `${firstDimensionMargin}px`
+    : undefined}
+  style:padding-left={verticalMode && firstDimensionMargin
+    ? `${firstDimensionMargin}px`
+    : undefined}
+  style:padding-right={verticalMode && firstDimensionMargin
+    ? `${firstDimensionMargin}px`
+    : undefined}
+  style:max-width={width ? `${width}px` : undefined}
+  style:max-height={verticalMode && height ? `${height}px` : undefined}
   style:--font-family-serif={fontFamilyGroupOne}
   style:--font-family-sans-serif={fontFamilyGroupTwo}
   style:--book-content-hint-furigana-font-color={hintFuriganaFontColor}
@@ -322,6 +342,7 @@
   style:--book-content-image-max-width="{verticalMode
     ? width
     : (width + gap) / columnCount - gap}px"
+  class:book-content--avoid-page-break={avoidPageBreak}
   class:book-content--writing-vertical-rl={verticalMode}
   class:book-content--writing-horizontal-rl={!verticalMode}
   class:book-content--hide-furigana={hideFurigana}
@@ -376,9 +397,18 @@
       max-height: var(--book-content-child-height, 100vh);
     }
 
-    :global(.ttu-img-container) {
+    &.book-content--avoid-page-break {
+      :global(p) {
+        -webkit-column-break-inside: avoid;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+    }
+
+    :global(p.ttu-img-container) {
       // Needed for Blink rendering engine
       break-inside: avoid;
+      text-align: center;
     }
   }
 

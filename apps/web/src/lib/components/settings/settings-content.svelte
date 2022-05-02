@@ -2,7 +2,6 @@
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
   import { inputClasses } from '$lib/css-classes';
-  import FormField from '$lib/components/form-field/form-field.svelte';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { ViewMode } from '$lib/data/view-mode';
@@ -32,6 +31,10 @@
   export let firstDimensionMargin: number;
 
   export let autoPositionOnResize: boolean;
+
+  export let avoidPageBreak: boolean;
+
+  export let pageColumns: number;
 
   export let persistentStorage: boolean;
 
@@ -97,36 +100,63 @@
     }
   ];
 
+  let furiganaStyleTooltip = '';
+
   $: verticalMode = writingMode === 'vertical-rl';
+  $: switch (furiganaStyle) {
+    case FuriganaStyle.Full:
+      furiganaStyleTooltip =
+        'Furigana is hidden and displayed on hover. On click the furigana will be permanently displayed.';
+      break;
+    case FuriganaStyle.Toggle:
+      furiganaStyleTooltip = 'Furigana is hidden and can be toggled by clicking.';
+      break;
+    default:
+      furiganaStyleTooltip = 'Furigana is diplayed but grayed out.';
+      break;
+  }
+  $: avoidPageBreakTooltip = avoidPageBreak
+    ? 'Tries to avoid Breaks between Pages.\nMay lead to empty Pages or unused Page Space'
+    : 'Pages will stretch across the availabe Space.\nIncreases Occurences for Page Breaks inside Sentences/Words.\nHas currently a Yomichan Bug';
 </script>
 
-<SettingsItemGroup title="Theme">
-  <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
-</SettingsItemGroup>
-
-<SettingsItemGroup title="Font settings" asGrid>
-  <FormField title="Font size">
+<div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:md:gap-8">
+  <div class="sm:col-span-2 lg:col-span-3">
+    <SettingsItemGroup title="Theme">
+      <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
+    </SettingsItemGroup>
+  </div>
+  <SettingsItemGroup title="Font size">
     <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
-  </FormField>
-  <FormField title="Font family (Group 1)">
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Font family (Group 1)">
     <input
       type="text"
       class={inputClasses}
       placeholder="Noto Serif JP"
       bind:value={fontFamilyGroupOne}
     />
-  </FormField>
-  <FormField title="Font family (Group 2)" marginBottom={false}>
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Font family (Group 2)">
     <input
       type="text"
       class={inputClasses}
       placeholder="Noto Sans JP"
       bind:value={fontFamilyGroupTwo}
     />
-  </FormField>
-</SettingsItemGroup>
-
-<div class="grid grid-cols-1 sm:grid-cols-2 md:gap-y-2 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-10">
+  </SettingsItemGroup>
+  <SettingsItemGroup title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}>
+    <input type="number" class={inputClasses} step="1" min="0" bind:value={firstDimensionMargin} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title={verticalMode ? 'Reader Max height' : 'Reader Max width'}>
+    <input
+      type="number"
+      class={inputClasses}
+      step="1"
+      min="0"
+      bind:value={secondDimensionMaxValue}
+    />
+  </SettingsItemGroup>
   <SettingsItemGroup title="View mode">
     <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
   </SettingsItemGroup>
@@ -139,41 +169,27 @@
   <SettingsItemGroup title="Hide furigana">
     <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
   </SettingsItemGroup>
-  <SettingsItemGroup title="Hide furigana style">
+  <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
     <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
   </SettingsItemGroup>
-  <SettingsItemGroup title="Persistent storage">
+  <SettingsItemGroup
+    title="Persistent storage"
+    tooltip="Indicates if unlimited Storage for this Page is enabled."
+  >
     <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
   </SettingsItemGroup>
   {#if viewMode === ViewMode.Continuous}
     <SettingsItemGroup title="Auto position on resize">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoPositionOnResize} />
     </SettingsItemGroup>
-    <div class="lg:col-span-2">
-      <SettingsItemGroup title="Reader size" asGrid columns={2}>
-        <FormField title={verticalMode ? 'Max height' : 'Max width'}>
-          <input
-            type="number"
-            class={inputClasses}
-            step="1"
-            min="0"
-            bind:value={secondDimensionMaxValue}
-          />
-        </FormField>
-
-        <FormField
-          title={verticalMode ? 'Left/right margin' : 'Top/bottom margin'}
-          marginBottom={false}
-        >
-          <input
-            type="number"
-            class={inputClasses}
-            step="1"
-            min="0"
-            bind:value={firstDimensionMargin}
-          />
-        </FormField>
+  {:else}
+    <SettingsItemGroup title="Avoid Page Break" tooltip={avoidPageBreakTooltip}>
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
+    </SettingsItemGroup>
+    {#if !verticalMode}
+      <SettingsItemGroup title="Page Columns">
+        <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />
       </SettingsItemGroup>
-    </div>
+    {/if}
   {/if}
 </div>

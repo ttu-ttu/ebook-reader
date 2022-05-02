@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "svelte-kit dev",
+    "dev": "svelte-kit dev --host",
     "build": "svelte-kit build",
     "package": "svelte-kit package",
     "preview": "svelte-kit preview",
@@ -36,6 +36,7 @@
     "@fortawesome/free-regular-svg-icons": "^6.1.1",
     "@fortawesome/free-solid-svg-icons": "^6.1.1",
     "@material/elevation": "^13.0.0",
+    "@popperjs/core": "^2.11.5",
     "@zip.js/zip.js": "^2.4.9",
     "balanced-match": "^2.0.0",
     "fake-indexeddb": "^3.1.7",

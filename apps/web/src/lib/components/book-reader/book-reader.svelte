@@ -60,6 +60,10 @@
 
   export let autoPositionOnResize: boolean;
 
+  export let avoidPageBreak: boolean;
+
+  export let pageColumns: number;
+
   export let viewMode: ViewMode;
 
   export let exploredCharCount: number;
@@ -84,6 +88,11 @@
 
   const containerEl$ = writableSubject<HTMLElement | null>(null);
 
+  $: heightModifer =
+    firstDimensionMargin && ViewMode.Paginated === viewMode && !verticalMode
+      ? firstDimensionMargin * 2
+      : 0;
+
   const computedStyle$ = combineLatest([
     containerEl$.pipe(filter((el): el is HTMLElement => !!el)),
     combineLatest([width$, height$]).pipe(startWith(0))
@@ -96,11 +105,17 @@
   const contentEl$ = new ReplaySubject<HTMLElement>(1);
 
   const contentViewportWidth$ = computedStyle$.pipe(
-    map((style) => width - parsePx(style.paddingLeft) - parsePx(style.paddingRight))
+    map((style) =>
+      getAdjustedWidth(width - parsePx(style.paddingLeft) - parsePx(style.paddingRight))
+    )
   );
 
   const contentViewportHeight$ = computedStyle$.pipe(
-    map((style) => height - parsePx(style.paddingTop) - parsePx(style.paddingBottom))
+    map((style) =>
+      getAdjustedHeight(
+        height - parsePx(style.paddingTop) - parsePx(style.paddingBottom) - heightModifer
+      )
+    )
   );
 
   const reactiveElements$ = iffBrowser(() => of(document)).pipe(
@@ -119,6 +134,20 @@
   $: width$.next(width);
 
   $: height$.next(height);
+
+  function getAdjustedWidth(widthValue: number) {
+    if (ViewMode.Paginated === viewMode && !verticalMode && secondDimensionMaxValue) {
+      return Math.min(secondDimensionMaxValue, widthValue);
+    }
+    return widthValue;
+  }
+
+  function getAdjustedHeight(heightValue: number) {
+    if (ViewMode.Paginated === viewMode && verticalMode && secondDimensionMaxValue) {
+      return Math.min(secondDimensionMaxValue, heightValue);
+    }
+    return heightValue;
+  }
 
   function parsePx(px: string) {
     return Number(px.replace(/px$/, ''));
@@ -172,6 +201,9 @@
       {hideFurigana}
       {furiganaStyle}
       loadingState={$imageLoadingState$ ?? true}
+      {avoidPageBreak}
+      {pageColumns}
+      {firstDimensionMargin}
       bind:exploredCharCount
       bind:bookCharCount
       bind:isBookmarkScreen
