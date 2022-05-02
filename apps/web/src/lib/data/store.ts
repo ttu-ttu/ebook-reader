@@ -50,7 +50,7 @@ export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
   true
 );
 
-export const avoidPageBreak$ = writableBooleanLocalStorageSubject()('avoidPageBreak', true);
+export const avoidPageBreak$ = writableBooleanLocalStorageSubject()('avoidPageBreak', false);
 
 export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0);
 
