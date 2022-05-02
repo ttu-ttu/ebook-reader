@@ -25,7 +25,7 @@ const config = {
     vite: {
       ssr: {
         // https://github.com/FortAwesome/Font-Awesome/issues/18677
-        noExternal: ['@fortawesome/*']
+        noExternal: ['@fortawesome/*', '@popperjs/*']
       }
     }
   },
