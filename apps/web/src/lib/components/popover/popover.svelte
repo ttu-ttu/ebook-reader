@@ -1,30 +1,34 @@
-<script>
+<script lang="ts">
   import flip from '@popperjs/core/lib/modifiers/flip';
   import offset from '@popperjs/core/lib/modifiers/offset';
   import { createPopper } from '@popperjs/core/lib/popper-lite';
-  import { popovers } from '$lib/data/store';
+  import type { Instance } from '@popperjs/core';
+  import { tick } from 'svelte';
+  import { clickOutside } from '$lib/functions/use-click-outside';
   import { browser } from '$app/env';
-  import { generateUUID } from '../functions/util';
+  import { generateUUID } from '../../functions/util';
+  import { popovers } from './popover';
 
   export let content = '';
   export let singlePopover = true;
 
-  let contentElement;
-  let iconElement;
-  let popoverElement;
+  let contentElement: HTMLElement;
+  let iconElement: HTMLElement;
+  let popoverElement: HTMLElement;
 
-  let id;
+  let id: string;
+  let instance: Instance;
   let isOpen = false;
-  let instance;
 
   $: if (browser) {
-    id = generateUUID();
+    id = generateUUID(window);
   }
   $: if (isOpen && singlePopover && !$popovers.includes(id)) {
     isOpen = false;
   }
+  $: targetElement = $$slots.icon ? iconElement : contentElement;
 
-  function conditionalClickHandlerAndClass(node, conditionFulfilled) {
+  function conditionalClickHandlerAndClass(node: HTMLElement, conditionFulfilled: boolean) {
     if (conditionFulfilled) {
       node.classList.add('cursor-pointer');
       node.addEventListener('click', toggleOpen, false);
@@ -40,7 +44,7 @@
     };
   }
 
-  function toggleOpen() {
+  async function toggleOpen() {
     if (isOpen) {
       popovers.remove(id);
     } else if (singlePopover) {
@@ -50,11 +54,13 @@
     }
 
     isOpen = !isOpen;
+    await tick();
 
     if (isOpen && instance) {
+      instance.state.elements.popper = popoverElement;
       instance.update();
     } else if (isOpen) {
-      instance = createPopper($$slots.icon ? iconElement : contentElement, popoverElement, {
+      instance = createPopper(targetElement, popoverElement, {
         placement: 'top',
         modifiers: [
           flip,
@@ -86,11 +92,21 @@
   </div>
 </div>
 
-<div
-  class="max-w-60vw z-10 whitespace-pre-wrap rounded bg-[#333] p-2 text-sm font-bold text-white md:max-w-lg"
-  class:hidden={!isOpen}
-  bind:this={popoverElement}
-  on:click={toggleOpen}
->
-  <div>{content}</div>
-</div>
+{#if isOpen}
+  <div
+    class="max-w-60vw z-10 whitespace-pre-wrap rounded bg-[#333] p-2 text-sm font-bold text-white md:max-w-lg"
+    bind:this={popoverElement}
+  >
+    <div
+      use:clickOutside={({ target }) => {
+        if (
+          !(targetElement === target || (target instanceof Node && targetElement.contains(target)))
+        ) {
+          toggleOpen();
+        }
+      }}
+    >
+      {content}
+    </div>
+  </div>
+{/if}

@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-export function generateUUID() {
+export function generateUUID(window: Window) {
   const array = new Uint32Array(16);
   window.crypto.getRandomValues(array);
   let str = '';

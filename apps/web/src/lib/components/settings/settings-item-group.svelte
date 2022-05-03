@@ -1,14 +1,10 @@
 <script type="ts">
   import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons';
   import Fa from 'svelte-fa';
-  import Popover from '../popover.svelte';
+  import Popover from '../popover/popover.svelte';
 
   export let title: string;
-  export let asGrid = false;
-  export let columns = 3;
   export let tooltip = '';
-
-  $: containerClasses = asGrid ? `grid md:grid-cols-${columns} gap-x-8` : '';
 </script>
 
 <section class="pb-8">
@@ -22,7 +18,7 @@
       <span class="capitalize">{title}</span>
     {/if}
   </h2>
-  <div class={containerClasses}>
+  <div>
     <slot />
   </div>
 </section>

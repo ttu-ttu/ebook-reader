@@ -29,6 +29,10 @@
       display: none;
     }
   }
+
+  :global(.ttu-thumbnail-container) {
+    text-align: center;
+  }
 }
 
 .book-content--hide-furigana.book-content--furigana-style-partial {

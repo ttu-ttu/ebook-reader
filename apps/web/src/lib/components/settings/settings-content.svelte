@@ -105,19 +105,18 @@
   $: verticalMode = writingMode === 'vertical-rl';
   $: switch (furiganaStyle) {
     case FuriganaStyle.Full:
-      furiganaStyleTooltip =
-        'Furigana is hidden and displayed on hover. On click the furigana will be permanently displayed.';
+      furiganaStyleTooltip = 'Hidden by default, show on hover or click';
       break;
     case FuriganaStyle.Toggle:
-      furiganaStyleTooltip = 'Furigana is hidden and can be toggled by clicking.';
+      furiganaStyleTooltip = 'Hidden by default, can be toggled on click';
       break;
     default:
-      furiganaStyleTooltip = 'Furigana is diplayed but grayed out.';
+      furiganaStyleTooltip = 'Display furigana as grayed out text';
       break;
   }
   $: avoidPageBreakTooltip = avoidPageBreak
-    ? 'Tries to avoid Breaks between Pages.\nMay lead to empty Pages or unused Page Space'
-    : 'Pages will stretch across the availabe Space.\nIncreases Occurences for Page Breaks inside Sentences/Words.\nHas currently a Yomichan Bug';
+    ? 'Avoids breaking words/sentences into different pages'
+    : 'Allow words/sentences to break into different pages';
 </script>
 
 <div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:md:gap-8">
@@ -172,10 +171,7 @@
   <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
     <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
   </SettingsItemGroup>
-  <SettingsItemGroup
-    title="Persistent storage"
-    tooltip="Indicates if unlimited Storage for this Page is enabled."
-  >
+  <SettingsItemGroup title="Persistent storage">
     <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
   </SettingsItemGroup>
   {#if viewMode === ViewMode.Continuous}

@@ -399,16 +399,14 @@
 
     &.book-content--avoid-page-break {
       :global(p) {
-        -webkit-column-break-inside: avoid;
         page-break-inside: avoid;
         break-inside: avoid;
       }
     }
 
-    :global(p.ttu-img-container) {
+    :global(.ttu-img-container) {
       // Needed for Blink rendering engine
       break-inside: avoid;
-      text-align: center;
     }
   }
 
