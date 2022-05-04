@@ -35,7 +35,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.1.1",
     "@fortawesome/free-regular-svg-icons": "^6.1.1",
     "@fortawesome/free-solid-svg-icons": "^6.1.1",
-    "@material/elevation": "^13.0.0",
+    "@material/elevation": "14.0.0",
     "@popperjs/core": "^2.11.5",
     "@zip.js/zip.js": "^2.4.9",
     "balanced-match": "^2.0.0",
