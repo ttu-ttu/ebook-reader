@@ -6,6 +6,7 @@
     debounceTime,
     distinctUntilChanged,
     filter,
+    fromEvent,
     map,
     observeOn,
     skip,
@@ -57,6 +58,8 @@
 
   export let autoPositionOnResize: boolean;
 
+  export let autoBookmark: boolean;
+
   export let loadingState: boolean;
 
   export let multiplier: number;
@@ -74,6 +77,7 @@
   export let pageManager: PageManager | undefined;
 
   const dispatch = createEventDispatcher<{
+    bookmark: void;
     contentChange: HTMLElement;
   }>();
 
@@ -200,10 +204,23 @@
 
     if (scrollWhenReady) {
       scrollWhenReady = false;
-      bookmarkData.then((data) => {
-        if (!data || !bookmarkManager) return;
-        bookmarkManager.scrollToBookmark(data);
-      });
+
+      bookmarkData
+        .then((data) => {
+          if (!data || !bookmarkManager) {
+            return;
+          }
+          bookmarkManager.scrollToBookmark(data);
+        })
+        .finally(() => {
+          if (autoBookmark) {
+            fromEvent(window, 'scroll')
+              .pipe(skip(1), debounceTime(3000), takeUntil(destroy$))
+              .subscribe(() => {
+                dispatch('bookmark');
+              });
+          }
+        });
     }
     contentReadyEvent = {};
   }

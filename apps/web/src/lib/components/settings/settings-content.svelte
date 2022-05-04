@@ -38,6 +38,8 @@
 
   export let persistentStorage: boolean;
 
+  export let autoBookmark: boolean;
+
   const availableThemes = Array.from(availableThemesMap.entries()).map(([theme, option]) => ({
     theme,
     option
@@ -161,6 +163,12 @@
   </SettingsItemGroup>
   <SettingsItemGroup title="Writing mode">
     <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Auto Bookmark"
+    tooltip={'Set a bookmark after 3 seconds without scrolling/page change'}
+  >
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
   </SettingsItemGroup>
   <SettingsItemGroup title="Blur image">
     <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
