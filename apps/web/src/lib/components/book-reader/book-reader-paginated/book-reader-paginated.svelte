@@ -399,7 +399,6 @@
 
     &.book-content--avoid-page-break {
       :global(p) {
-        page-break-inside: avoid;
         break-inside: avoid;
       }
     }

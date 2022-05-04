@@ -8,26 +8,26 @@ import { writable } from 'svelte/store';
 
 /* eslint-disable no-param-reassign */
 function popoverStore() {
-  const popovers: string[] = [];
+  const popovers: symbol[] = [];
   const { subscribe, set, update } = writable(popovers);
 
   return {
     subscribe,
     set,
     update,
-    add(instance: string) {
+    add(instance: symbol) {
       this.update((instances) => {
         instances.push(instance);
         return instances;
       });
     },
-    replace(instance: string) {
+    replace(instance: symbol) {
       this.update((instances) => {
         instances = [instance];
         return instances;
       });
     },
-    remove(instance: string) {
+    remove(instance: symbol) {
       this.update((instances) => {
         instances = instances.filter((item) => item !== instance);
         return instances;
