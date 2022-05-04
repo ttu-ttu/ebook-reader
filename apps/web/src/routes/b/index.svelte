@@ -25,6 +25,7 @@
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import {
     autoPositionOnResize$,
+    avoidPageBreak$,
     bookReaderKeybindMap$,
     database,
     firstDimensionMargin$,
@@ -35,6 +36,7 @@
     hideFurigana$,
     hideSpoilerImage$,
     multiplier$,
+    pageColumns$,
     secondDimensionMaxValue$,
     theme$,
     verticalMode$,
@@ -251,6 +253,8 @@
     secondDimensionMaxValue={$secondDimensionMaxValue$}
     firstDimensionMargin={$firstDimensionMargin$}
     autoPositionOnResize={$autoPositionOnResize$}
+    avoidPageBreak={$avoidPageBreak$}
+    pageColumns={$pageColumns$}
     multiplier={$multiplier$}
     bind:exploredCharCount
     bind:bookCharCount

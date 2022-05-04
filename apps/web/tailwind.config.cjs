@@ -14,6 +14,9 @@ const config = {
       },
       spacing: {
         21: '5.25rem'
+      },
+      maxWidth: {
+        '60vw': '60vw'
       }
     }
   },
