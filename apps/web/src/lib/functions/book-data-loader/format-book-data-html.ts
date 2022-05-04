@@ -50,9 +50,13 @@ function getHtmlWithImageSource(bookData: BooksDbBookData) {
 
 function addImageContainerClass(el: HTMLElement) {
   Array.from(el.getElementsByTagName('img'))
-    .map((imgEl) => imgEl.parentElement)
-    .forEach((parentEl) => {
+    .map((imgEl) => ({ parentEl: imgEl.parentElement, isGaiji: isElementGaiji(imgEl) }))
+    .forEach(({ parentEl, isGaiji }) => {
       parentEl?.classList.add('ttu-img-container');
+
+      if (!isGaiji) {
+        parentEl?.classList.add('ttu-thumbnail-container');
+      }
     });
 }
 

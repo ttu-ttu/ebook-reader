@@ -7,6 +7,7 @@
   import { pxScreen } from '$lib/css-classes';
   import {
     autoPositionOnResize$,
+    avoidPageBreak$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -14,6 +15,7 @@
     furiganaStyle$,
     hideFurigana$,
     hideSpoilerImage$,
+    pageColumns$,
     secondDimensionMaxValue$,
     theme$,
     writingMode$,
@@ -81,6 +83,8 @@
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
       bind:firstDimensionMargin={$firstDimensionMargin$}
       bind:autoPositionOnResize={$autoPositionOnResize$}
+      bind:avoidPageBreak={$avoidPageBreak$}
+      bind:pageColumns={$pageColumns$}
       bind:persistentStorage={$persistentStorage$}
     />
   </div>
