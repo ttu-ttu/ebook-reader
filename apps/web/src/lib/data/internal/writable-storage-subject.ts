@@ -5,8 +5,8 @@
  */
 
 import { skip } from 'rxjs';
-import { writableSubject } from '$lib/functions/svelte/store';
 import type { localStorage } from '../window/local-storage';
+import { writableSubject } from '$lib/functions/svelte/store';
 
 type Storage = typeof localStorage;
 
@@ -19,7 +19,7 @@ export function writableStorageSubject<T>(
     const initValue = getStoredOrDefault(storage)(key, defaultValue, mapFromString);
     const subject = writableSubject(initValue);
     subject.pipe(skip(1)).subscribe((updatedValue) => {
-      storage.setItem(key, mapToString(updatedValue));
+      storage.setItem(key, mapToString(updatedValue ?? defaultValue));
     });
     return subject;
   };
