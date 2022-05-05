@@ -64,6 +64,8 @@
 
   export let pageColumns: number;
 
+  export let autoBookmark: boolean;
+
   export let viewMode: ViewMode;
 
   export let exploredCharCount: number;
@@ -174,6 +176,7 @@
       {secondDimensionMaxValue}
       {firstDimensionMargin}
       {autoPositionOnResize}
+      {autoBookmark}
       {multiplier}
       loadingState={$imageLoadingState$ ?? true}
       bind:exploredCharCount
@@ -183,6 +186,7 @@
       bind:bookmarkManager
       bind:pageManager
       on:contentChange={(ev) => contentEl$.next(ev.detail)}
+      on:bookmark
     />
   {:else}
     <BookReaderPaginated
@@ -203,6 +207,7 @@
       loadingState={$imageLoadingState$ ?? true}
       {avoidPageBreak}
       {pageColumns}
+      {autoBookmark}
       {firstDimensionMargin}
       bind:exploredCharCount
       bind:bookCharCount
@@ -211,6 +216,7 @@
       bind:bookmarkManager
       bind:pageManager
       on:contentChange={(ev) => contentEl$.next(ev.detail)}
+      on:bookmark
     />
   {/if}
 </div>

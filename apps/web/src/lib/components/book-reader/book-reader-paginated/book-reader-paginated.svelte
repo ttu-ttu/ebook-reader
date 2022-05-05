@@ -2,6 +2,7 @@
   import {
     BehaviorSubject,
     combineLatest,
+    debounceTime,
     distinctUntilChanged,
     fromEvent,
     map,
@@ -74,7 +75,10 @@
 
   export let firstDimensionMargin: number;
 
+  export let autoBookmark = false;
+
   const dispatch = createEventDispatcher<{
+    bookmark: void;
     contentChange: HTMLElement;
   }>();
 
@@ -226,6 +230,14 @@
 
     bookmarkData.then(updateBookmarkScreen);
   });
+
+  if (autoBookmark) {
+    pageChange$.pipe(debounceTime(3000), takeUntil(destroy$)).subscribe((isUser) => {
+      if (isUser) {
+        dispatch('bookmark');
+      }
+    });
+  }
 
   currentSection$.pipe(distinctUntilChanged(), takeUntil(destroy$)).subscribe(() => {
     allowDisplay = false;
