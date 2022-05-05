@@ -24,6 +24,7 @@
   import StyleSheetRenderer from '$lib/components/style-sheet-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import {
+    autoBookmark$,
     autoPositionOnResize$,
     avoidPageBreak$,
     bookReaderKeybindMap$,
@@ -255,6 +256,7 @@
     autoPositionOnResize={$autoPositionOnResize$}
     avoidPageBreak={$avoidPageBreak$}
     pageColumns={$pageColumns$}
+    autoBookmark={$autoBookmark$}
     multiplier={$multiplier$}
     bind:exploredCharCount
     bind:bookCharCount
@@ -263,6 +265,7 @@
     bind:autoScroller
     bind:bookmarkManager
     bind:pageManager
+    on:bookmark={bookmarkPage}
   />
   {$initBookmarkData$ ?? ''}
   {$setBackgroundColor$ ?? ''}

@@ -6,6 +6,7 @@
   import SettingsHeader from '$lib/components/settings/settings-header.svelte';
   import { pxScreen } from '$lib/css-classes';
   import {
+    autoBookmark$,
     autoPositionOnResize$,
     avoidPageBreak$,
     firstDimensionMargin$,
@@ -86,6 +87,7 @@
       bind:avoidPageBreak={$avoidPageBreak$}
       bind:pageColumns={$pageColumns$}
       bind:persistentStorage={$persistentStorage$}
+      bind:autoBookmark={$autoBookmark$}
     />
   </div>
 </div>
