@@ -55,7 +55,7 @@ function addImageContainerClass(el: HTMLElement) {
       parentEl?.classList.add('ttu-img-container');
 
       if (!isGaiji) {
-        parentEl?.classList.add('ttu-thumbnail-container');
+        parentEl?.classList.add('ttu-illustration-container');
       }
     });
 }
