@@ -148,7 +148,9 @@
   $: {
     if (browser && calculator) {
       bookmarkManagerConcrete =
-        browser && calculator && new BookmarkManagerContinuous(calculator, window);
+        browser &&
+        calculator &&
+        new BookmarkManagerContinuous(calculator, window, firstDimensionMargin || 0);
       bookmarkManager = bookmarkManagerConcrete;
     }
   }
@@ -299,12 +301,12 @@
 
 {#if firstDimensionMargin}
   <div
-    class="fixed"
+    class="fixed z-[5]"
     style:background-color={backgroundColor}
     style="{fullLengthDimension}: 100%; {modifyingDimension}: {firstDimensionMargin}px; {boundSide[0]}: 0"
   />
   <div
-    class="fixed"
+    class="fixed z-[5]"
     style:background-color={backgroundColor}
     style="{fullLengthDimension}: 100%; {modifyingDimension}: {firstDimensionMargin}px; {boundSide[1]}: 0"
   />
@@ -313,13 +315,15 @@
 {#if bookmarkPos}
   {#if verticalMode}
     <div
+      style:height={`${maxHeight || height}px`}
       style:right={bookmarkPos.right}
-      class="pointer-events-none absolute inset-y-0 w-12 bg-yellow-600 bg-opacity-10"
+      class="pointer-events-none absolute inset-y-0 m-auto w-12 bg-yellow-600 bg-opacity-10"
     />
   {:else}
     <div
+      style:width={`${secondDimensionMaxValue || width}px`}
       style:top={bookmarkPos.top}
-      class="absolute inset-x-0 h-12 bg-yellow-600 bg-opacity-10 pointer-events-none"
+      class="absolute inset-x-0 h-12 bg-yellow-600 bg-opacity-10 pointer-events-none m-auto"
     />
   {/if}
 {/if}
