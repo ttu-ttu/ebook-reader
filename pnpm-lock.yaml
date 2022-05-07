@@ -55,7 +55,7 @@ importers:
       '@sveltejs/kit': next
       '@tailwindcss/aspect-ratio': ^0.4.0
       '@tailwindcss/forms': ^0.5.0
-      '@tailwindcss/line-clamp': ^0.3.1
+      '@tailwindcss/line-clamp': 0.4.0
       '@types/balanced-match': ^1.0.2
       '@types/path-browserify': ^1.0.0
       '@types/ua-parser-js': ^0.7.36
@@ -101,7 +101,7 @@ importers:
       '@sveltejs/kit': 1.0.0-next.326_sass@1.49.11+svelte@3.46.6
       '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.23
       '@tailwindcss/forms': 0.5.0_tailwindcss@3.0.23
-      '@tailwindcss/line-clamp': 0.3.1_tailwindcss@3.0.23
+      '@tailwindcss/line-clamp': 0.4.0_tailwindcss@3.0.23
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
@@ -598,8 +598,8 @@ packages:
       tailwindcss: 3.0.23_autoprefixer@10.4.4
     dev: true
 
-  /@tailwindcss/line-clamp/0.3.1_tailwindcss@3.0.23:
-    resolution: {integrity: sha512-pNr0T8LAc3TUx/gxCfQZRe9NB2dPEo/cedPHzUGIPxqDMhgjwNm6jYxww4W5l0zAsAddxr+XfZcqttGiFDgrGg==}
+  /@tailwindcss/line-clamp/0.4.0_tailwindcss@3.0.23:
+    resolution: {integrity: sha512-HQZo6gfx1D0+DU3nWlNLD5iA6Ef4JAXh0LeD8lOGrJwEDBwwJNKQza6WoXhhY1uQrxOuU8ROxV7CqiQV4CoiLw==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
