@@ -23,7 +23,7 @@
     "eslint-plugin-header": "^3.1.1",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-rxjs": "^5.0.2",
-    "eslint-plugin-svelte3": "^3.2.1",
+    "eslint-plugin-svelte3": "4.0.0",
     "husky": "^7.0.4",
     "lint-staged": "^12.3.8",
     "prettier": "^2.5.1",
