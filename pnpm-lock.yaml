@@ -16,7 +16,7 @@ importers:
       eslint-plugin-header: ^3.1.1
       eslint-plugin-import: ^2.25.4
       eslint-plugin-rxjs: ^5.0.2
-      eslint-plugin-svelte3: ^3.2.1
+      eslint-plugin-svelte3: 4.0.0
       husky: ^7.0.4
       lint-staged: ^12.3.8
       prettier: ^2.5.1
@@ -36,7 +36,7 @@ importers:
       eslint-plugin-header: 3.1.1_eslint@8.15.0
       eslint-plugin-import: 2.26.0_eslint@8.15.0
       eslint-plugin-rxjs: 5.0.2_c3alnx6mxv77hhhkcvisj3heci
-      eslint-plugin-svelte3: 3.4.1_d54iut6yon4bnxsavjvsnatsgi
+      eslint-plugin-svelte3: 4.0.0_d54iut6yon4bnxsavjvsnatsgi
       husky: 7.0.4
       lint-staged: 12.4.1
       prettier: 2.6.2
@@ -1860,11 +1860,10 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-svelte3/3.4.1_d54iut6yon4bnxsavjvsnatsgi:
-    resolution: {integrity: sha512-7p59WG8qV8L6wLdl4d/c3mdjkgVglQCdv5XOTk/iNPBKXuuV+Q0eFP5Wa6iJd/G2M1qR3BkLPEzaANOqKAZczw==}
-    engines: {node: '>=10'}
+  /eslint-plugin-svelte3/4.0.0_d54iut6yon4bnxsavjvsnatsgi:
+    resolution: {integrity: sha512-OIx9lgaNzD02+MDFNLw0GEUbuovNcglg+wnd/UY0fbZmlQSz7GlQiQ1f+yX0XvC07XPcDOnFcichqI3xCwp71g==}
     peerDependencies:
-      eslint: '>=6.0.0'
+      eslint: '>=8.0.0'
       svelte: ^3.2.0
     dependencies:
       eslint: 8.15.0
