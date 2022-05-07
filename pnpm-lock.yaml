@@ -21,6 +21,7 @@ importers:
       lint-staged: ^12.3.8
       prettier: ^2.5.1
       prettier-plugin-tailwindcss: ^0.1.8
+      svelte: ^3.44.0
       typescript: ~4.6.2
     devDependencies:
       '@commitlint/cli': 16.2.4
@@ -35,11 +36,12 @@ importers:
       eslint-plugin-header: 3.1.1_eslint@8.15.0
       eslint-plugin-import: 2.26.0_eslint@8.15.0
       eslint-plugin-rxjs: 5.0.2_c3alnx6mxv77hhhkcvisj3heci
-      eslint-plugin-svelte3: 3.4.1_eslint@8.15.0
+      eslint-plugin-svelte3: 3.4.1_d54iut6yon4bnxsavjvsnatsgi
       husky: 7.0.4
       lint-staged: 12.4.1
       prettier: 2.6.2
       prettier-plugin-tailwindcss: 0.1.10_prettier@2.6.2
+      svelte: 3.46.6
       typescript: 4.6.3
 
   apps/web:
@@ -1858,7 +1860,7 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-svelte3/3.4.1_eslint@8.15.0:
+  /eslint-plugin-svelte3/3.4.1_d54iut6yon4bnxsavjvsnatsgi:
     resolution: {integrity: sha512-7p59WG8qV8L6wLdl4d/c3mdjkgVglQCdv5XOTk/iNPBKXuuV+Q0eFP5Wa6iJd/G2M1qR3BkLPEzaANOqKAZczw==}
     engines: {node: '>=10'}
     peerDependencies:
@@ -1866,6 +1868,7 @@ packages:
       svelte: ^3.2.0
     dependencies:
       eslint: 8.15.0
+      svelte: 3.46.6
     dev: true
 
   /eslint-scope/5.1.1:
