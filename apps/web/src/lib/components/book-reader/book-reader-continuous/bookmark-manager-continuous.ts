@@ -4,19 +4,23 @@
  * All rights reserved.
  */
 
-import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
-import { formatPos } from '$lib/functions/format-pos';
 import type { BookmarkManager } from '../types';
+import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
 import type { CharacterStatsCalculator } from './character-stats-calculator';
+import { formatPos } from '$lib/functions/format-pos';
 
 export class BookmarkManagerContinuous implements BookmarkManager {
-  constructor(private calculator: CharacterStatsCalculator, private window: Window) {}
+  constructor(
+    private calculator: CharacterStatsCalculator,
+    private window: Window,
+    private firstDimensionMargin: number
+  ) {}
 
   scrollToBookmark(bookmarkData: BooksDbBookmarkData) {
     const targetScroll = this.getBookmarkPosition(bookmarkData);
     if (!targetScroll) return;
 
-    const { scrollToData } = resolveTargetScroll(targetScroll);
+    const { scrollToData } = resolveTargetScroll(targetScroll, this.firstDimensionMargin);
     this.window.scrollTo(scrollToData);
   }
 
@@ -39,7 +43,7 @@ export class BookmarkManagerContinuous implements BookmarkManager {
     const targetScroll = this.getBookmarkPosition(bookmarkData);
     if (!targetScroll) return undefined;
 
-    return resolveTargetScroll(targetScroll).bookmarkPosData;
+    return resolveTargetScroll(targetScroll, this.firstDimensionMargin).bookmarkPosData;
   }
 
   private getBookmarkPosition(bookmark: BooksDbBookmarkData): TargetScroll | undefined {
@@ -81,7 +85,10 @@ export class BookmarkManagerContinuous implements BookmarkManager {
   }
 }
 
-function resolveTargetScroll(targetScroll: TargetScroll): {
+function resolveTargetScroll(
+  targetScroll: TargetScroll,
+  dimensionAdjustment: number
+): {
   bookmarkPosData: BookmarkPosData;
   scrollToData: ScrollToOptions;
 } {
@@ -91,7 +98,7 @@ function resolveTargetScroll(targetScroll: TargetScroll): {
         left: targetScroll.scrollX
       },
       bookmarkPosData: {
-        right: `${-targetScroll.scrollX}px`
+        right: `${-targetScroll.scrollX + dimensionAdjustment}px`
       }
     };
   }
@@ -100,7 +107,7 @@ function resolveTargetScroll(targetScroll: TargetScroll): {
       top: targetScroll.scrollY
     },
     bookmarkPosData: {
-      top: `${targetScroll.scrollY}px`
+      top: `${targetScroll.scrollY + dimensionAdjustment}px`
     }
   };
 }

@@ -49,7 +49,12 @@ export class CharacterStatsCalculator {
       this.verticalMode ? scrollElRect.right : scrollElRect.top,
       this.direction
     );
-
+    const dimensionAdjustment = Number(
+      getComputedStyle(this.containerEl)[this.verticalMode ? 'paddingRight' : 'paddingTop'].replace(
+        /px$/,
+        ''
+      )
+    );
     const paragraphPosToIndices = new Map<number, number[]>();
     for (let i = 0; i < this.paragraphs.length; i += 1) {
       const node = this.paragraphs[i];
@@ -59,7 +64,7 @@ export class CharacterStatsCalculator {
         this.verticalMode ? nodeRect.left : nodeRect.bottom,
         this.direction
       );
-      const paragraphPos = nodeLeft - scrollElRight + scrollPos;
+      const paragraphPos = nodeLeft - scrollElRight - dimensionAdjustment + scrollPos;
       this.paragraphPos[i] = paragraphPos;
 
       const indices = paragraphPosToIndices.get(paragraphPos) || [];
