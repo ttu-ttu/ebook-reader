@@ -32,9 +32,9 @@
     "typescript": "4.6.4"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.1.1",
-    "@fortawesome/free-regular-svg-icons": "^6.1.1",
-    "@fortawesome/free-solid-svg-icons": "^6.1.1",
+    "@fortawesome/fontawesome-svg-core": "6.1.1",
+    "@fortawesome/free-regular-svg-icons": "6.1.1",
+    "@fortawesome/free-solid-svg-icons": "6.1.1",
     "@popperjs/core": "2.11.5",
     "@zip.js/zip.js": "2.4.10",
     "balanced-match": "2.0.0",

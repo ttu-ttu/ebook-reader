@@ -46,9 +46,9 @@ importers:
 
   apps/web:
     specifiers:
-      '@fortawesome/fontawesome-svg-core': ^6.1.1
-      '@fortawesome/free-regular-svg-icons': ^6.1.1
-      '@fortawesome/free-solid-svg-icons': ^6.1.1
+      '@fortawesome/fontawesome-svg-core': 6.1.1
+      '@fortawesome/free-regular-svg-icons': 6.1.1
+      '@fortawesome/free-solid-svg-icons': 6.1.1
       '@popperjs/core': 2.11.5
       '@sveltejs/adapter-auto': next
       '@sveltejs/adapter-static': 1.0.0-next.29
