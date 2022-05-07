@@ -51,7 +51,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.1.1
       '@popperjs/core': 2.11.5
       '@sveltejs/adapter-static': 1.0.0-next.29
-      '@sveltejs/kit': next
+      '@sveltejs/kit': 1.0.0-next.326
       '@tailwindcss/aspect-ratio': 0.4.0
       '@tailwindcss/forms': 0.5.1
       '@tailwindcss/line-clamp': 0.4.0
