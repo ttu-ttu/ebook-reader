@@ -1,3 +1,10 @@
 {
-  "extends": ["config:base"]
+  "extends": ["config:js-app", ":automergeAll", ":automergeBranch"],
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["node"],
+      "enabled": false
+    }
+  ]
 }
