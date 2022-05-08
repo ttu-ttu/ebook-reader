@@ -146,10 +146,21 @@
       bind:value={fontFamilyGroupTwo}
     />
   </SettingsItemGroup>
-  <SettingsItemGroup title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}>
+  <SettingsItemGroup
+    withDimensionSlider
+    isFirstDimension
+    isVertical={verticalMode}
+    title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}
+    bind:dimensionValue={firstDimensionMargin}
+  >
     <input type="number" class={inputClasses} step="1" min="0" bind:value={firstDimensionMargin} />
   </SettingsItemGroup>
-  <SettingsItemGroup title={verticalMode ? 'Reader Max height' : 'Reader Max width'}>
+  <SettingsItemGroup
+    withDimensionSlider
+    isVertical={verticalMode}
+    title={verticalMode ? 'Reader Max height' : 'Reader Max width'}
+    bind:dimensionValue={secondDimensionMaxValue}
+  >
     <input
       type="number"
       class={inputClasses}
