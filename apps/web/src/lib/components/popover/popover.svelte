@@ -93,8 +93,8 @@
 {#if isOpen}
   <div
     data-popover
+    class="max-w-60vw absolute z-10 rounded bg-[#333] p-2 text-sm font-bold text-white md:max-w-lg"
     class:whitespace-pre-wrap={contentText}
-    class="max-w-60vw z-10 rounded bg-[#333] p-2 text-sm font-bold text-white md:max-w-lg"
     bind:this={popoverElement}
   >
     <div

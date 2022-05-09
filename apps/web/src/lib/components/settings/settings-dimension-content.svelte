@@ -10,6 +10,9 @@
   $: calculatedValue = Math.ceil(
     window[getDimension()] * (presetValue / 100 / (isFirstDimension ? 2 : 1))
   );
+  $: min = isFirstDimension ? 5 : 50;
+  $: max = isFirstDimension ? 50 : 95;
+  $: quarter = isFirstDimension ? 25 : 75;
 
   function getDimension() {
     if (isVertical) {
@@ -35,15 +38,14 @@
   class="mb-2 mt-4"
   type="range"
   step="5"
-  min={isFirstDimension ? 5 : 50}
-  max={isFirstDimension ? 50 : 95}
-  dir={isFirstDimension ? 'ltr' : 'rtl'}
+  {min}
+  {max}
   bind:value={presetValue}
   on:change={() => (dimensionValue = calculatedValue)}
 />
 <div class="flex justify-evenly">
-  <button on:click={() => setToValue(isFirstDimension ? 25 : 75)}>
-    {isFirstDimension ? 25 : 75}%
+  <button on:click={() => setToValue(quarter)}>
+    {quarter}%
   </button>
   <button on:click={() => setToValue(50)}> 50% </button>
 </div>

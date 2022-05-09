@@ -6,6 +6,7 @@
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
+  import SettingsDimensionPopover from './settings-dimension-popover.svelte';
   import SettingsItemGroup from './settings-item-group.svelte';
 
   export let selectedTheme: string;
@@ -146,21 +147,21 @@
       bind:value={fontFamilyGroupTwo}
     />
   </SettingsItemGroup>
-  <SettingsItemGroup
-    withDimensionSlider
-    isFirstDimension
-    isVertical={verticalMode}
-    title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}
-    bind:dimensionValue={firstDimensionMargin}
-  >
+  <SettingsItemGroup title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}>
+    <SettingsDimensionPopover
+      slot="header"
+      isFirstDimension
+      isVertical={verticalMode}
+      bind:dimensionValue={firstDimensionMargin}
+    />
     <input type="number" class={inputClasses} step="1" min="0" bind:value={firstDimensionMargin} />
   </SettingsItemGroup>
-  <SettingsItemGroup
-    withDimensionSlider
-    isVertical={verticalMode}
-    title={verticalMode ? 'Reader Max height' : 'Reader Max width'}
-    bind:dimensionValue={secondDimensionMaxValue}
-  >
+  <SettingsItemGroup title={verticalMode ? 'Reader Max height' : 'Reader Max width'}>
+    <SettingsDimensionPopover
+      slot="header"
+      isVertical={verticalMode}
+      bind:dimensionValue={secondDimensionMaxValue}
+    />
     <input
       type="number"
       class={inputClasses}
