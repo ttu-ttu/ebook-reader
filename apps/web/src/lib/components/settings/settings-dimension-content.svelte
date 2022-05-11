@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   export let dimensionValue = 0;
   export let isVertical = true;
   export let isFirstDimension = false;
 
-  let presetValue = isFirstDimension ? 5 : 95;
+  const progressStep = 5;
+
+  let presetValue = 0;
 
   $: calculatedValue = Math.ceil(
     window[getDimension()] * (presetValue / 100 / (isFirstDimension ? 2 : 1))
@@ -28,7 +30,16 @@
     dimensionValue = calculatedValue;
   }
 
-  setToValue(presetValue);
+  onMount(() => {
+    const currentPercentage = Math.min(
+      Math.max(
+        Math.round(((dimensionValue * (isFirstDimension ? 2 : 1)) / window[getDimension()]) * 100),
+        !isFirstDimension && !dimensionValue ? max : min
+      ),
+      max
+    );
+    setToValue(Math.round(currentPercentage / progressStep) * progressStep);
+  });
 </script>
 
 <div class="text-center">
@@ -37,7 +48,7 @@
 <input
   class="mb-2 mt-4"
   type="range"
-  step="5"
+  step={progressStep}
   {min}
   {max}
   bind:value={presetValue}
