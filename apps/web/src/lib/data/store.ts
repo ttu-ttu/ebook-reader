@@ -35,7 +35,7 @@ export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()(
 export const verticalMode$ = writingMode$.pipe(map((writingMode) => writingMode === 'vertical-rl'));
 export const viewMode$ = writableStringLocalStorageSubject<ViewMode>()(
   'viewMode',
-  ViewMode.Continuous
+  ViewMode.Paginated
 );
 
 export const secondDimensionMaxValue$ = writableNumberLocalStorageSubject()(
