@@ -324,6 +324,25 @@
     const nextPage = verticalMode ? !swipeLeft : swipeLeft;
     concretePageManager.flipPage(nextPage ? 1 : -1);
   }
+
+  function onKeydown(ev: KeyboardEvent) {
+    if (!concretePageManager) return;
+    switch (ev.code) {
+      case 'ArrowLeft':
+        concretePageManager[verticalMode ? 'nextPage' : 'prevPage']();
+        break;
+      case 'ArrowRight':
+        concretePageManager[verticalMode ? 'prevPage' : 'nextPage']();
+        break;
+      case 'ArrowUp':
+        concretePageManager.prevPage();
+        break;
+      case 'ArrowDown':
+        concretePageManager.nextPage();
+        break;
+      default:
+    }
+  }
 </script>
 
 <div
@@ -386,6 +405,8 @@
     <Fa icon={faBookmark} />
   </div>
 {/if}
+
+<svelte:window on:keydown={onKeydown} />
 
 <style lang="scss">
   @import '../styles';
