@@ -8,7 +8,7 @@
   import { browser } from '$app/env';
   import { popovers } from './popover';
 
-  export let content = '';
+  export let contentText = '';
   export let singlePopover = true;
 
   let contentElement: HTMLElement;
@@ -85,7 +85,7 @@
   <div use:conditionalClickHandlerAndClass={!$$slots.icon} bind:this={contentElement}>
     <slot />
   </div>
-  <div use:conditionalClickHandlerAndClass={$$slots.icon} bind:this={iconElement}>
+  <div class="mx-2" use:conditionalClickHandlerAndClass={$$slots.icon} bind:this={iconElement}>
     <slot name="icon" />
   </div>
 </div>
@@ -93,7 +93,8 @@
 {#if isOpen}
   <div
     data-popover
-    class="max-w-60vw z-10 whitespace-pre-wrap rounded bg-[#333] p-2 text-sm font-bold text-white md:max-w-lg"
+    class="max-w-60vw absolute z-10 rounded bg-[#333] p-2 text-sm font-bold text-white md:max-w-lg"
+    class:whitespace-pre-wrap={contentText}
     bind:this={popoverElement}
   >
     <div
@@ -103,7 +104,8 @@
         }
       }}
     >
-      {content}
+      {contentText}
+      <slot name="content" />
     </div>
   </div>
 {/if}
