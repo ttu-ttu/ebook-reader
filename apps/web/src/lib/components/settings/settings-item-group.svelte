@@ -8,16 +8,19 @@
 </script>
 
 <section class="pb-8">
-  <h2 class="mb-2 text-xl font-medium">
-    {#if tooltip}
-      <Popover content={tooltip}>
-        <Fa icon={faCircleQuestion} slot="icon" class="mx-2" />
+  <div class="flex">
+    <h2 class="mb-2 text-xl font-medium">
+      {#if tooltip}
+        <Popover contentText={tooltip}>
+          <Fa icon={faCircleQuestion} slot="icon" />
+          <span class="capitalize">{title}</span>
+        </Popover>
+      {:else}
         <span class="capitalize">{title}</span>
-      </Popover>
-    {:else}
-      <span class="capitalize">{title}</span>
-    {/if}
-  </h2>
+      {/if}
+    </h2>
+    <slot name="header" />
+  </div>
   <div>
     <slot />
   </div>
