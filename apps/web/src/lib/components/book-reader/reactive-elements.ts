@@ -7,6 +7,7 @@
 import { fromEvent, merge, take, tap } from 'rxjs';
 
 import { FuriganaStyle } from '../../data/furigana-style';
+import { nextChapter$ } from '../book-toc/book-toc';
 
 export function reactiveElements(document: Document, furiganaStyle: FuriganaStyle) {
   const anchorTagDocumentListener = anchorTagListener(document);
@@ -29,14 +30,7 @@ function anchorTagListener(document: Document) {
     });
 
     const obs$ = anchorTags.map((el) =>
-      fromClickEvent(el).pipe(
-        tap(() => {
-          const targetEl = document.getElementById(el.hash.substring(1));
-          if (targetEl) {
-            targetEl.scrollIntoView();
-          }
-        })
-      )
+      fromClickEvent(el).pipe(tap(() => nextChapter$.next(el.hash.substring(1))))
     );
     return merge(...obs$);
   };

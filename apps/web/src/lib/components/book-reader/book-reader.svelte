@@ -25,6 +25,7 @@
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
+  import { tocIsOpen$ } from '../book-toc/book-toc';
 
   export let htmlContent: string;
 
@@ -156,7 +157,7 @@
   }
 </script>
 
-<div bind:this={$containerEl$} class="{pxReader} py-8">
+<div bind:this={$containerEl$} class="{pxReader} py-8" class:opacity-20={$tocIsOpen$}>
   {#if viewMode === ViewMode.Continuous}
     <BookReaderContinuous
       {htmlContent}

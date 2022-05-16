@@ -13,6 +13,8 @@
   } from 'rxjs';
   import { quintInOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
+  import Fa from 'svelte-fa';
+  import { faList } from '@fortawesome/free-solid-svg-icons';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import BookReader from '$lib/components/book-reader/book-reader.svelte';
@@ -55,7 +57,31 @@
   import { tapDom } from '$lib/functions/rxjs/tap-dom';
   import { onKeydownReader } from './on-keydown-reader';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import BookToc from '$lib/components/book-toc/book-toc.svelte';
   import { clickOutside } from '$lib/functions/use-click-outside';
+  import {
+    getChapterData,
+    nextChapter$,
+    sectionList$,
+    sectionProgress$,
+    tocIsOpen$
+  } from '$lib/components/book-toc/book-toc';
+
+  let showHeader = true;
+  let isBookmarkScreen = false;
+  let showFooter = true;
+  let exploredCharCount = 0;
+  let bookCharCount = 0;
+  let autoScroller: AutoScroller | undefined;
+  let bookmarkManager: BookmarkManager | undefined;
+  let pageManager: PageManager | undefined;
+  let bookmarkData: Promise<BooksDbBookmarkData | undefined> = Promise.resolve(undefined);
+  let footerElement: HTMLElement;
+
+  const autoHideHeader$ = timer(2500).pipe(
+    tap(() => (showHeader = false)),
+    reduceToEmptyString()
+  );
 
   const bookId$ = iffBrowser(() => readableToObservable(page)).pipe(
     map((pageObj) => Number(pageObj.url.searchParams.get('id'))),
@@ -76,8 +102,6 @@
     reduceToEmptyString()
   );
 
-  let bookmarkData: Promise<BooksDbBookmarkData | undefined> = Promise.resolve(undefined);
-
   const initBookmarkData$ = rawBookData$.pipe(
     tap((rawBookData) => {
       if (!rawBookData) return;
@@ -90,10 +114,13 @@
     switchMap((rawBookData) => {
       if (!rawBookData) return EMPTY;
 
+      sectionList$.next(rawBookData.sections || []);
+
       return loadBookData(rawBookData, '.book-content', document);
     }),
     shareReplay({ refCount: true, bufferSize: 1 })
   );
+
   const resize$ = iffBrowser(() => fromEvent(visualViewport, 'resize')).pipe(share());
 
   const containerViewportWidth$ = resize$.pipe(
@@ -138,9 +165,13 @@
     takeWhenBrowser()
   );
 
-  let autoScroller: AutoScroller | undefined;
-  let bookmarkManager: BookmarkManager | undefined;
-  let pageManager: PageManager | undefined;
+  const sectionData$ = iffBrowser(() => sectionProgress$).pipe(
+    map((sectionProgress) => [...sectionProgress.values()])
+  );
+
+  $: if ($tocIsOpen$) {
+    autoScroller?.off();
+  }
 
   function onKeydown(ev: KeyboardEvent) {
     const result = onKeydownReader(
@@ -150,7 +181,9 @@
       scrollToBookmark,
       (x) => multiplier$.next(multiplier$.getValue() + x),
       autoScroller,
-      pageManager
+      pageManager,
+      $verticalMode$,
+      changeChapter
     );
 
     if (!result) return;
@@ -182,15 +215,6 @@
     bookmarkManager.scrollToBookmark(data);
   }
 
-  let showHeader = true;
-
-  let isBookmarkScreen = false;
-
-  const autoHideHeader$ = timer(2500).pipe(
-    tap(() => (showHeader = false)),
-    reduceToEmptyString()
-  );
-
   function onBookManagerClick() {
     database.deleteLastItem();
     bookmarkPage();
@@ -204,9 +228,22 @@
     fullscreenManager.exitFullscreen();
   }
 
-  let showFooter = true;
-  let exploredCharCount = 0;
-  let bookCharCount = 0;
+  function changeChapter(offset: number) {
+    if (!$sectionData$?.length) {
+      return;
+    }
+
+    const [mainChapters, currentChapterIndex] = getChapterData($sectionData$);
+
+    if (
+      (!currentChapterIndex && offset === -1) ||
+      (offset === 1 && currentChapterIndex === mainChapters.length - 1)
+    ) {
+      return;
+    }
+
+    nextChapter$.next(mainChapters[currentChapterIndex + offset].reference);
+  }
 </script>
 
 <svelte:head>
@@ -274,19 +311,49 @@
   {$leaveIfBookMissing$ ?? ''}
 {/if}
 
-{#if showFooter && bookCharCount}
+{#if $tocIsOpen$}
   <div
-    class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none"
-    style:color={$themeOption$?.tooltipTextFontColor}
+    class="writing-horizontal-tb fixed top-0 left-0 z-20 flex h-full w-full max-w-xl flex-col justify-between"
+    style:color={$themeOption$?.fontColor}
+    style:background-color={$themeOption$?.tocBackgroundColor}
+    in:fly|local={{ x: -100, duration: 100, easing: quintInOut }}
+    use:clickOutside={({ target }) => {
+      if (target !== footerElement) {
+        tocIsOpen$.next(false);
+      }
+    }}
   >
-    {exploredCharCount} / {bookCharCount} ({((exploredCharCount / bookCharCount) * 100).toFixed(
-      2
-    )}%)
+    <BookToc sectionData={$sectionData$} {exploredCharCount} />
   </div>
 {/if}
-<button
-  class="fixed inset-x-0 bottom-0 z-10 h-8 w-full cursor-pointer"
-  on:click={() => (showFooter = !showFooter)}
-/>
+
+<div
+  class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full cursor-pointer items-center justify-between text-xs leading-none"
+  style:color={$themeOption$?.tooltipTextFontColor}
+  bind:this={footerElement}
+  on:click={() => {
+    if (!$tocIsOpen$) {
+      showFooter = !showFooter;
+    }
+  }}
+>
+  <div class="h-full">
+    {#if $sectionData$?.length}
+      <div
+        class="flex h-full w-8 items-center justify-center text-lg"
+        on:click|stopPropagation={() => tocIsOpen$.next(true)}
+      >
+        <Fa icon={faList} />
+      </div>
+    {/if}
+  </div>
+  {#if showFooter && bookCharCount}
+    <div class="pr-2">
+      {exploredCharCount} / {bookCharCount} ({((exploredCharCount / bookCharCount) * 100).toFixed(
+        2
+      )}%)
+    </div>
+  {/if}
+</div>
 
 <svelte:window on:keydown={onKeydown} />

@@ -14,6 +14,7 @@ interface BooksDbV3BookData {
   blobs: Record<string, Blob>;
   coverImage?: string | Blob;
   hasThumb: boolean;
+  sections?: Section[];
 }
 
 interface BooksDbV3BookmarkData {
@@ -22,6 +23,15 @@ interface BooksDbV3BookmarkData {
   scrollY?: number;
   exploredCharCount?: number;
   progress: number | string | undefined;
+}
+
+export interface Section {
+  reference: string;
+  charactersWeight: number;
+  label?: string;
+  startCharacter?: number;
+  characters?: number;
+  parentChapter?: string;
 }
 
 export default interface BooksDbV3 extends DBSchema {
