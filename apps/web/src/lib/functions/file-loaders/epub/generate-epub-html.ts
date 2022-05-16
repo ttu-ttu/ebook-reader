@@ -64,10 +64,16 @@ export default function generateEpubHtml(
   let firstChapterMatchIndex = -1;
 
   if (tocData.type && tocData.content) {
-    const parsedToc = parser.parseFromString(tocData.content, 'text/html');
+    let parsedToc = parser.parseFromString(tocData.content, 'text/html');
 
     if (tocData.type === 3) {
-      const navTocElement = parsedToc.querySelector('nav[epub\\:type="toc"],nav#toc');
+      let navTocElement = parsedToc.querySelector('nav[epub\\:type="toc"],nav#toc');
+
+      if (!navTocElement) {
+        parsedToc = parser.parseFromString(tocData.content, 'text/xml');
+      }
+
+      navTocElement = parsedToc.querySelector('nav[epub\\:type="toc"],nav#toc');
 
       if (navTocElement) {
         mainChapters = [...navTocElement.querySelectorAll('a')].map((elm) => {
