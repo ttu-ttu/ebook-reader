@@ -67,11 +67,15 @@ export default function generateEpubHtml(
     const parsedToc = parser.parseFromString(tocData.content, 'text/html');
 
     if (tocData.type === 3) {
-      mainChapters = [...parsedToc.querySelectorAll('nav[epub\\:type="toc"] a')].map((elm) => {
-        const anchor = elm as HTMLAnchorElement;
+      const navTocElement = parsedToc.querySelector('nav[epub\\:type="toc"],nav#toc');
 
-        return { reference: anchor.href, charactersWeight: 1, label: anchor.innerText };
-      });
+      if (navTocElement) {
+        mainChapters = [...navTocElement.querySelectorAll('a')].map((elm) => {
+          const anchor = elm as HTMLAnchorElement;
+
+          return { reference: anchor.href, charactersWeight: 1, label: anchor.innerText };
+        });
+      }
     } else {
       mainChapters = [...parsedToc.querySelectorAll('navPoint')].map((elm) => {
         const navLabel = elm.querySelector('navLabel text') as HTMLElement;
@@ -88,10 +92,10 @@ export default function generateEpubHtml(
 
   if (mainChapters.length) {
     firstChapterMatchIndex = itemRefs.findIndex((ref) =>
-      mainChapters[0].reference.includes(itemIdToHtmlRef[ref['@_idref']])
+      mainChapters[0].reference.includes(itemIdToHtmlRef[ref['@_idref'].split('/').pop() || ''])
     );
 
-    if (firstChapterMatchIndex > 0) {
+    if (firstChapterMatchIndex !== 0) {
       mainChapters.unshift({
         reference: itemIdToHtmlRef[itemRefs[0]['@_idref']],
         charactersWeight: 1,
@@ -102,9 +106,7 @@ export default function generateEpubHtml(
   }
 
   let currentMainChapter = mainChapters[0];
-  let currentMainChapterId = currentMainChapter
-    ? `${prependValue}${itemRefs[firstChapterMatchIndex]['@_idref']}`
-    : '';
+  let currentMainChapterId = currentMainChapter ? `${prependValue}${itemRefs[0]['@_idref']}` : '';
   let currentMainChapterIndex = 0;
   let previousCharacterCount = 0;
   let currentCharCount = 0;
@@ -141,12 +143,14 @@ export default function generateEpubHtml(
     currentCharCount += countForElement(childDiv);
 
     const mainChapterIndex = mainChapters.findIndex((chapter) =>
-      chapter.reference.includes(htmlHref)
+      chapter.reference.includes(htmlHref.split('/').pop() || '')
     );
     const mainChapter = mainChapterIndex > -1 ? mainChapters[mainChapterIndex] : undefined;
     const characters = currentCharCount - previousCharacterCount;
 
     if (mainChapter) {
+      const oldMainChapterIndex = currentMainChapterIndex;
+
       currentMainChapter = mainChapter;
       currentMainChapterIndex = sectionData.length;
       currentMainChapterId = `${prependValue}${itemIdRef}`;
@@ -155,8 +159,11 @@ export default function generateEpubHtml(
         reference: currentMainChapterId,
         charactersWeight: characters || 1,
         label: currentMainChapter.label,
-        startCharacter: previousCharacterCount,
-        characters: characters - (mainChapterIndex ? 0 : 1)
+        startCharacter: currentMainChapterIndex
+          ? (sectionData[oldMainChapterIndex].startCharacter as number) +
+            (sectionData[oldMainChapterIndex].characters as number)
+          : 0,
+        characters
       });
     } else if (currentMainChapter) {
       (sectionData[currentMainChapterIndex].characters as number) += characters;
