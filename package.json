@@ -13,8 +13,8 @@
   "devDependencies": {
     "@commitlint/cli": "17.0.0",
     "@commitlint/config-conventional": "17.0.0",
-    "@typescript-eslint/eslint-plugin": "5.24.0",
-    "@typescript-eslint/parser": "5.24.0",
+    "@typescript-eslint/eslint-plugin": "5.25.0",
+    "@typescript-eslint/parser": "5.25.0",
     "eslint": "8.15.0",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-config-airbnb-typescript": "17.0.0",
