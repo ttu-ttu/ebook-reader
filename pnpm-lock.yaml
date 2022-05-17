@@ -58,7 +58,7 @@ importers:
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
-      '@zip.js/zip.js': 2.4.11
+      '@zip.js/zip.js': 2.4.12
       autoprefixer: 10.4.7
       balanced-match: 2.0.0
       fake-indexeddb: 3.1.7
@@ -83,7 +83,7 @@ importers:
       '@fortawesome/free-regular-svg-icons': 6.1.1
       '@fortawesome/free-solid-svg-icons': 6.1.1
       '@popperjs/core': 2.11.5
-      '@zip.js/zip.js': 2.4.11
+      '@zip.js/zip.js': 2.4.12
       balanced-match: 2.0.0
       fake-indexeddb: 3.1.7
       fast-xml-parser: 4.0.7
@@ -856,8 +856,8 @@ packages:
       eslint-visitor-keys: 3.3.0
     dev: true
 
-  /@zip.js/zip.js/2.4.11:
-    resolution: {integrity: sha512-foZOFEdy1ZSxUvy4a3k/FlZqFTX7/1Dw7ji/plohTNcDid/XuAtsIWKcANRwZL5JLpSfndtz5M5oAF8oKfwfIw==}
+  /@zip.js/zip.js/2.4.12:
+    resolution: {integrity: sha512-Y9VTILBi067CUNyaCTeLXxAVbB547EdUfAJZndfpnqYm8r2blVmHAqvggPYw2p89rTCvJAhDXlGkY4cv0+JYmA==}
     dev: false
 
   /JSONStream/1.3.5:
