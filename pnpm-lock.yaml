@@ -53,7 +53,7 @@ importers:
       '@sveltejs/adapter-static': 1.0.0-next.31
       '@sveltejs/kit': 1.0.0-next.335
       '@tailwindcss/aspect-ratio': 0.4.0
-      '@tailwindcss/forms': 0.5.1
+      '@tailwindcss/forms': 0.5.2
       '@tailwindcss/line-clamp': 0.4.0
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
@@ -98,7 +98,7 @@ importers:
       '@sveltejs/adapter-static': 1.0.0-next.31
       '@sveltejs/kit': 1.0.0-next.335_sass@1.51.0+svelte@3.48.0
       '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.24
-      '@tailwindcss/forms': 0.5.1_tailwindcss@3.0.24
+      '@tailwindcss/forms': 0.5.2_tailwindcss@3.0.24
       '@tailwindcss/line-clamp': 0.4.0_tailwindcss@3.0.24
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
@@ -568,8 +568,8 @@ packages:
       tailwindcss: 3.0.24
     dev: true
 
-  /@tailwindcss/forms/0.5.1_tailwindcss@3.0.24:
-    resolution: {integrity: sha512-QSwsFORnC2BAP0lRzQkz1pw+EzIiiPdk4e27vGQjyXkwJPeC7iLIRVndJzf9CJVbcrrIcirb/TfxF3gRTyFEVA==}
+  /@tailwindcss/forms/0.5.2_tailwindcss@3.0.24:
+    resolution: {integrity: sha512-pSrFeJB6Bg1Mrg9CdQW3+hqZXAKsBrSG9MAfFLKy1pVA4Mb4W7C0k7mEhlmS2Dfo/otxrQOET7NJiJ9RrS563w==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1'
     dependencies:
