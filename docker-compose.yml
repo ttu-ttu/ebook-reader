@@ -1,0 +1,7 @@
+services:
+  ebook-reader:
+    build:
+      context: ./
+      dockerfile: ./apps/web/Dockerfile
+    ports:
+      - 8080:80

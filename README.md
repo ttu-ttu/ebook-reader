@@ -83,6 +83,17 @@ docker run --name ebook-reader -d -p 8080:80 ebook-reader
 
 3. Visit [http://localhost:8080](http://localhost:8080) to use the app
 
+### Using Docker Compose
+
+1. Install and launch [Docker Compose](https://docs.docker.com/compose/install/)
+2. Run the command below
+
+```sh
+docker-compose up
+```
+
+3. Visit [http://localhost:8080](http://localhost:8080) to use the app
+
 ### Using HTTP Hosting App
 
 1. Have [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/installation) installed
