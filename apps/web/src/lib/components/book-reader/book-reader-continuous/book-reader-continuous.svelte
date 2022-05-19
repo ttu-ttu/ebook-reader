@@ -124,9 +124,9 @@
 
   const destroy$ = new Subject<void>();
 
-  const sectionToElement: Map<string, HTMLElement> = new Map();
+  const sectionToElement = new Map<string, HTMLElement>();
 
-  const sectionData: Map<string, SectionWithProgress> = new Map();
+  const sectionData = new Map<string, SectionWithProgress>();
 
   let scrollAdjustment = 0;
 
