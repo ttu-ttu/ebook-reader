@@ -16,7 +16,7 @@ COPY apps/web ./
 RUN pnpm build
 
 
-FROM nginx:1.21-alpine
+FROM nginx:1.22-alpine
 
 COPY apps/web/nginx /etc/nginx
 COPY --from=builder /workspace/apps/web/build /usr/share/nginx/html
