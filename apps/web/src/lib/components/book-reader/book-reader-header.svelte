@@ -6,6 +6,7 @@
     faBookmark as fasBookmark,
     faExpand,
     faCog,
+    faList,
     faSignOutAlt
   } from '@fortawesome/free-solid-svg-icons';
   import {
@@ -15,12 +16,13 @@
     translateXHeaderFa
   } from '$lib/css-classes';
 
+  export let hasChapterData: boolean;
   export let autoScrollMultiplier: number;
   export let showFullscreenButton: boolean;
-
   export let isBookmarkScreen: boolean;
 
   const dispatch = createEventDispatcher<{
+    tocClick: void;
     bookmarkClick: void;
     fullscreenClick: void;
     bookManagerClick: void;
@@ -30,6 +32,15 @@
 
 <div class="flex h-12 justify-between bg-gray-700 px-4 text-white md:px-8 xl:h-10">
   <div class="flex transform-gpu {nTranslateXHeaderFa}">
+    {#if hasChapterData}
+      <div
+        class="flex h-full items-center text-xl xl:text-lg {pHeaderFa} {opacityHeaderIcon} cursor-pointer"
+        on:click={() => dispatch('tocClick')}
+        role="button"
+      >
+        <Fa icon={faList} />
+      </div>
+    {/if}
     <div
       class="flex h-full items-center text-xl xl:text-lg {pHeaderFa} {opacityHeaderIcon} cursor-pointer"
       on:click={() => dispatch('bookmarkClick')}

@@ -19,7 +19,6 @@ export interface ThemeOption {
   hintFuriganaShadowColor: string;
   hintFuriganaFontColor: string;
   tooltipTextFontColor: string;
-  tocBackgroundColor: string;
 }
 
 function updateHintFuriganaFontColor(theme: Record<keyof ThemeOption, ColorObject>) {
@@ -70,11 +69,6 @@ const lightTheme = updateHintFuriganaFontColor({
     g: 0x00,
     b: 0x00,
     a: 0.6
-  },
-  tocBackgroundColor: {
-    r: 0x96,
-    g: 0xa0,
-    b: 0xa0
   }
 });
 
@@ -118,11 +112,6 @@ const darkTheme = updateHintFuriganaFontColor({
     g: 0xff,
     b: 0xff,
     a: 0.6
-  },
-  tocBackgroundColor: {
-    r: 0x14,
-    g: 0x19,
-    b: 0x1e
   }
 });
 

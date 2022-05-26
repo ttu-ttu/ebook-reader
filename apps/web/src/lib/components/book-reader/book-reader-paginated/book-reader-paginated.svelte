@@ -18,7 +18,7 @@
   import { swipe } from 'svelte-gestures';
   import { faBookmark, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import { browser } from '$app/env';
-  import { nextChapter$, tocIsOpen$ } from '$lib/components/book-toc/book-toc';
+  import { nextChapter$, tocIsOpen$ } from '$lib/components/book-reader/book-toc/book-toc';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';

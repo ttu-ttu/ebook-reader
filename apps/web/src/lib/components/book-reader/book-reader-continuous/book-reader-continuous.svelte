@@ -25,7 +25,7 @@
     sectionProgress$,
     tocIsOpen$,
     type SectionWithProgress
-  } from '$lib/components/book-toc/book-toc';
+  } from '$lib/components/book-reader/book-toc/book-toc';
   import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';

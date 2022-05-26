@@ -5,8 +5,12 @@
  */
 
 import { Observable, take, type Subject, type BehaviorSubject } from 'rxjs';
+import {
+  sectionProgress$,
+  sectionList$,
+  type SectionWithProgress
+} from '$lib/components/book-reader/book-toc/book-toc';
 import type { PageManager } from '../types';
-import { sectionProgress$, sectionList$, type SectionWithProgress } from '../../book-toc/book-toc';
 
 export class PageManagerPaginated implements PageManager {
   private translateX = 0;

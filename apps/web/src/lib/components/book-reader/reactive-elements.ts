@@ -7,7 +7,7 @@
 import { fromEvent, merge, take, tap } from 'rxjs';
 
 import { FuriganaStyle } from '../../data/furigana-style';
-import { nextChapter$ } from '../book-toc/book-toc';
+import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
 
 export function reactiveElements(document: Document, furiganaStyle: FuriganaStyle) {
   const anchorTagDocumentListener = anchorTagListener(document);

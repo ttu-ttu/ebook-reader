@@ -13,8 +13,6 @@
   } from 'rxjs';
   import { quintInOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
-  import Fa from 'svelte-fa';
-  import { faList } from '@fortawesome/free-solid-svg-icons';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import BookReader from '$lib/components/book-reader/book-reader.svelte';
@@ -46,6 +44,8 @@
     writingMode$,
     viewMode$
   } from '$lib/data/store';
+  import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
   import { availableThemes } from '$lib/data/theme-option';
   import { fullscreenManager } from '$lib/data/fullscreen-manager';
   import loadBookData from '$lib/functions/book-data-loader/load-book-data';
@@ -55,17 +55,15 @@
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { takeWhenBrowser } from '$lib/functions/rxjs/take-when-browser';
   import { tapDom } from '$lib/functions/rxjs/tap-dom';
-  import { onKeydownReader } from './on-keydown-reader';
-  import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
-  import BookToc from '$lib/components/book-toc/book-toc.svelte';
-  import { clickOutside } from '$lib/functions/use-click-outside';
   import {
     getChapterData,
     nextChapter$,
     sectionList$,
     sectionProgress$,
     tocIsOpen$
-  } from '$lib/components/book-toc/book-toc';
+  } from '$lib/components/book-reader/book-toc/book-toc';
+  import { clickOutside } from '$lib/functions/use-click-outside';
+  import { onKeydownReader } from './on-keydown-reader';
 
   let showHeader = true;
   let isBookmarkScreen = false;
@@ -76,7 +74,6 @@
   let bookmarkManager: BookmarkManager | undefined;
   let pageManager: PageManager | undefined;
   let bookmarkData: Promise<BooksDbBookmarkData | undefined> = Promise.resolve(undefined);
-  let footerElement: HTMLElement;
 
   const autoHideHeader$ = timer(2500).pipe(
     tap(() => (showHeader = false)),
@@ -259,9 +256,14 @@
     use:clickOutside={() => (showHeader = false)}
   >
     <BookReaderHeader
+      hasChapterData={!!$sectionData$?.length}
       showFullscreenButton={fullscreenManager.fullscreenEnabled}
       autoScrollMultiplier={$multiplier$}
       bind:isBookmarkScreen
+      on:tocClick={() => {
+        showHeader = false;
+        tocIsOpen$.next(true);
+      }}
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
       on:bookManagerClick={onBookManagerClick}
@@ -313,47 +315,29 @@
 
 {#if $tocIsOpen$}
   <div
-    class="writing-horizontal-tb fixed top-0 left-0 z-20 flex h-full w-full max-w-xl flex-col justify-between"
+    class="writing-horizontal-tb fixed top-0 left-0 z-[60] flex h-full w-full max-w-xl flex-col justify-between"
     style:color={$themeOption$?.fontColor}
-    style:background-color={$themeOption$?.tocBackgroundColor}
+    style:background-color={$backgroundColor$}
     in:fly|local={{ x: -100, duration: 100, easing: quintInOut }}
-    use:clickOutside={({ target }) => {
-      if (target !== footerElement) {
-        tocIsOpen$.next(false);
-      }
-    }}
+    use:clickOutside={() => tocIsOpen$.next(false)}
   >
     <BookToc sectionData={$sectionData$} {exploredCharCount} />
   </div>
 {/if}
 
-<div
-  class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full cursor-pointer items-center justify-between text-xs leading-none"
-  style:color={$themeOption$?.tooltipTextFontColor}
-  bind:this={footerElement}
-  on:click={() => {
-    if (!$tocIsOpen$) {
-      showFooter = !showFooter;
-    }
-  }}
->
-  <div class="h-full">
-    {#if $sectionData$?.length}
-      <div
-        class="flex h-full w-8 items-center justify-center text-lg"
-        on:click|stopPropagation={() => tocIsOpen$.next(true)}
-      >
-        <Fa icon={faList} />
-      </div>
-    {/if}
+{#if showFooter && bookCharCount}
+  <div
+    class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none"
+    style:color={$themeOption$?.tooltipTextFontColor}
+  >
+    {exploredCharCount} / {bookCharCount} ({((exploredCharCount / bookCharCount) * 100).toFixed(
+      2
+    )}%)
   </div>
-  {#if showFooter && bookCharCount}
-    <div class="pr-2">
-      {exploredCharCount} / {bookCharCount} ({((exploredCharCount / bookCharCount) * 100).toFixed(
-        2
-      )}%)
-    </div>
-  {/if}
-</div>
+{/if}
+<button
+  class="fixed inset-x-0 bottom-0 z-10 h-8 w-full cursor-pointer"
+  on:click={() => (showFooter = !showFooter)}
+/>
 
 <svelte:window on:keydown={onKeydown} />

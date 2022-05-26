@@ -2,6 +2,7 @@
   import { faXmark, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
   import { onMount } from 'svelte';
   import Fa from 'svelte-fa';
+  import { dialogManager } from '$lib/data/dialog-manager';
   import { getChapterData, nextChapter$, tocIsOpen$, type SectionWithProgress } from './book-toc';
 
   export let sectionData: SectionWithProgress[] = [];
@@ -43,6 +44,11 @@
   }
 
   onMount(() => {
+    dialogManager.dialogs$.next([
+      {
+        component: '<div/>'
+      }
+    ]);
     if (currentChapter) {
       scrollToChapterItem(document.getElementById(`for${currentChapter.reference}`));
     }
@@ -87,6 +93,7 @@
 
     if (closeToc) {
       tocIsOpen$.next(false);
+      dialogManager.dialogs$.next([]);
     }
   }
 </script>
