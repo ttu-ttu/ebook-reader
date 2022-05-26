@@ -51,7 +51,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.1.1
       '@popperjs/core': 2.11.5
       '@sveltejs/adapter-static': 1.0.0-next.32
-      '@sveltejs/kit': 1.0.0-next.344
+      '@sveltejs/kit': 1.0.0-next.345
       '@tailwindcss/aspect-ratio': 0.4.0
       '@tailwindcss/forms': 0.5.2
       '@tailwindcss/line-clamp': 0.4.0
@@ -96,7 +96,7 @@ importers:
       ua-parser-js: 1.0.2
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.32
-      '@sveltejs/kit': 1.0.0-next.344_sass@1.52.1+svelte@3.48.0
+      '@sveltejs/kit': 1.0.0-next.345_sass@1.52.1+svelte@3.48.0
       '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.24
       '@tailwindcss/forms': 0.5.2_tailwindcss@3.0.24
       '@tailwindcss/line-clamp': 0.4.0_tailwindcss@3.0.24
@@ -519,8 +519,8 @@ packages:
       tiny-glob: 0.2.9
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.344_sass@1.52.1+svelte@3.48.0:
-    resolution: {integrity: sha512-IKFyB/ErD1E6/Gl/AKA2EvOPmu6jdHDIoDYStL0PP12ZASOKTPNfSgusPHMNOTV+qyJKwo8JdOTWwLuFmZLq8A==}
+  /@sveltejs/kit/1.0.0-next.345_sass@1.52.1+svelte@3.48.0:
+    resolution: {integrity: sha512-2nLZoXZ02uXMSxqRAMRCr/J4aCphqgKLxEhRRyh3c3aWLAjWiDWLDcvSB770eHt3y0MkYrTvp7JrDF7RhfyuBA==}
     engines: {node: '>=16.7'}
     hasBin: true
     peerDependencies:
@@ -2669,7 +2669,7 @@ packages:
     dependencies:
       universalify: 2.0.0
     optionalDependencies:
-      graceful-fs: 4.2.9
+      graceful-fs: 4.2.10
     dev: true
 
   /jsonparse/1.3.1:
