@@ -44,7 +44,7 @@
     "rxjs": "7.5.5",
     "svelte-fa": "2.4.0",
     "svelte-gestures": "1.4.1",
-    "svelte-meta-tags": "2.6.0",
+    "svelte-meta-tags": "2.6.1",
     "ua-parser-js": "1.0.2"
   }
 }
