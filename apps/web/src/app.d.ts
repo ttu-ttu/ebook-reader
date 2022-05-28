@@ -8,3 +8,11 @@ declare namespace App {
   // interface Session {}
   // interface Stuff {}
 }
+
+declare global {
+  interface HTMLElement {
+    scrollIntoViewIfNeeded(arg?: boolean): void;
+  }
+}
+
+export {};

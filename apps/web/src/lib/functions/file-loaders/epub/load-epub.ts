@@ -5,15 +5,15 @@
  */
 
 import type { LoadData } from '../types';
-import reduceObjToBlobs from '../utils/reduce-obj-to-blobs';
 import extractEpub from './extract-epub';
 import generateEpubHtml from './generate-epub-html';
 import generateEpubStyleSheet from './generate-epub-style-sheet';
 import getEpubCoverImageFilename from './get-epub-cover-image-filename';
+import reduceObjToBlobs from '../utils/reduce-obj-to-blobs';
 
 export default async function loadEpub(file: File, document: Document): Promise<LoadData> {
   const { contents, result: data } = await extractEpub(file);
-  const element = generateEpubHtml(data, contents, document);
+  const result = generateEpubHtml(data, contents, document);
 
   const displayData = {
     title: file.name,
@@ -40,8 +40,9 @@ export default async function loadEpub(file: File, document: Document): Promise<
 
   return {
     ...displayData,
-    elementHtml: element.innerHTML,
+    elementHtml: result.element.innerHTML,
     blobs: blobData,
-    coverImage
+    coverImage,
+    sections: result.sections
   };
 }

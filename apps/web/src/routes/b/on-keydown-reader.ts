@@ -17,7 +17,9 @@ export function onKeydownReader(
   scrollToBookmark: () => void,
   multiplierOffsetFn: (offset: number) => void,
   autoScroller: AutoScroller | undefined,
-  pageManager: PageManager | undefined
+  pageManager: PageManager | undefined,
+  isVertical: boolean,
+  changeChapter: (offset: number) => void
 ) {
   const action = bookReaderKeybindMap[ev.code];
 
@@ -43,6 +45,12 @@ export function onKeydownReader(
       return true;
     case BookReaderAvailableKeybind.PREV_PAGE:
       pageManager?.prevPage();
+      return true;
+    case BookReaderAvailableKeybind.PREV_CHAPTER:
+      changeChapter(isVertical ? 1 : -1);
+      return true;
+    case BookReaderAvailableKeybind.NEXT_CHAPTER:
+      changeChapter(isVertical ? -1 : 1);
       return true;
     default:
       return false;

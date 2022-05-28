@@ -44,6 +44,8 @@
     writingMode$,
     viewMode$
   } from '$lib/data/store';
+  import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
   import { availableThemes } from '$lib/data/theme-option';
   import { fullscreenManager } from '$lib/data/fullscreen-manager';
   import loadBookData from '$lib/functions/book-data-loader/load-book-data';
@@ -53,9 +55,30 @@
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { takeWhenBrowser } from '$lib/functions/rxjs/take-when-browser';
   import { tapDom } from '$lib/functions/rxjs/tap-dom';
-  import { onKeydownReader } from './on-keydown-reader';
-  import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import {
+    getChapterData,
+    nextChapter$,
+    sectionList$,
+    sectionProgress$,
+    tocIsOpen$
+  } from '$lib/components/book-reader/book-toc/book-toc';
   import { clickOutside } from '$lib/functions/use-click-outside';
+  import { onKeydownReader } from './on-keydown-reader';
+
+  let showHeader = true;
+  let isBookmarkScreen = false;
+  let showFooter = true;
+  let exploredCharCount = 0;
+  let bookCharCount = 0;
+  let autoScroller: AutoScroller | undefined;
+  let bookmarkManager: BookmarkManager | undefined;
+  let pageManager: PageManager | undefined;
+  let bookmarkData: Promise<BooksDbBookmarkData | undefined> = Promise.resolve(undefined);
+
+  const autoHideHeader$ = timer(2500).pipe(
+    tap(() => (showHeader = false)),
+    reduceToEmptyString()
+  );
 
   const bookId$ = iffBrowser(() => readableToObservable(page)).pipe(
     map((pageObj) => Number(pageObj.url.searchParams.get('id'))),
@@ -76,8 +99,6 @@
     reduceToEmptyString()
   );
 
-  let bookmarkData: Promise<BooksDbBookmarkData | undefined> = Promise.resolve(undefined);
-
   const initBookmarkData$ = rawBookData$.pipe(
     tap((rawBookData) => {
       if (!rawBookData) return;
@@ -90,10 +111,13 @@
     switchMap((rawBookData) => {
       if (!rawBookData) return EMPTY;
 
+      sectionList$.next(rawBookData.sections || []);
+
       return loadBookData(rawBookData, '.book-content', document);
     }),
     shareReplay({ refCount: true, bufferSize: 1 })
   );
+
   const resize$ = iffBrowser(() => fromEvent(visualViewport, 'resize')).pipe(share());
 
   const containerViewportWidth$ = resize$.pipe(
@@ -138,9 +162,13 @@
     takeWhenBrowser()
   );
 
-  let autoScroller: AutoScroller | undefined;
-  let bookmarkManager: BookmarkManager | undefined;
-  let pageManager: PageManager | undefined;
+  const sectionData$ = iffBrowser(() => sectionProgress$).pipe(
+    map((sectionProgress) => [...sectionProgress.values()])
+  );
+
+  $: if ($tocIsOpen$) {
+    autoScroller?.off();
+  }
 
   function onKeydown(ev: KeyboardEvent) {
     const result = onKeydownReader(
@@ -150,7 +178,9 @@
       scrollToBookmark,
       (x) => multiplier$.next(multiplier$.getValue() + x),
       autoScroller,
-      pageManager
+      pageManager,
+      $verticalMode$,
+      changeChapter
     );
 
     if (!result) return;
@@ -182,15 +212,6 @@
     bookmarkManager.scrollToBookmark(data);
   }
 
-  let showHeader = true;
-
-  let isBookmarkScreen = false;
-
-  const autoHideHeader$ = timer(2500).pipe(
-    tap(() => (showHeader = false)),
-    reduceToEmptyString()
-  );
-
   function onBookManagerClick() {
     database.deleteLastItem();
     bookmarkPage();
@@ -204,9 +225,22 @@
     fullscreenManager.exitFullscreen();
   }
 
-  let showFooter = true;
-  let exploredCharCount = 0;
-  let bookCharCount = 0;
+  function changeChapter(offset: number) {
+    if (!$sectionData$?.length) {
+      return;
+    }
+
+    const [mainChapters, currentChapterIndex] = getChapterData($sectionData$);
+
+    if (
+      (!currentChapterIndex && offset === -1) ||
+      (offset === 1 && currentChapterIndex === mainChapters.length - 1)
+    ) {
+      return;
+    }
+
+    nextChapter$.next(mainChapters[currentChapterIndex + offset].reference);
+  }
 </script>
 
 <svelte:head>
@@ -222,9 +256,14 @@
     use:clickOutside={() => (showHeader = false)}
   >
     <BookReaderHeader
+      hasChapterData={!!$sectionData$?.length}
       showFullscreenButton={fullscreenManager.fullscreenEnabled}
       autoScrollMultiplier={$multiplier$}
       bind:isBookmarkScreen
+      on:tocClick={() => {
+        showHeader = false;
+        tocIsOpen$.next(true);
+      }}
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
       on:bookManagerClick={onBookManagerClick}
@@ -272,6 +311,18 @@
   {$setWritingMode$ ?? ''}
 {:else}
   {$leaveIfBookMissing$ ?? ''}
+{/if}
+
+{#if $tocIsOpen$}
+  <div
+    class="writing-horizontal-tb fixed top-0 left-0 z-[60] flex h-full w-full max-w-xl flex-col justify-between"
+    style:color={$themeOption$?.fontColor}
+    style:background-color={$backgroundColor$}
+    in:fly|local={{ x: -100, duration: 100, easing: quintInOut }}
+    use:clickOutside={() => tocIsOpen$.next(false)}
+  >
+    <BookToc sectionData={$sectionData$} {exploredCharCount} />
+  </div>
 {/if}
 
 {#if showFooter && bookCharCount}
