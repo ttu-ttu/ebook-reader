@@ -68,6 +68,10 @@ export class AutoScrollerContinuous implements AutoScroller {
     this.enabled$.next(!this.enabled$.getValue());
   }
 
+  off() {
+    this.enabled$.next(false);
+  }
+
   private calcNewPos([prevTick, curTick]: [number, number]) {
     let scrollScale = 0.00365956;
 

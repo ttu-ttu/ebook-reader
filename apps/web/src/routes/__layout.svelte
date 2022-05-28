@@ -45,7 +45,11 @@
       class="relative top-1/2 left-1/2 inline-block max-w-[80vw] -translate-x-1/2 -translate-y-1/2"
     >
       {#each dialogs as dialog}
-        <svelte:component this={dialog.component} {...dialog.props} on:close={closeAllDialogs} />
+        {#if typeof dialog.component === 'string'}
+          {@html dialog.component}
+        {:else}
+          <svelte:component this={dialog.component} {...dialog.props} on:close={closeAllDialogs} />
+        {/if}
       {/each}
     </div>
   </div>

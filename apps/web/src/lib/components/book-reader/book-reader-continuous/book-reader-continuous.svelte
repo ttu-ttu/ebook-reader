@@ -3,17 +3,30 @@
   import {
     animationFrameScheduler,
     combineLatest,
+    debounce,
     debounceTime,
     distinctUntilChanged,
+    EMPTY,
     filter,
     fromEvent,
     map,
     observeOn,
     skip,
     Subject,
-    takeUntil
+    switchMap,
+    take,
+    takeUntil,
+    timer
   } from 'rxjs';
   import { browser } from '$app/env';
+  import {
+    nextChapter$,
+    sectionList$,
+    sectionProgress$,
+    tocIsOpen$,
+    type SectionWithProgress
+  } from '$lib/components/book-reader/book-toc/book-toc';
+  import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
@@ -110,6 +123,14 @@
   const height$ = new Subject<number>();
 
   const destroy$ = new Subject<void>();
+
+  const sectionToElement = new Map<string, HTMLElement>();
+
+  const sectionData = new Map<string, SectionWithProgress>();
+
+  let scrollAdjustment = 0;
+
+  let willNavigate = false;
 
   $: fullLengthDimension = verticalMode ? 'height' : 'width';
 
@@ -222,13 +243,79 @@
                 dispatch('bookmark');
               });
           }
+
+          sectionList$
+            .pipe(
+              take(1),
+              switchMap((sections) => {
+                if (!sections.length) {
+                  return EMPTY;
+                }
+
+                sections.forEach((section) => {
+                  const ref = section.reference;
+                  const elm = document.getElementById(ref);
+
+                  if (elm) {
+                    if (!scrollAdjustment) {
+                      scrollAdjustment =
+                        Number(
+                          getComputedStyle(elm)[
+                            verticalMode ? 'marginLeft' : 'marginBottom'
+                          ].replace(/px$/, '')
+                        ) / 2;
+                    }
+
+                    sectionData.set(ref, { ...section, progress: 0 });
+                    sectionToElement.set(ref, elm);
+                  }
+                });
+
+                if (sectionToElement.size) {
+                  updateSectionProgress();
+
+                  return fromEvent(window, 'scroll');
+                }
+                return EMPTY;
+              }),
+              debounce(() => timer(willNavigate ? 100 : 500)),
+              takeUntil(destroy$)
+            )
+            .subscribe(updateSectionProgress);
         });
     }
     contentReadyEvent = {};
   }
 
+  function updateSectionProgress() {
+    const entries = [...sectionData.entries()];
+
+    for (let index = 0, { length } = entries; index < length; index += 1) {
+      const [ref, entry] = entries[index];
+
+      const elm = sectionToElement.get(ref) as HTMLElement;
+      const rect = elm.getBoundingClientRect();
+
+      entry.progress = verticalMode
+        ? (Math.min(
+            Math.max(rect.right + (firstDimensionMargin || 0) - window.innerWidth, 0),
+            rect.width
+          ) /
+            (rect.width || 1)) *
+          100
+        : (Math.abs(Math.min(Math.max(rect.top - (firstDimensionMargin || 0), -rect.height), 0)) /
+            (rect.height || 1)) *
+          100;
+
+      sectionData.set(ref, entry);
+    }
+
+    willNavigate = false;
+    sectionProgress$.next(sectionData);
+  }
+
   function onWheel(ev: WheelEvent) {
-    if (verticalMode) {
+    if (verticalMode && !$tocIsOpen$) {
       scrollFn(ev, fontSize, window.innerWidth);
     }
   }
@@ -260,6 +347,33 @@
     bookCharCount = calculator.charCount;
     dispatch('contentChange', contentEl);
   }
+
+  nextChapter$.pipe(takeUntil(destroy$)).subscribe((chapterId) => {
+    let targetElement = document.getElementById(chapterId);
+
+    if (!targetElement) {
+      return;
+    }
+
+    const checkForParent = !chapterId.startsWith(prependValue);
+
+    targetElement = checkForParent
+      ? targetElement.closest(`div[id^="${prependValue}"]`) || targetElement
+      : targetElement;
+
+    willNavigate = true;
+
+    const rect = targetElement.getBoundingClientRect();
+
+    if (verticalMode) {
+      window.scrollBy(
+        -(window.innerWidth - rect.right - (firstDimensionMargin || 0) - scrollAdjustment),
+        0
+      );
+    } else {
+      window.scrollBy(0, rect.top - (firstDimensionMargin || 0) - scrollAdjustment);
+    }
+  });
 </script>
 
 <div

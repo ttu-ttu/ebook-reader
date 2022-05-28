@@ -4,11 +4,18 @@
  * All rights reserved.
  */
 
-import { type Subject, type BehaviorSubject, Observable } from 'rxjs';
+import { Observable, take, type Subject, type BehaviorSubject } from 'rxjs';
+import {
+  sectionProgress$,
+  sectionList$,
+  type SectionWithProgress
+} from '$lib/components/book-reader/book-toc/book-toc';
 import type { PageManager } from '../types';
 
 export class PageManagerPaginated implements PageManager {
   private translateX = 0;
+
+  private sectionData: Map<string, SectionWithProgress> = new Map();
 
   constructor(
     private contentEl: HTMLElement,
@@ -22,7 +29,19 @@ export class PageManagerPaginated implements PageManager {
     private verticalMode: boolean,
     private pageChange$: Subject<boolean>,
     private sectionRenderComplete$: Subject<number>
-  ) {}
+  ) {
+    sectionList$.pipe(take(1)).subscribe((entries) => {
+      if (!entries.length) {
+        return;
+      }
+
+      entries.forEach((section) => {
+        this.sectionData.set(section.reference, { ...section, progress: 0 });
+      });
+
+      sectionProgress$.next(this.sectionData);
+    });
+  }
 
   nextPage() {
     this.flipPage(1);
@@ -114,6 +133,8 @@ export class PageManagerPaginated implements PageManager {
 
     this.updateSectionIndex(nextPage).subscribe(() => {
       this.scrollToPos(0, isUser);
+      this.updateSectionData(this.sections[nextPage - 1]?.id, 100, false);
+      this.updateSectionData(this.sections[nextPage]?.id, 0);
     });
     return true;
   }
@@ -124,6 +145,11 @@ export class PageManagerPaginated implements PageManager {
     viewportSize: number,
     isUser: boolean
   ) {
+    this.updateSectionData(
+      this.sections[this.sectionIndex$.getValue()]?.id,
+      (pos / scrollSize) * 100
+    );
+
     if (this.verticalMode) {
       this.scrollToPos(pos, isUser);
       return;
@@ -173,5 +199,34 @@ export class PageManagerPaginated implements PageManager {
       this.sectionIndex$.next(index);
       return subscription;
     });
+  }
+
+  private updateSectionData(ref: string, progress: number, emit = true) {
+    if (!ref || !this.sectionData.has(ref)) return;
+
+    const sections = [...this.sectionData.values()];
+    let currentRefSeen = false;
+
+    sections.forEach((section) => {
+      const entry = this.sectionData.get(section.reference) as SectionWithProgress;
+      const isCurrentRef = section.reference === ref;
+
+      if (isCurrentRef) {
+        entry.progress = progress;
+      } else if (currentRefSeen) {
+        entry.progress = 0;
+      } else {
+        entry.progress = 100;
+      }
+
+      if (!currentRefSeen && isCurrentRef) {
+        currentRefSeen = true;
+      }
+      this.sectionData.set(section.reference, entry);
+    });
+
+    if (emit) {
+      sectionProgress$.next(this.sectionData);
+    }
   }
 }

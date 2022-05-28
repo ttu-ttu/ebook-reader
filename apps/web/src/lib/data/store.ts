@@ -67,7 +67,9 @@ export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   PageUp: BookReaderAvailableKeybind.PREV_PAGE,
   Space: BookReaderAvailableKeybind.AUTO_SCROLL_TOGGLE,
   KeyA: BookReaderAvailableKeybind.AUTO_SCROLL_INCREASE,
-  KeyD: BookReaderAvailableKeybind.AUTO_SCROLL_DECREASE
+  KeyD: BookReaderAvailableKeybind.AUTO_SCROLL_DECREASE,
+  KeyN: BookReaderAvailableKeybind.PREV_CHAPTER,
+  KeyM: BookReaderAvailableKeybind.NEXT_CHAPTER
 });
 
 const db = browser ? createBooksDb() : import('fake-indexeddb/auto.js').then(() => createBooksDb());

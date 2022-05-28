@@ -8,6 +8,7 @@ import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/b
 
 export interface AutoScroller {
   toggle: () => void;
+  off: () => void;
 }
 
 export interface BookmarkManager {
