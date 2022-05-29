@@ -18,6 +18,8 @@
     takeUntil,
     timer
   } from 'rxjs';
+  import Fa from 'svelte-fa';
+  import { faBookmark } from '@fortawesome/free-solid-svg-icons';
   import { browser } from '$app/env';
   import {
     nextChapter$,
@@ -114,6 +116,8 @@
 
   let isResizeScroll = false;
 
+  let bookmarkAdjustment = window.matchMedia('(min-width: 640px)').matches ? '0.5rem' : '0.25rem';
+
   const scrollFn = browser
     ? horizontalMouseWheel(4, document.documentElement, requestAnimationFrame)
     : () => 0;
@@ -143,6 +147,16 @@
   $: height$.next(height);
 
   $: maxHeight = verticalMode && secondDimensionMaxValue ? secondDimensionMaxValue : undefined;
+
+  $: if (secondDimensionMaxValue && contentEl) {
+    const dimensionAdjustment = Number(
+      getComputedStyle(contentEl)[verticalMode ? 'marginTop' : 'marginRight'].replace(/px$/, '')
+    );
+
+    bookmarkAdjustment = `min(max(calc(${`${dimensionAdjustment}px - ${bookmarkAdjustment}`}), ${bookmarkAdjustment}), ${
+      dimensionAdjustment ? `${dimensionAdjustment}px` : bookmarkAdjustment
+    })`;
+  }
 
   $: {
     if (htmlContent) {
@@ -416,11 +430,15 @@
 {#if firstDimensionMargin}
   <div
     class="fixed z-[5]"
+    class:inset-y-0={verticalMode}
+    class:inset-x-0={!verticalMode}
     style:background-color={backgroundColor}
     style="{fullLengthDimension}: 100%; {modifyingDimension}: {firstDimensionMargin}px; {boundSide[0]}: 0"
   />
   <div
     class="fixed z-[5]"
+    class:inset-y-0={verticalMode}
+    class:inset-x-0={!verticalMode}
     style:background-color={backgroundColor}
     style="{fullLengthDimension}: 100%; {modifyingDimension}: {firstDimensionMargin}px; {boundSide[1]}: 0"
   />
@@ -429,16 +447,22 @@
 {#if bookmarkPos}
   {#if verticalMode}
     <div
-      style:height={`${maxHeight || height}px`}
-      style:right={bookmarkPos.right}
-      class="pointer-events-none absolute inset-y-0 m-auto w-12 bg-yellow-600 bg-opacity-10"
-    />
+      class="pointer-events-none absolute text-xl opacity-25"
+      style:color={fontColor}
+      style:right={`calc(${bookmarkPos.right} + 1rem)`}
+      style:top={bookmarkAdjustment}
+    >
+      <Fa icon={faBookmark} />
+    </div>
   {:else}
     <div
-      style:width={`${secondDimensionMaxValue || width}px`}
-      style:top={bookmarkPos.top}
-      class="absolute inset-x-0 h-12 bg-yellow-600 bg-opacity-10 pointer-events-none m-auto"
-    />
+      class="pointer-events-none absolute text-sm opacity-25 sm:text-xl"
+      style:color={fontColor}
+      style:left={bookmarkAdjustment}
+      style:top={`calc(${bookmarkPos.top} + 1.5rem)`}
+    >
+      <Fa icon={faBookmark} />
+    </div>
   {/if}
 {/if}
 
