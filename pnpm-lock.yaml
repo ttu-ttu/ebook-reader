@@ -69,7 +69,7 @@ importers:
       rxjs: 7.5.5
       sass: 1.52.1
       svelte: 3.48.0
-      svelte-check: 2.7.1
+      svelte-check: 2.7.2
       svelte-fa: 2.4.0
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.1
@@ -107,7 +107,7 @@ importers:
       postcss: 8.4.14
       sass: 1.52.1
       svelte: 3.48.0
-      svelte-check: 2.7.1_560975abd0d2327030792feb7e2cbd76
+      svelte-check: 2.7.2_560975abd0d2327030792feb7e2cbd76
       svelte-preprocess: 4.10.6_a9c2f98cdbd8af6ddff4a142544d8959
       tailwindcss: 3.0.24
       tslib: 2.4.0
@@ -2529,7 +2529,7 @@ packages:
     dev: true
 
   /is-extglob/2.1.1:
-    resolution: {integrity: sha1-qIwCU1eR8C7TfHahueqXc8gz+MI=}
+    resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
     engines: {node: '>=0.10.0'}
     dev: true
 
@@ -3728,8 +3728,8 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/2.7.1_560975abd0d2327030792feb7e2cbd76:
-    resolution: {integrity: sha512-vHVu2+SQ6ibt77iTQaq2oiOjBgGL48qqcg0ZdEOsP5pPOjgeyR9QbnaEdzdBs9nsVYBc/42haKtzb2uFqS8GVw==}
+  /svelte-check/2.7.2_560975abd0d2327030792feb7e2cbd76:
+    resolution: {integrity: sha512-TuVX4YtXHbRM8sVuK5Jk+mKWdm3f0d6hvAC6qCTp8yUszGZewpEBCo2V5fRWZCiz+0J4OCiDHOS+DFMxv39rJA==}
     hasBin: true
     peerDependencies:
       svelte: ^3.24.0
