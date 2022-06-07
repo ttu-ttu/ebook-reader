@@ -51,7 +51,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.1.1
       '@popperjs/core': 2.11.5
       '@sveltejs/adapter-static': 1.0.0-next.34
-      '@sveltejs/kit': 1.0.0-next.348
+      '@sveltejs/kit': 1.0.0-next.350
       '@tailwindcss/aspect-ratio': 0.4.0
       '@tailwindcss/forms': 0.5.2
       '@tailwindcss/line-clamp': 0.4.0
@@ -96,7 +96,7 @@ importers:
       ua-parser-js: 1.0.2
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.34
-      '@sveltejs/kit': 1.0.0-next.348_sass@1.52.2+svelte@3.48.0
+      '@sveltejs/kit': 1.0.0-next.350_sass@1.52.2+svelte@3.48.0
       '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.24
       '@tailwindcss/forms': 0.5.2_tailwindcss@3.0.24
       '@tailwindcss/line-clamp': 0.4.0_tailwindcss@3.0.24
@@ -519,18 +519,18 @@ packages:
       tiny-glob: 0.2.9
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.348_sass@1.52.2+svelte@3.48.0:
-    resolution: {integrity: sha512-K9dfgzIbotWmbcdCsQ6ROGs9R+bsGWwmSdN6l6km1QV5esQehqg1UYHGD9q0VJsg4rJg/zmKVBYo0oBquSHPZw==}
+  /@sveltejs/kit/1.0.0-next.350_sass@1.52.2+svelte@3.48.0:
+    resolution: {integrity: sha512-qkZNjp7yIj6t91+wMhmMtGJH0Lb89OaKdVXUDy92CS5/4OHRTKcQPdfOKs4no/upkS3RiFb+rEpOkYqTMcPUXg==}
     engines: {node: '>=16.7'}
     hasBin: true
     peerDependencies:
       svelte: ^3.44.0
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 1.0.0-next.46_svelte@3.48.0+vite@2.9.9
+      '@sveltejs/vite-plugin-svelte': 1.0.0-next.46_svelte@3.48.0+vite@2.9.10
       chokidar: 3.5.3
       sade: 1.8.1
       svelte: 3.48.0
-      vite: 2.9.9_sass@1.52.2
+      vite: 2.9.10_sass@1.52.2
     transitivePeerDependencies:
       - diff-match-patch
       - less
@@ -539,7 +539,7 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/vite-plugin-svelte/1.0.0-next.46_svelte@3.48.0+vite@2.9.9:
+  /@sveltejs/vite-plugin-svelte/1.0.0-next.46_svelte@3.48.0+vite@2.9.10:
     resolution: {integrity: sha512-dumtaI5XusnDgXoQ3vxQAdoCaTWf8zKVezJdiTGjuaS/GSsmLIvtHUvMt0NlwEikPQ/hL53eIzMliRQ/j35w9w==}
     engines: {node: ^14.13.1 || >= 16}
     peerDependencies:
@@ -557,7 +557,7 @@ packages:
       magic-string: 0.26.2
       svelte: 3.48.0
       svelte-hmr: 0.14.12_svelte@3.48.0
-      vite: 2.9.9_sass@1.52.2
+      vite: 2.9.10_sass@1.52.2
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4085,8 +4085,8 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite/2.9.9_sass@1.52.2:
-    resolution: {integrity: sha512-ffaam+NgHfbEmfw/Vuh6BHKKlI/XIAhxE5QSS7gFLIngxg171mg1P3a4LSRME0z2ZU1ScxoKzphkipcYwSD5Ew==}
+  /vite/2.9.10_sass@1.52.2:
+    resolution: {integrity: sha512-TwZRuSMYjpTurLqXspct+HZE7ONiW9d+wSWgvADGxhDPPyoIcNywY+RX4ng+QpK30DCa1l/oZgi2PLZDibhzbQ==}
     engines: {node: '>=12.2.0'}
     hasBin: true
     peerDependencies:
