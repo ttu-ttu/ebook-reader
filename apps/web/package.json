@@ -22,7 +22,7 @@
     "@types/ua-parser-js": "0.7.36",
     "autoprefixer": "10.4.7",
     "postcss": "8.4.14",
-    "sass": "1.52.2",
+    "sass": "1.52.3",
     "svelte": "3.48.0",
     "svelte-check": "2.7.2",
     "svelte-preprocess": "4.10.7",
