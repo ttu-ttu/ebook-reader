@@ -67,7 +67,7 @@ importers:
       path-browserify: 1.0.1
       postcss: 8.4.14
       rxjs: 7.5.5
-      sass: 1.52.2
+      sass: 1.52.3
       svelte: 3.48.0
       svelte-check: 2.7.2
       svelte-fa: 2.4.0
@@ -96,7 +96,7 @@ importers:
       ua-parser-js: 1.0.2
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.34
-      '@sveltejs/kit': 1.0.0-next.350_sass@1.52.2+svelte@3.48.0
+      '@sveltejs/kit': 1.0.0-next.350_sass@1.52.3+svelte@3.48.0
       '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.0.24
       '@tailwindcss/forms': 0.5.2_tailwindcss@3.0.24
       '@tailwindcss/line-clamp': 0.4.0_tailwindcss@3.0.24
@@ -105,10 +105,10 @@ importers:
       '@types/ua-parser-js': 0.7.36
       autoprefixer: 10.4.7_postcss@8.4.14
       postcss: 8.4.14
-      sass: 1.52.2
+      sass: 1.52.3
       svelte: 3.48.0
-      svelte-check: 2.7.2_a3c25f17517768a105e473aceffb6490
-      svelte-preprocess: 4.10.7_de6da29ed2128c547bc53046f444cd54
+      svelte-check: 2.7.2_f48c0aacb2cad4478cdbc6245a6c9b83
+      svelte-preprocess: 4.10.7_2d278b45484a61e52612ee2d883dfb6b
       tailwindcss: 3.0.24
       tslib: 2.4.0
       typescript: 4.7.3
@@ -519,7 +519,7 @@ packages:
       tiny-glob: 0.2.9
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.350_sass@1.52.2+svelte@3.48.0:
+  /@sveltejs/kit/1.0.0-next.350_sass@1.52.3+svelte@3.48.0:
     resolution: {integrity: sha512-qkZNjp7yIj6t91+wMhmMtGJH0Lb89OaKdVXUDy92CS5/4OHRTKcQPdfOKs4no/upkS3RiFb+rEpOkYqTMcPUXg==}
     engines: {node: '>=16.7'}
     hasBin: true
@@ -530,7 +530,7 @@ packages:
       chokidar: 3.5.3
       sade: 1.8.1
       svelte: 3.48.0
-      vite: 2.9.10_sass@1.52.2
+      vite: 2.9.10_sass@1.52.3
     transitivePeerDependencies:
       - diff-match-patch
       - less
@@ -557,7 +557,7 @@ packages:
       magic-string: 0.26.2
       svelte: 3.48.0
       svelte-hmr: 0.14.12_svelte@3.48.0
-      vite: 2.9.10_sass@1.52.2
+      vite: 2.9.10_sass@1.52.3
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -3477,8 +3477,8 @@ packages:
       rimraf: 2.7.1
     dev: true
 
-  /sass/1.52.2:
-    resolution: {integrity: sha512-mfHB2VSeFS7sZlPv9YohB9GB7yWIgQNTGniQwfQ04EoQN0wsQEv7SwpCwy/x48Af+Z3vDeFXz+iuXM3HK/phZQ==}
+  /sass/1.52.3:
+    resolution: {integrity: sha512-LNNPJ9lafx+j1ArtA7GyEJm9eawXN8KlA1+5dF6IZyoONg1Tyo/g+muOsENWJH/2Q1FHbbV4UwliU0cXMa/VIA==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
@@ -3728,7 +3728,7 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/2.7.2_a3c25f17517768a105e473aceffb6490:
+  /svelte-check/2.7.2_f48c0aacb2cad4478cdbc6245a6c9b83:
     resolution: {integrity: sha512-TuVX4YtXHbRM8sVuK5Jk+mKWdm3f0d6hvAC6qCTp8yUszGZewpEBCo2V5fRWZCiz+0J4OCiDHOS+DFMxv39rJA==}
     hasBin: true
     peerDependencies:
@@ -3741,7 +3741,7 @@ packages:
       picocolors: 1.0.0
       sade: 1.8.1
       svelte: 3.48.0
-      svelte-preprocess: 4.10.7_de6da29ed2128c547bc53046f444cd54
+      svelte-preprocess: 4.10.7_2d278b45484a61e52612ee2d883dfb6b
       typescript: 4.7.3
     transitivePeerDependencies:
       - '@babel/core'
@@ -3784,7 +3784,7 @@ packages:
       - typescript
     dev: false
 
-  /svelte-preprocess/4.10.7_de6da29ed2128c547bc53046f444cd54:
+  /svelte-preprocess/4.10.7_2d278b45484a61e52612ee2d883dfb6b:
     resolution: {integrity: sha512-sNPBnqYD6FnmdBrUmBCaqS00RyCsCpj2BG58A1JBswNF7b0OKviwxqVrOL/CKyJrLSClrSeqQv5BXNg2RUbPOw==}
     engines: {node: '>= 9.11.2'}
     requiresBuild: true
@@ -3830,7 +3830,7 @@ packages:
       detect-indent: 6.1.0
       magic-string: 0.25.9
       postcss: 8.4.14
-      sass: 1.52.2
+      sass: 1.52.3
       sorcery: 0.10.0
       strip-indent: 3.0.0
       svelte: 3.48.0
@@ -4085,7 +4085,7 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite/2.9.10_sass@1.52.2:
+  /vite/2.9.10_sass@1.52.3:
     resolution: {integrity: sha512-TwZRuSMYjpTurLqXspct+HZE7ONiW9d+wSWgvADGxhDPPyoIcNywY+RX4ng+QpK30DCa1l/oZgi2PLZDibhzbQ==}
     engines: {node: '>=12.2.0'}
     hasBin: true
@@ -4105,7 +4105,7 @@ packages:
       postcss: 8.4.14
       resolve: 1.22.0
       rollup: 2.74.1
-      sass: 1.52.2
+      sass: 1.52.3
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
