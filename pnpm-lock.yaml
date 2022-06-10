@@ -70,7 +70,7 @@ importers:
       sass: 1.52.3
       svelte: 3.48.0
       svelte-check: 2.7.2
-      svelte-fa: 2.4.0
+      svelte-fa: 3.0.1
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.1
       svelte-preprocess: 4.10.7
@@ -90,7 +90,7 @@ importers:
       idb: 7.0.1
       path-browserify: 1.0.1
       rxjs: 7.5.5
-      svelte-fa: 2.4.0
+      svelte-fa: 3.0.1
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.1_svelte@3.48.0+typescript@4.7.3
       ua-parser-js: 1.0.2
@@ -3779,8 +3779,8 @@ packages:
       - sugarss
     dev: true
 
-  /svelte-fa/2.4.0:
-    resolution: {integrity: sha512-0bnbMGbsE1LUnlioDcf27tl2O8kjuXlTXMXzIxC7LoIOWmqn0D+zd539HfLiQbdLuOHGTaynwN9V+4ehhEu1Jw==}
+  /svelte-fa/3.0.1:
+    resolution: {integrity: sha512-p0+sp0Zzcjzqi/3cg4TsGG8MO1DE6vgNxUqcELZXMvkMgad/1VFTSKZ9QRkQMWBcIHsu3IEr16HldQFU4bJQ2g==}
     dev: false
 
   /svelte-gestures/1.4.1:
