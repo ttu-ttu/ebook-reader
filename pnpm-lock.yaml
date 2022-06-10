@@ -74,7 +74,7 @@ importers:
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.1
       svelte-preprocess: 4.10.7
-      tailwindcss: 3.1.1
+      tailwindcss: 3.1.2
       tslib: 2.4.0
       typescript: 4.7.3
       ua-parser-js: 1.0.2
@@ -97,9 +97,9 @@ importers:
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.34
       '@sveltejs/kit': 1.0.0-next.350_sass@1.52.3+svelte@3.48.0
-      '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.1.1
-      '@tailwindcss/forms': 0.5.2_tailwindcss@3.1.1
-      '@tailwindcss/line-clamp': 0.4.0_tailwindcss@3.1.1
+      '@tailwindcss/aspect-ratio': 0.4.0_tailwindcss@3.1.2
+      '@tailwindcss/forms': 0.5.2_tailwindcss@3.1.2
+      '@tailwindcss/line-clamp': 0.4.0_tailwindcss@3.1.2
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
@@ -109,7 +109,7 @@ importers:
       svelte: 3.48.0
       svelte-check: 2.7.2_f48c0aacb2cad4478cdbc6245a6c9b83
       svelte-preprocess: 4.10.7_2d278b45484a61e52612ee2d883dfb6b
-      tailwindcss: 3.1.1
+      tailwindcss: 3.1.2
       tslib: 2.4.0
       typescript: 4.7.3
 
@@ -562,29 +562,29 @@ packages:
       - supports-color
     dev: true
 
-  /@tailwindcss/aspect-ratio/0.4.0_tailwindcss@3.1.1:
+  /@tailwindcss/aspect-ratio/0.4.0_tailwindcss@3.1.2:
     resolution: {integrity: sha512-WJu0I4PpqNPuutpaA9zDUq2JXR+lorZ7PbLcKNLmb6GL9/HLfC7w3CRsMhJF4BbYd/lkY6CfXOvkYpuGnZfkpQ==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.1.1
+      tailwindcss: 3.1.2
     dev: true
 
-  /@tailwindcss/forms/0.5.2_tailwindcss@3.1.1:
+  /@tailwindcss/forms/0.5.2_tailwindcss@3.1.2:
     resolution: {integrity: sha512-pSrFeJB6Bg1Mrg9CdQW3+hqZXAKsBrSG9MAfFLKy1pVA4Mb4W7C0k7mEhlmS2Dfo/otxrQOET7NJiJ9RrS563w==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1'
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.1.1
+      tailwindcss: 3.1.2
     dev: true
 
-  /@tailwindcss/line-clamp/0.4.0_tailwindcss@3.1.1:
+  /@tailwindcss/line-clamp/0.4.0_tailwindcss@3.1.2:
     resolution: {integrity: sha512-HQZo6gfx1D0+DU3nWlNLD5iA6Ef4JAXh0LeD8lOGrJwEDBwwJNKQza6WoXhhY1uQrxOuU8ROxV7CqiQV4CoiLw==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.1.1
+      tailwindcss: 3.1.2
     dev: true
 
   /@tsconfig/node10/1.0.8:
@@ -3864,8 +3864,8 @@ packages:
     resolution: {integrity: sha512-fN2YRm/bGumvjUpu6yI3BpvZnpIm9I6A7HR4oUNYd7ggYyIwSA/BX7DJ+UXXffLp6XNcUijyLvttbPVCYa/3xQ==}
     engines: {node: '>= 8'}
 
-  /tailwindcss/3.1.1:
-    resolution: {integrity: sha512-F5VFj5FiS4QZqdXPE6T6RJFqbsmISQ2KBUp9bOQyws9TleGToHsa54X8kwXwVdHMQhNeXOlxI47lrRICEVuOvg==}
+  /tailwindcss/3.1.2:
+    resolution: {integrity: sha512-yJ6L5s1U5AeS5g7HHy212zdQfjwD426FBfm59pet/JsyneuZuD4C2W7PpJEg4ppisiB21uLqtNagv8KXury3+Q==}
     engines: {node: '>=12.13.0'}
     hasBin: true
     dependencies:
