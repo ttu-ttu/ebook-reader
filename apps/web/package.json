@@ -42,7 +42,7 @@
     "idb": "7.0.1",
     "path-browserify": "1.0.1",
     "rxjs": "7.5.5",
-    "svelte-fa": "3.0.1",
+    "svelte-fa": "3.0.2",
     "svelte-gestures": "1.4.1",
     "svelte-meta-tags": "2.6.1",
     "ua-parser-js": "1.0.2"
