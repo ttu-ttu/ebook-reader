@@ -18,7 +18,7 @@ importers:
       eslint-plugin-rxjs: 5.0.2
       eslint-plugin-svelte3: 4.0.0
       husky: 8.0.1
-      lint-staged: 13.0.1
+      lint-staged: 13.0.2
       prettier: 2.7.1
       prettier-plugin-tailwindcss: 0.1.11
       svelte: 3.48.0
@@ -38,7 +38,7 @@ importers:
       eslint-plugin-rxjs: 5.0.2_eslint@8.17.0+typescript@4.7.3
       eslint-plugin-svelte3: 4.0.0_eslint@8.17.0+svelte@3.48.0
       husky: 8.0.1
-      lint-staged: 13.0.1
+      lint-staged: 13.0.2
       prettier: 2.7.1
       prettier-plugin-tailwindcss: 0.1.11_prettier@2.7.1
       svelte: 3.48.0
@@ -2713,8 +2713,8 @@ packages:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
     dev: true
 
-  /lint-staged/13.0.1:
-    resolution: {integrity: sha512-Ykaf4QTi0a02BF7cnq7JIPGOJxH4TkNMWhSlJdH9wOekd0X+gog47Jfh/0L31DqZe5AiydLGC7LkPqpaNm+Kvg==}
+  /lint-staged/13.0.2:
+    resolution: {integrity: sha512-qQLfLTh9z34eMzfEHENC+QBskZfxjomrf+snF3xJ4BzilORbD989NLqQ00ughsF/A+PT41e87+WsMFabf9++pQ==}
     engines: {node: ^14.13.1 || >=16.0.0}
     hasBin: true
     dependencies:
@@ -3905,7 +3905,7 @@ packages:
     dev: true
 
   /through/2.3.8:
-    resolution: {integrity: sha1-DdTJ/6q8NXlgsbckEV1+Doai4fU=}
+    resolution: {integrity: sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==}
     dev: true
 
   /through2/4.0.2:
