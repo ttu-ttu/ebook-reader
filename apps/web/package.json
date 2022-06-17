@@ -39,7 +39,7 @@
     "balanced-match": "2.0.0",
     "fake-indexeddb": "3.1.8",
     "fast-xml-parser": "4.0.8",
-    "idb": "7.0.1",
+    "idb": "7.0.2",
     "path-browserify": "1.0.1",
     "rxjs": "7.5.5",
     "svelte-fa": "3.0.2",
