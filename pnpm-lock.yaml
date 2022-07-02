@@ -12,7 +12,7 @@ importers:
       eslint-config-airbnb-base: 15.0.0
       eslint-config-airbnb-typescript: 17.0.0
       eslint-config-prettier: 8.5.0
-      eslint-import-resolver-typescript: 3.1.4
+      eslint-import-resolver-typescript: 3.1.5
       eslint-plugin-header: 3.1.1
       eslint-plugin-import: 2.26.0
       eslint-plugin-rxjs: 5.0.2
@@ -32,9 +32,9 @@ importers:
       eslint-config-airbnb-base: 15.0.0_86af6c937a18f7b068a2d4281b478827
       eslint-config-airbnb-typescript: 17.0.0_684b41d5654c30b2fca224197cc8d4f1
       eslint-config-prettier: 8.5.0_eslint@8.19.0
-      eslint-import-resolver-typescript: 3.1.4_86af6c937a18f7b068a2d4281b478827
+      eslint-import-resolver-typescript: 3.1.5_86af6c937a18f7b068a2d4281b478827
       eslint-plugin-header: 3.1.1_eslint@8.19.0
-      eslint-plugin-import: 2.26.0_65087e72dea79bd350af07df2a2146d0
+      eslint-plugin-import: 2.26.0_3a3249097527a58c9e7eafffc797be36
       eslint-plugin-rxjs: 5.0.2_eslint@8.19.0+typescript@4.7.4
       eslint-plugin-svelte3: 4.0.0_eslint@8.19.0+svelte@3.48.0
       husky: 8.0.1
@@ -1811,7 +1811,7 @@ packages:
     dependencies:
       confusing-browser-globals: 1.0.11
       eslint: 8.19.0
-      eslint-plugin-import: 2.26.0_65087e72dea79bd350af07df2a2146d0
+      eslint-plugin-import: 2.26.0_3a3249097527a58c9e7eafffc797be36
       object.assign: 4.1.2
       object.entries: 1.1.5
       semver: 6.3.0
@@ -1829,7 +1829,7 @@ packages:
       '@typescript-eslint/parser': 5.30.3_eslint@8.19.0+typescript@4.7.4
       eslint: 8.19.0
       eslint-config-airbnb-base: 15.0.0_86af6c937a18f7b068a2d4281b478827
-      eslint-plugin-import: 2.26.0_65087e72dea79bd350af07df2a2146d0
+      eslint-plugin-import: 2.26.0_3a3249097527a58c9e7eafffc797be36
     dev: true
 
   /eslint-config-prettier/8.5.0_eslint@8.19.0:
@@ -1865,8 +1865,8 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-import-resolver-typescript/3.1.4_86af6c937a18f7b068a2d4281b478827:
-    resolution: {integrity: sha512-cDOnlg4ZRVMC5ZQ8WNpd5UsOg1YFskGBw15KXSC+sogExW8zjSycc55iBSNKdKuveCMof2VtLz0Dw4WkXAHkag==}
+  /eslint-import-resolver-typescript/3.1.5_86af6c937a18f7b068a2d4281b478827:
+    resolution: {integrity: sha512-e6RV/fghzX5DGP98dg3ZmGF4qr1QzVgJdbVkYl8jJ2iO7Ox9wOdTNMBoYRqbvavf2ofT8xKTd4JnY+X4t2TtXw==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
     peerDependencies:
       eslint: '*'
@@ -1875,7 +1875,7 @@ packages:
       debug: 4.3.4
       enhanced-resolve: 5.10.0
       eslint: 8.19.0
-      eslint-plugin-import: 2.26.0_65087e72dea79bd350af07df2a2146d0
+      eslint-plugin-import: 2.26.0_3a3249097527a58c9e7eafffc797be36
       get-tsconfig: 4.1.0
       globby: 13.1.2
       is-core-module: 2.9.0
@@ -1885,7 +1885,7 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-module-utils/2.7.3_e631febb0779b46112ee5dfd425fefed:
+  /eslint-module-utils/2.7.3_82b25c3d14b33b1119d1dc6d86d61a70:
     resolution: {integrity: sha512-088JEC7O3lDZM9xGe0RerkOMd0EjFl+Yvd1jPWIkMT5u3H9+HC34mWWPnqPrN13gieT9pBOO+Qt07Nb/6TresQ==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -1906,7 +1906,7 @@ packages:
       '@typescript-eslint/parser': 5.30.3_eslint@8.19.0+typescript@4.7.4
       debug: 3.2.7
       eslint-import-resolver-node: 0.3.6
-      eslint-import-resolver-typescript: 3.1.4_86af6c937a18f7b068a2d4281b478827
+      eslint-import-resolver-typescript: 3.1.5_86af6c937a18f7b068a2d4281b478827
       find-up: 2.1.0
     transitivePeerDependencies:
       - supports-color
@@ -1920,7 +1920,7 @@ packages:
       eslint: 8.19.0
     dev: true
 
-  /eslint-plugin-import/2.26.0_65087e72dea79bd350af07df2a2146d0:
+  /eslint-plugin-import/2.26.0_3a3249097527a58c9e7eafffc797be36:
     resolution: {integrity: sha512-hYfi3FXaM8WPLf4S1cikh/r4IxnO6zrhZbEGz2b660EJRbuxgpDS5gkCuYgGWg2xxh2rBuIr4Pvhve/7c31koA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -1937,7 +1937,7 @@ packages:
       doctrine: 2.1.0
       eslint: 8.19.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.3_e631febb0779b46112ee5dfd425fefed
+      eslint-module-utils: 2.7.3_82b25c3d14b33b1119d1dc6d86d61a70
       has: 1.0.3
       is-core-module: 2.8.1
       is-glob: 4.0.3
