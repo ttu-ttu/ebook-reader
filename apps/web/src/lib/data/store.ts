@@ -72,6 +72,6 @@ export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyM: BookReaderAvailableKeybind.NEXT_CHAPTER
 });
 
-const db = browser ? createBooksDb() : import('fake-indexeddb/auto.js').then(() => createBooksDb());
+const db = browser ? createBooksDb() : import('fake-indexeddb/auto').then(() => createBooksDb());
 
 export const database = new DatabaseService(db);
