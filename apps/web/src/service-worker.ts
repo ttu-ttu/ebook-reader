@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
-import { build, files, prerendered, version } from '$service-worker';
 import { toSearchParams } from '$lib/functions/to-search-params';
+import { build, files, prerendered, version } from '$service-worker';
 
 // eslint-disable-next-line no-restricted-globals
 const worker = self as unknown as ServiceWorkerGlobalScope;
@@ -42,7 +42,10 @@ worker.addEventListener('fetch', (event) => {
   if (!isHttp || isDevServerRequest || skipBecauseUncached) return;
 
   if (isSelfHost && prerenderedSet.has(url.pathname)) {
-    event.respondWith(networkFirstRaceCache(event.request, BUILD_CACHE_NAME));
+    const requestWithoutParams = new Request(url.pathname);
+    event.respondWith(
+      networkFirstRaceCache(event.request, false, BUILD_CACHE_NAME, requestWithoutParams)
+    );
     return;
   }
 
@@ -61,7 +64,12 @@ worker.addEventListener('fetch', (event) => {
   }
 });
 
-async function networkFirstRaceCache(request: Request, fallbackCacheName?: string) {
+async function networkFirstRaceCache(
+  request: Request,
+  storeResponse = true,
+  fallbackCacheName?: string,
+  fallbackCacheRequest?: Request
+) {
   const cache = await caches.open(`other:${version}`);
   const controller = new AbortController();
 
@@ -69,11 +77,18 @@ async function networkFirstRaceCache(request: Request, fallbackCacheName?: strin
 
   let done = false;
   let attempted = false;
+
+  const retrieveFromFallbackCache = () =>
+    fallbackCacheName
+      ? caches.match(fallbackCacheRequest ?? request, { cacheName: fallbackCacheName })
+      : undefined;
+
   const retrieveFromCache = async () => {
+    if (!storeResponse) return retrieveFromFallbackCache();
     const response = await cache.match(request);
     if (response) return response;
     if (!fallbackCacheName) return undefined;
-    return caches.match(request, { cacheName: fallbackCacheName });
+    return retrieveFromFallbackCache();
   };
 
   try {
@@ -86,7 +101,9 @@ async function networkFirstRaceCache(request: Request, fallbackCacheName?: strin
     const response = await fetch(request, { signal: controller.signal });
     done = true; // avoid Cache.put() was aborted exception
     clearTimeout(handle);
-    cache.put(request, response.clone());
+    if (storeResponse) {
+      cache.put(request, response.clone());
+    }
     return response;
   } catch (err) {
     if (!attempted) {
