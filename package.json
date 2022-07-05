@@ -4,6 +4,7 @@
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
+    "check": "eslint --fix-dry-run .",
     "dev": "cd apps/web && pnpm dev",
     "build": "cd apps/web && pnpm build",
     "prepare": "husky install",
