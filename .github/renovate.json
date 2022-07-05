@@ -5,6 +5,11 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["node"],
       "enabled": false
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["@zip.js/zip.js"],
+      "enabled": false
     }
   ]
 }
