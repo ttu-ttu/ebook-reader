@@ -92,15 +92,19 @@
     nextChapter$.next(chapterId);
 
     if (closeToc) {
-      tocIsOpen$.next(false);
-      dialogManager.dialogs$.next([]);
+      closeTocMenu();
     }
+  }
+
+  function closeTocMenu() {
+    tocIsOpen$.next(false);
+    dialogManager.dialogs$.next([]);
   }
 </script>
 
 <div class="flex justify-between p-4">
   <div>Chapter Progress: {currentChapterCharacterProgress} ({currentChapterProgress}%)</div>
-  <div class="cursor-pointer" on:click={() => tocIsOpen$.next(false)}>
+  <div class="flex cursor-pointer items-end md:items-center" on:click={closeTocMenu}>
     <Fa icon={faXmark} />
   </div>
 </div>
