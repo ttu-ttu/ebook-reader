@@ -170,9 +170,7 @@
             out:scale={outAnimationParams}
           >
             <MergedHeaderIcon
-              items={$isMobile$
-                ? [mergeEntries.FILE_IMPORT]
-                : [mergeEntries.FILE_IMPORT, mergeEntries.FOLDER_IMPORT]}
+              items={importMenuItems}
               mergeTo={mergeEntries.FILE_IMPORT}
               on:action={triggerInput}
             />
