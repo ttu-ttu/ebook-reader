@@ -321,7 +321,7 @@
     in:fly|local={{ x: -100, duration: 100, easing: quintInOut }}
     use:clickOutside={() => tocIsOpen$.next(false)}
   >
-    <BookToc sectionData={$sectionData$} {exploredCharCount} />
+    <BookToc sectionData={$sectionData$} verticalMode={$verticalMode$} {exploredCharCount} />
   </div>
 {/if}
 
