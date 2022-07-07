@@ -7,6 +7,7 @@
 
   export let sectionData: SectionWithProgress[] = [];
   export let exploredCharCount = 0;
+  export let verticalMode: boolean;
 
   let chapters: SectionWithProgress[] = [];
   let currentChapter: SectionWithProgress;
@@ -14,8 +15,12 @@
   let currentChapterCharacterProgress = '0/0';
   let currentChapterProgress = '0.00';
 
-  $: prevChapterAvailable = !!currentChapterIndex;
-  $: nextChapterAvailable = currentChapterIndex < chapters.length - 1;
+  $: prevChapterAvailable = verticalMode
+    ? currentChapterIndex < chapters.length - 1
+    : !!currentChapterIndex;
+  $: nextChapterAvailable = verticalMode
+    ? !!currentChapterIndex
+    : currentChapterIndex < chapters.length - 1;
 
   $: if (sectionData) {
     const [mainChapters, chapterIndex, referenceId] = getChapterData(sectionData);
@@ -131,14 +136,14 @@
   <div
     class="cursor-pointer"
     class:opacity-30={!prevChapterAvailable}
-    on:click={() => changeChapter(prevChapterAvailable, -1)}
+    on:click={() => changeChapter(prevChapterAvailable, verticalMode ? 1 : -1)}
   >
     <Fa icon={faChevronLeft} />
   </div>
   <div
     class="cursor-pointer"
     class:opacity-30={!nextChapterAvailable}
-    on:click={() => changeChapter(nextChapterAvailable, 1)}
+    on:click={() => changeChapter(nextChapterAvailable, verticalMode ? -1 : 1)}
   >
     <Fa icon={faChevronRight} />
   </div>
