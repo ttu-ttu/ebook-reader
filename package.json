@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "dev": "cd apps/web && pnpm dev",
-    "dev-host": "cd apps/web && pnpm dev-host",
     "build": "cd apps/web && pnpm build",
     "prepare": "husky install",
     "lint": "eslint --fix .",
