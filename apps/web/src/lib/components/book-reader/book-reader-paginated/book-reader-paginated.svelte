@@ -383,6 +383,9 @@
   style:--book-content-hint-furigana-shadow-color={hintFuriganaShadowColor}
   style:--book-content-child-width="{width}px"
   style:--book-content-child-height="{height}px"
+  style:--book-content-child-width-single-column={!verticalMode && columnCount === 1
+    ? `${width}px`
+    : undefined}
   style:--book-content-column-count={columnCount}
   style:--book-content-image-max-width="{verticalMode
     ? width
@@ -432,6 +435,10 @@
 
   .book-content-container {
     column-count: var(--book-content-column-count, 1);
+    column-width: var(
+      --book-content-child-width-single-column,
+      auto
+    ); //necessary for the page to render correctly on ios
     column-gap: 20px;
     column-fill: auto;
     height: var(--book-content-child-height, 95vh);
