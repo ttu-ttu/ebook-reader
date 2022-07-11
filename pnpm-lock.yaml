@@ -66,7 +66,7 @@ importers:
       idb: 7.0.2
       path-browserify: 1.0.1
       postcss: 8.4.14
-      rxjs: 7.5.5
+      rxjs: 7.5.6
       sass: 1.53.0
       svelte: 3.49.0
       svelte-check: 2.8.0
@@ -89,7 +89,7 @@ importers:
       fast-xml-parser: 4.0.9
       idb: 7.0.2
       path-browserify: 1.0.1
-      rxjs: 7.5.5
+      rxjs: 7.5.6
       svelte-fa: 3.0.2
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.1_uslzfc62di2n2otc2tvfklnwji
@@ -3564,6 +3564,13 @@ packages:
     resolution: {integrity: sha512-sy+H0pQofO95VDmFLzyaw9xNJU4KTRSwQIGM6+iG3SypAtCiLDzpeG8sJrNCWn2Up9km+KhkvTdbkrdy+yzZdw==}
     dependencies:
       tslib: 2.4.0
+    dev: true
+
+  /rxjs/7.5.6:
+    resolution: {integrity: sha512-dnyv2/YsXhnm461G+R/Pe5bWP41Nm6LBXEYWI6eiFP4fiwx6WRI/CD0zbdVAudd9xwLEF2IDcKXLHit0FYjUzw==}
+    dependencies:
+      tslib: 2.4.0
+    dev: false
 
   /sade/1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
