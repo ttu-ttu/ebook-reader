@@ -41,7 +41,7 @@
     "fast-xml-parser": "4.0.9",
     "idb": "7.0.2",
     "path-browserify": "1.0.1",
-    "rxjs": "7.5.5",
+    "rxjs": "7.5.6",
     "svelte-fa": "3.0.2",
     "svelte-gestures": "1.4.1",
     "svelte-meta-tags": "2.6.1",
