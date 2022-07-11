@@ -10,6 +10,6 @@
 </script>
 
 <Popover>
-  <Fa icon={faArrowDown19} slot="icon" />
+  <Fa icon={faArrowDown19} slot="icon" class="mx-2" />
   <SettingsDimensionContent slot="content" {isFirstDimension} {isVertical} bind:dimensionValue />
 </Popover>

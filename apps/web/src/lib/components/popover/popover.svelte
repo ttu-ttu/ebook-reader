@@ -2,14 +2,20 @@
   import flip from '@popperjs/core/lib/modifiers/flip';
   import offset from '@popperjs/core/lib/modifiers/offset';
   import { createPopper } from '@popperjs/core/lib/popper-lite';
-  import type { Instance } from '@popperjs/core';
+  import type { Instance, Placement } from '@popperjs/core';
   import { tick } from 'svelte';
   import { clickOutside } from '$lib/functions/use-click-outside';
   import { browser } from '$app/env';
   import { popovers } from './popover';
 
   export let contentText = '';
+  export let contentStyles = 'padding: 0';
+  export let eventType = 'click';
+  export let fallbackPlacements = ['left', 'bottom', 'right'];
+  export let placement: Placement = 'top';
   export let singlePopover = true;
+  export let xOffset = 0;
+  export let yOffset = 10;
 
   let contentElement: HTMLElement;
   let iconElement: HTMLElement;
@@ -26,23 +32,7 @@
     isOpen = false;
   }
 
-  function conditionalClickHandlerAndClass(node: HTMLElement, conditionFulfilled: boolean) {
-    if (conditionFulfilled) {
-      node.classList.add('cursor-pointer');
-      node.addEventListener('click', toggleOpen, false);
-    } else {
-      node.classList.remove('cursor-pointer');
-      node.removeEventListener('click', toggleOpen, false);
-    }
-
-    return {
-      destroy() {
-        node.removeEventListener('click', toggleOpen, false);
-      }
-    };
-  }
-
-  async function toggleOpen() {
+  export async function toggleOpen() {
     if (isOpen) {
       popovers.remove(id);
     } else if (singlePopover) {
@@ -59,25 +49,56 @@
       instance.update();
     } else if (isOpen) {
       instance = createPopper($$slots.icon ? iconElement : contentElement, popoverElement, {
-        placement: 'top',
+        placement,
         modifiers: [
           flip,
           {
             name: 'flip',
             options: {
-              fallbackPlacements: ['left', 'bottom', 'right']
+              fallbackPlacements
             }
           },
           offset,
           {
             name: 'offset',
             options: {
-              offset: [0, 10]
+              offset: [xOffset, yOffset]
             }
           }
         ]
       });
     }
+  }
+
+  function conditionalClickHandlerAndClass(node: HTMLElement, conditionFulfilled: boolean) {
+    if (conditionFulfilled) {
+      node.classList.add('cursor-pointer');
+      if (eventType === 'click') {
+        node.addEventListener('click', toggleOpen, false);
+      } else {
+        node.addEventListener('pointerenter', toggleOpen, false);
+        node.addEventListener('pointerleave', toggleOpen, false);
+      }
+    } else {
+      node.classList.remove('cursor-pointer');
+      if (eventType === 'click') {
+        node.removeEventListener('click', toggleOpen, false);
+      } else {
+        node.removeEventListener('pointerenter', toggleOpen, false);
+        node.removeEventListener('pointerleave', toggleOpen, false);
+      }
+    }
+
+    return {
+      destroy() {
+        if (eventType === 'click') {
+          node.removeEventListener('click', toggleOpen, false);
+        } else {
+          node.removeEventListener('pointerenter', toggleOpen, false);
+          node.removeEventListener('pointerleave', toggleOpen, false);
+        }
+      }
+    };
   }
 </script>
 
@@ -85,7 +106,7 @@
   <div use:conditionalClickHandlerAndClass={!$$slots.icon} bind:this={contentElement}>
     <slot />
   </div>
-  <div class="mx-2" use:conditionalClickHandlerAndClass={$$slots.icon} bind:this={iconElement}>
+  <div use:conditionalClickHandlerAndClass={$$slots.icon} bind:this={iconElement}>
     <slot name="icon" />
   </div>
 </div>
@@ -93,11 +114,12 @@
 {#if isOpen}
   <div
     data-popover
-    class="max-w-60vw absolute z-10 rounded bg-[#333] p-2 text-sm font-bold text-white md:max-w-lg"
+    class="max-w-60vw absolute z-10 rounded bg-[#333] text-sm font-bold text-white md:max-w-lg"
     class:whitespace-pre-wrap={contentText}
     bind:this={popoverElement}
   >
     <div
+      style={contentStyles}
       use:clickOutside={({ target }) => {
         if (!(target instanceof Element && target.closest('[data-popover]'))) {
           toggleOpen();

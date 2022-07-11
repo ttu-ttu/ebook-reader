@@ -1,8 +1,10 @@
 <script lang="ts">
   import { MetaTags } from 'svelte-meta-tags';
+  import { browser } from '$app/env';
   import { page } from '$app/stores';
-  import { basePath } from '$lib/data/env';
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
+  import { basePath } from '$lib/data/env';
+  import { isMobile, isMobile$ } from '$lib/functions/utils';
   import '../app.scss';
 
   let path = '';
@@ -10,6 +12,10 @@
 
   let dialogs: Dialog[] = [];
   dialogManager.dialogs$.subscribe((d) => (dialogs = d));
+
+  $: if (browser) {
+    isMobile$.next(isMobile(window));
+  }
 
   function closeAllDialogs() {
     dialogManager.dialogs$.next([]);

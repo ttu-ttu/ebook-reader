@@ -1,18 +1,23 @@
 <script lang="ts">
-  import { faBug, faCog, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
+  import Fa from 'svelte-fa';
+  import { faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
   import { createEventDispatcher } from 'svelte';
   import { quintOut } from 'svelte/easing';
   import { scale } from 'svelte/transition';
-  import Fa from 'svelte-fa';
+  import { browser } from '$app/env';
+  import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import {
+    baseHeaderClasses,
+    baseIconClasses,
     nTranslateXHeaderFa,
-    opacityHeaderIcon,
     pHeaderFa,
     pxScreen,
     translateXHeaderFa
   } from '$lib/css-classes';
   import { inputAllowDirectory } from '$lib/functions/file-dom/input-allow-directory';
   import { inputFile } from '$lib/functions/file-dom/input-file';
+  import { isMobile$ } from '$lib/functions/utils';
+  import { mergeEntries } from '../merged-header-icon/merged-entries';
 
   export let hasBookOpened: boolean;
   export let selectMode: boolean;
@@ -27,12 +32,7 @@
     filesChange: FileList;
   }>();
 
-  const pHeaderMat = 'p-3 xl:p-2.5';
   const nTranslateXHeaderMat = '-translate-x-3 xl:-translate-x-2.5';
-
-  function dispatchFilesChange(fileList: FileList) {
-    dispatch('filesChange', fileList);
-  }
 
   const inAnimationParams = {
     delay: 150,
@@ -44,20 +44,63 @@
     duration: 150,
     easing: quintOut
   };
+
+  const importMenuItems = [mergeEntries.FILE_IMPORT];
+
+  let fileImportElm: HTMLElement;
+  let folderImportElm: HTMLElement;
+
+  $: if (browser) {
+    importMenuItems.push(...($isMobile$ ? [] : [mergeEntries.FOLDER_IMPORT]));
+  }
+
+  function triggerInput(event: CustomEvent<string>) {
+    switch (event.detail) {
+      case mergeEntries.FOLDER_IMPORT.label:
+        folderImportElm.click();
+        break;
+
+      default:
+        fileImportElm.click();
+        break;
+    }
+  }
+
+  function dispatchFilesChange(fileList: FileList) {
+    dispatch('filesChange', fileList);
+  }
 </script>
 
-<div class="relative h-12 bg-gray-700 text-white xl:h-10">
+<input
+  hidden
+  multiple
+  type="file"
+  accept=".htmlz,.epub"
+  use:inputFile={dispatchFilesChange}
+  bind:this={fileImportElm}
+/>
+<input
+  hidden
+  multiple
+  type="file"
+  use:inputAllowDirectory
+  use:inputFile={dispatchFilesChange}
+  bind:this={folderImportElm}
+/>
+<div class={baseHeaderClasses}>
   <div class="flex h-full justify-between {pxScreen}">
     {#if selectedCount === 0}
-      <div class="transform-gpu {nTranslateXHeaderMat}">
+      <div
+        class="transform-gpu {nTranslateXHeaderMat}"
+        in:scale={inAnimationParams}
+        out:scale={outAnimationParams}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           on:click={() => (selectMode = !selectMode)}
-          in:scale={inAnimationParams}
-          out:scale={outAnimationParams}
           class:opacity-100={selectMode}
           class:opacity-60={!selectMode}
-          class="h-12 w-12 xl:h-10 xl:w-10 {pHeaderMat} cursor-pointer transition-opacity hover:opacity-100"
+          class={baseIconClasses}
           viewBox="0 0 24 24"
         >
           <path
@@ -67,9 +110,9 @@
         </svg>
       </div>
     {:else}
-      <div class="flex items-center h-full transform-gpu {nTranslateXHeaderFa} text-xl font-medium">
+      <div class="flex h-full transform-gpu items-center {nTranslateXHeaderFa} text-xl font-medium">
         <div
-          class="flex items-center h-full text-2xl xl:text-xl {pHeaderFa} cursor-pointer"
+          class="flex h-full items-center text-2xl xl:text-xl {pHeaderFa} cursor-pointer"
           in:scale={inAnimationParams}
           out:scale={outAnimationParams}
           on:click={() => (selectMode = !selectMode)}
@@ -77,7 +120,7 @@
           <Fa icon={faTimes} />
         </div>
         <span
-          class="transform-gpu translate-x-2"
+          class="translate-x-2 transform-gpu"
           in:scale={inAnimationParams}
           out:scale={outAnimationParams}>{selectedCount}</span
         >
@@ -93,7 +136,7 @@
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
             on:click={() => dispatch('backToBookClick')}
-            class="h-12 w-12 xl:h-10 xl:w-10 {pHeaderMat} {opacityHeaderIcon} cursor-pointer"
+            class={baseIconClasses}
           >
             <path
               class="fill-current"
@@ -108,7 +151,7 @@
           in:scale={inAnimationParams}
           out:scale={outAnimationParams}
           on:click={() => dispatch('selectAllClick')}
-          class="w-12 xl:w-10 h-12 xl:h-10 {pHeaderMat} {opacityHeaderIcon} cursor-pointer"
+          class={baseIconClasses}
         >
           <path
             class="fill-current"
@@ -121,70 +164,36 @@
     <div class="flex transform-gpu {translateXHeaderFa}">
       {#if !selectMode}
         {#if !isImporting}
-          <label
-            class="xl:mr-1 {opacityHeaderIcon} cursor-pointer"
+          <div
+            class="relative transform-gpu"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              class="h-12 w-12 xl:h-10 xl:w-10 {pHeaderMat}"
-            >
-              <path
-                class="fill-current"
-                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15.01l1.41 1.41L11 14.84V19h2v-4.16l1.59 1.59L16 15.01 12.01 11 8 15.01z"
-              />
-            </svg>
-            <input
-              type="file"
-              accept=".htmlz,.epub"
-              use:inputFile={dispatchFilesChange}
-              disabled={isImporting}
-              multiple
-              hidden
+            <MergedHeaderIcon
+              items={importMenuItems}
+              mergeTo={mergeEntries.FILE_IMPORT}
+              on:action={triggerInput}
             />
-          </label>
-          <label
-            class="xl:mr-1 {opacityHeaderIcon} cursor-pointer"
+          </div>
+          <div
+            class="relative transform-gpu"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              class="h-12 w-12 xl:h-10 xl:w-10 {pHeaderMat}"
-            >
-              <path
-                class="fill-current"
-                d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10zM9.41 14.42L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01l1.41 1.41z"
-              />
-            </svg>
-            <input
-              type="file"
-              use:inputFile={dispatchFilesChange}
-              use:inputAllowDirectory
-              multiple
-              disabled={isImporting}
-              hidden
+            <MergedHeaderIcon
+              on:action={({ detail }) => {
+                if (detail === mergeEntries.BUG_REPORT.label) {
+                  dispatch('bugReportClick');
+                }
+              }}
             />
-          </label>
+          </div>
         {/if}
-
-        <a href="/settings">
-          <span
-            class="flex h-full items-center text-xl xl:text-lg {pHeaderFa} {opacityHeaderIcon} cursor-pointer"
-            in:scale={inAnimationParams}
-            out:scale={outAnimationParams}
-          >
-            <Fa icon={faCog} />
-          </span>
-        </a>
       {/if}
 
       {#if selectedCount > 0}
         <div
-          class="flex h-full items-center text-xl xl:text-lg {pHeaderFa} {opacityHeaderIcon} cursor-pointer"
+          class="transform-gpu {baseIconClasses}"
           in:scale={inAnimationParams}
           out:scale={outAnimationParams}
           on:click={() => dispatch('removeClick')}
@@ -192,15 +201,6 @@
           <Fa icon={faTrash} />
         </div>
       {/if}
-
-      <div
-        class="flex h-full items-center text-xl xl:text-lg {pHeaderFa} {opacityHeaderIcon} cursor-pointer"
-        in:scale={inAnimationParams}
-        out:scale={outAnimationParams}
-        on:click={() => dispatch('bugReportClick')}
-      >
-        <Fa icon={faBug} />
-      </div>
     </div>
   </div>
 </div>
