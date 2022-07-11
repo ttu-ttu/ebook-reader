@@ -35,6 +35,9 @@
   });
 
   let prevPage = '/manage';
+
+  let activeSettings = 'Reader';
+
   afterNavigate((navigation) => {
     const { from } = navigation;
     if (!from) return;
@@ -66,12 +69,13 @@
 </svelte:head>
 
 <div class="elevation-4 fixed inset-x-0 top-0 z-10">
-  <SettingsHeader leavePageLink={prevPage} />
+  <SettingsHeader leavePageLink={prevPage} bind:activeSettings />
 </div>
 
 <div class="{pxScreen} h-full pt-16 xl:pt-14">
   <div class="max-w-5xl">
     <SettingsContent
+      {activeSettings}
       bind:selectedTheme={$theme$}
       bind:fontSize={$fontSize$}
       bind:fontFamilyGroupOne={$fontFamilyGroupOne$}

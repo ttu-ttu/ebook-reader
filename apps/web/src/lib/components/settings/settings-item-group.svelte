@@ -11,9 +11,8 @@
   <div class="flex">
     <h2 class="mb-2 text-xl font-medium">
       {#if tooltip}
-        <Popover>
+        <Popover contentText={tooltip} contentStyles="padding: 0.5rem;">
           <Fa icon={faCircleQuestion} slot="icon" class="mx-2" />
-          <div slot="content" class="p-2">{tooltip}</div>
           <span class="capitalize">{title}</span>
         </Popover>
       {:else}
