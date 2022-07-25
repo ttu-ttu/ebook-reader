@@ -20,7 +20,7 @@ importers:
       husky: 8.0.1
       lint-staged: 13.0.3
       prettier: 2.7.1
-      prettier-plugin-tailwindcss: 0.1.12
+      prettier-plugin-tailwindcss: 0.1.13
       svelte: 3.49.0
       typescript: 4.7.4
     devDependencies:
@@ -40,7 +40,7 @@ importers:
       husky: 8.0.1
       lint-staged: 13.0.3
       prettier: 2.7.1
-      prettier-plugin-tailwindcss: 0.1.12_prettier@2.7.1
+      prettier-plugin-tailwindcss: 0.1.13_prettier@2.7.1
       svelte: 3.49.0
       typescript: 4.7.4
 
@@ -3333,8 +3333,8 @@ packages:
     engines: {node: '>= 0.8.0'}
     dev: true
 
-  /prettier-plugin-tailwindcss/0.1.12_prettier@2.7.1:
-    resolution: {integrity: sha512-pEZ6tppwknCeq3ObR9g8t61AhWtVRRR3I0EQNeiRrrJ3D42FJGeUDxiFc/LJRYEeAx5JOxagsF0MICwuWOJa+w==}
+  /prettier-plugin-tailwindcss/0.1.13_prettier@2.7.1:
+    resolution: {integrity: sha512-/EKQURUrxLu66CMUg4+1LwGdxnz8of7IDvrSLqEtDqhLH61SAlNNUSr90UTvZaemujgl3OH/VHg+fyGltrNixw==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
       prettier: '>=2.2.0'
