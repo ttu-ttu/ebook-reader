@@ -78,7 +78,7 @@ importers:
       tslib: 2.4.0
       typescript: 4.7.4
       ua-parser-js: 1.0.2
-      vite: ^3.0.2
+      vite: 3.0.2
     dependencies:
       '@fortawesome/fontawesome-svg-core': 6.1.1
       '@fortawesome/free-regular-svg-icons': 6.1.1
