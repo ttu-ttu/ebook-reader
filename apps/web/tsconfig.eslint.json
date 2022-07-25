@@ -9,6 +9,7 @@
     "playwright.config.js",
     "postcss.config.cjs",
     "svelte.config.js",
+    "vite.config.js",
     "tailwind.config.cjs"
   ]
 }
