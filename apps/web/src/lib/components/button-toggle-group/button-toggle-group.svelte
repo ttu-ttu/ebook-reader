@@ -18,8 +18,12 @@
 <div class="-m-1">
   {#each options as option}
     <button
-      class="m-1 rounded-md border border-gray-400 bg-white p-2 text-lg"
+      class="m-1 rounded-md border-2 border-gray-400 p-2 text-lg"
+      class:border-4={option.thickBorders && option.id === selectedOptionId}
       class:border-blue-300={option.id === selectedOptionId}
+      class:bg-gray-700={option.id === selectedOptionId}
+      class:text-white={option.id === selectedOptionId}
+      class:bg-white={option.id !== selectedOptionId}
       style={mapToStyleString(option.style)}
       on:click={() => (selectedOptionId = option.id)}
     >

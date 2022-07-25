@@ -77,9 +77,25 @@ You may find the following controls in the manager:
 | ![Icon](assets/readme/control-bookselection.svg) | Selects all books                                                          |
 | ![Icon](assets/readme/control-file-upload.svg)   | Allows you to import new books to the library                              |
 | ![Icon](assets/readme/control-folder-upload.svg) | Allows you to import new books from a folder to the library (desktop only) |
-| ![Icon](assets/readme/control-settings.svg)      | Navigates you to the settings                                              |
 | ![Icon](assets/readme/control-log.svg)           | Allows you to download data for a bug report                               |
+| ![Icon](assets/readme/control-settings.svg)      | Navigates you to the settings                                              |
 | ![Icon](assets/readme/control-manager.svg)       | Opens the action menu                                                      |
+
+# Storage Limits
+
+Data like books or bookmarks will be stored locally in your browser storage. Browsers typically apply certain limits on how much a website
+can store on your computer. Those limits are different across different browsers and options you may have enabled.
+
+> When the available disk space is filled up, the quota manager will start clearing out data based on an LRU policy — the least recently used origin will be
+> deleted first, then the next one, until the browser is no longer over the limit.
+
+Therefore your data can be lost based on the amount you stored and how much storage is available. In order to overcome this limitation ttu reader
+will try to request for persistant storage during data insertion. You can enable persistant storage in the reader settings. Based on your browser you will
+see different behavior. E. g. firefox will ask you for your confirmation while chrome will not display any dialog but automatically grant the permissions if you frequently interacted with / bookmarked the page and / or have granted notification permissions to the site
+
+**Note**: Other browsers may have additional criteria for data eviction which are not affected by this setting. E. g. iOS > 13.3 may delete all your page data if you haven't interacted with the reader for 7 days etc.
+
+For more Information and Details check out this [Documentation](https://web.dev/storage-for-the-web/#how-much)
 
 # Self Host
 

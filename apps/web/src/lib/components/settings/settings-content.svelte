@@ -41,6 +41,8 @@
 
   export let autoBookmark: boolean;
 
+  export let activeSettings: string;
+
   const availableThemes = Array.from(availableThemesMap.entries()).map(([theme, option]) => ({
     theme,
     option
@@ -52,7 +54,8 @@
     style: {
       color: option.fontColor,
       'background-color': option.backgroundColor
-    }
+    },
+    thickBorders: true
   }));
 
   const optionsForToggle: ToggleOption<boolean>[] = [
@@ -120,92 +123,109 @@
   $: avoidPageBreakTooltip = avoidPageBreak
     ? 'Avoids breaking words/sentences into different pages'
     : 'Allow words/sentences to break into different pages';
+  $: persistentStorageTooltip = persistentStorage
+    ? 'Reader uses higher storage limit'
+    : 'Uses lower temporary storage.\nMay require bookmark or notification permissions for enablement';
 </script>
 
 <div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:md:gap-8">
-  <div class="sm:col-span-2 lg:col-span-3">
-    <SettingsItemGroup title="Theme">
-      <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
-    </SettingsItemGroup>
-  </div>
-  <SettingsItemGroup title="Font size">
-    <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="Font family (Group 1)">
-    <input
-      type="text"
-      class={inputClasses}
-      placeholder="Noto Serif JP"
-      bind:value={fontFamilyGroupOne}
-    />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="Font family (Group 2)">
-    <input
-      type="text"
-      class={inputClasses}
-      placeholder="Noto Sans JP"
-      bind:value={fontFamilyGroupTwo}
-    />
-  </SettingsItemGroup>
-  <SettingsItemGroup title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}>
-    <SettingsDimensionPopover
-      slot="header"
-      isFirstDimension
-      isVertical={verticalMode}
-      bind:dimensionValue={firstDimensionMargin}
-    />
-    <input type="number" class={inputClasses} step="1" min="0" bind:value={firstDimensionMargin} />
-  </SettingsItemGroup>
-  <SettingsItemGroup title={verticalMode ? 'Reader Max height' : 'Reader Max width'}>
-    <SettingsDimensionPopover
-      slot="header"
-      isVertical={verticalMode}
-      bind:dimensionValue={secondDimensionMaxValue}
-    />
-    <input
-      type="number"
-      class={inputClasses}
-      step="1"
-      min="0"
-      bind:value={secondDimensionMaxValue}
-    />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="View mode">
-    <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="Writing mode">
-    <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
-  </SettingsItemGroup>
-  <SettingsItemGroup
-    title="Auto Bookmark"
-    tooltip={'Set a bookmark after 3 seconds without scrolling/page change'}
-  >
-    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="Blur image">
-    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="Hide furigana">
-    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
-    <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
-  </SettingsItemGroup>
-  <SettingsItemGroup title="Persistent storage">
-    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
-  </SettingsItemGroup>
-  {#if viewMode === ViewMode.Continuous}
-    <SettingsItemGroup title="Auto position on resize">
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoPositionOnResize} />
-    </SettingsItemGroup>
-  {:else}
-    <SettingsItemGroup title="Avoid Page Break" tooltip={avoidPageBreakTooltip}>
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
-    </SettingsItemGroup>
-    {#if !verticalMode}
-      <SettingsItemGroup title="Page Columns">
-        <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />
+  {#if activeSettings === 'Reader'}
+    <div class="sm:col-span-2 lg:col-span-3">
+      <SettingsItemGroup title="Theme">
+        <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
       </SettingsItemGroup>
+    </div>
+    <SettingsItemGroup title="Font size">
+      <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Font family (Group 1)">
+      <input
+        type="text"
+        class={inputClasses}
+        placeholder="Noto Serif JP"
+        bind:value={fontFamilyGroupOne}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Font family (Group 2)">
+      <input
+        type="text"
+        class={inputClasses}
+        placeholder="Noto Sans JP"
+        bind:value={fontFamilyGroupTwo}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}
+    >
+      <SettingsDimensionPopover
+        slot="header"
+        isFirstDimension
+        isVertical={verticalMode}
+        bind:dimensionValue={firstDimensionMargin}
+      />
+      <input
+        type="number"
+        class={inputClasses}
+        step="1"
+        min="0"
+        bind:value={firstDimensionMargin}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title={verticalMode ? 'Reader Max height' : 'Reader Max width'}>
+      <SettingsDimensionPopover
+        slot="header"
+        isVertical={verticalMode}
+        bind:dimensionValue={secondDimensionMaxValue}
+      />
+      <input
+        type="number"
+        class={inputClasses}
+        step="1"
+        min="0"
+        bind:value={secondDimensionMaxValue}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="View mode">
+      <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Writing mode">
+      <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Auto Bookmark"
+      tooltip={'Set a bookmark after 3 seconds without scrolling/page change'}
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Blur image">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Hide furigana">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
+      <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
+    </SettingsItemGroup>
+    {#if viewMode === ViewMode.Continuous}
+      <SettingsItemGroup title="Auto position on resize">
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={autoPositionOnResize}
+        />
+      </SettingsItemGroup>
+    {:else}
+      <SettingsItemGroup title="Avoid Page Break" tooltip={avoidPageBreakTooltip}>
+        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
+      </SettingsItemGroup>
+      {#if !verticalMode}
+        <SettingsItemGroup title="Page Columns">
+          <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />
+        </SettingsItemGroup>
+      {/if}
     {/if}
+  {:else}
+    <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
+    </SettingsItemGroup>
   {/if}
 </div>
