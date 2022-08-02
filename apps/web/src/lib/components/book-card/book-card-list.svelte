@@ -1,7 +1,6 @@
 <script lang="ts">
   import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
   import { createEventDispatcher } from 'svelte';
-  import { flip } from 'svelte/animate';
   import Fa from 'svelte-fa';
   import type { BookCardProps } from './book-card-props';
   import BookCard from './book-card.svelte';
@@ -32,7 +31,6 @@
       class="relative"
       on:mouseenter={() => (hoveringBookId = bookCard.id)}
       on:mouseleave={() => (hoveringBookId = undefined)}
-      animate:flip={{ duration: 400 }}
     >
       <div
         class="mdc-elevation--z1 hover:mdc-elevation--z8 mdc-elevation-transition relative overflow-hidden"
