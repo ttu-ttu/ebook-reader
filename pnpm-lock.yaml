@@ -64,7 +64,7 @@ importers:
       fake-indexeddb: 4.0.0
       fast-xml-parser: 4.0.9
       idb: 7.0.2
-      p-limit: ^4.0.0
+      p-limit: 4.0.0
       path-browserify: 1.0.1
       postcss: 8.4.16
       rxjs: 7.5.6
