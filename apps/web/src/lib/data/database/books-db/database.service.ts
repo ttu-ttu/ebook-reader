@@ -4,11 +4,27 @@
  * All rights reserved.
  */
 
-import type { IDBPDatabase } from 'idb';
+import type {
+  BooksDbBookData,
+  BooksDbBookmarkData
+} from '$lib/data/database/books-db/versions/books-db';
 import { Subject, from } from 'rxjs';
-import { map, shareReplay, startWith, switchMap } from 'rxjs/operators';
-import type BooksDb from './versions/books-db';
-import type { BooksDbBookData, BooksDbBookmarkData } from './versions/books-db';
+import { catchError, map, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
+
+import type BooksDb from '$lib/data/database/books-db/versions/books-db';
+import type { BrowserStorageHandler } from '$lib/data/storage-manager/browser-handler';
+import type { IDBPDatabase } from 'idb';
+import LogReportDialog from '$lib/components/log-report-dialog.svelte';
+import MessageDialog from '$lib/components/message-dialog.svelte';
+import { StorageKey } from '$lib/data/storage-manager/storage-source';
+import { dialogManager } from '$lib/data/dialog-manager';
+import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
+import { handleErrorDuringReplication } from '$lib/functions/replication/error-handler';
+import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
+import { logger } from '$lib/data/logger';
+import pLimit from 'p-limit';
+import { replicationProgress$ } from '$lib/functions/replication/replication-progress';
+import { throwIfAborted } from '$lib/functions/replication/replication-error';
 
 const LAST_ITEM_KEY = 0;
 
@@ -17,13 +33,44 @@ export class DatabaseService {
 
   isReady$ = this.db$.pipe(map((db) => !!db));
 
+  listLoading$ = new Subject<boolean>();
+
   dataListChanged$ = new Subject<void>();
 
-  dataList$ = this.dataListChanged$.pipe(
-    startWith(0),
-    switchMap(() => this.db$),
-    switchMap((db) => db.getAll('data')),
-    shareReplay({ refCount: true, bufferSize: 1 })
+  dataList$ = iffBrowser(() =>
+    this.dataListChanged$.pipe(
+      startWith(true),
+      tap((withLoadingSpinner) => {
+        if (withLoadingSpinner) {
+          this.listLoading$.next(true);
+        }
+      }),
+      switchMap(() =>
+        from(
+          getStorageHandler(StorageKey.BROWSER, window).then((handler) => handler.getDataList())
+        ).pipe(
+          catchError((error: unknown) => {
+            if (error instanceof Error) {
+              const showReport = logger.history.length > 1;
+
+              dialogManager.dialogs$.next([
+                {
+                  component: showReport ? LogReportDialog : MessageDialog,
+                  props: {
+                    title: 'Failure',
+                    message: showReport ? 'Error(s) occurred' : `An Error occured: ${error.message}`
+                  }
+                }
+              ]);
+            }
+
+            return [[]];
+          })
+        )
+      ),
+      tap(() => this.listLoading$.next(false)),
+      shareReplay({ refCount: true, bufferSize: 1 })
+    )
   );
 
   dataIds$ = this.dataListChanged$.pipe(
@@ -61,48 +108,77 @@ export class DatabaseService {
     return undefined;
   }
 
-  async getDataListByQuery(query: number | IDBKeyRange | null | undefined) {
-    const db = await this.db;
-    return db.getAll('data', query);
-  }
-
-  async upsertData(data: Omit<BooksDbBookData, 'id'>) {
+  async upsertData(data: Omit<BooksDbBookData, 'id'>, storageHandler: BrowserStorageHandler) {
     const db = await this.db;
 
     let dataId: number;
+    let bookData: BooksDbBookData;
 
     const tx = db.transaction('data', 'readwrite');
     const { store } = tx;
     const oldId = await store.index('title').getKey(data.title);
 
     if (oldId) {
-      dataId = await store.put({
+      bookData = {
         ...data,
         id: oldId
-      });
+      };
+      dataId = await store.put(bookData);
     } else {
       // Until https://github.com/jakearchibald/idb/issues/150 resolves
       const bookDataWithoutKey: Omit<BooksDbBookData, 'id'> = data;
       dataId = await store.add(bookDataWithoutKey as BooksDbBookData);
+      bookData = { ...data, id: dataId };
     }
     await tx.done;
+
+    storageHandler.applyUpsert(bookData);
+
+    replicationProgress$.next({ progressToAdd: 100 });
+
     this.dataListChanged$.next();
     return dataId;
   }
 
-  async deleteData(dataIds: number[]) {
+  async deleteData(dataIds: number[], cancelSignal: AbortSignal) {
     const db = await this.db;
-
     const lastItemObj = await db.get('lastItem', LAST_ITEM_KEY);
-    const bookmarkIds = await db.getAllKeys('bookmark');
+    const bookmarkIdData = await db.getAllKeys('bookmark');
+    const lastItem = lastItemObj?.dataId;
+    const bookmarkIds = new Set(bookmarkIdData);
+    const deleted: number[] = [];
+    const limiter = pLimit(1);
+    const tasks: Promise<void>[] = [];
 
-    const deleteBookPromises = dataIds.map((id) =>
-      this.deleteSingleData(id, {
-        lastItem: lastItemObj?.dataId,
-        bookmarkIds: new Set(bookmarkIds)
-      })
+    let errorMessage = '';
+
+    replicationProgress$.next({
+      progressToAdd: 0,
+      baseProgress: 100,
+      maxProgress: 100 * dataIds.length
+    });
+
+    dataIds.forEach((id) =>
+      tasks.push(
+        limiter(async () => {
+          try {
+            throwIfAborted(cancelSignal);
+
+            deleted.push(await this.deleteSingleData(db, id, { lastItem, bookmarkIds }));
+          } catch (error) {
+            errorMessage = handleErrorDuringReplication(
+              error,
+              `Error deleting Book with id ${id}: `,
+              [limiter]
+            );
+          }
+        })
+      )
     );
-    await Promise.all(deleteBookPromises);
+
+    await Promise.all(tasks).catch(() => {});
+
+    return { error: errorMessage, deleted };
   }
 
   async getBookmark(dataId: number) {
@@ -131,16 +207,11 @@ export class DatabaseService {
   }
 
   private async deleteSingleData(
+    db: IDBPDatabase<BooksDb>,
     dataId: number,
-    cachedData: {
-      bookmarkIds: Set<number>;
-      lastItem: number | undefined;
-    }
+    cachedData: { bookmarkIds: Set<number>; lastItem: number | undefined }
   ) {
-    const db = await this.db;
-
     const storeNames: ('data' | 'bookmark' | 'lastItem')[] = ['data'];
-
     const shouldDeleteLastItem = cachedData.lastItem === dataId;
     const shouldDeleteBookmark = cachedData.bookmarkIds.has(dataId);
 
@@ -153,18 +224,33 @@ export class DatabaseService {
 
     const tx = db.transaction(storeNames, 'readwrite');
 
-    if (shouldDeleteLastItem) {
-      await tx.objectStore('lastItem').delete(LAST_ITEM_KEY);
-    }
-    if (shouldDeleteBookmark) {
-      await tx.objectStore('bookmark').delete(dataId);
-    }
-    await tx.objectStore('data').delete(dataId);
-    await tx.done;
+    try {
+      if (shouldDeleteLastItem) {
+        await tx.objectStore('lastItem').delete(LAST_ITEM_KEY);
+      }
+      if (shouldDeleteBookmark) {
+        await tx.objectStore('bookmark').delete(dataId);
+      }
 
-    if (shouldDeleteLastItem) {
-      this.lastItemChanged$.next();
+      await tx.objectStore('data').delete(dataId);
+      await tx.done;
+
+      if (shouldDeleteLastItem) {
+        this.lastItemChanged$.next();
+      }
+    } catch (error: any) {
+      try {
+        tx.abort();
+        await tx.done;
+      } catch (_) {
+        // no-op
+      }
+
+      throw error;
     }
-    this.dataListChanged$.next();
+
+    replicationProgress$.next({ progressToAdd: 100 });
+
+    return dataId;
   }
 }

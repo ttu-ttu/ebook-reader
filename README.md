@@ -80,6 +80,7 @@ You may find the following controls in the manager:
 | ![Icon](assets/readme/control-log.svg)           | Allows you to download data for a bug report                               |
 | ![Icon](assets/readme/control-settings.svg)      | Navigates you to the settings                                              |
 | ![Icon](assets/readme/control-manager.svg)       | Opens the action menu                                                      |
+| ![Icon](assets/readme/control-cancel.svg)        | Cancels the current book import/deletion                                   |
 
 # Storage Limits
 
@@ -90,8 +91,9 @@ can store on your computer. Those limits are different across different browsers
 > deleted first, then the next one, until the browser is no longer over the limit.
 
 Therefore your data can be lost based on the amount you stored and how much storage is available. In order to overcome this limitation ttu reader
-will try to request for persistant storage during data insertion. You can enable persistant storage in the reader settings. Based on your browser you will
-see different behavior. E. g. firefox will ask you for your confirmation while chrome will not display any dialog but automatically grant the permissions if you frequently interacted with / bookmarked the page and / or have granted notification permissions to the site
+will try to request for persistant storage during data insertion. Based on your browser you will
+see different behavior. E. g. firefox will ask you for your confirmation while chrome will not display any dialog but automatically grant the permissions if you frequently interacted with / bookmarked the page and / or have granted notification permissions to the site.
+You can see the current status of persistant storage in the reader settings.
 
 **Note**: Other browsers may have additional criteria for data eviction which are not affected by this setting. E. g. iOS > 13.3 may delete all your page data if you haven't interacted with the reader for 7 days etc.
 
