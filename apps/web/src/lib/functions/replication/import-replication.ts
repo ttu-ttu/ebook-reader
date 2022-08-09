@@ -25,6 +25,7 @@ export async function addBooks(
   const dataIds: number[] = [];
   const limiter = pLimit(1);
   const tasks: Promise<void>[] = [];
+  const lastBookModified = new Date().getTime();
 
   let errorMessage = '';
 
@@ -39,8 +40,8 @@ export async function addBooks(
           throwIfAborted(cancelSignal);
 
           const bookContent = await (file.name.endsWith('.epub')
-            ? loadEpub(file, document)
-            : loadHtmlz(file, document));
+            ? loadEpub(file, document, lastBookModified)
+            : loadHtmlz(file, document, lastBookModified));
 
           replicationProgress$.next({ progressToAdd: 100 });
           currentTitle = bookContent.title;

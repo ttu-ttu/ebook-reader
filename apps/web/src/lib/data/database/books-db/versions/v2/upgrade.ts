@@ -5,6 +5,7 @@
  */
 
 import type { IDBPDatabase, IDBPTransaction, StoreNames } from 'idb';
+
 import type BooksDb from '../books-db';
 import type { BooksDbBookData } from '../books-db';
 import type BooksDbV2 from './books-db-v2';
@@ -66,7 +67,9 @@ export default async function upgradeBooksDbFromV2(
         const bookDataWithoutKey: Omit<BooksDbBookData, 'id'> = {
           ...parsedData,
           blobs: {},
-          hasThumb: false
+          hasThumb: false,
+          lastBookModified: 0,
+          lastBookOpen: 0
         };
         const dataId = await transaction
           .objectStore('data')
@@ -77,7 +80,8 @@ export default async function upgradeBooksDbFromV2(
           await transaction.objectStore('bookmark').put({
             dataId,
             scrollX: +scrollX,
-            progress: '0%'
+            progress: '0%',
+            lastBookmarkModified: 0
           });
         }
 

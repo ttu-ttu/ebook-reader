@@ -116,12 +116,14 @@ export class DatabaseService {
 
     const tx = db.transaction('data', 'readwrite');
     const { store } = tx;
-    const oldId = await store.index('title').getKey(data.title);
+    const oldData = await store.index('title').get(data.title);
 
-    if (oldId) {
+    if (oldData) {
       bookData = {
         ...data,
-        id: oldId
+        id: oldData.id,
+        lastBookModified: data.lastBookModified || oldData.lastBookModified,
+        lastBookOpen: data.lastBookOpen || oldData.lastBookOpen
       };
       dataId = await store.put(bookData);
     } else {

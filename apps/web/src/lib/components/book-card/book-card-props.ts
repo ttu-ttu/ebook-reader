@@ -8,5 +8,8 @@ export interface BookCardProps {
   id: number;
   imagePath: string | Blob;
   title: string;
+  lastBookModified: number;
+  lastBookOpen: number;
   progress: number;
+  lastBookmarkModified: number;
 }
