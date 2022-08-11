@@ -49,7 +49,7 @@ importers:
       '@fortawesome/fontawesome-svg-core': 6.1.2
       '@fortawesome/free-regular-svg-icons': 6.1.2
       '@fortawesome/free-solid-svg-icons': 6.1.2
-      '@popperjs/core': 2.11.5
+      '@popperjs/core': 2.11.6
       '@sveltejs/adapter-static': 1.0.0-next.39
       '@sveltejs/kit': 1.0.0-next.398
       '@tailwindcss/aspect-ratio': 0.4.0
@@ -84,7 +84,7 @@ importers:
       '@fortawesome/fontawesome-svg-core': 6.1.2
       '@fortawesome/free-regular-svg-icons': 6.1.2
       '@fortawesome/free-solid-svg-icons': 6.1.2
-      '@popperjs/core': 2.11.5
+      '@popperjs/core': 2.11.6
       '@zip.js/zip.js': 2.4.26
       balanced-match: 2.0.0
       fake-indexeddb: 4.0.0
@@ -521,8 +521,8 @@ packages:
       tslib: 2.4.0
     dev: true
 
-  /@popperjs/core/2.11.5:
-    resolution: {integrity: sha512-9X2obfABZuDVLCgPK9aX0a/x4jaOEweTTWE2+9sr0Qqqevj2Uv5XorvusThmc9XGYpS9yI+fhh8RTafBtGposw==}
+  /@popperjs/core/2.11.6:
+    resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
     dev: false
 
   /@rollup/pluginutils/4.2.1:
