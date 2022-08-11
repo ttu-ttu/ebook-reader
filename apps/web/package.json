@@ -35,7 +35,7 @@
     "@fortawesome/fontawesome-svg-core": "6.1.2",
     "@fortawesome/free-regular-svg-icons": "6.1.2",
     "@fortawesome/free-solid-svg-icons": "6.1.2",
-    "@popperjs/core": "2.11.5",
+    "@popperjs/core": "2.11.6",
     "@zip.js/zip.js": "2.4.26",
     "balanced-match": "2.0.0",
     "fake-indexeddb": "4.0.0",
