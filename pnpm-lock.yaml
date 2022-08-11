@@ -73,7 +73,7 @@ importers:
       svelte-check: 2.8.0
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
-      svelte-meta-tags: 2.6.1
+      svelte-meta-tags: 2.6.2
       svelte-preprocess: 4.10.7
       tailwindcss: 3.1.8
       tslib: 2.4.0
@@ -95,7 +95,7 @@ importers:
       rxjs: 7.5.6
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
-      svelte-meta-tags: 2.6.1_uslzfc62di2n2otc2tvfklnwji
+      svelte-meta-tags: 2.6.2
       ua-parser-js: 1.0.2
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.39
@@ -3614,14 +3614,6 @@ packages:
       source-map-js: 1.0.2
     dev: true
 
-  /schema-dts/1.1.0_typescript@4.7.4:
-    resolution: {integrity: sha512-vdmbs/5ycj4zyKpZIDqTcy+IZi4s7c38RVAYuDmRi7zgxUT8wRWPMLzg0jr7FjdVunYu9yZ00F3+XcZTTFcTOQ==}
-    peerDependencies:
-      typescript: '>=4.1.0'
-    dependencies:
-      typescript: 4.7.4
-    dev: false
-
   /semver/5.7.1:
     resolution: {integrity: sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==}
     hasBin: true
@@ -3905,15 +3897,8 @@ packages:
       svelte: 3.49.0
     dev: true
 
-  /svelte-meta-tags/2.6.1_uslzfc62di2n2otc2tvfklnwji:
-    resolution: {integrity: sha512-cjtwhzOrRq96ZrsSYNhdLPhI7Xw4MP8RGPFfhOKVPnLXqz4kK8MK9EK/ArltzwEexVfTr2nBx3Z3rGXIsVFOfw==}
-    peerDependencies:
-      svelte: ^3.39.0
-    dependencies:
-      schema-dts: 1.1.0_typescript@4.7.4
-      svelte: 3.49.0
-    transitivePeerDependencies:
-      - typescript
+  /svelte-meta-tags/2.6.2:
+    resolution: {integrity: sha512-2XPeMUj5Q93D7PzStFgwiUa7xxcCayz0VwaOm48KQdZKRuKWw6maA9lG+KiuUufcuERmReWFWzLeHzrtb4lmDg==}
     dev: false
 
   /svelte-preprocess/4.10.7_v47vl5ncx4rolutzzqi3rog55m:
@@ -3972,6 +3957,7 @@ packages:
   /svelte/3.49.0:
     resolution: {integrity: sha512-+lmjic1pApJWDfPCpUUTc1m8azDqYCG1JN9YEngrx/hUyIcFJo6VZhj0A1Ai0wqoHcEIuQy+e9tk+4uDgdtsFA==}
     engines: {node: '>= 8'}
+    dev: true
 
   /synckit/0.8.1:
     resolution: {integrity: sha512-rJEeygO5PNmcZICmrgnbOd2usi5zWE1ESc0Gn5tTmJlongoU8zCTwMFQtar2UgMSiR68vK9afPQ+uVs2lURSIA==}
@@ -4173,6 +4159,7 @@ packages:
     resolution: {integrity: sha512-C0WQT0gezHuw6AdY1M2jxUO83Rjf0HP7Sk1DtXj6j1EwkQNZrHAg2XPWlq62oqEhYvONq5pkC2Y9oPljWToLmQ==}
     engines: {node: '>=4.2.0'}
     hasBin: true
+    dev: true
 
   /typeson-registry/1.0.0-alpha.39:
     resolution: {integrity: sha512-NeGDEquhw+yfwNhguLPcZ9Oj0fzbADiX4R0WxvoY8nGhy98IbzQy1sezjoEFWOywOboj/DWehI+/aUlRVrJnnw==}
