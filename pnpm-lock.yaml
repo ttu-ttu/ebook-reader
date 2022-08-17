@@ -70,7 +70,7 @@ importers:
       rxjs: 7.5.6
       sass: 1.54.4
       svelte: 3.49.0
-      svelte-check: 2.8.0
+      svelte-check: 2.8.1
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.2
@@ -110,9 +110,9 @@ importers:
       postcss: 8.4.16
       sass: 1.54.4
       svelte: 3.49.0
-      svelte-check: 2.8.0_wfbwvhujpq55dwnmdsqpqghtky
+      svelte-check: 2.8.1_wfbwvhujpq55dwnmdsqpqghtky
       svelte-preprocess: 4.10.7_v47vl5ncx4rolutzzqi3rog55m
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
       tslib: 2.4.0
       typescript: 4.7.4
       vite: 3.0.8_sass@1.54.4
@@ -583,7 +583,7 @@ packages:
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
     dev: true
 
   /@tailwindcss/forms/0.5.2_tailwindcss@3.1.8:
@@ -592,7 +592,7 @@ packages:
       tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1'
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
     dev: true
 
   /@tailwindcss/line-clamp/0.4.0_tailwindcss@3.1.8:
@@ -600,7 +600,7 @@ packages:
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
     dev: true
 
   /@tsconfig/node10/1.0.8:
@@ -3852,8 +3852,8 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/2.8.0_wfbwvhujpq55dwnmdsqpqghtky:
-    resolution: {integrity: sha512-HRL66BxffMAZusqe5I5k26mRWQ+BobGd9Rxm3onh7ZVu0nTk8YTKJ9vu3LVPjUGLU9IX7zS+jmwPVhJYdXJ8vg==}
+  /svelte-check/2.8.1_wfbwvhujpq55dwnmdsqpqghtky:
+    resolution: {integrity: sha512-cibyY1sgt3ONIDnQbSgV2X9AJFhwEslRHNo95lijrYfPzVEvTvbmL2ohsUyqB5L7j1GhLXtQbjCJ4lZZ/fwbeQ==}
     hasBin: true
     peerDependencies:
       svelte: ^3.24.0
@@ -3967,10 +3967,12 @@ packages:
       tslib: 2.4.0
     dev: true
 
-  /tailwindcss/3.1.8:
+  /tailwindcss/3.1.8_postcss@8.4.16:
     resolution: {integrity: sha512-YSneUCZSFDYMwk+TGq8qYFdCA3yfBRdBlS7txSq0LUmzyeqRe3a8fBQzbz9M3WS/iFT4BNf/nmw9mEzrnSaC0g==}
     engines: {node: '>=12.13.0'}
     hasBin: true
+    peerDependencies:
+      postcss: ^8.0.9
     dependencies:
       arg: 5.0.2
       chokidar: 3.5.3
