@@ -42,7 +42,10 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     existingFileData.id = book.id;
     existingFileData.title = book.title;
     existingFileData.imagePath = book.coverImage || '';
+    existingFileData.lastBookModified = book.lastBookModified || 0;
+    existingFileData.lastBookOpen = book.lastBookOpen || 0;
     existingFileData.progress = 0;
+    existingFileData.lastBookmarkModified = 0;
 
     this.titleToFileData.set(book.title, existingFileData);
   }

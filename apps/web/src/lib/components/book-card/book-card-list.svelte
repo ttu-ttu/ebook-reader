@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+  import { faCheckCircle, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+  import BookCard from '$lib/components/book-card/book-card.svelte';
+  import type { BookCardProps } from '$lib/components/book-card/book-card-props';
+  import Popover from '$lib/components/popover/popover.svelte';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
-  import type { BookCardProps } from './book-card-props';
-  import BookCard from './book-card.svelte';
 
   export let bookCards: BookCardProps[] = [];
   export let currentBookId: number | undefined;
@@ -22,6 +23,10 @@
 
   function onBookCardClick(id: number) {
     dispatch('bookClick', { id });
+  }
+
+  function getCardDateInfo(dateTime: number) {
+    return dateTime ? new Date(dateTime).toLocaleString() : 'No Data';
   }
 </script>
 
@@ -48,7 +53,25 @@
           </div>
         {/if}
       </div>
-
+      {#if selectedBookIds.has(bookCard.id)}
+        <div class="absolute top-10 left-2">
+          <Popover placement="right" fallbackPlacements={['bottom']} yOffset={5}>
+            <Fa
+              slot="icon"
+              class="mdc-elevation--z2 hover:mdc-elevation--z8 mdc-elevation-transition left-2 top-10 rounded-full bg-blue-400 text-xl text-white"
+              icon={faCircleInfo}
+            />
+            <div class="p-4" slot="content">
+              <div>Last Read:</div>
+              <div class="w-40">{getCardDateInfo(bookCard.lastBookOpen)}</div>
+              <div class="mt-4">Bookmarked:</div>
+              <div class="w-40">{getCardDateInfo(bookCard.lastBookmarkModified)}</div>
+              <div class="mt-4">Last Update:</div>
+              <div class="w-40">{getCardDateInfo(bookCard.lastBookModified)}</div>
+            </div>
+          </Popover>
+        </div>
+      {/if}
       {#if bookCard.id === hoveringBookId}
         <div
           class="mdc-elevation--z2 hover:mdc-elevation--z8 mdc-elevation-transition absolute -top-2 -right-2 h-6 w-6 cursor-pointer rounded-full bg-red-400"

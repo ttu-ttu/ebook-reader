@@ -62,6 +62,8 @@
     sectionProgress$,
     tocIsOpen$
   } from '$lib/components/book-reader/book-toc/book-toc';
+  import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
+  import { StorageKey } from '$lib/data/storage-manager/storage-source';
   import { clickOutside } from '$lib/functions/use-click-outside';
   import { onKeydownReader } from './on-keydown-reader';
 
@@ -110,6 +112,14 @@
   const bookData$ = rawBookData$.pipe(
     switchMap((rawBookData) => {
       if (!rawBookData) return EMPTY;
+
+      // eslint-disable-next-line no-param-reassign
+      rawBookData.lastBookOpen = new Date().getTime();
+      getStorageHandler(StorageKey.BROWSER, window)
+        .then((handler) => database.upsertData(rawBookData, handler))
+        .catch(() => {
+          // no-op
+        });
 
       sectionList$.next(rawBookData.sections || []);
 

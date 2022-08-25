@@ -15,6 +15,8 @@ interface BooksDbV3BookData {
   coverImage?: string | Blob;
   hasThumb: boolean;
   sections?: Section[];
+  lastBookModified: number;
+  lastBookOpen: number;
 }
 
 interface BooksDbV3BookmarkData {
@@ -23,6 +25,7 @@ interface BooksDbV3BookmarkData {
   scrollY?: number;
   exploredCharCount?: number;
   progress: number | string | undefined;
+  lastBookmarkModified: number;
 }
 
 export interface Section {
