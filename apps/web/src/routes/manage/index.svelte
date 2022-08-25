@@ -36,10 +36,12 @@
     map(([dataList, bookmarks]) => {
       const bookmarkMap = keyBy(bookmarks, 'dataId');
 
-      return dataList.map((d) => ({
-        ...d,
-        ...bookmarkToProgress(bookmarkMap.get(d.id))
-      }));
+      return dataList
+        .map((d) => ({
+          ...d,
+          ...bookmarkToProgress(bookmarkMap.get(d.id))
+        }))
+        .sort(sortBookCards);
     }),
     share()
   );
@@ -74,9 +76,25 @@
   function bookmarkToProgress(b: BooksDbBookmarkData | undefined) {
     return b?.progress
       ? {
-          progress: typeof b.progress === 'string' ? +b.progress.slice(0, -1) : b.progress
+          progress: typeof b.progress === 'string' ? +b.progress.slice(0, -1) : b.progress,
+          lastBookmarkModified: b.lastBookmarkModified || 0
         }
-      : { progress: 0 };
+      : { progress: 0, lastBookmarkModified: 0 };
+  }
+
+  function sortBookCards(card1: BookCardProps, card2: BookCardProps) {
+    let sortDiff = 0;
+
+    const { lastBookModified: card1LastModified = 0, lastBookOpen: card1lastOpen = 0 } = card1;
+    const { lastBookModified: card2LastModified = 0, lastBookOpen: card2lastOpen = 0 } = card2;
+
+    if (card1lastOpen || card2lastOpen) {
+      sortDiff = card2lastOpen - card1lastOpen;
+    } else {
+      sortDiff = card2LastModified - card1LastModified;
+    }
+
+    return sortDiff;
   }
 
   function onBookClick(bookId: number) {

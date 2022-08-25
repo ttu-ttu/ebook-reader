@@ -60,7 +60,7 @@ Explanation from [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Keyboard
 
 You can open the book manager by clicking/tapping on the respective icon in the reader.
 You will be presented with a list of covers for all the imported books with their respective titles and progress (determined
-by bookmark location).
+by bookmark location). Books are sorted in following priority: last opened/read > last modified/added > no time data stored.
 
 You may:
 
