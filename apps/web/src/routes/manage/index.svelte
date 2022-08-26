@@ -4,6 +4,7 @@
   import BookCardList from '$lib/components/book-card/book-card-list.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import BookManagerHeader from '$lib/components/book-card/book-manager-header.svelte';
+  import BookReplication from '$lib/components/book-replication/book-replication.svelte';
   import LogReportDialog from '$lib/components/log-report-dialog.svelte';
   import MessageDialog from '$lib/components/message-dialog.svelte';
   import { pxScreen } from '$lib/css-classes';
@@ -11,17 +12,19 @@
   import { dialogManager } from '$lib/data/dialog-manager';
   import { logger } from '$lib/data/logger';
   import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
-  import { StorageKey } from '$lib/data/storage-manager/storage-source';
-  import { database, requestPersistentStorage$ } from '$lib/data/store';
-  import { storage } from '$lib/data/window/navigator/storage';
+  import { StorageDataType, StorageKey } from '$lib/data/storage-manager/storage-source';
+  import { database } from '$lib/data/store';
   import { cloneMutateSet } from '$lib/functions/clone-mutate-set';
   import { getDropEventFiles } from '$lib/functions/file-dom/get-drop-event-files';
   import { inputFile } from '$lib/functions/file-dom/input-file';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { keyBy } from '$lib/functions/key-by';
-  import { addBooks } from '$lib/functions/replication/import-replication';
-  import { replicationProgress$ } from '$lib/functions/replication/replication-progress';
-  import { combineLatest, map, Observable, share, Subject, takeUntil } from 'rxjs';
+  import { importBackup, importData, replicateData } from '$lib/functions/replication/replicator';
+  import {
+    replicationProgress$,
+    replicationStart$
+  } from '$lib/functions/replication/replication-progress';
+  import { combineLatest, map, Observable, share, Subject, switchMap, takeUntil } from 'rxjs';
   import { onDestroy, tick } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -144,51 +147,45 @@
 
     const supportedExtRegex = /\.(?:htmlz|epub)$/;
     const files = Array.from(fileList).filter((f) => supportedExtRegex.test(f.name));
+    const errorTitle = 'Bookimport failed';
 
     if (!files.length) {
       resetProgress();
 
-      dialogManager.dialogs$.next([
-        {
-          component: MessageDialog,
-          props: {
-            title: 'Bookimport failed',
-            message: 'File(s) must be HTMLZ or EPUB'
-          }
-        }
-      ]);
+      showError(errorTitle, 'File(s) must be HTMLZ or EPUB', '');
       return;
     }
 
-    if (requestPersistentStorage$.getValue()) {
-      try {
-        await storage.persist();
-      } catch (_) {
-        // no-op
-      }
-    }
-
-    const { error, dataId } = await addBooks(files, window, document, cancelSignal).catch(
-      (catchedError) => ({ error: catchedError.message, dataId: 0 })
-    );
+    const targetKey = StorageKey.BROWSER;
+    const { error, dataId } = await importData(
+      window,
+      document,
+      targetKey,
+      files,
+      cancelSignal
+    ).catch((catchedError) => ({ error: catchedError.message, dataId: 0 }));
 
     resetProgress();
 
     if (error) {
-      const showReport = logger.history.length > 1;
-
-      dialogManager.dialogs$.next([
-        {
-          component: showReport ? LogReportDialog : MessageDialog,
-          props: {
-            title: 'Bookimport failed',
-            message: showReport ? 'Error(s) occurred during Bookimport' : error
-          }
-        }
-      ]);
-    } else if (dataId) {
+      showError(errorTitle, error, 'Error(s) occurred during Bookimport');
+    } else if (targetKey === StorageKey.BROWSER && dataId) {
       openBook(dataId);
     }
+  }
+
+  function showError(title: string, message: string, fallbackMessage: string) {
+    const showReport = logger.errorCount > 1;
+
+    dialogManager.dialogs$.next([
+      {
+        component: showReport ? LogReportDialog : MessageDialog,
+        props: {
+          title,
+          message: showReport ? fallbackMessage : message
+        }
+      }
+    ]);
   }
 
   function initializeReplicationProgressData() {
@@ -256,17 +253,36 @@
     }
 
     if (error) {
-      const showReport = logger.history.length > 1;
+      showError('Deletion failed', error, 'Error(s) occurred during Deletion');
+    }
+  }
 
-      dialogManager.dialogs$.next([
-        {
-          component: showReport ? LogReportDialog : MessageDialog,
-          props: {
-            title: 'Deletion failed',
-            message: showReport ? 'Error(s) occurred during Deletion' : error
-          }
-        }
-      ]);
+  async function onImportBackup(file: File) {
+    if (!operationAllowed()) {
+      return;
+    }
+
+    const errorTitle = 'Import failed';
+
+    cancelTooltip = `Cancels the current Import\nAlready imported Data will not be deleted`;
+
+    initializeReplicationProgressData();
+
+    if (!file.name.endsWith('.zip')) {
+      resetProgress();
+
+      showError(errorTitle, 'Invalid File - expected zip Archive', '');
+      return;
+    }
+
+    const error = await importBackup(window, StorageKey.BROWSER, file, cancelSignal).catch(
+      (err) => err.message
+    );
+
+    resetProgress();
+
+    if (error) {
+      showError(errorTitle, error, 'Error(s) occurred during Import');
     }
   }
 
@@ -282,6 +298,20 @@
     ]);
   }
 
+  function onReplicateBookData() {
+    dialogManager.dialogs$.next([
+      {
+        component: BookReplication,
+        props: {
+          dataToReplicate: [StorageDataType.PROGRESS],
+          source: StorageKey.BROWSER,
+          target: StorageKey.BACKUP
+        },
+        disableCloseOnClick: true
+      }
+    ]);
+  }
+
   replicationProgress$.pipe(takeUntil(destroy$)).subscribe((replicationProgressData) => {
     if (cancelSignal.aborted) {
       return;
@@ -289,17 +319,16 @@
 
     baseProgress = replicationProgressData.baseProgress || baseProgress || 0;
     replicationToProgress = replicationProgressData.maxProgress || replicationToProgress || 0;
-    executionStart = replicationProgressData.executionStart || executionStart;
 
     if (replicationProgressData.progressToAdd === -1) {
       const progressDiffToAdd =
         Math.ceil(replicationProgress / baseProgress) * baseProgress - replicationProgress;
       replicationProgress += progressDiffToAdd || baseProgress;
-    } else {
+    } else if (replicationProgressData.progressToAdd) {
       replicationProgress += replicationProgressData.progressToAdd;
     }
 
-    if (replicationProgressData.progressToAdd) {
+    if (replicationProgressData.progressToAdd || replicationProgressData.reportOnly) {
       const duration = (Date.now() - executionStart) / 1000;
       const processPerSecond = replicationProgress / duration;
       const remainingTime = (replicationToProgress - replicationProgress) / processPerSecond;
@@ -307,6 +336,39 @@
       replicationProgressRemaining = `~ ${getTimestamp(Math.ceil(remainingTime))}`;
     }
   });
+
+  replicationStart$
+    .pipe(
+      switchMap(async ({ source, target, dataToReplicate }) => {
+        if (!operationAllowed()) {
+          return;
+        }
+
+        cancelTooltip = 'Cancels the current Export';
+
+        initializeReplicationProgressData();
+
+        const books = $bookCards$.filter((card) => selectedBookIds.has(card.id));
+        const error = await replicateData(
+          window,
+          source,
+          target,
+          books,
+          dataToReplicate,
+          cancelSignal
+        ).catch((err) => err.message);
+
+        resetProgress();
+
+        if (error) {
+          showError('Export failed', error, 'Error(s) occurred during Export');
+        }
+      }),
+      takeUntil(destroy$)
+    )
+    .subscribe(() => {
+      // no-op
+    });
 
   function getTimestamp(seconds: number) {
     return seconds && Number.isFinite(seconds)
@@ -340,6 +402,8 @@
         replicationProgressRemaining = 'Canceling ...';
       }
     }}
+    on:replicateBookData={onReplicateBookData}
+    on:importBackup={(ev) => onImportBackup(ev.detail)}
   />
 </div>
 

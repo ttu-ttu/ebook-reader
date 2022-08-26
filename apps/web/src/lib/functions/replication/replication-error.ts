@@ -14,14 +14,18 @@ class ReplicationError extends Error {
 
   isRecoverable = false;
 
-  constructor(message: string, isRecoverable = false) {
+  constructor(message: string, isRecoverable = true) {
     super(message);
 
     this.isRecoverable = isRecoverable;
   }
 }
 
-function throwIfAborted(cancelSignal: AbortSignal) {
+function throwIfAborted(cancelSignal?: AbortSignal) {
+  if (!cancelSignal) {
+    return;
+  }
+
   if (typeof cancelSignal.throwIfAborted === 'function') {
     cancelSignal.throwIfAborted();
   } else if (cancelSignal.aborted) {

@@ -12,7 +12,6 @@ import { Subject, from } from 'rxjs';
 import { catchError, map, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
 
 import type BooksDb from '$lib/data/database/books-db/versions/books-db';
-import type { BrowserStorageHandler } from '$lib/data/storage-manager/browser-handler';
 import type { IDBPDatabase } from 'idb';
 import LogReportDialog from '$lib/components/log-report-dialog.svelte';
 import MessageDialog from '$lib/components/message-dialog.svelte';
@@ -108,7 +107,15 @@ export class DatabaseService {
     return undefined;
   }
 
-  async upsertData(data: Omit<BooksDbBookData, 'id'>, storageHandler: BrowserStorageHandler) {
+  async getDataByTitle(title: string) {
+    if (title) {
+      const db = await this.db;
+      return db.getFromIndex('data', 'title', title);
+    }
+    return undefined;
+  }
+
+  async upsertData(data: Omit<BooksDbBookData, 'id'>) {
     const db = await this.db;
 
     let dataId: number;
@@ -134,11 +141,6 @@ export class DatabaseService {
     }
     await tx.done;
 
-    storageHandler.applyUpsert(bookData);
-
-    replicationProgress$.next({ progressToAdd: 100 });
-
-    this.dataListChanged$.next();
     return dataId;
   }
 
@@ -191,7 +193,6 @@ export class DatabaseService {
   async putBookmark(bookmarkData: BooksDbBookmarkData) {
     const db = await this.db;
     const result = await db.put('bookmark', bookmarkData);
-    this.bookmarksChanged$.next();
     return result;
   }
 

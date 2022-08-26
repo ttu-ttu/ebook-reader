@@ -1,6 +1,11 @@
 <script lang="ts">
   import { browser } from '$app/env';
-  import { faCircleXmark, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
+  import {
+    faCircleXmark,
+    faCloudArrowUp,
+    faTimes,
+    faTrash
+  } from '@fortawesome/free-solid-svg-icons';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import Popover from '$lib/components/popover/popover.svelte';
@@ -35,6 +40,8 @@
     bugReportClick: void;
     backToBookClick: void;
     filesChange: FileList;
+    importBackup: File;
+    replicateBookData: void;
     cancelReplication: void;
   }>();
 
@@ -55,15 +62,24 @@
 
   let fileImportElm: HTMLElement;
   let folderImportElm: HTMLElement;
+  let backupImportElm: HTMLElement;
 
   $: if (browser) {
-    importMenuItems.push(...($isMobile$ ? [] : [mergeEntries.FOLDER_IMPORT]));
+    importMenuItems.push(
+      ...($isMobile$
+        ? [mergeEntries.BACKUP_IMPORT]
+        : [mergeEntries.FOLDER_IMPORT, mergeEntries.BACKUP_IMPORT])
+    );
   }
 
   function triggerInput(event: CustomEvent<string>) {
     switch (event.detail) {
       case mergeEntries.FOLDER_IMPORT.label:
         folderImportElm.click();
+        break;
+
+      case mergeEntries.BACKUP_IMPORT.label:
+        backupImportElm.click();
         break;
 
       default:
@@ -74,6 +90,10 @@
 
   function dispatchFilesChange(fileList: FileList) {
     dispatch('filesChange', fileList);
+  }
+
+  function dispatchImportBackup(fileList: FileList) {
+    dispatch('importBackup', fileList[0]);
   }
 </script>
 
@@ -92,6 +112,13 @@
   use:inputAllowDirectory
   use:inputFile={dispatchFilesChange}
   bind:this={folderImportElm}
+/>
+<input
+  hidden
+  type="file"
+  accept=".zip"
+  use:inputFile={dispatchImportBackup}
+  bind:this={backupImportElm}
 />
 <div class={baseHeaderClasses}>
   {#if !replicationToProgress}
@@ -199,6 +226,14 @@
         {/if}
 
         {#if selectedCount > 0}
+          <div
+            class="transform-gpu {baseIconClasses}"
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
+            on:click={() => dispatch('replicateBookData')}
+          >
+            <Fa icon={faCloudArrowUp} />
+          </div>
           <div
             class="transform-gpu {baseIconClasses}"
             in:scale={inAnimationParams}

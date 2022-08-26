@@ -77,10 +77,31 @@ You may find the following controls in the manager:
 | ![Icon](assets/readme/control-bookselection.svg) | Selects all books                                                          |
 | ![Icon](assets/readme/control-file-upload.svg)   | Allows you to import new books to the library                              |
 | ![Icon](assets/readme/control-folder-upload.svg) | Allows you to import new books from a folder to the library (desktop only) |
+| ![Icon](assets/readme/control-import.svg)        | Allows you to import a previous exported archive                           |
 | ![Icon](assets/readme/control-log.svg)           | Allows you to download data for a bug report                               |
 | ![Icon](assets/readme/control-settings.svg)      | Navigates you to the settings                                              |
 | ![Icon](assets/readme/control-manager.svg)       | Opens the action menu                                                      |
+| ![Icon](assets/readme/control-export.svg)        | Opens the export menu for the selected books                               |
 | ![Icon](assets/readme/control-cancel.svg)        | Cancels the current book import/deletion                                   |
+
+### Data Import/Export
+
+You can transfer books and their progress between devices/browsers by importing and exporting the data via zip archives.
+In order to create an export select books and click on the respective export button.
+You can choose what kind of data you want to export:
+
+| Option    | Content                                             |
+| --------- | --------------------------------------------------- |
+| Book Data | Book data like text content, images, chapters etc.  |
+| Bookmark  | Progress data like scroll position, percentage etc. |
+
+You can reimport data by clicking on the import button and selecting an exported archive when no books are selected. All data present
+in the archive will be saved to your browser.
+
+**Note**: Book dependant data like bookmarks will only be reimported if the respective book title still exists in your browser or is part
+of the export archive.
+
+Both - export and import - can be canceled by clicking on the respective button besides the progress bar. Already processed data will stay as is.
 
 # Storage Limits
 

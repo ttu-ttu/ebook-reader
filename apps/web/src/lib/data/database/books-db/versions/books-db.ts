@@ -10,5 +10,6 @@ type BooksDb = BooksDbV3;
 
 export type BooksDbBookData = BooksDb['data']['value'];
 export type BooksDbBookmarkData = BooksDb['bookmark']['value'];
+export const currentDbVersion = 3;
 
 export default BooksDb;

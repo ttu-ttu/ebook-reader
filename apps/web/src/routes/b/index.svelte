@@ -116,7 +116,7 @@
       // eslint-disable-next-line no-param-reassign
       rawBookData.lastBookOpen = new Date().getTime();
       getStorageHandler(StorageKey.BROWSER, window)
-        .then((handler) => database.upsertData(rawBookData, handler))
+        .then((handler) => handler.saveBook(rawBookData, rawBookData.title))
         .catch(() => {
           // no-op
         });

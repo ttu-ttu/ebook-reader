@@ -1,17 +1,15 @@
 <script lang="ts">
-  import { MetaTags } from 'svelte-meta-tags';
   import { browser } from '$app/env';
   import { page } from '$app/stores';
-  import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { basePath } from '$lib/data/env';
+  import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { isMobile, isMobile$ } from '$lib/functions/utils';
+  import { MetaTags } from 'svelte-meta-tags';
   import '../app.scss';
 
   let path = '';
-  page.subscribe((p) => (path = p.url.pathname));
-
   let dialogs: Dialog[] = [];
-  dialogManager.dialogs$.subscribe((d) => (dialogs = d));
+  let clickOnCloseDisabled = false;
 
   $: if (browser) {
     isMobile$.next(isMobile(window));
@@ -19,7 +17,15 @@
 
   function closeAllDialogs() {
     dialogManager.dialogs$.next([]);
+    clickOnCloseDisabled = false;
   }
+
+  dialogManager.dialogs$.subscribe((d) => {
+    clickOnCloseDisabled = d[0]?.disableCloseOnClick ?? false;
+    dialogs = d;
+  });
+
+  page.subscribe((p) => (path = p.url.pathname));
 </script>
 
 <MetaTags
@@ -44,7 +50,11 @@
   <div class="writing-horizontal-tb fixed inset-0 z-50 h-full w-full">
     <div
       class="tap-highlight-transparent absolute inset-0 bg-black/[.32]"
-      on:click={closeAllDialogs}
+      on:click={() => {
+        if (!clickOnCloseDisabled) {
+          closeAllDialogs();
+        }
+      }}
     />
 
     <div

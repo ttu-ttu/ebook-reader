@@ -4,15 +4,17 @@
  * All rights reserved.
  */
 
+import type {
+  BooksDbBookData,
+  BooksDbBookmarkData
+} from '$lib/data/database/books-db/versions/books-db';
+
 import { BaseStorageHandler } from '$lib/data/storage-manager/base-handler';
 import type { BookCardProps } from '$lib/components/book-card/book-card-props';
-import type { BooksDbBookData } from '$lib/data/database/books-db/versions/books-db';
-import type { LoadData } from '$lib/functions/file-loaders/types';
+import type { ReplicationContext } from '$lib/functions/replication/replication-progress';
 import { database } from '$lib/data/store';
 
 export class BrowserStorageHandler extends BaseStorageHandler {
-  private titleToFileData = new Map<string, BookCardProps>();
-
   async init(window: Window) {
     this.window = window;
   }
@@ -23,7 +25,7 @@ export class BrowserStorageHandler extends BaseStorageHandler {
       const data = await db.getAll('data');
 
       for (let index = 0, { length } = data; index < length; index += 1) {
-        this.applyUpsert(data[index]);
+        this.applyUpsert(data[index], data[index].id);
       }
 
       this.dataListFetched = true;
@@ -32,14 +34,13 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     return [...this.titleToFileData.values()];
   }
 
-  async addBook(book: LoadData) {
-    return database.upsertData(book, this);
-  }
-
-  applyUpsert(book: BooksDbBookData) {
+  applyUpsert(book: Omit<BooksDbBookData, 'id'>, id?: number) {
     const existingFileData = this.titleToFileData.get(book.title) || ({} as BookCardProps);
 
-    existingFileData.id = book.id;
+    if (id) {
+      existingFileData.id = id;
+    }
+
     existingFileData.title = book.title;
     existingFileData.imagePath = book.coverImage || '';
     existingFileData.lastBookModified = book.lastBookModified || 0;
@@ -48,6 +49,33 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     existingFileData.lastBookmarkModified = 0;
 
     this.titleToFileData.set(book.title, existingFileData);
+  }
+
+  async saveBook(book: Omit<BooksDbBookData, 'id'> | File) {
+    if (!(book instanceof File)) {
+      const id = await database.upsertData(book);
+
+      this.applyUpsert(book, id);
+    }
+
+    return 0;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async saveProgress(context: ReplicationContext, progress: BooksDbBookmarkData | File) {
+    if (progress instanceof File) {
+      return;
+    }
+
+    const dataId = context.id || (await database.getDataByTitle(context.title))?.id;
+
+    if (dataId) {
+      const bookmarkData = progress;
+
+      bookmarkData.dataId = dataId;
+
+      await database.putBookmark(bookmarkData);
+    }
   }
 
   async deleteBookData(booksToDelete: string[], cancelSignal: AbortSignal) {
@@ -79,4 +107,14 @@ export class BrowserStorageHandler extends BaseStorageHandler {
 
     return [error, deleted];
   }
+
+  /* eslint-disable class-methods-use-this */
+  getBookData(context: ReplicationContext) {
+    return database.getData(context.id);
+  }
+
+  getProgressData(context: ReplicationContext) {
+    return database.getBookmark(context.id);
+  }
+  /* eslint-enable class-methods-use-this */
 }

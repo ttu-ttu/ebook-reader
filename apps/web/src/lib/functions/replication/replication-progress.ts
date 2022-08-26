@@ -4,13 +4,36 @@
  * All rights reserved.
  */
 
+import type {
+  BooksDbBookData,
+  BooksDbBookmarkData
+} from '$lib/data/database/books-db/versions/books-db';
+import type { StorageDataType, StorageKey } from '$lib/data/storage-manager/storage-source';
+
 import { Subject } from 'rxjs';
 
+export interface ReplicationContent {
+  dataToReplicate: StorageDataType[];
+  source: StorageKey;
+  target: StorageKey;
+}
+
+export interface ReplicationContext {
+  id: number;
+  title: string;
+}
+
+export interface ReplicationData {
+  type: StorageDataType;
+  data?: Omit<BooksDbBookData, 'id'> | File | BooksDbBookmarkData;
+}
+
 export interface ReplicationProgress {
-  progressToAdd: number;
-  executionStart?: number;
+  progressToAdd?: number;
   baseProgress?: number;
   maxProgress?: number;
+  reportOnly?: boolean;
 }
 
 export const replicationProgress$ = new Subject<ReplicationProgress>();
+export const replicationStart$ = new Subject<ReplicationContent>();
