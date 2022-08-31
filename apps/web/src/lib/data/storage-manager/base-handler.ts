@@ -43,6 +43,8 @@ export abstract class BaseStorageHandler {
     progress: BooksDbBookmarkData | File
   ): Promise<void>;
 
+  abstract saveCover(context: ReplicationContext): Promise<void>;
+
   abstract deleteBookData(booksToDelete: string[], cancelSignal: AbortSignal): Promise<any[]>;
 
   abstract getBookData(
@@ -280,5 +282,18 @@ export abstract class BaseStorageHandler {
     ) as BooksDbBookmarkData;
 
     return progressData;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async getCoverBlob(imagePath: string | Blob | Entry) {
+    if (imagePath === undefined) {
+      return imagePath;
+    }
+
+    if (imagePath instanceof Blob) {
+      return imagePath;
+    }
+
+    return undefined;
   }
 }

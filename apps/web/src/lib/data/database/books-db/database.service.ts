@@ -141,7 +141,7 @@ export class DatabaseService {
     }
     await tx.done;
 
-    return dataId;
+    return bookData;
   }
 
   async deleteData(dataIds: number[], cancelSignal: AbortSignal) {

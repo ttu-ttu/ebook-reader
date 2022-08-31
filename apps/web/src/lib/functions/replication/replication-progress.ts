@@ -10,6 +10,7 @@ import type {
 } from '$lib/data/database/books-db/versions/books-db';
 import type { StorageDataType, StorageKey } from '$lib/data/storage-manager/storage-source';
 
+import type { Entry } from '@zip.js/zip.js';
 import { Subject } from 'rxjs';
 
 export interface ReplicationContent {
@@ -21,6 +22,7 @@ export interface ReplicationContent {
 export interface ReplicationContext {
   id: number;
   title: string;
+  imagePath: string | Blob | Entry;
 }
 
 export interface ReplicationData {

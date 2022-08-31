@@ -47,7 +47,21 @@ export class BackupStorageHandler extends BaseStorageHandler {
 
     this.importEntries = await this.importReader.getEntries();
 
-    return this.importEntries.map((entry) => ({ id: 0, title: entry.filename.split('/')[0] }));
+    const titles = new Map<string, ReplicationContext>();
+
+    for (let index = 0, { length } = this.importEntries; index < length; index += 1) {
+      const entry = this.importEntries[index];
+      const title = entry.filename.split('/')[0];
+      const context = titles.get(title) || { id: 0, title, imagePath: '' };
+
+      if (entry.filename.startsWith(`${title}/cover`)) {
+        context.imagePath = entry;
+      }
+
+      titles.set(title, context);
+    }
+
+    return [...titles.values()];
   }
 
   async saveBook(
@@ -88,6 +102,21 @@ export class BackupStorageHandler extends BaseStorageHandler {
           progress.lastBookmarkModified || 0
         }_${progress.progress}.json`,
         JSON.stringify(progress),
+        this.exportZipWriter
+      );
+    }
+  }
+
+  async saveCover(context: ReplicationContext) {
+    const cover = await this.getCoverBlob(context.imagePath);
+
+    if (cover) {
+      this.exportZipWriter = await this.addDataToZip(
+        `${context.title}/cover_${exporterVersion}_${currentDbVersion}.${cover.type.replace(
+          'image/',
+          ''
+        )}`,
+        cover,
         this.exportZipWriter
       );
     }

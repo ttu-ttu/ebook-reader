@@ -53,9 +53,9 @@ export class BrowserStorageHandler extends BaseStorageHandler {
 
   async saveBook(book: Omit<BooksDbBookData, 'id'> | File) {
     if (!(book instanceof File)) {
-      const id = await database.upsertData(book);
+      const storedBookData = await database.upsertData(book);
 
-      this.applyUpsert(book, id);
+      this.applyUpsert(storedBookData, storedBookData.id);
     }
 
     return 0;
@@ -115,6 +115,10 @@ export class BrowserStorageHandler extends BaseStorageHandler {
 
   getProgressData(context: ReplicationContext) {
     return database.getBookmark(context.id);
+  }
+
+  async saveCover() {
+    // no-op
   }
   /* eslint-enable class-methods-use-this */
 }
