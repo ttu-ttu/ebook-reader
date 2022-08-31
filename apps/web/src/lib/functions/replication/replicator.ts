@@ -48,6 +48,8 @@ export async function importData(
         let currentTitle = file.name;
 
         try {
+          throwIfAborted(cancelSignal);
+
           const bookContent = await (file.name.endsWith('.epub')
             ? loadEpub(file, document, lastBookModified)
             : loadHtmlz(file, document, lastBookModified));
@@ -135,6 +137,8 @@ export async function replicateData(
     replicationTasks.push(
       replicationLimiter(async () => {
         try {
+          throwIfAborted(cancelSignal);
+
           let dataProcessed = false;
 
           if (processBookData) {
