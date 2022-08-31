@@ -56,6 +56,7 @@ export class BrowserStorageHandler extends BaseStorageHandler {
       const storedBookData = await database.upsertData(book);
 
       this.applyUpsert(storedBookData, storedBookData.id);
+      return storedBookData.id;
     }
 
     return 0;
