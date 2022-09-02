@@ -52,7 +52,7 @@ importers:
       '@popperjs/core': 2.11.6
       '@sveltejs/adapter-static': 1.0.0-next.41
       '@sveltejs/kit': 1.0.0-next.398
-      '@tailwindcss/aspect-ratio': 0.4.1
+      '@tailwindcss/aspect-ratio': 0.4.2
       '@tailwindcss/forms': 0.5.2
       '@tailwindcss/line-clamp': 0.4.1
       '@types/balanced-match': 1.0.2
@@ -100,7 +100,7 @@ importers:
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.41
       '@sveltejs/kit': 1.0.0-next.398_svelte@3.49.0+vite@3.0.9
-      '@tailwindcss/aspect-ratio': 0.4.1_tailwindcss@3.1.8
+      '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.1.8
       '@tailwindcss/forms': 0.5.2_tailwindcss@3.1.8
       '@tailwindcss/line-clamp': 0.4.1_tailwindcss@3.1.8
       '@types/balanced-match': 1.0.2
@@ -587,8 +587,8 @@ packages:
       - supports-color
     dev: true
 
-  /@tailwindcss/aspect-ratio/0.4.1_tailwindcss@3.1.8:
-    resolution: {integrity: sha512-1wN2Znrh064KfaULmW+UVgnMCk+LUbYnupH4syF9I9Qx7JLfUlGyPYd0oMXFwqkpNv5aiHu4j+0uSbjSY9tNvA==}
+  /@tailwindcss/aspect-ratio/0.4.2_tailwindcss@3.1.8:
+    resolution: {integrity: sha512-8QPrypskfBa7QIMuKHg2TA7BqES6vhBrDLOv8Unb6FcFyd3TjKbc6lcmb9UPQHxfl24sXoJ41ux/H7qQQvfaSQ==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
