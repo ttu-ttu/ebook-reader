@@ -15,7 +15,7 @@
     "@sveltejs/adapter-static": "1.0.0-next.41",
     "@sveltejs/kit": "1.0.0-next.398",
     "@tailwindcss/aspect-ratio": "0.4.2",
-    "@tailwindcss/forms": "0.5.2",
+    "@tailwindcss/forms": "0.5.3",
     "@tailwindcss/line-clamp": "0.4.1",
     "@types/balanced-match": "1.0.2",
     "@types/path-browserify": "1.0.0",
