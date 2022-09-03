@@ -21,7 +21,7 @@ importers:
       lint-staged: 13.0.3
       prettier: 2.7.1
       prettier-plugin-tailwindcss: 0.1.13
-      svelte: 3.49.0
+      svelte: 3.50.0
       typescript: 4.8.2
     devDependencies:
       '@commitlint/cli': 17.1.2
@@ -36,12 +36,12 @@ importers:
       eslint-plugin-header: 3.1.1_eslint@8.23.0
       eslint-plugin-import: 2.26.0_a3i7brydqn6m553iazzl7kmmui
       eslint-plugin-rxjs: 5.0.2_yqf6kl63nyoq5megxukfnom5rm
-      eslint-plugin-svelte3: 4.0.0_sfdub7vxhxkt5wmgvhhmmgyu2e
+      eslint-plugin-svelte3: 4.0.0_sc4laremvjv7grvyfrqmp3xv5q
       husky: 8.0.1
       lint-staged: 13.0.3
       prettier: 2.7.1
       prettier-plugin-tailwindcss: 0.1.13_prettier@2.7.1
-      svelte: 3.49.0
+      svelte: 3.50.0
       typescript: 4.8.2
 
   apps/web:
@@ -69,7 +69,7 @@ importers:
       postcss: 8.4.16
       rxjs: 7.5.6
       sass: 1.54.8
-      svelte: 3.49.0
+      svelte: 3.50.0
       svelte-check: 2.9.0
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
@@ -99,7 +99,7 @@ importers:
       ua-parser-js: 1.0.2
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.41
-      '@sveltejs/kit': 1.0.0-next.398_svelte@3.49.0+vite@3.0.9
+      '@sveltejs/kit': 1.0.0-next.398_svelte@3.50.0+vite@3.0.9
       '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.1.8
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.1.8
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.1.8
@@ -109,9 +109,9 @@ importers:
       autoprefixer: 10.4.8_postcss@8.4.16
       postcss: 8.4.16
       sass: 1.54.8
-      svelte: 3.49.0
-      svelte-check: 2.9.0_f5urgkboyys3wbiivxj4sltznu
-      svelte-preprocess: 4.10.7_pxxiereockejw5abpwoddd4ivy
+      svelte: 3.50.0
+      svelte-check: 2.9.0_rjdoehgmjsjjgqiald4wewriby
+      svelte-preprocess: 4.10.7_xall5v2ndd26memt654fbj5nvq
       tailwindcss: 3.1.8_postcss@8.4.16
       tslib: 2.4.0
       typescript: 4.8.2
@@ -546,7 +546,7 @@ packages:
     resolution: {integrity: sha512-Bw6MfEuzuqjKZuVCG7ZHXiOIy/LDoRVR278eeAf4kcwl1B8+YEvChqdCvG2N5Ur+rxUIHstPgeX39HezS8d+mw==}
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.398_svelte@3.49.0+vite@3.0.9:
+  /@sveltejs/kit/1.0.0-next.398_svelte@3.50.0+vite@3.0.9:
     resolution: {integrity: sha512-ONjHoRurnFUe+0lv0P9rZQpDuuJy4Cr/lDneoG+lkOR5/7gcvd03TlVdxLz1ZQAWPbgovm/PpshOvIUeC4n62A==}
     engines: {node: '>=16.9'}
     hasBin: true
@@ -554,17 +554,17 @@ packages:
       svelte: ^3.44.0
       vite: ^3.0.0
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 1.0.1_svelte@3.49.0+vite@3.0.9
+      '@sveltejs/vite-plugin-svelte': 1.0.1_svelte@3.50.0+vite@3.0.9
       chokidar: 3.5.3
       sade: 1.8.1
-      svelte: 3.49.0
+      svelte: 3.50.0
       vite: 3.0.9_sass@1.54.8
     transitivePeerDependencies:
       - diff-match-patch
       - supports-color
     dev: true
 
-  /@sveltejs/vite-plugin-svelte/1.0.1_svelte@3.49.0+vite@3.0.9:
+  /@sveltejs/vite-plugin-svelte/1.0.1_svelte@3.50.0+vite@3.0.9:
     resolution: {integrity: sha512-PorCgUounn0VXcpeJu+hOweZODKmGuLHsLomwqSj+p26IwjjGffmYQfVHtiTWq+NqaUuuHWWG7vPge6UFw4Aeg==}
     engines: {node: ^14.18.0 || >= 16}
     peerDependencies:
@@ -580,8 +580,8 @@ packages:
       deepmerge: 4.2.2
       kleur: 4.1.5
       magic-string: 0.26.2
-      svelte: 3.49.0
-      svelte-hmr: 0.14.12_svelte@3.49.0
+      svelte: 3.50.0
+      svelte-hmr: 0.14.12_svelte@3.50.0
       vite: 3.0.9_sass@1.54.8
     transitivePeerDependencies:
       - supports-color
@@ -1983,14 +1983,14 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-svelte3/4.0.0_sfdub7vxhxkt5wmgvhhmmgyu2e:
+  /eslint-plugin-svelte3/4.0.0_sc4laremvjv7grvyfrqmp3xv5q:
     resolution: {integrity: sha512-OIx9lgaNzD02+MDFNLw0GEUbuovNcglg+wnd/UY0fbZmlQSz7GlQiQ1f+yX0XvC07XPcDOnFcichqI3xCwp71g==}
     peerDependencies:
       eslint: '>=8.0.0'
       svelte: ^3.2.0
     dependencies:
       eslint: 8.23.0
-      svelte: 3.49.0
+      svelte: 3.50.0
     dev: true
 
   /eslint-scope/5.1.1:
@@ -3873,7 +3873,7 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/2.9.0_f5urgkboyys3wbiivxj4sltznu:
+  /svelte-check/2.9.0_rjdoehgmjsjjgqiald4wewriby:
     resolution: {integrity: sha512-9AVrtP7WbfDgCdqTZNPdj5CCCy1OrYMxFVWAWzNw7fl93c9klFJFtqzVXa6fovfQ050CcpUyJE2dPFL9TFAREw==}
     hasBin: true
     peerDependencies:
@@ -3885,8 +3885,8 @@ packages:
       import-fresh: 3.3.0
       picocolors: 1.0.0
       sade: 1.8.1
-      svelte: 3.49.0
-      svelte-preprocess: 4.10.7_pxxiereockejw5abpwoddd4ivy
+      svelte: 3.50.0
+      svelte-preprocess: 4.10.7_xall5v2ndd26memt654fbj5nvq
       typescript: 4.8.2
     transitivePeerDependencies:
       - '@babel/core'
@@ -3909,13 +3909,13 @@ packages:
     resolution: {integrity: sha512-TAmfcz+DgdfrRDFSQ9UsXxhqDjQR7LaUaALauqITaTCVSHPWXIZ9WSBPP6DrXh9MYqgVZwy85wJdv7NQPwsZfA==}
     dev: false
 
-  /svelte-hmr/0.14.12_svelte@3.49.0:
+  /svelte-hmr/0.14.12_svelte@3.50.0:
     resolution: {integrity: sha512-4QSW/VvXuqVcFZ+RhxiR8/newmwOCTlbYIezvkeN6302YFRE8cXy0naamHcjz8Y9Ce3ITTZtrHrIL0AGfyo61w==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
     peerDependencies:
       svelte: '>=3.19.0'
     dependencies:
-      svelte: 3.49.0
+      svelte: 3.50.0
     dev: true
 
   /svelte-meta-tags/2.6.3_typescript@4.8.2:
@@ -3926,7 +3926,7 @@ packages:
       - typescript
     dev: false
 
-  /svelte-preprocess/4.10.7_pxxiereockejw5abpwoddd4ivy:
+  /svelte-preprocess/4.10.7_xall5v2ndd26memt654fbj5nvq:
     resolution: {integrity: sha512-sNPBnqYD6FnmdBrUmBCaqS00RyCsCpj2BG58A1JBswNF7b0OKviwxqVrOL/CKyJrLSClrSeqQv5BXNg2RUbPOw==}
     engines: {node: '>= 9.11.2'}
     requiresBuild: true
@@ -3975,12 +3975,12 @@ packages:
       sass: 1.54.8
       sorcery: 0.10.0
       strip-indent: 3.0.0
-      svelte: 3.49.0
+      svelte: 3.50.0
       typescript: 4.8.2
     dev: true
 
-  /svelte/3.49.0:
-    resolution: {integrity: sha512-+lmjic1pApJWDfPCpUUTc1m8azDqYCG1JN9YEngrx/hUyIcFJo6VZhj0A1Ai0wqoHcEIuQy+e9tk+4uDgdtsFA==}
+  /svelte/3.50.0:
+    resolution: {integrity: sha512-zXeOUDS7+85i+RxLN+0iB6PMbGH7OhEgjETcD1fD8ZrhuhNFxYxYEHU41xuhkHIulJavcu3PKbPyuCrBxdxskQ==}
     engines: {node: '>= 8'}
     dev: true
 
