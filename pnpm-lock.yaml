@@ -59,7 +59,7 @@ importers:
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
       '@zip.js/zip.js': 2.4.26
-      autoprefixer: 10.4.10
+      autoprefixer: 10.4.11
       balanced-match: 2.0.0
       fake-indexeddb: 4.0.0
       fast-xml-parser: 4.0.10
@@ -106,7 +106,7 @@ importers:
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
-      autoprefixer: 10.4.10_postcss@8.4.16
+      autoprefixer: 10.4.11_postcss@8.4.16
       postcss: 8.4.16
       sass: 1.54.9
       svelte: 3.50.1
@@ -1069,8 +1069,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /autoprefixer/10.4.10_postcss@8.4.16:
-    resolution: {integrity: sha512-nMaiDARyp1e74c8IeAXkr+BmFKa8By4Zak7tyaNPF09Iu39WFpNXOWrVirmXjKr+5cOyERwvtbMOLYz6iBJYgQ==}
+  /autoprefixer/10.4.11_postcss@8.4.16:
+    resolution: {integrity: sha512-5lHp6DgRodxlBLSkzHOTcufWFflH1ewfy2hvFQyjrblBFlP/0Yh4O/Wrg4ow8WRlN3AAUFFLAQwX8hTptzqVHg==}
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
     peerDependencies:
