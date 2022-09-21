@@ -63,7 +63,7 @@ importers:
       balanced-match: 2.0.0
       fake-indexeddb: 4.0.0
       fast-xml-parser: 4.0.10
-      idb: 7.0.2
+      idb: 7.1.0
       p-limit: 4.0.0
       path-browserify: 1.0.1
       postcss: 8.4.16
@@ -89,7 +89,7 @@ importers:
       balanced-match: 2.0.0
       fake-indexeddb: 4.0.0
       fast-xml-parser: 4.0.10
-      idb: 7.0.2
+      idb: 7.1.0
       p-limit: 4.0.0
       path-browserify: 1.0.1
       rxjs: 7.5.6
@@ -2488,8 +2488,8 @@ packages:
     hasBin: true
     dev: true
 
-  /idb/7.0.2:
-    resolution: {integrity: sha512-jjKrT1EnyZewQ/gCBb/eyiYrhGzws2FeY92Yx8qT9S9GeQAmo4JFVIiWRIfKW/6Ob9A+UDAOW9j9jn58fy2HIg==}
+  /idb/7.1.0:
+    resolution: {integrity: sha512-Wsk07aAxDsntgYJY4h0knZJuTxM73eQ4reRAO+Z1liOh8eMCJ/MoDS8fCui1vGT9mnjtl1sOu3I2i/W1swPYZg==}
     dev: false
 
   /ignore/5.2.0:
