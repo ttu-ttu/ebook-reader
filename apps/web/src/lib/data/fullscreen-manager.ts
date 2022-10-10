@@ -15,7 +15,9 @@ class FullscreenManager {
     return this.fallbackSpec('fullscreenElement', 'webkitFullscreenElement') ?? null;
   }
 
-  constructor(private document: Document) {}
+  constructor(document: Document) {
+    this.fallbackSpec = fallbackSpec(document);
+  }
 
   // eslint-disable-next-line class-methods-use-this
   async requestFullscreen(el: Element, fullscreenOptions?: FullscreenOptions) {
@@ -30,7 +32,7 @@ class FullscreenManager {
     await fn();
   }
 
-  private fallbackSpec = fallbackSpec(this.document);
+  private fallbackSpec: <P extends keyof Document>(specName: P, alias: string) => Document[P];
 }
 
 function fallbackSpec<T>(obj: T) {
