@@ -8,7 +8,7 @@ import type {
   BooksDbBookData,
   BooksDbBookmarkData
 } from '$lib/data/database/books-db/versions/books-db';
-import { Subject, from } from 'rxjs';
+import { Subject, from, Observable } from 'rxjs';
 import { catchError, map, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
 
 import type BooksDb from '$lib/data/database/books-db/versions/books-db';
@@ -29,9 +29,9 @@ import { throwIfAborted } from '$lib/functions/replication/replication-error';
 const LAST_ITEM_KEY = 0;
 
 export class DatabaseService {
-  private db$ = from(this.db).pipe(shareReplay({ refCount: true, bufferSize: 1 }));
+  private db$: Observable<Awaited<typeof this.db>>;
 
-  isReady$ = this.db$.pipe(map((db) => !!db));
+  isReady$: Observable<boolean>;
 
   listLoading$ = new Subject<boolean>();
 
@@ -98,7 +98,10 @@ export class DatabaseService {
     shareReplay({ refCount: true, bufferSize: 1 })
   );
 
-  constructor(public db: Promise<IDBPDatabase<BooksDb>>) {}
+  constructor(public db: Promise<IDBPDatabase<BooksDb>>) {
+    this.db$ = from(db).pipe(shareReplay({ refCount: true, bufferSize: 1 }));
+    this.isReady$ = this.db$.pipe(map((x) => !!x));
+  }
 
   async getData(dataId: number) {
     if (!Number.isNaN(dataId)) {
