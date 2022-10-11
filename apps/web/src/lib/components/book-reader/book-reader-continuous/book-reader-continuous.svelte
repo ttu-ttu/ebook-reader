@@ -247,6 +247,8 @@
           if (!data || !bookmarkManager) {
             return;
           }
+
+          prevIntendedCharCount = data.exploredCharCount || 0;
           bookmarkManager.scrollToBookmark(data);
         })
         .finally(() => {
@@ -339,6 +341,7 @@
       if (!calculator) return;
 
       exploredCharCount = calculator.calcExploredCharCount();
+      console.log('scroll', exploredCharCount);
       if (!isResizeScroll) {
         prevIntendedCharCount = exploredCharCount;
       }
