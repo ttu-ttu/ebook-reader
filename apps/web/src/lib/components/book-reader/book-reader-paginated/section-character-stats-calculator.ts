@@ -4,11 +4,11 @@
  * All rights reserved.
  */
 
-import type { BehaviorSubject } from 'rxjs';
-import { dev } from '$app/env';
+import { dev } from '$app/environment';
 import { binarySearchNoNegative } from '$lib/functions/binary-search';
 import { formatPos } from '$lib/functions/format-pos';
 import { getCharacterCount } from '$lib/functions/get-character-count';
+import type { BehaviorSubject } from 'rxjs';
 import { CharacterStatsCalculator } from '../book-reader-continuous/character-stats-calculator';
 import { getParagraphNodes } from '../get-paragraph-nodes';
 

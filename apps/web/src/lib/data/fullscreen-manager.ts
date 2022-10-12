@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-import { browser } from '$app/env';
+import { browser } from '$app/environment';
 
 class FullscreenManager {
   get fullscreenEnabled() {

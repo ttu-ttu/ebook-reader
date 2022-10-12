@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { browser } from '$app/env';
-  import { faCircleXmark, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
+  import { browser } from '$app/environment';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import Popover from '$lib/components/popover/popover.svelte';
@@ -15,9 +14,10 @@
   import { inputAllowDirectory } from '$lib/functions/file-dom/input-allow-directory';
   import { inputFile } from '$lib/functions/file-dom/input-file';
   import { isMobile$ } from '$lib/functions/utils';
+  import { faCircleXmark, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
   import { createEventDispatcher } from 'svelte';
-  import { quintOut } from 'svelte/easing';
   import Fa from 'svelte-fa';
+  import { quintOut } from 'svelte/easing';
   import { scale } from 'svelte/transition';
 
   export let hasBookOpened: boolean;

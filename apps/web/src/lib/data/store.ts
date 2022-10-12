@@ -4,18 +4,18 @@
  * All rights reserved.
  */
 
-import { map } from 'rxjs';
-import { browser } from '$app/env';
+import { browser } from '$app/environment';
 import { writableSubject } from '$lib/functions/svelte/store';
+import { map } from 'rxjs';
+import { BookReaderAvailableKeybind, type BookReaderKeybindMap } from './book-reader-keybind';
 import { DatabaseService } from './database/books-db/database.service';
 import { createBooksDb } from './database/books-db/factory';
 import { FuriganaStyle } from './furigana-style';
 import { writableBooleanLocalStorageSubject } from './internal/writable-boolean-local-storage-subject';
 import { writableNumberLocalStorageSubject } from './internal/writable-number-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
-import type { WritingMode } from './writing-mode';
-import { BookReaderAvailableKeybind, type BookReaderKeybindMap } from './book-reader-keybind';
 import { ViewMode } from './view-mode';
+import type { WritingMode } from './writing-mode';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const multiplier$ = writableNumberLocalStorageSubject()('autoScrollMultiplier', 20);

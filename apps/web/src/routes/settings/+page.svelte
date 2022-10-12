@@ -41,7 +41,7 @@
   afterNavigate((navigation) => {
     const { from } = navigation;
     if (!from) return;
-    prevPage = `${from.pathname}${from.search}`;
+    prevPage = `${from.url.pathname}${from.url.search}`;
   });
 
   const setPersistentStorage$ = persistentStorage$.pipe(
