@@ -34,6 +34,7 @@ jobs:
 
       - name: Postinstall steps
         run: pnpm svelte-kit sync
+        working-directory: apps/web
 
       - name: Build
         run: pnpm build
