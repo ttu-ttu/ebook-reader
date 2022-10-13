@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-import { browser } from '$app/env';
+import { browser } from '$app/environment';
 
 const fakeStorage = {
   persist: async () => false,

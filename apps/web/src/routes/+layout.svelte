@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { MetaTags } from 'svelte-meta-tags';
-  import { browser } from '$app/env';
+  import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { basePath } from '$lib/data/env';
   import { isMobile, isMobile$ } from '$lib/functions/utils';
+  import { MetaTags } from 'svelte-meta-tags';
   import '../app.scss';
 
   let path = '';

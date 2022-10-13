@@ -4,6 +4,7 @@
     filter,
     fromEvent,
     map,
+    of,
     share,
     shareReplay,
     startWith,
@@ -128,17 +129,19 @@
     shareReplay({ refCount: true, bufferSize: 1 })
   );
 
-  const resize$ = iffBrowser(() => fromEvent(visualViewport, 'resize')).pipe(share());
+  const resize$ = iffBrowser(() =>
+    visualViewport ? fromEvent(visualViewport, 'resize') : of()
+  ).pipe(share());
 
   const containerViewportWidth$ = resize$.pipe(
     startWith(0),
-    map(() => visualViewport.width),
+    map(() => visualViewport?.width || 0),
     takeWhenBrowser()
   );
 
   const containerViewportHeight$ = resize$.pipe(
     startWith(0),
-    map(() => visualViewport.height),
+    map(() => visualViewport?.height || 0),
     takeWhenBrowser()
   );
 
