@@ -4,8 +4,8 @@
  * All rights reserved.
  */
 
+import { browser as browserImpl } from '$app/environment';
 import { NEVER, type Observable } from 'rxjs';
-import { browser as browserImpl } from '$app/env';
 
 export function takeWhenBrowser<T>(browser = browserImpl) {
   return (obs: Observable<T>) => (browser ? obs : NEVER);

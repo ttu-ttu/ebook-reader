@@ -13,6 +13,7 @@ COPY apps/web/package.json ./
 RUN pnpm install --frozen-lockfile
 
 COPY apps/web ./
+RUN pnpm svelte-kit sync
 RUN pnpm build
 
 

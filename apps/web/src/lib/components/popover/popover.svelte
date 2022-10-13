@@ -1,11 +1,11 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
+  import { clickOutside } from '$lib/functions/use-click-outside';
+  import type { Instance, Placement } from '@popperjs/core';
   import flip from '@popperjs/core/lib/modifiers/flip';
   import offset from '@popperjs/core/lib/modifiers/offset';
   import { createPopper } from '@popperjs/core/lib/popper-lite';
-  import type { Instance, Placement } from '@popperjs/core';
   import { tick } from 'svelte';
-  import { clickOutside } from '$lib/functions/use-click-outside';
-  import { browser } from '$app/env';
   import { popovers } from './popover';
 
   export let contentText = '';
