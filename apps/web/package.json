@@ -45,6 +45,6 @@
     "svelte-fa": "3.0.3",
     "svelte-gestures": "1.4.1",
     "svelte-meta-tags": "2.6.3",
-    "ua-parser-js": "1.0.2"
+    "ua-parser-js": "1.0.32"
   }
 }
