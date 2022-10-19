@@ -50,7 +50,7 @@ importers:
       '@fortawesome/free-regular-svg-icons': 6.2.0
       '@fortawesome/free-solid-svg-icons': 6.2.0
       '@popperjs/core': 2.11.6
-      '@sveltejs/adapter-static': 1.0.0-next.44
+      '@sveltejs/adapter-static': 1.0.0-next.45
       '@sveltejs/kit': 1.0.0-next.517
       '@tailwindcss/aspect-ratio': 0.4.2
       '@tailwindcss/forms': 0.5.3
@@ -98,7 +98,7 @@ importers:
       svelte-meta-tags: 2.6.3_typescript@4.8.4
       ua-parser-js: 1.0.32
     devDependencies:
-      '@sveltejs/adapter-static': 1.0.0-next.44
+      '@sveltejs/adapter-static': 1.0.0-next.45
       '@sveltejs/kit': 1.0.0-next.517_svelte@3.52.0+vite@3.1.8
       '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.1.8
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.1.8
@@ -560,8 +560,8 @@ packages:
       picomatch: 2.3.1
     dev: true
 
-  /@sveltejs/adapter-static/1.0.0-next.44:
-    resolution: {integrity: sha512-qBtkmIMYGiDv5r2F3AfSG0ABHZim2NC+1PL2YVCa+QYz8IVCm1E/wGQ0RW4KVrANZ3MZk8y52PPajx+8/fwmNw==}
+  /@sveltejs/adapter-static/1.0.0-next.45:
+    resolution: {integrity: sha512-7hJp3QYbn5+hDJKJDMe3ufAvPlgSP6Ishm1X84cbydKM1ZuI/rtmQw3gDEUuXAgcU+TDJTJLwrSlcErr1/HjIw==}
     dev: true
 
   /@sveltejs/kit/1.0.0-next.517_svelte@3.52.0+vite@3.1.8:
