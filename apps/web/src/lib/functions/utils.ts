@@ -7,6 +7,9 @@
 import { writableSubject } from '$lib/functions/svelte/store';
 
 export function isMobile(window: Window) {
+  const UA = window.navigator.userAgent;
+  const userAgentRegex = /\b(BlackBerry|webOS|iPhone|IEMobile|Android|Windows Phone|iPad|iPod)\b/i;
+
   if (('maxTouchPoints' in window.navigator) as any) {
     return window.navigator.maxTouchPoints > 0;
   }
@@ -23,12 +26,13 @@ export function isMobile(window: Window) {
   if ('orientation' in window) {
     return true;
   }
-
-  const UA = window.navigator.userAgent;
-  const userAgentRegex = /\b(BlackBerry|webOS|iPhone|IEMobile|Android|Windows Phone|iPad|iPod)\b/i;
   return userAgentRegex.test(UA);
 }
 
-export function dummyFn() {}
+export function isOnOldUrl(window: Window) {
+  return window.location.href.startsWith('https://ttu-ebook.web.app');
+}
+
+export function dummyFn() { }
 
 export const isMobile$ = writableSubject<boolean>(false);

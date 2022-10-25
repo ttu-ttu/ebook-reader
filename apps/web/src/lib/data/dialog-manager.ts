@@ -9,6 +9,7 @@ import { writableSubject } from '$lib/functions/svelte/store';
 export interface Dialog {
   component: (new (...args: any[]) => any) | string;
   props?: Record<string, any>;
+  disableCloseOnClick?: boolean;
 }
 
 const dialogs$ = writableSubject<Dialog[]>([]);
