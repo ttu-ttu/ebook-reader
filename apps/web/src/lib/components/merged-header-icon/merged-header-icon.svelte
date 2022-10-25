@@ -10,6 +10,7 @@
   export let leavePageLink = '';
   export let items = [mergeEntries.MANAGE, mergeEntries.BUG_REPORT, mergeEntries.SETTINGS];
   export let mergeTo = mergeEntries.MANAGE;
+  export let disableRouteNavigation = false;
 
   const dispatch = createEventDispatcher<{ action: string }>();
 
@@ -26,10 +27,12 @@
       menuElm.toggleOpen();
     }
 
-    const action = actionItems.find((item) => item.label === target);
+    if (!disableRouteNavigation) {
+      const action = actionItems.find((item) => item.label === target);
 
-    if (action?.routeId) {
-      goto(`/${action.routeId}`);
+      if (action?.routeId) {
+        goto(`/${action.routeId}`);
+      }
     }
   }
 

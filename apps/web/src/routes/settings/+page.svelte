@@ -8,7 +8,10 @@
   import {
     autoBookmark$,
     autoPositionOnResize$,
+    autoReplication$,
     avoidPageBreak$,
+    cacheStorageData$,
+    confirmClose$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -17,10 +20,12 @@
     hideFurigana$,
     hideSpoilerImage$,
     pageColumns$,
+    replicationSaveBehavior$,
     secondDimensionMaxValue$,
+    showExternalPlaceholder$,
     theme$,
-    writingMode$,
-    viewMode$
+    viewMode$,
+    writingMode$
   } from '$lib/data/store';
   import { storage } from '$lib/data/window/navigator/storage';
   import { formatPageTitle } from '$lib/functions/format-page-title';
@@ -92,6 +97,11 @@
       bind:pageColumns={$pageColumns$}
       bind:persistentStorage={$persistentStorage$}
       bind:autoBookmark={$autoBookmark$}
+      bind:confirmClose={$confirmClose$}
+      bind:cacheStorageData={$cacheStorageData$}
+      bind:replicationSaveBehavior={$replicationSaveBehavior$}
+      bind:autoReplication={$autoReplication$}
+      bind:showExternalPlaceholder={$showExternalPlaceholder$}
     />
   </div>
 </div>

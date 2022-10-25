@@ -3,6 +3,7 @@
   import Ripple from '$lib/components/ripple.svelte';
   import { buttonClasses } from '$lib/css-classes';
   import { logger } from '$lib/data/logger';
+  import { StorageSourceDefault } from '$lib/data/storage/storage-types';
   import {
     theme$,
     fontSize$,
@@ -20,6 +21,16 @@
     pageColumns$,
     autoPositionOnResize$,
     requestPersistentStorage$,
+    confirmClose$,
+    cacheStorageData$,
+    autoReplication$,
+    replicationSaveBehavior$,
+    showExternalPlaceholder$,
+    gDriveStorageSource$,
+    oneDriveStorageSource$,
+    fsStorageSource$,
+    syncTarget$,
+    isOnline$,
     multiplier$
   } from '$lib/data/store';
 
@@ -53,6 +64,18 @@
           pageColumns: pageColumns$.getValue(),
           autoPositionOnResize: autoPositionOnResize$.getValue(),
           requestPersistentStorage: requestPersistentStorage$.getValue(),
+          confirmClose: confirmClose$.getValue(),
+          cacheStorageData: cacheStorageData$.getValue(),
+          autoReplication: autoReplication$.getValue(),
+          replicationSaveBehavior: replicationSaveBehavior$.getValue(),
+          showExternalPlaceholder: showExternalPlaceholder$.getValue(),
+          gDriveStorageSource:
+            gDriveStorageSource$.getValue() === StorageSourceDefault.GDRIVE_DEFAULT,
+          oneDriveStorageSource:
+            oneDriveStorageSource$.getValue() === StorageSourceDefault.ONEDRIVE_DEFAULT,
+          fsStorageSource: !!fsStorageSource$.getValue(),
+          syncTarget: !!syncTarget$.getValue(),
+          isOnline: isOnline$.getValue(),
           multiplier: multiplier$.getValue()
         },
         log: logger.history
@@ -70,7 +93,12 @@
     <p>{message}</p>
   </svelte:fragment>
   <svelte:fragment slot="footer">
-    <a class={buttonClasses} href="https://github.com/ttu-ttu/ebook-reader" target="_blank">
+    <a
+      class={buttonClasses}
+      href="https://github.com/ttu-ttu/ebook-reader"
+      target="_blank"
+      rel="noreferrer"
+    >
       Open Repository
       <Ripple />
     </a>

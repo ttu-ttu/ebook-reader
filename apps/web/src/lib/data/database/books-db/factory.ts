@@ -4,12 +4,12 @@
  * All rights reserved.
  */
 
-import { openDB } from 'idb';
 import type BooksDb from './versions/books-db';
+import { openDB } from 'idb';
 import upgradeBooksDbFromV2 from './versions/v2/upgrade';
 
 export function createBooksDb(name = 'books') {
-  return openDB<BooksDb>(name, 3, {
+  return openDB<BooksDb>(name, 4, {
     async upgrade(oldDb, oldVersion, newVersion, transaction) {
       // eslint-disable-next-line default-case
       switch (oldVersion) {
@@ -25,10 +25,20 @@ export function createBooksDb(name = 'books') {
           });
 
           oldDb.createObjectStore('lastItem');
+
+          oldDb.createObjectStore('storageSource', {
+            keyPath: 'name'
+          });
           break;
         }
         case 2: {
           await upgradeBooksDbFromV2(oldDb, oldVersion, newVersion, transaction);
+          break;
+        }
+        case 3: {
+          oldDb.createObjectStore('storageSource', {
+            keyPath: 'name'
+          });
           break;
         }
       }

@@ -6,24 +6,29 @@
 
 import type {
   BooksDbBookData,
-  BooksDbBookmarkData
+  BooksDbBookmarkData,
+  BooksDbStorageSource
 } from '$lib/data/database/books-db/versions/books-db';
-import { Subject, from, Observable } from 'rxjs';
+import { Observable, Subject, from } from 'rxjs';
 import { catchError, map, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
 
+import type { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
 import type BooksDb from '$lib/data/database/books-db/versions/books-db';
-import type { BrowserStorageHandler } from '$lib/data/storage-manager/browser-handler';
 import type { IDBPDatabase } from 'idb';
 import LogReportDialog from '$lib/components/log-report-dialog.svelte';
 import MessageDialog from '$lib/components/message-dialog.svelte';
-import { StorageKey } from '$lib/data/storage-manager/storage-source';
+import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
+import { StorageKey } from '$lib/data/storage/storage-types';
 import { dialogManager } from '$lib/data/dialog-manager';
-import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
+import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
 import { handleErrorDuringReplication } from '$lib/functions/replication/error-handler';
 import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
 import { logger } from '$lib/data/logger';
 import pLimit from 'p-limit';
 import { replicationProgress$ } from '$lib/functions/replication/replication-progress';
+import { setStorageSourceDefault } from '$lib/data/storage/storage-source-manager';
+import { storageSource$ } from '$lib/data/storage/storage-view';
+import { syncTarget$ } from '$lib/data/store';
 import { throwIfAborted } from '$lib/functions/replication/replication-error';
 
 const LAST_ITEM_KEY = 0;
@@ -35,23 +40,32 @@ export class DatabaseService {
 
   listLoading$ = new Subject<boolean>();
 
-  dataListChanged$ = new Subject<void>();
+  dataListChanged$ = new Subject<BaseStorageHandler | undefined>();
+
+  lastHandler: BaseStorageHandler | undefined;
 
   dataList$ = iffBrowser(() =>
     this.dataListChanged$.pipe(
-      startWith(true),
-      tap((withLoadingSpinner) => {
-        if (withLoadingSpinner) {
-          this.listLoading$.next(true);
-        }
+      startWith(undefined),
+      tap((handler) => {
+        this.lastHandler = handler;
       }),
-      switchMap(() =>
+      switchMap(() => storageSource$),
+      switchMap((storageSource) =>
         from(
-          getStorageHandler(StorageKey.BROWSER, window).then((handler) => handler.getDataList())
+          Promise.resolve(this.lastHandler || getStorageHandler(window, storageSource, '')).then(
+            (handler) => {
+              logger.clearHistory();
+
+              return handler.getBookList();
+            }
+          )
         ).pipe(
           catchError((error: unknown) => {
             if (error instanceof Error) {
-              const showReport = logger.history.length > 1;
+              const showReport = logger.errorCount > 1;
+
+              logger.warn(error.message);
 
               dialogManager.dialogs$.next([
                 {
@@ -64,20 +78,21 @@ export class DatabaseService {
               ]);
             }
 
+            if (storageSource !== StorageKey.BROWSER) {
+              this.lastHandler = undefined;
+              storageSource$.next(StorageKey.BROWSER);
+            }
+
             return [[]];
           })
         )
       ),
-      tap(() => this.listLoading$.next(false)),
+      tap(() => {
+        this.lastHandler = undefined;
+        this.listLoading$.next(false);
+      }),
       shareReplay({ refCount: true, bufferSize: 1 })
     )
-  );
-
-  dataIds$ = this.dataListChanged$.pipe(
-    startWith(0),
-    switchMap(() => this.db$),
-    switchMap((db) => db.getAllKeys('data')),
-    shareReplay({ refCount: true, bufferSize: 1 })
   );
 
   bookmarksChanged$ = new Subject<void>();
@@ -98,6 +113,8 @@ export class DatabaseService {
     shareReplay({ refCount: true, bufferSize: 1 })
   );
 
+  storageSourcesChanged$ = new Subject<BooksDbStorageSource[]>();
+
   constructor(public db: Promise<IDBPDatabase<BooksDb>>) {
     this.db$ = from(db).pipe(shareReplay({ refCount: true, bufferSize: 1 }));
     this.isReady$ = this.db$.pipe(map((x) => !!x));
@@ -111,7 +128,20 @@ export class DatabaseService {
     return undefined;
   }
 
-  async upsertData(data: Omit<BooksDbBookData, 'id'>, storageHandler: BrowserStorageHandler) {
+  async getDataByTitle(title: string) {
+    if (title) {
+      const db = await this.db;
+      return db.getFromIndex('data', 'title', title);
+    }
+
+    return undefined;
+  }
+
+  async upsertData(
+    data: Omit<BooksDbBookData, 'id'>,
+    saveBehavior: ReplicationSaveBehavior,
+    removeStorageContext = true
+  ) {
     const db = await this.db;
 
     let dataId: number;
@@ -122,13 +152,29 @@ export class DatabaseService {
     const oldData = await store.index('title').get(data.title);
 
     if (oldData) {
-      bookData = {
-        ...data,
-        id: oldData.id,
-        lastBookModified: data.lastBookModified || oldData.lastBookModified,
-        lastBookOpen: data.lastBookOpen || oldData.lastBookOpen
-      };
-      dataId = await store.put(bookData);
+      if (removeStorageContext) {
+        oldData.storageSource = undefined;
+      }
+
+      if (
+        saveBehavior === ReplicationSaveBehavior.NewOnly &&
+        oldData.lastBookModified &&
+        data.lastBookModified &&
+        oldData.lastBookModified >= data.lastBookModified &&
+        (oldData.lastBookOpen || 0) >= (data.lastBookOpen || 0)
+      ) {
+        bookData = oldData;
+        dataId = oldData.id;
+      } else {
+        bookData = {
+          ...data,
+          id: oldData.id,
+          lastBookModified: data.lastBookModified || oldData.lastBookModified,
+          lastBookOpen: data.lastBookOpen || oldData.lastBookOpen,
+          ...(removeStorageContext ? { storageSource: undefined } : {})
+        };
+        dataId = await store.put(bookData);
+      }
     } else {
       // Until https://github.com/jakearchibald/idb/issues/150 resolves
       const bookDataWithoutKey: Omit<BooksDbBookData, 'id'> = data;
@@ -137,12 +183,7 @@ export class DatabaseService {
     }
     await tx.done;
 
-    storageHandler.applyUpsert(bookData);
-
-    replicationProgress$.next({ progressToAdd: 100 });
-
-    this.dataListChanged$.next();
-    return dataId;
+    return bookData;
   }
 
   async deleteData(dataIds: number[], cancelSignal: AbortSignal) {
@@ -157,11 +198,7 @@ export class DatabaseService {
 
     let errorMessage = '';
 
-    replicationProgress$.next({
-      progressToAdd: 0,
-      baseProgress: 100,
-      maxProgress: 100 * dataIds.length
-    });
+    replicationProgress$.next({ progressBase: 1, maxProgress: dataIds.length });
 
     dataIds.forEach((id) =>
       tasks.push(
@@ -191,10 +228,28 @@ export class DatabaseService {
     return db.get('bookmark', dataId);
   }
 
-  async putBookmark(bookmarkData: BooksDbBookmarkData) {
+  async putBookmark(bookmarkData: BooksDbBookmarkData, saveBehavior: ReplicationSaveBehavior) {
     const db = await this.db;
-    const result = await db.put('bookmark', bookmarkData);
-    this.bookmarksChanged$.next();
+
+    let result: number;
+
+    if (saveBehavior === ReplicationSaveBehavior.Overwrite) {
+      result = await db.put('bookmark', bookmarkData);
+    } else {
+      const existingBookmark = await db.get('bookmark', bookmarkData.dataId);
+
+      if (
+        existingBookmark &&
+        existingBookmark.lastBookmarkModified &&
+        bookmarkData.lastBookmarkModified &&
+        (existingBookmark.lastBookmarkModified || 0) >= (bookmarkData.lastBookmarkModified || 0)
+      ) {
+        result = existingBookmark.dataId;
+      } else {
+        result = await db.put('bookmark', bookmarkData);
+      }
+    }
+
     return result;
   }
 
@@ -254,8 +309,79 @@ export class DatabaseService {
       throw error;
     }
 
-    replicationProgress$.next({ progressToAdd: 100 });
+    replicationProgress$.next({ progressToAdd: 1 });
 
     return dataId;
+  }
+
+  async getStorageSources() {
+    const db = await this.db;
+
+    return db.getAll('storageSource');
+  }
+
+  async saveStorageSource(
+    storageSource: BooksDbStorageSource,
+    oldName: string,
+    isSyncTarget: boolean,
+    isStorageSourceDefault: boolean
+  ) {
+    const db = await this.db;
+    const tx = db.transaction(['storageSource'], 'readwrite');
+
+    try {
+      const store = tx.objectStore('storageSource');
+
+      if (oldName && storageSource.name !== oldName) {
+        await store.delete(oldName);
+      }
+
+      if (storageSource.name === oldName) {
+        await store.put(storageSource);
+      } else {
+        await store.add(storageSource);
+      }
+
+      await tx.done;
+
+      if (isSyncTarget) {
+        syncTarget$.next(storageSource.name);
+      } else if (oldName) {
+        syncTarget$.next('');
+      }
+
+      if (isStorageSourceDefault) {
+        setStorageSourceDefault(storageSource.name, storageSource.type);
+      } else if (oldName) {
+        setStorageSourceDefault('', storageSource.type);
+      }
+    } catch (error: any) {
+      try {
+        tx.abort();
+        await tx.done;
+      } catch (_) {
+        // no-op
+      }
+
+      throw error;
+    }
+  }
+
+  async deleteStorageSource(
+    toDelete: BooksDbStorageSource,
+    wasSyncTarget: boolean,
+    wasStorageSourceDefault: boolean
+  ) {
+    const db = await this.db;
+
+    await db.delete('storageSource', toDelete.name);
+
+    if (wasSyncTarget) {
+      syncTarget$.next('');
+    }
+
+    if (wasStorageSourceDefault) {
+      setStorageSourceDefault('', toDelete.type);
+    }
   }
 }

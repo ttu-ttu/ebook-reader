@@ -46,6 +46,7 @@
       </div>
     {/if}
     <MergedHeaderIcon
+      disableRouteNavigation
       items={[mergeEntries.SETTINGS, mergeEntries.MANAGE]}
       on:action={({ detail }) => {
         if (detail === mergeEntries.SETTINGS.label) {

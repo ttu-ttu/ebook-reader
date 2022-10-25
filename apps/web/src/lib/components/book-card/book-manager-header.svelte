@@ -11,10 +11,29 @@
     pxScreen,
     translateXHeaderFa
   } from '$lib/css-classes';
+  import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
+  import { StorageKey } from '$lib/data/storage/storage-types';
+  import {
+    isStorageSourceAvailable,
+    storageIcon$,
+    storageSource$
+  } from '$lib/data/storage/storage-view';
+  import {
+    cacheStorageData$,
+    fsStorageSource$,
+    gDriveStorageSource$,
+    isOnline$,
+    oneDriveStorageSource$
+  } from '$lib/data/store';
   import { inputAllowDirectory } from '$lib/functions/file-dom/input-allow-directory';
   import { inputFile } from '$lib/functions/file-dom/input-file';
   import { isMobile$ } from '$lib/functions/utils';
-  import { faCircleXmark, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
+  import {
+    faCircleXmark,
+    faCloudArrowUp,
+    faTimes,
+    faTrash
+  } from '@fortawesome/free-solid-svg-icons';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
   import { quintOut } from 'svelte/easing';
@@ -35,6 +54,8 @@
     bugReportClick: void;
     backToBookClick: void;
     filesChange: FileList;
+    importBackup: File;
+    replicateData: void;
     cancelReplication: void;
   }>();
 
@@ -52,18 +73,61 @@
   };
 
   const importMenuItems = [mergeEntries.FILE_IMPORT];
+  const storageSourceMenuItems = [
+    { label: 'Browser', key: StorageKey.BROWSER, requiresConnectivity: false }
+  ];
 
   let fileImportElm: HTMLElement;
   let folderImportElm: HTMLElement;
+  let backupImportElm: HTMLElement;
+  let storageSourceElm: Popover;
 
   $: if (browser) {
-    importMenuItems.push(...($isMobile$ ? [] : [mergeEntries.FOLDER_IMPORT]));
+    importMenuItems.push(
+      ...($isMobile$
+        ? [mergeEntries.BACKUP_IMPORT]
+        : [mergeEntries.FOLDER_IMPORT, mergeEntries.BACKUP_IMPORT])
+    );
+
+    storageSourceMenuItems.push(
+      ...(isStorageSourceAvailable(StorageKey.GDRIVE, $gDriveStorageSource$, window)
+        ? [
+            {
+              label: 'GDrive',
+              key: StorageKey.GDRIVE,
+              requiresConnectivity: true
+            }
+          ]
+        : []),
+      ...(isStorageSourceAvailable(StorageKey.ONEDRIVE, $oneDriveStorageSource$, window)
+        ? [
+            {
+              label: 'OneDrive',
+              key: StorageKey.ONEDRIVE,
+              requiresConnectivity: true
+            }
+          ]
+        : []),
+      ...(isStorageSourceAvailable(StorageKey.FS, $fsStorageSource$, window)
+        ? [
+            {
+              label: 'Filesystem',
+              key: StorageKey.FS,
+              requiresConnectivity: false
+            }
+          ]
+        : [])
+    );
   }
 
   function triggerInput(event: CustomEvent<string>) {
     switch (event.detail) {
       case mergeEntries.FOLDER_IMPORT.label:
         folderImportElm.click();
+        break;
+
+      case mergeEntries.BACKUP_IMPORT.label:
+        backupImportElm.click();
         break;
 
       default:
@@ -74,6 +138,10 @@
 
   function dispatchFilesChange(fileList: FileList) {
     dispatch('filesChange', fileList);
+  }
+
+  function dispatchImportBackup(fileList: FileList) {
+    dispatch('importBackup', fileList[0]);
   }
 </script>
 
@@ -92,6 +160,13 @@
   use:inputAllowDirectory
   use:inputFile={dispatchFilesChange}
   bind:this={folderImportElm}
+/>
+<input
+  hidden
+  type="file"
+  accept=".zip"
+  use:inputFile={dispatchImportBackup}
+  bind:this={backupImportElm}
 />
 <div class={baseHeaderClasses}>
   {#if !replicationToProgress}
@@ -188,6 +263,55 @@
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
           >
+            <Popover
+              placement="bottom"
+              fallbackPlacements={['bottom-end', 'bottom-start']}
+              yOffset={0}
+              bind:this={storageSourceElm}
+            >
+              <div slot="icon" class={baseIconClasses}>
+                {#key $storageIcon$}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox={$storageIcon$.viewBox}>
+                    <path class="fill-current" d={$storageIcon$.d} />
+                  </svg>
+                {/key}
+              </div>
+              <div class="w-28 bg-gray-700" slot="content">
+                {#each storageSourceMenuItems as sourceMenuItem (sourceMenuItem.key)}
+                  <div
+                    role="button"
+                    class="cursor-pointer px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
+                    class:hover:bg-white={!sourceMenuItem.requiresConnectivity || $isOnline$}
+                    class:hover:text-gray-700={!sourceMenuItem.requiresConnectivity || $isOnline$}
+                    class:cursor-not-allowed={sourceMenuItem.requiresConnectivity && !$isOnline$}
+                    class:text-gray-500={sourceMenuItem.requiresConnectivity && !$isOnline$}
+                    on:click={async () => {
+                      if (sourceMenuItem.requiresConnectivity && !$isOnline$) {
+                        return;
+                      }
+
+                      if (sourceMenuItem.key !== $storageSource$) {
+                        if (!$cacheStorageData$) {
+                          getStorageHandler(window, sourceMenuItem.key).clearData();
+                        }
+
+                        storageSource$.next(sourceMenuItem.key);
+                      }
+
+                      storageSourceElm.toggleOpen();
+                    }}
+                  >
+                    {sourceMenuItem.label}
+                  </div>
+                {/each}
+              </div>
+            </Popover>
+          </div>
+          <div
+            class="relative transform-gpu"
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
+          >
             <MergedHeaderIcon
               on:action={({ detail }) => {
                 if (detail === mergeEntries.BUG_REPORT.label) {
@@ -199,6 +323,14 @@
         {/if}
 
         {#if selectedCount > 0}
+          <div
+            class="transform-gpu {baseIconClasses}"
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
+            on:click={() => dispatch('replicateData')}
+          >
+            <Fa icon={faCloudArrowUp} />
+          </div>
           <div
             class="transform-gpu {baseIconClasses}"
             in:scale={inAnimationParams}

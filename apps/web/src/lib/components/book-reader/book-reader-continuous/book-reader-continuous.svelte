@@ -10,6 +10,7 @@
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
+  import { skipKeyDownListener$ } from '$lib/data/store';
   import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
   import { faBookmark } from '@fortawesome/free-solid-svg-icons';
   import {
@@ -329,7 +330,7 @@
   }
 
   function onWheel(ev: WheelEvent) {
-    if (verticalMode && !$tocIsOpen$) {
+    if (verticalMode && !$tocIsOpen$ && $skipKeyDownListener$) {
       scrollFn(ev, fontSize, window.innerWidth);
     }
   }

@@ -14,5 +14,5 @@ export const translateXHeaderFa = 'translate-x-4 xl:translate-x-3';
 export const inputClasses =
   'mt-1 block w-full px-0.5 bg-background-color border-0 border-b-2 border-gray-400/50 focus:ring-0 focus:border-black transition';
 export const buttonClasses =
-  'inline-block no-underline font-medium rounded min-w-[64px] px-4 leading-9 cursor-pointer text-cyan-900';
+  'inline-block no-underline font-medium rounded min-w-[32px] sm:min-w-[64px] px-4 leading-9 cursor-pointer text-cyan-900';
 export const baseIconClasses = `flex justify-center items-center h-12 w-12 cursor-pointer text-xl xl:h-10 xl:w-10 xl:text-lg ${pHeaderMat} ${opacityHeaderIcon}`;

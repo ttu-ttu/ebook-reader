@@ -4,28 +4,40 @@
   import BookCardList from '$lib/components/book-card/book-card-list.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import BookManagerHeader from '$lib/components/book-card/book-manager-header.svelte';
+  import BookExportDialog from '$lib/components/book-export/book-export-dialog.svelte';
   import LogReportDialog from '$lib/components/log-report-dialog.svelte';
   import MessageDialog from '$lib/components/message-dialog.svelte';
   import { pxScreen } from '$lib/css-classes';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
   import { logger } from '$lib/data/logger';
-  import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
-  import { StorageKey } from '$lib/data/storage-manager/storage-source';
-  import { database, requestPersistentStorage$ } from '$lib/data/store';
-  import { storage } from '$lib/data/window/navigator/storage';
+  import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
+  import { StorageKey } from '$lib/data/storage/storage-types';
+  import { storageSource$ } from '$lib/data/storage/storage-view';
+  import {
+    cacheStorageData$,
+    database,
+    isOnline$,
+    lastExportedTarget$,
+    lastExportedTypes$,
+    replicationSaveBehavior$,
+    showExternalPlaceholder$
+  } from '$lib/data/store';
   import { cloneMutateSet } from '$lib/functions/clone-mutate-set';
   import { getDropEventFiles } from '$lib/functions/file-dom/get-drop-event-files';
   import { inputFile } from '$lib/functions/file-dom/input-file';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { keyBy } from '$lib/functions/key-by';
-  import { addBooks } from '$lib/functions/replication/import-replication';
-  import { replicationProgress$ } from '$lib/functions/replication/replication-progress';
-  import { combineLatest, map, Observable, share, Subject, takeUntil } from 'rxjs';
-  import { onDestroy, tick } from 'svelte';
+  import { importBackup, importData, replicateData } from '$lib/functions/replication/replicator';
+  import {
+    replicationProgress$,
+    executeReplicate$,
+    type ReplicationProgress
+  } from '$lib/functions/replication/replication-progress';
+  import { combineLatest, map, Observable, share, Subject, switchMap, takeUntil } from 'rxjs';
+  import { tick } from 'svelte';
   import Fa from 'svelte-fa';
-
-  const destroy$ = new Subject<void>();
+  import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
 
   const booksAreLoading$ = database.listLoading$.pipe(map((isLoading) => isLoading));
 
@@ -34,14 +46,19 @@
     database.bookmarks$
   ]).pipe(
     map(([dataList, bookmarks]) => {
-      const bookmarkMap = keyBy(bookmarks, 'dataId');
+      if ($storageSource$ === StorageKey.BROWSER) {
+        const bookmarkMap = keyBy(bookmarks, 'dataId');
 
-      return dataList
-        .map((d) => ({
-          ...d,
-          ...bookmarkToProgress(bookmarkMap.get(d.id))
-        }))
-        .sort(sortBookCards);
+        return dataList
+          .filter((d) => $showExternalPlaceholder$ || !d.isPlaceholder)
+          .map((d) => ({
+            ...d,
+            ...bookmarkToProgress(bookmarkMap.get(d.id))
+          }))
+          .sort(sortBookCards);
+      }
+
+      return dataList.sort(sortBookCards);
     }),
     share()
   );
@@ -59,7 +76,8 @@
   let replicationProgress = 0;
   let replicationToProgress = 0;
   let replicationProgressRemaining = '~ ??:??:??';
-  let baseProgress = 0;
+  let replicationDone = new Subject<void>();
+  let progressBase = 0;
   let executionStart: number;
 
   $: {
@@ -67,11 +85,6 @@
       selectedBookIds = new Set();
     }
   }
-
-  onDestroy(() => {
-    destroy$.next();
-    destroy$.complete();
-  });
 
   function bookmarkToProgress(b: BooksDbBookmarkData | undefined) {
     return b?.progress
@@ -94,16 +107,77 @@
       sortDiff = card2LastModified - card1LastModified;
     }
 
+    if (!sortDiff) {
+      sortDiff = card1.title.localeCompare(card2.title, 'ja-JP', { numeric: true });
+    }
+
     return sortDiff;
   }
 
-  function onBookClick(bookId: number) {
+  async function onBookClick(bookId: number) {
     if (!operationAllowed()) {
       return;
     }
 
     if (!selectMode) {
-      openBook(bookId);
+      dialogManager.dialogs$.next([
+        {
+          component: '<div/>',
+          disableCloseOnClick: true
+        }
+      ]);
+
+      let idToOpen = bookId;
+
+      try {
+        const bookItem = $bookCards$.find((book) => book.id === bookId);
+
+        if (!bookItem) {
+          throw new Error('Book title not found');
+        }
+
+        const isForBrowser = $storageSource$ === StorageKey.BROWSER;
+        const handler = getStorageHandler(
+          window,
+          $storageSource$,
+          '',
+          isForBrowser,
+          $cacheStorageData$,
+          $replicationSaveBehavior$
+        );
+
+        if (!cacheStorageData$) {
+          handler.clearData(false);
+        }
+
+        handler.startContext({
+          id: isForBrowser ? bookItem.id : 0,
+          title: bookItem.title,
+          imagePath: bookItem.imagePath
+        });
+
+        idToOpen = await handler.prepareBookForReading();
+
+        dialogManager.dialogs$.next([]);
+      } catch (error: any) {
+        const message = `Error opening book: ${error.message}`;
+
+        logger.warn(message);
+
+        dialogManager.dialogs$.next([
+          {
+            component: MessageDialog,
+            props: {
+              title: 'Error',
+              message
+            }
+          }
+        ]);
+
+        return;
+      }
+
+      openBook(idToOpen);
       return;
     }
 
@@ -117,7 +191,28 @@
   }
 
   function operationAllowed() {
-    return !replicationToProgress;
+    const connectivityPass = !(
+      ($storageSource$ === StorageKey.GDRIVE || $storageSource$ === StorageKey.ONEDRIVE) &&
+      !$isOnline$
+    );
+
+    if (!connectivityPass && !replicationToProgress) {
+      const message = 'You have to be online for this operation';
+
+      logger.warn(message);
+
+      dialogManager.dialogs$.next([
+        {
+          component: MessageDialog,
+          props: {
+            title: 'Failure',
+            message
+          }
+        }
+      ]);
+    }
+
+    return !replicationToProgress && connectivityPass;
   }
 
   function openBook(bookId: number) {
@@ -138,60 +233,63 @@
       return;
     }
 
-    cancelTooltip = `Cancels the current Import\nAlready imported Data will not be deleted`;
+    cancelTooltip = `Cancels the current Import\nAlready imported data will not be deleted`;
 
     initializeReplicationProgressData();
 
     const supportedExtRegex = /\.(?:htmlz|epub)$/;
     const files = Array.from(fileList).filter((f) => supportedExtRegex.test(f.name));
+    const errorTitle = 'Bookimport failed';
 
     if (!files.length) {
       resetProgress();
 
-      dialogManager.dialogs$.next([
-        {
-          component: MessageDialog,
-          props: {
-            title: 'Bookimport failed',
-            message: 'File(s) must be HTMLZ or EPUB'
-          }
-        }
-      ]);
+      showError(errorTitle, 'File(s) must be HTMLZ or EPUB', '');
       return;
     }
 
-    if (requestPersistentStorage$.getValue()) {
-      try {
-        await storage.persist();
-      } catch (_) {
-        // no-op
-      }
-    }
-
-    const { error, dataId } = await addBooks(files, window, document, cancelSignal).catch(
-      (catchedError) => ({ error: catchedError.message, dataId: 0 })
-    );
+    const { error, dataId } = await importData(
+      document,
+      getStorageHandler(
+        window,
+        $storageSource$,
+        '',
+        $storageSource$ === StorageKey.BROWSER,
+        $cacheStorageData$,
+        $replicationSaveBehavior$
+      ),
+      files,
+      cancelSignal
+    ).catch((catchedError) => ({ error: catchedError.message, dataId: 0 }));
 
     resetProgress();
 
     if (error) {
-      const showReport = logger.history.length > 1;
-
-      dialogManager.dialogs$.next([
-        {
-          component: showReport ? LogReportDialog : MessageDialog,
-          props: {
-            title: 'Bookimport failed',
-            message: showReport ? 'Error(s) occurred during Bookimport' : error
-          }
-        }
-      ]);
-    } else if (dataId) {
+      showError(errorTitle, error, 'Error(s) occurred during bookimport');
+    } else if ($storageSource$ === StorageKey.BROWSER && dataId) {
       openBook(dataId);
     }
   }
 
+  function showError(title: string, message: string, fallbackMessage: string) {
+    const showReport = logger.errorCount > 1;
+
+    logger.warn(message);
+
+    dialogManager.dialogs$.next([
+      {
+        component: showReport ? LogReportDialog : MessageDialog,
+        props: {
+          title,
+          message: showReport ? fallbackMessage : message
+        }
+      }
+    ]);
+  }
+
   function initializeReplicationProgressData() {
+    replicationDone = new Subject<void>();
+    replicationProgress$.pipe(takeUntil(replicationDone)).subscribe(updateProgress);
     replicationProgressRemaining = '~ ??:??:??';
     replicationProgress = 0;
     replicationToProgress = 1;
@@ -204,6 +302,8 @@
   }
 
   function resetProgress() {
+    replicationDone.next();
+    replicationDone.complete();
     replicationToProgress = 0;
     replicationProgress = 0;
     cancelTooltip = '';
@@ -227,13 +327,13 @@
       return;
     }
 
-    cancelTooltip = `Cancels the Deletion\nAlready deleted Data will not be restored`;
+    cancelTooltip = `Cancels the Deletion\nAlready deleted data will not be restored`;
 
     initializeReplicationProgressData();
 
     const currentBookCount = $bookCards$.length;
-    const handler = await getStorageHandler(StorageKey.BROWSER, window);
-    const [error, deletedBooks] = (await handler.deleteBookData(
+    const handler = getStorageHandler(window, $storageSource$, '');
+    const { error, deleted } = await handler.deleteBookData(
       $bookCards$.reduce((toDelete, card) => {
         if (bookIds.includes(card.id)) {
           toDelete.push(card.title);
@@ -241,32 +341,68 @@
         return toDelete;
       }, [] as string[]),
       cancelSignal
-    )) as [string, number[]];
+    );
 
     resetProgress();
 
     await tick();
 
-    if (deletedBooks.length === currentBookCount) {
+    if (deleted.length === currentBookCount) {
       selectMode = false;
     } else {
       selectedBookIds = cloneMutateSet(selectedBookIds, (set) => {
-        deletedBooks.forEach((x) => set.delete(x));
+        deleted.forEach((deletedBookId) => set.delete(deletedBookId));
       });
     }
 
     if (error) {
-      const showReport = logger.history.length > 1;
+      showError('Deletion failed', error, 'Error(s) occurred during deletion');
+    }
+  }
 
-      dialogManager.dialogs$.next([
-        {
-          component: showReport ? LogReportDialog : MessageDialog,
-          props: {
-            title: 'Deletion failed',
-            message: showReport ? 'Error(s) occurred during Deletion' : error
-          }
-        }
-      ]);
+  async function onImportBackup(file: File) {
+    if (!operationAllowed()) {
+      return;
+    }
+
+    const errorTitle = 'Import failed';
+
+    cancelTooltip = `Cancels the current Import\nAlready imported data will not be deleted`;
+
+    initializeReplicationProgressData();
+
+    if (!file.name.endsWith('.zip')) {
+      resetProgress();
+
+      showError(errorTitle, 'Invalid file - expected zip archive', '');
+      return;
+    }
+
+    const error = await importBackup(
+      getStorageHandler(
+        window,
+        StorageKey.BACKUP,
+        undefined,
+        $storageSource$ === StorageKey.BROWSER,
+        $cacheStorageData$,
+        $replicationSaveBehavior$
+      ),
+      getStorageHandler(
+        window,
+        $storageSource$,
+        '',
+        $storageSource$ === StorageKey.BROWSER,
+        $cacheStorageData$,
+        $replicationSaveBehavior$
+      ),
+      file,
+      cancelSignal
+    ).catch((err) => err.message);
+
+    resetProgress();
+
+    if (error) {
+      showError(errorTitle, error, 'Error(s) occurred during import');
     }
   }
 
@@ -282,21 +418,36 @@
     ]);
   }
 
-  replicationProgress$.pipe(takeUntil(destroy$)).subscribe((replicationProgressData) => {
+  function onReplicateData() {
+    dialogManager.dialogs$.next([{ component: BookExportDialog, disableCloseOnClick: true }]);
+  }
+
+  function updateProgress(replicationProgressData: ReplicationProgress) {
     if (cancelSignal.aborted) {
       return;
     }
 
-    baseProgress = replicationProgressData.baseProgress || baseProgress || 0;
+    progressBase = replicationProgressData.progressBase || progressBase || 0;
     replicationToProgress = replicationProgressData.maxProgress || replicationToProgress || 0;
-    executionStart = replicationProgressData.executionStart || executionStart;
 
-    if (replicationProgressData.progressToAdd === -1) {
+    if (replicationProgressData.skipStep) {
       const progressDiffToAdd =
-        Math.ceil(replicationProgress / baseProgress) * baseProgress - replicationProgress;
-      replicationProgress += progressDiffToAdd || baseProgress;
-    } else {
-      replicationProgress += replicationProgressData.progressToAdd;
+        Math.ceil(replicationProgress / progressBase) * progressBase - replicationProgress;
+
+      replicationProgress =
+        Math.floor(
+          (replicationProgress + (progressDiffToAdd || progressBase) + Number.EPSILON) * 1000
+        ) / 1000;
+    } else if (replicationProgressData.completeStep) {
+      const progressDiffToAdd = Math.ceil(replicationProgress) - replicationProgress;
+
+      replicationProgress =
+        Math.floor((replicationProgress + progressDiffToAdd + Number.EPSILON) * 1000) / 1000;
+    } else if (replicationProgressData.progressToAdd && replicationProgressData.progressToAdd > 0) {
+      replicationProgress =
+        Math.floor(
+          (replicationProgress + replicationProgressData.progressToAdd + Number.EPSILON) * 1000
+        ) / 1000;
     }
 
     if (replicationProgressData.progressToAdd) {
@@ -304,9 +455,51 @@
       const processPerSecond = replicationProgress / duration;
       const remainingTime = (replicationToProgress - replicationProgress) / processPerSecond;
 
-      replicationProgressRemaining = `~ ${getTimestamp(Math.ceil(remainingTime))}`;
+      replicationProgressRemaining =
+        replicationToProgress > replicationProgress
+          ? `~ ${getTimestamp(Math.ceil(remainingTime))}`
+          : '~ 00:00:01';
     }
-  });
+  }
+
+  const replicator$ = executeReplicate$.pipe(
+    switchMap(async () => {
+      if (!operationAllowed()) {
+        return;
+      }
+
+      cancelTooltip = 'Cancels the current export';
+
+      initializeReplicationProgressData();
+
+      const handlers = [$storageSource$, $lastExportedTarget$].map((storageType) =>
+        getStorageHandler(
+          window,
+          storageType,
+          '',
+          $lastExportedTarget$ === StorageKey.BROWSER,
+          $cacheStorageData$,
+          $replicationSaveBehavior$
+        )
+      );
+      const books = $bookCards$.filter((card) => selectedBookIds.has(card.id));
+      const error = await replicateData(
+        handlers[0],
+        handlers[1],
+        false,
+        books.map((book) => ({ title: book.title, imagePath: book.imagePath })),
+        $lastExportedTypes$,
+        cancelSignal
+      ).catch((err) => err.message);
+
+      resetProgress();
+
+      if (error) {
+        showError('Export failed', error, 'Error(s) occurred during export');
+      }
+    }),
+    reduceToEmptyString()
+  );
 
   function getTimestamp(seconds: number) {
     return seconds && Number.isFinite(seconds)
@@ -318,6 +511,8 @@
 <svelte:head>
   <title>{formatPageTitle('Book Manager')}</title>
 </svelte:head>
+
+{$replicator$ ?? ''}
 
 <div class="elevation-4 fixed inset-x-0 top-0 z-10">
   <BookManagerHeader
@@ -340,6 +535,8 @@
         replicationProgressRemaining = 'Canceling ...';
       }
     }}
+    on:replicateData={onReplicateData}
+    on:importBackup={(ev) => onImportBackup(ev.detail)}
   />
 </div>
 

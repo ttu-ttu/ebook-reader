@@ -57,6 +57,7 @@
   let imageLoading = true;
 
   $: imageLoadComplete = imgEl?.complete && !imageLoading;
+  $: alt = `${title}_cover`;
 </script>
 
 <div class="aspect-w-2 aspect-h-3 relative cursor-pointer" role="button" on:click>
@@ -68,13 +69,15 @@
 
       {#if imagePath}
         <img
-          src={mapImagePath(imagePath)}
-          class="relative h-full w-full object-cover transition delay-150 duration-700 ease-out"
-          bind:this={imgEl}
-          class:blur={!imageLoadComplete}
-          on:load={() => (imageLoading = false)}
-          alt=""
           decoding="async"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          class="relative h-full w-full object-cover transition delay-150 duration-700 ease-out"
+          class:blur={!imageLoadComplete}
+          src={mapImagePath(imagePath)}
+          {alt}
+          bind:this={imgEl}
+          on:load={() => (imageLoading = false)}
         />
       {/if}
     </div>

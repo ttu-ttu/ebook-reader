@@ -5,6 +5,11 @@
  */
 
 import { browser } from '$app/environment';
+import { StorageDataType, StorageKey, StorageSourceDefault } from '$lib/data/storage/storage-types';
+import {
+  AutoReplicationType,
+  ReplicationSaveBehavior
+} from '$lib/functions/replication/replication-options';
 import { writableSubject } from '$lib/functions/svelte/store';
 import { map } from 'rxjs';
 import { BookReaderAvailableKeybind, type BookReaderKeybindMap } from './book-reader-keybind';
@@ -13,6 +18,7 @@ import { createBooksDb } from './database/books-db/factory';
 import { FuriganaStyle } from './furigana-style';
 import { writableBooleanLocalStorageSubject } from './internal/writable-boolean-local-storage-subject';
 import { writableNumberLocalStorageSubject } from './internal/writable-number-local-storage-subject';
+import { writableArrayLocalStorageSubject } from './internal/writable-object-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
 import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
@@ -60,6 +66,50 @@ export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(
   true
 );
 
+export const confirmClose$ = writableBooleanLocalStorageSubject()('confirmClose', false);
+
+export const cacheStorageData$ = writableBooleanLocalStorageSubject()('cacheStorageData', false);
+
+export const autoReplication$ = writableStringLocalStorageSubject<AutoReplicationType>()(
+  'autoReplication',
+  AutoReplicationType.Off
+);
+
+export const replicationSaveBehavior$ =
+  writableStringLocalStorageSubject<ReplicationSaveBehavior>()(
+    'replicationSaveBehavior',
+    ReplicationSaveBehavior.NewOnly
+  );
+
+export const showExternalPlaceholder$ = writableBooleanLocalStorageSubject()(
+  'showExternalPlaceholder',
+  false
+);
+
+export const gDriveStorageSource$ = writableStringLocalStorageSubject()(
+  'gDriveStorageSource',
+  StorageSourceDefault.GDRIVE_DEFAULT
+);
+
+export const oneDriveStorageSource$ = writableStringLocalStorageSubject()(
+  'oneDriveStorageSource',
+  StorageSourceDefault.ONEDRIVE_DEFAULT
+);
+
+export const fsStorageSource$ = writableStringLocalStorageSubject()('fsStorageSource', '');
+
+export const syncTarget$ = writableStringLocalStorageSubject()('syncTarget', '');
+
+export const lastExportedTarget$ = writableStringLocalStorageSubject<StorageKey>()(
+  'lastExportedTarget',
+  StorageKey.BACKUP
+);
+
+export const lastExportedTypes$ = writableArrayLocalStorageSubject<StorageDataType>()(
+  'lastExportedTypes',
+  [StorageDataType.PROGRESS]
+);
+
 export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyB: BookReaderAvailableKeybind.BOOKMARK,
   KeyR: BookReaderAvailableKeybind.JUMP_TO_BOOKMARK,
@@ -75,3 +125,7 @@ export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
 const db = browser ? createBooksDb() : import('fake-indexeddb/auto').then(() => createBooksDb());
 
 export const database = new DatabaseService(db);
+
+export const isOnline$ = writableSubject<boolean>(true);
+
+export const skipKeyDownListener$ = writableSubject<boolean>(false);

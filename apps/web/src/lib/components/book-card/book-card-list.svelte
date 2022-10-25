@@ -34,6 +34,7 @@
   {#each bookCards as bookCard (bookCard.id)}
     <div
       class="relative"
+      class:opacity-60={bookCard.isPlaceholder}
       on:mouseenter={() => (hoveringBookId = bookCard.id)}
       on:mouseleave={() => (hoveringBookId = undefined)}
     >
@@ -62,7 +63,9 @@
               icon={faCircleInfo}
             />
             <div class="p-4" slot="content">
-              <div>Last Read:</div>
+              <div>Characters:</div>
+              <div class="w-40">{bookCard.characters || 'No Data'}</div>
+              <div class="mt-4">Last Read:</div>
               <div class="w-40">{getCardDateInfo(bookCard.lastBookOpen)}</div>
               <div class="mt-4">Bookmarked:</div>
               <div class="w-40">{getCardDateInfo(bookCard.lastBookmarkModified)}</div>
