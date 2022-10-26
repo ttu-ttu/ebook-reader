@@ -139,7 +139,7 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
         true,
         this.cacheStorageData,
         ReplicationSaveBehavior.Overwrite
-      ).saveBook(bookData, false);
+      ).saveBook(bookData, true, false);
     } else if (data?.id) {
       idToReturn = data.id;
     }
@@ -272,9 +272,12 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     return data;
   }
 
-  async saveBook(data: Omit<BooksDbBookData, 'id'> | File) {
-    const filename = BaseStorageHandler.getBookFileName(data);
+  async saveBook(data: Omit<BooksDbBookData, 'id'> | File, skipTimestampFallback = true) {
     const { titleId, files, file } = await this.getExternalFile('bookdata_', '', 0.2, false);
+    const filename = BaseStorageHandler.getBookFileName(
+      data,
+      skipTimestampFallback ? '' : file?.name
+    );
     const { characters, lastBookModified, lastBookOpen } =
       BaseStorageHandler.getBookMetadata(filename);
 

@@ -44,7 +44,7 @@ You may find the following controls in the reader footer:
 | ![Icon](assets/readme/control-sync-error.svg)  | Indicates that multiple auto export attempts failed. Click/Tap to execute a manual export                                                |
 | ![Image](assets/readme/book-progress.png)      | Displays your reading progress. Click/Tap on it to hide                                                                                  |
 
-**Note**: The setting "Close Confirmation" will handle reloading and closing tabs but not other ways of navigation like e. g. clicking/tapping the back button etc. There are known limitations on mobile iOS and therefore this functionality may not work as expected on this platform
+**Note**: The setting "Close Confirmation" will handle reloading and closing tabs but not other ways of navigation like e. g. clicking/tapping the back button / closing pages via mobile browser menu etc. There are known limitations on mobile iOS and therefore this functionality may not work as expected on this platform
 
 # Desktop Keybinds
 
@@ -139,6 +139,8 @@ You can read books from external sources without having a local book copy (this 
 ッツ Ebook Reader provides default storage sources for data import/export via GDrive or OneDrive which requires a reauthentication every 50 minutes in order to be functional.
 Storage Sources under Settings => Data let you add additional custom sources for the filesystem target and/or a custom set of credentials for an external hoster which
 may can create persistent sessions and therefore asks for reauthentication less often in case you add a client secret.
+
+**Note**: The timeout for login is currently 45 seconds after which the login popup will close with an error
 
 To create such custom credentials follow these steps for the hoster you want to add.
 
@@ -256,7 +258,7 @@ VITE_ONEDRIVE_CLIENT_SECRET1="gfedcba"
 
 **GDrive Note**: Permissions are scoped to the client id and client secret which means different GDrive storage sources can only see their own data and will create their own "ttu-reader-data" folder. Also data added by you manually on the google website will not be displayed - you should use the functionality provided by ッツ Ebook Reader in order to add/delete books etc.
 
-**OneDrive Note**: OneDrive only allows to add localhost addresses - in case you host or develop on 127.0.0.1 you should either switch to localhost or need to manually type in the localhost address in the address bar in order to use OneDrive. The maximum file size of a book for this storage source is currently 60 MB
+**OneDrive Note**: OneDrive only allows to add localhost addresses - in case you host or develop on 127.0.0.1 you should either switch to localhost or need to manually type in the localhost address in the address bar in order to use OneDrive. The maximum file size of a book for this storage source is currently 60 MB. In case you encounter an ETag Error simply retry your export attempt - typically it should work the 2nd time
 
 # Storage Limits
 

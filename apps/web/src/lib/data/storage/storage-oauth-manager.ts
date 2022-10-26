@@ -62,7 +62,7 @@ export class StorageOAuthManager {
 
   private authCloseInterval: NodeJS.Timer | undefined;
 
-  private authTimeout = 30000;
+  private authTimeout = 45000;
 
   private authTimeoutTimer: NodeJS.Timeout | undefined;
 
@@ -74,7 +74,9 @@ export class StorageOAuthManager {
   async getToken(
     window: Window,
     storageSourceName: string,
-    askForStorageUnlock: boolean
+    askForStorageUnlock: boolean,
+    authWindow?: Window | null,
+    oldUnlockResult?: StorageUnlockAction
   ): Promise<string | undefined> {
     const oldToken = storageOAuthTokens.get(storageSourceName);
     const shallUnlock = !oldToken || askForStorageUnlock;
@@ -93,6 +95,7 @@ export class StorageOAuthManager {
     this.remoteData = undefined;
 
     let secret: string | undefined;
+    let unlockResult = oldUnlockResult;
 
     if (storageSourceName === StorageSourceDefault.GDRIVE_DEFAULT) {
       this.remoteData = {
@@ -105,36 +108,42 @@ export class StorageOAuthManager {
         clientSecret: ''
       };
     } else {
-      const db = await database.db;
-      const storageSource = await db.get('storageSource', storageSourceName);
+      if (!unlockResult) {
+        const db = await database.db;
+        const storageSource = await db.get('storageSource', storageSourceName);
 
-      if (!storageSource) {
-        throw new Error(`No storage source with name ${storageSourceName} found`);
+        if (!storageSource) {
+          throw new Error(`No storage source with name ${storageSourceName} found`);
+        }
+
+        unlockResult = shallUnlock
+          ? await new Promise<StorageUnlockAction | undefined>((resolver) => {
+              dialogManager.dialogs$.next([
+                {
+                  component: StorageUnlock,
+                  props: {
+                    description: 'You are trying to access protected data',
+                    action: `Enter the correct password for ${storageSourceName} and login to your account if required to proceed`,
+                    encryptedData: storageSource.data,
+                    forwardSecret: true,
+                    resolver
+                  },
+                  disableCloseOnClick: true
+                }
+              ]);
+            })
+          : undefined;
+
+        if (!unlockResult) {
+          throw new Error(`Unable to unlock required data`);
+        }
       }
 
-      const result = shallUnlock
-        ? await new Promise<StorageUnlockAction | undefined>((resolver) => {
-            dialogManager.dialogs$.next([
-              {
-                component: StorageUnlock,
-                props: {
-                  description: 'You are trying to access protected data',
-                  action: `Enter the correct password for ${storageSourceName} and login to your account if required to proceed`,
-                  encryptedData: storageSource.data,
-                  forwardSecret: true,
-                  resolver
-                },
-                disableCloseOnClick: true
-              }
-            ]);
-          })
-        : undefined;
-
-      if (!result) {
-        throw new Error(`Unable to unlock required data`);
-      }
-
-      this.remoteData = result;
+      this.remoteData = {
+        clientId: unlockResult.clientId,
+        clientSecret: unlockResult.clientSecret,
+        refreshToken: unlockResult.refreshToken
+      };
 
       token = await this.verifyToken(token);
 
@@ -142,19 +151,25 @@ export class StorageOAuthManager {
         return token.accessToken;
       }
 
-      secret = result.secret;
+      secret = unlockResult.secret;
     }
 
     this.parentWindow = window;
-    this.authWindow = shallUnlock
-      ? StorageOAuthManager.createWindow(
-          '/auth?ttu-init-auth=1',
-          'auth',
-          Math.min(Math.max(this.parentWindow.innerWidth, 300), 560),
-          Math.min(Math.max(this.parentWindow.innerHeight, 300), 560),
-          window
-        )
-      : null;
+
+    if (authWindow) {
+      this.authWindow = authWindow;
+      this.authWindow.location.assign('/auth?ttu-init-auth=1');
+    } else if (shallUnlock) {
+      this.authWindow = StorageOAuthManager.createWindow(
+        '/auth?ttu-init-auth=1',
+        'auth',
+        Math.min(Math.max(this.parentWindow.innerWidth, 300), 560),
+        Math.min(Math.max(this.parentWindow.innerHeight, 300), 560),
+        window
+      );
+    } else {
+      this.authWindow = null;
+    }
 
     if (!this.authWindow) {
       if (shallUnlock) {
@@ -174,7 +189,19 @@ export class StorageOAuthManager {
           ]);
         });
 
-        return this.getToken(window, storageSourceName, false);
+        return this.getToken(
+          window,
+          storageSourceName,
+          false,
+          StorageOAuthManager.createWindow(
+            '/auth?ttu-init-wait=1',
+            'auth',
+            Math.min(Math.max(this.parentWindow.innerWidth, 300), 560),
+            Math.min(Math.max(this.parentWindow.innerHeight, 300), 560),
+            window
+          ),
+          unlockResult
+        );
       }
 
       throw new Error('Unable to open login window. Please check your popup settings');

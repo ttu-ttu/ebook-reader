@@ -122,7 +122,7 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
         true,
         this.cacheStorageData,
         ReplicationSaveBehavior.Overwrite
-      ).saveBook(data, false);
+      ).saveBook(data, true, false);
     } else if (book?.id) {
       idToReturn = book.id;
     }
@@ -259,10 +259,13 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     return cover;
   }
 
-  async saveBook(data: Omit<BooksDbBookData, 'id'> | File) {
+  async saveBook(data: Omit<BooksDbBookData, 'id'> | File, skipTimestampFallback = true) {
     const isFile = data instanceof File;
-    const filename = BaseStorageHandler.getBookFileName(data);
     const { file, files, rootDirectory } = await this.getExternalFile('bookdata_', 0.2);
+    const filename = BaseStorageHandler.getBookFileName(
+      data,
+      file && skipTimestampFallback ? '' : file?.name
+    );
     const { characters, lastBookModified, lastBookOpen } =
       BaseStorageHandler.getBookMetadata(filename);
 

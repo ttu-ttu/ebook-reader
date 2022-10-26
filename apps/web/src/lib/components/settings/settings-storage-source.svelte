@@ -208,7 +208,7 @@
 </script>
 
 <DialogTemplate>
-  <div class="flex flex-col" slot="content" bind:this={containerElm}>
+  <div class="flex max-h-[50vh] flex-col overflow-auto" slot="content" bind:this={containerElm}>
     <input
       required
       type="text"

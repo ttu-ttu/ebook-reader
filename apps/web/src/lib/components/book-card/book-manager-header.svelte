@@ -269,9 +269,13 @@
               yOffset={0}
               bind:this={storageSourceElm}
             >
-              <div slot="icon" class={baseIconClasses}>
+              <div slot="icon">
                 {#key $storageIcon$}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox={$storageIcon$.viewBox}>
+                  <svg
+                    class={baseIconClasses}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox={$storageIcon$.viewBox}
+                  >
                     <path class="fill-current" d={$storageIcon$.d} />
                   </svg>
                 {/key}

@@ -140,6 +140,7 @@ export class DatabaseService {
   async upsertData(
     data: Omit<BooksDbBookData, 'id'>,
     saveBehavior: ReplicationSaveBehavior,
+    skipTimestampFallback = true,
     removeStorageContext = true
   ) {
     const db = await this.db;
@@ -169,8 +170,12 @@ export class DatabaseService {
         bookData = {
           ...data,
           id: oldData.id,
-          lastBookModified: data.lastBookModified || oldData.lastBookModified,
-          lastBookOpen: data.lastBookOpen || oldData.lastBookOpen,
+          ...(skipTimestampFallback
+            ? { lastBookModified: data.lastBookModified, lastBookOpen: data.lastBookOpen }
+            : {
+                lastBookModified: data.lastBookModified || oldData.lastBookModified,
+                lastBookOpen: data.lastBookOpen || oldData.lastBookOpen
+              }),
           ...(removeStorageContext ? { storageSource: undefined } : {})
         };
         dataId = await store.put(bookData);

@@ -126,13 +126,18 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     return cover;
   }
 
-  async saveBook(data: Omit<BooksDbBookData, 'id'> | File, removeStorageContext = true) {
+  async saveBook(
+    data: Omit<BooksDbBookData, 'id'> | File,
+    skipTimestampFallback = true,
+    removeStorageContext = true
+  ) {
     let idToReturn = 0;
 
     if (!(data instanceof File)) {
       const storedBookData = await database.upsertData(
         data,
         this.saveBehavior,
+        skipTimestampFallback,
         removeStorageContext
       );
 

@@ -68,6 +68,7 @@ export abstract class BaseStorageHandler {
 
   abstract saveBook(
     data: Omit<BooksDbBookData, 'id'> | File,
+    skipTimestampFallback?: boolean,
     removeStorageContext?: boolean
   ): Promise<number>;
 
@@ -455,9 +456,24 @@ export abstract class BaseStorageHandler {
       .replaceAll('~ttu-spc~', ' ');
   }
 
-  protected static getBookFileName(book: Omit<BooksDbBookData, 'id'> | File) {
+  protected static getBookFileName(
+    book: Omit<BooksDbBookData, 'id'> | File,
+    existingFilename?: string
+  ) {
     if (book instanceof File) {
       return book.name;
+    }
+
+    if (existingFilename) {
+      const { characters, lastBookModified, lastBookOpen } =
+        BaseStorageHandler.getBookMetadata(existingFilename);
+
+      return `bookdata_${exporterVersion}_${currentDbVersion}_${
+        characters ||
+        BaseStorageHandler.getBookCharacters(book.characters || 0, book.sections || [])
+      }_${book.lastBookModified || lastBookModified || 0}_${
+        book.lastBookOpen || lastBookOpen || 0
+      }.zip`;
     }
 
     return `bookdata_${exporterVersion}_${currentDbVersion}_${BaseStorageHandler.getBookCharacters(

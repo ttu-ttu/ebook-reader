@@ -65,7 +65,7 @@ export async function importData(
             cancelSignal
           );
 
-          dataIds.push(await targetHandler.saveBook(bookContent));
+          dataIds.push(await targetHandler.saveBook(bookContent, false));
 
           checkCancelAndProgress(cancelSignal, false);
 
@@ -87,7 +87,10 @@ export async function importData(
 
   await Promise.all(tasks).catch(() => {});
 
-  return { error: errorMessage, dataId: files.length === 1 ? dataIds.at(-1) : undefined };
+  return {
+    error: errorMessage,
+    dataId: files.length === 1 ? dataIds[dataIds.length - 1] : undefined
+  };
 }
 
 export async function importBackup(

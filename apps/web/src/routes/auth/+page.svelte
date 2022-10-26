@@ -108,6 +108,8 @@
       }
 
       window.location.assign(`${authEndpoint}?${params.toString()}`);
+    } else if (url.searchParams.has('ttu-init-wait')) {
+      // idle until location reassign for iOS workaround of blocking popups in async context
     } else {
       reportError(
         url.origin,
