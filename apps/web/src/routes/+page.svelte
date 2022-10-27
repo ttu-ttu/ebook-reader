@@ -6,7 +6,7 @@
   import { observe } from '$lib/functions/rxjs/use-observable';
 
   const autoNavigate$ = database.lastItem$.pipe(
-    map((lastItem) => (lastItem ? `/b/${lastItem.dataId}` : 'manage')),
+    map((lastItem) => (lastItem ? `/b?id=${lastItem.dataId}` : 'manage')),
     tap(goto)
   );
 </script>
