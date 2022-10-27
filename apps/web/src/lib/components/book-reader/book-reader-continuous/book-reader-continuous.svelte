@@ -330,7 +330,7 @@
   }
 
   function onWheel(ev: WheelEvent) {
-    if (verticalMode && !$tocIsOpen$ && $skipKeyDownListener$) {
+    if (verticalMode && !$tocIsOpen$ && !$skipKeyDownListener$) {
       scrollFn(ev, fontSize, window.innerWidth);
     }
   }
