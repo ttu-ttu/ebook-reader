@@ -98,7 +98,7 @@
   let showSpinner = true;
   let showHeader = true;
   let isBookmarkScreen = false;
-  const showFooter = true;
+  let showFooter = true;
   let exploredCharCount = 0;
   let bookCharCount = 0;
   let autoScroller: AutoScroller | undefined;
@@ -772,6 +772,8 @@
 <div
   class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full cursor-pointer items-center justify-between text-xs leading-none"
   style:color={$themeOption$?.tooltipTextFontColor}
+  on:click={() => (showFooter = !showFooter)}
+  on:keypress={() => {}}
 >
   <div class="h-full">
     {#if dataToReplicate.length}
@@ -780,6 +782,7 @@
         class:text-red-500={externalStorageErrors > 1}
         class:animate-pulse={externalStorageErrors > 1 || isReplicating}
         on:click|stopPropagation={() => executeReplication(false)}
+        on:keypress={() => {}}
       >
         <Fa icon={faCloudBolt} />
       </div>
