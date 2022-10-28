@@ -676,7 +676,7 @@
       ]);
     }
 
-    goto(`/${routeId}`);
+    goto(`${routeId}`);
   }
 </script>
 
@@ -773,7 +773,7 @@
   class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full cursor-pointer items-center justify-between text-xs leading-none"
   style:color={$themeOption$?.tooltipTextFontColor}
   on:click={() => (showFooter = !showFooter)}
-  on:keypress={() => {}}
+  on:keyup={() => {}}
 >
   <div class="h-full">
     {#if dataToReplicate.length}
@@ -782,7 +782,7 @@
         class:text-red-500={externalStorageErrors > 1}
         class:animate-pulse={externalStorageErrors > 1 || isReplicating}
         on:click|stopPropagation={() => executeReplication(false)}
-        on:keypress={() => {}}
+        on:keyup={() => {}}
       >
         <Fa icon={faCloudBolt} />
       </div>
