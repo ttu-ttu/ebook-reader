@@ -76,7 +76,7 @@ importers:
       svelte-meta-tags: 2.6.3
       svelte-preprocess: 4.10.7
       tailwindcss: 3.2.1
-      tslib: 2.4.0
+      tslib: 2.4.1
       typescript: 4.8.4
       ua-parser-js: 1.0.32
       vite: 3.2.2
@@ -113,7 +113,7 @@ importers:
       svelte-check: 2.9.2_2uxq2uj3y7vikqtsxwvwgetdve
       svelte-preprocess: 4.10.7_xxv2f6lfnubmrcdhc2bvphwium
       tailwindcss: 3.2.1_postcss@8.4.18
-      tslib: 2.4.0
+      tslib: 2.4.1
       typescript: 4.8.4
       vite: 3.2.2_sass@1.55.0
 
@@ -541,7 +541,7 @@ packages:
       open: 8.4.0
       picocolors: 1.0.0
       tiny-glob: 0.2.9
-      tslib: 2.4.0
+      tslib: 2.4.1
     dev: true
 
   /@polka/url/1.0.0-next.21:
@@ -2021,7 +2021,7 @@ packages:
       eslint-etc: 5.1.0_wyqvi574yv7oiwfeinomdzmc3m
       requireindex: 1.2.0
       rxjs-report-usage: 1.0.6
-      tslib: 2.4.0
+      tslib: 2.4.1
       tsutils: 3.21.0_typescript@4.8.4
       tsutils-etc: 1.4.1_mhfzdf4crgayux52p57kxjyixi
       typescript: 4.8.4
@@ -3657,7 +3657,7 @@ packages:
   /rxjs/7.5.7:
     resolution: {integrity: sha512-z9MzKh/UcOqB3i20H6rtrlaE/CgjLOvheWK/9ILrbhROGTweAi1BaFsTT9FbwZi5Trr1qNRs+MXkhmR06awzQA==}
     dependencies:
-      tslib: 2.4.0
+      tslib: 2.4.1
 
   /sade/1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
@@ -4069,7 +4069,7 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     dependencies:
       '@pkgr/utils': 2.3.1
-      tslib: 2.4.0
+      tslib: 2.4.1
     dev: true
 
   /tailwindcss/3.2.1_postcss@8.4.18:
@@ -4210,8 +4210,8 @@ packages:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
     dev: true
 
-  /tslib/2.4.0:
-    resolution: {integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==}
+  /tslib/2.4.1:
+    resolution: {integrity: sha512-tGyy4dAjRIEwI7BzsB0lynWgOpfqjUdq91XXAlIWD2OwKBH7oCl/GZG/HT4BOHrTlPMOASlMQ7veyTqpmRcrNA==}
 
   /tsutils-etc/1.4.1_mhfzdf4crgayux52p57kxjyixi:
     resolution: {integrity: sha512-6UPYgc7OXcIW5tFxlsZF3OVSBvDInl/BkS3Xsu64YITXk7WrnWTVByKWPCThFDBp5gl5IGHOzGMdQuDCE7OL4g==}
