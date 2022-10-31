@@ -51,7 +51,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.2.0
       '@popperjs/core': 2.11.6
       '@sveltejs/adapter-static': 1.0.0-next.47
-      '@sveltejs/kit': 1.0.0-next.528
+      '@sveltejs/kit': 1.0.0-next.529
       '@tailwindcss/aspect-ratio': 0.4.2
       '@tailwindcss/forms': 0.5.3
       '@tailwindcss/line-clamp': 0.4.2
@@ -99,7 +99,7 @@ importers:
       ua-parser-js: 1.0.32
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.47
-      '@sveltejs/kit': 1.0.0-next.528_svelte@3.52.0+vite@3.2.1
+      '@sveltejs/kit': 1.0.0-next.529_svelte@3.52.0+vite@3.2.1
       '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.2.1
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.2.1
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.1
@@ -556,8 +556,8 @@ packages:
     resolution: {integrity: sha512-pYY9/FhJAIWB3BXnLoKXj5yMZjQjtD9ZsW8UOqKE51H5sbCNHu+wdBlh2CkW20ww4yhfYrlvLWioxij6DPRO9w==}
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.528_svelte@3.52.0+vite@3.2.1:
-    resolution: {integrity: sha512-zUtXzWU4+EgT9cw5s7laPM6jgLQatGui+pCxUyQzEpMwDAOeNWduYl4bEFCRyfQTSNzQK+nnpkR+e5X+TO8BHA==}
+  /@sveltejs/kit/1.0.0-next.529_svelte@3.52.0+vite@3.2.1:
+    resolution: {integrity: sha512-wM9Y38m8GVNT2YDQo41XNNa55OwTiGE+4fEuuhQnQY4nOSihXGllPsdIulnVsrxcSw9jKLkzwJdFr+i2y2y+OQ==}
     engines: {node: '>=16.14'}
     hasBin: true
     requiresBuild: true
@@ -568,7 +568,7 @@ packages:
       '@sveltejs/vite-plugin-svelte': 1.1.0_svelte@3.52.0+vite@3.2.1
       '@types/cookie': 0.5.1
       cookie: 0.5.0
-      devalue: 4.0.0
+      devalue: 4.0.1
       kleur: 4.1.5
       magic-string: 0.26.7
       mime: 3.0.0
@@ -1505,8 +1505,8 @@ packages:
       minimist: 1.2.6
     dev: true
 
-  /devalue/4.0.0:
-    resolution: {integrity: sha512-w25siwXyuMUqMr7jPlEjyNCp1vn0Jzj/fNg3qVt/r/Dpe8HjESh2V92L0jmh3uq4iJt0BvjH+Azk1pQzkcnDWA==}
+  /devalue/4.0.1:
+    resolution: {integrity: sha512-Oksbel8g2rv5ivcCyImF1RXEU2FcS1OtCwVs4tJCCeVws/Dp9EE15fUbEsNr/xLD3ZxsQURBCDf56Lk1CgwCpg==}
     dev: true
 
   /didyoumean/1.2.2:
