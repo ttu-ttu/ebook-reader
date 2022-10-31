@@ -15,6 +15,7 @@
   } from 'rxjs';
   import { quintInOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
+  import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { faCloudBolt, faSpinner } from '@fortawesome/free-solid-svg-icons';
@@ -284,6 +285,14 @@
 
   $: if ($tocIsOpen$) {
     autoScroller?.off();
+  }
+
+  $: if (browser && bookCharCount) {
+    document.dispatchEvent(new CustomEvent('ttsu:page.change', { detail: { exploredCharCount } }));
+  }
+
+  $: if (browser) {
+    document.dispatchEvent(new CustomEvent('ttsu:page.change', { detail: { bookCharCount } }));
   }
 
   $: upSyncEnabled =
