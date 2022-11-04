@@ -51,7 +51,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.2.0
       '@popperjs/core': 2.11.6
       '@sveltejs/adapter-static': 1.0.0-next.48
-      '@sveltejs/kit': 1.0.0-next.532
+      '@sveltejs/kit': 1.0.0-next.535
       '@tailwindcss/aspect-ratio': 0.4.2
       '@tailwindcss/forms': 0.5.3
       '@tailwindcss/line-clamp': 0.4.2
@@ -99,7 +99,7 @@ importers:
       ua-parser-js: 1.0.32
     devDependencies:
       '@sveltejs/adapter-static': 1.0.0-next.48
-      '@sveltejs/kit': 1.0.0-next.532_svelte@3.52.0+vite@3.2.2
+      '@sveltejs/kit': 1.0.0-next.535_svelte@3.52.0+vite@3.2.2
       '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.2.1
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.2.1
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.1
@@ -556,19 +556,19 @@ packages:
     resolution: {integrity: sha512-Z5Z+QZOav6D0KDeU3ReksGERJg/sX1k5OKWWXyQ11OwGErEEwSXHYRUyjaBmZEPeGzpVVGwwMUK8YWJlG/MKeA==}
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.532_svelte@3.52.0+vite@3.2.2:
-    resolution: {integrity: sha512-g+t+dncoz/DBc1mfwSfBaIBqE5pl0caMUy7yZzjsnyw0WG3AevC04d2KfTOgtOMgXVDnSVqZxlTR+MM5tnKeyw==}
+  /@sveltejs/kit/1.0.0-next.535_svelte@3.52.0+vite@3.2.2:
+    resolution: {integrity: sha512-sbVFeidRGYKqahVWATuvl9PVnIDA/DvXUuq3LAV7eLXf9LWsdMt+9OhXmz8Ltxv8ov3+Ph6gcVSBvisF4BEvBQ==}
     engines: {node: '>=16.14'}
     hasBin: true
     requiresBuild: true
     peerDependencies:
       svelte: ^3.44.0
-      vite: ^3.1.0
+      vite: ^3.2.0
     dependencies:
       '@sveltejs/vite-plugin-svelte': 1.1.0_svelte@3.52.0+vite@3.2.2
       '@types/cookie': 0.5.1
       cookie: 0.5.0
-      devalue: 4.1.0
+      devalue: 4.2.0
       kleur: 4.1.5
       magic-string: 0.26.7
       mime: 3.0.0
@@ -1506,8 +1506,8 @@ packages:
       minimist: 1.2.6
     dev: true
 
-  /devalue/4.1.0:
-    resolution: {integrity: sha512-glzE77YSRp97HdNQ8EKTYJQ3tS/7DaY+c7/NjsTrJsNexqYIEANww4qyjhxsJqvpDpoqxgRqjwDNrOq8WS8NFQ==}
+  /devalue/4.2.0:
+    resolution: {integrity: sha512-mbjoAaCL2qogBKgeFxFPOXAUsZchircF+B/79LD4sHH0+NHfYm8gZpQrskKDn5gENGt35+5OI1GUF7hLVnkPDw==}
     dev: true
 
   /didyoumean/1.2.2:
