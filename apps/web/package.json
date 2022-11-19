@@ -37,7 +37,7 @@
     "@zip.js/zip.js": "2.4.26",
     "balanced-match": "2.0.0",
     "fake-indexeddb": "4.0.0",
-    "fast-xml-parser": "4.0.11",
+    "fast-xml-parser": "4.0.12",
     "idb": "7.1.1",
     "p-limit": "4.0.0",
     "path-browserify": "1.0.1",
