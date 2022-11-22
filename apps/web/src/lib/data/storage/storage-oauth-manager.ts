@@ -4,6 +4,7 @@
  * All rights reserved.
  */
 
+import { base } from '$app/paths';
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
 import { dialogManager } from '$lib/data/dialog-manager';
 import {
