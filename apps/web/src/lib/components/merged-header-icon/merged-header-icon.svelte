@@ -2,6 +2,7 @@
   import Fa from 'svelte-fa';
   import { createEventDispatcher } from 'svelte';
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import Popover from '$lib/components/popover/popover.svelte';
@@ -31,7 +32,7 @@
       const action = actionItems.find((item) => item.label === target);
 
       if (action?.routeId) {
-        goto(`${action.routeId}`);
+        goto(`${base}${action.routeId}`);
       }
     }
   }

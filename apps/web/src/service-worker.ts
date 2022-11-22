@@ -1,7 +1,9 @@
 /// <reference lib="webworker" />
 
-import { toSearchParams } from '$lib/functions/to-search-params';
 import { build, files, prerendered, version } from '$service-worker';
+
+import { base } from '$app/paths';
+import { toSearchParams } from '$lib/functions/to-search-params';
 
 // eslint-disable-next-line no-restricted-globals
 const worker = self as unknown as ServiceWorkerGlobalScope;
@@ -121,7 +123,7 @@ function selfHostParameterizedUrlResponse(request: Request) {
   const readerRegex = /\/b\/(?<id>\d+)\/?(\?|$)/;
   const readerRegexResult = readerRegex.exec(url.pathname);
   if (readerRegexResult?.groups) {
-    return createRedirectResponse(`/b?${toSearchParams(readerRegexResult.groups)}`);
+    return createRedirectResponse(`${base}/b?${toSearchParams(readerRegexResult.groups)}`);
   }
   return undefined;
 }

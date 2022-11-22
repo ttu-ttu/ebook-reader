@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { faUpload } from '@fortawesome/free-solid-svg-icons';
   import BookCardList from '$lib/components/book-card/book-card-list.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
@@ -225,7 +226,7 @@
   }
 
   async function gotoBook(id: number) {
-    await goto(`/b?id=${id}`);
+    await goto(`${base}/b?id=${id}`);
   }
 
   async function onFilesChange(fileList: FileList | File[]) {

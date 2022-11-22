@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { map, tap } from 'rxjs';
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { database } from '$lib/data/store';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { observe } from '$lib/functions/rxjs/use-observable';
+  import { map, tap } from 'rxjs';
 
   const autoNavigate$ = database.lastItem$.pipe(
-    map((lastItem) => (lastItem ? `/b?id=${lastItem.dataId}` : 'manage')),
+    map((lastItem) => (lastItem ? `${base}/b?id=${lastItem.dataId}` : 'manage')),
     tap(goto)
   );
 </script>

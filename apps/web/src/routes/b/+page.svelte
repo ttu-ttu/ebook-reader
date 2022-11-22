@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import {
     auditTime,
     EMPTY,
@@ -202,7 +203,7 @@
   const leaveIfBookMissing$ = rawBookData$.pipe(
     tap((data) => {
       if (!data) {
-        goto('/manage');
+        goto(`${base}${mergeEntries.MANAGE.routeId}`);
       }
     }),
     reduceToEmptyString()
@@ -685,7 +686,7 @@
       ]);
     }
 
-    goto(`${routeId}`);
+    goto(`${base}${routeId}`);
   }
 </script>
 
