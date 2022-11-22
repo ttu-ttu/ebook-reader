@@ -51,6 +51,28 @@ export class PageManagerPaginated implements PageManager {
     this.flipPage(-1);
   }
 
+  updateSectionDataByOffset(offset = 0) {
+    const viewportSize = this.verticalMode ? this.height : this.width;
+    const currentPercentage =
+      (this.virtualScrollPos$.getValue() /
+        this.scrollEl[this.verticalMode ? 'scrollHeight' : 'scrollWidth']) *
+      100;
+
+    if (offset) {
+      const nextPageOffset = this.virtualScrollPos$.getValue() + viewportSize + this.pageGap;
+      const diffPercentage =
+        (nextPageOffset / this.scrollEl[this.verticalMode ? 'scrollHeight' : 'scrollWidth']) * 100 -
+        currentPercentage;
+
+      this.updateSectionData(
+        this.sections[this.sectionIndex$.getValue()]?.id,
+        currentPercentage + diffPercentage * offset
+      );
+    } else {
+      this.updateSectionData(this.sections[this.sectionIndex$.getValue()]?.id, currentPercentage);
+    }
+  }
+
   flipPage(multiplier: 1 | -1) {
     const scrollSizeProp = this.verticalMode ? 'scrollHeight' : 'scrollWidth';
     const viewportSize = this.verticalMode ? this.height : this.width;

@@ -29,4 +29,6 @@ export function isMobile(window: Window) {
   return userAgentRegex.test(UA);
 }
 
+export function dummyFn() {}
+
 export const isMobile$ = writableSubject<boolean>(false);

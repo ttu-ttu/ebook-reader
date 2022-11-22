@@ -14,11 +14,16 @@ export class PageManagerContinuous implements PageManager {
   ) {}
 
   nextPage() {
-    this.scrollByPercent(0.9);
+    this.scrollByPercent(0.95);
   }
 
   prevPage() {
-    this.scrollByPercent(-0.9);
+    this.scrollByPercent(-0.95);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  updateSectionDataByOffset() {
+    // no-op
   }
 
   scrollTo(pos: number) {
