@@ -14,7 +14,7 @@
 
   const dispatch = createEventDispatcher<{ action: string }>();
 
-  const actionItems = items.filter((item) => item.routeId !== $page.routeId);
+  const actionItems = items.filter((item) => item.routeId !== $page.route.id);
 
   let menuElm: Popover;
 
