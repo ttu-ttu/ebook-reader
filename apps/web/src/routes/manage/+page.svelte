@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { base } from '$app/paths';
   import { faUpload } from '@fortawesome/free-solid-svg-icons';
   import BookCardList from '$lib/components/book-card/book-card-list.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
@@ -11,6 +10,7 @@
   import { pxScreen } from '$lib/css-classes';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
+  import { pagePath } from '$lib/data/env';
   import { logger } from '$lib/data/logger';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import { StorageKey } from '$lib/data/storage/storage-types';
@@ -226,7 +226,7 @@
   }
 
   async function gotoBook(id: number) {
-    await goto(`${base}/b?id=${id}`);
+    await goto(`${pagePath}/b?id=${id}`);
   }
 
   async function onFilesChange(fileList: FileList | File[]) {

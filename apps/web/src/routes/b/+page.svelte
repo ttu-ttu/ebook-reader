@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { base } from '$app/paths';
   import {
     auditTime,
     EMPTY,
@@ -64,6 +63,7 @@
     BooksDbBookmarkData
   } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
+  import { pagePath } from '$lib/data/env';
   import { logger } from '$lib/data/logger';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import type { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
@@ -203,7 +203,7 @@
   const leaveIfBookMissing$ = rawBookData$.pipe(
     tap((data) => {
       if (!data) {
-        goto(`${base}${mergeEntries.MANAGE.routeId}`);
+        goto(`${pagePath}${mergeEntries.MANAGE.routeId}`);
       }
     }),
     reduceToEmptyString()
@@ -686,7 +686,7 @@
       ]);
     }
 
-    goto(`${base}${routeId}`);
+    goto(`${pagePath}${routeId}`);
   }
 </script>
 

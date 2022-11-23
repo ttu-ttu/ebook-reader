@@ -5,6 +5,7 @@
  */
 
 export const basePath = import.meta.env.VITE_BASE_PATH || 'https://reader.ttsu.app';
+export const pagePath = import.meta.env.VITE_PAGE_PATH || '';
 export const gDriveAuthEndpoint =
   import.meta.env.VITE_GDRIVE_AUTH_ENDPOINT || 'https://accounts.google.com/o/oauth2/v2/auth';
 export const gDriveTokenEndpoint =

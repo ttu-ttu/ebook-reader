@@ -4,7 +4,6 @@
  * All rights reserved.
  */
 
-import { base } from '$app/paths';
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
 import { dialogManager } from '$lib/data/dialog-manager';
 import {
@@ -15,7 +14,8 @@ import {
   oneDriveAuthEndpoint,
   oneDriveClientId,
   oneDriveScope,
-  oneDriveTokenEndpoint
+  oneDriveTokenEndpoint,
+  pagePath
 } from '$lib/data/env';
 import { logger } from '$lib/data/logger';
 import {
@@ -159,10 +159,10 @@ export class StorageOAuthManager {
 
     if (authWindow) {
       this.authWindow = authWindow;
-      this.authWindow.location.assign(`${base}/auth?ttu-init-auth=1`);
+      this.authWindow.location.assign(`${pagePath}/auth?ttu-init-auth=1`);
     } else if (shallUnlock) {
       this.authWindow = StorageOAuthManager.createWindow(
-        `${base}/auth?ttu-init-auth=1`,
+        `${pagePath}/auth?ttu-init-auth=1`,
         'auth',
         Math.min(Math.max(this.parentWindow.innerWidth, 300), 560),
         Math.min(Math.max(this.parentWindow.innerHeight, 300), 560),
@@ -195,7 +195,7 @@ export class StorageOAuthManager {
           storageSourceName,
           false,
           StorageOAuthManager.createWindow(
-            `${base}/auth?ttu-init-wait=1`,
+            `${pagePath}/auth?ttu-init-wait=1`,
             'auth',
             Math.min(Math.max(this.parentWindow.innerWidth, 300), 560),
             Math.min(Math.max(this.parentWindow.innerHeight, 300), 560),

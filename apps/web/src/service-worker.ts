@@ -2,7 +2,7 @@
 
 import { build, files, prerendered, version } from '$service-worker';
 
-import { base } from '$app/paths';
+import { pagePath } from '$lib/data/env';
 import { toSearchParams } from '$lib/functions/to-search-params';
 
 // eslint-disable-next-line no-restricted-globals
@@ -123,7 +123,7 @@ function selfHostParameterizedUrlResponse(request: Request) {
   const readerRegex = /\/b\/(?<id>\d+)\/?(\?|$)/;
   const readerRegexResult = readerRegex.exec(url.pathname);
   if (readerRegexResult?.groups) {
-    return createRedirectResponse(`${base}/b?${toSearchParams(readerRegexResult.groups)}`);
+    return createRedirectResponse(`${[[pagePath]]}/b?${toSearchParams(readerRegexResult.groups)}`);
   }
   return undefined;
 }
