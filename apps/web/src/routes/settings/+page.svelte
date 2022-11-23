@@ -28,6 +28,7 @@
     writingMode$
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
+  import { pagePath } from '$lib/data/env';
   import { storage } from '$lib/data/window/navigator/storage';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { writableSubject } from '$lib/functions/svelte/store';
@@ -40,7 +41,7 @@
     storage.persisted().then(setPersistentStorage);
   });
 
-  let prevPage = mergeEntries.MANAGE.routeId;
+  let prevPage = `${pagePath}${mergeEntries.MANAGE.routeId}`;
 
   let activeSettings = 'Reader';
 
