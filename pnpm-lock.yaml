@@ -61,7 +61,7 @@ importers:
       '@zip.js/zip.js': 2.4.26
       autoprefixer: 10.4.13
       balanced-match: 2.0.0
-      fake-indexeddb: 4.0.0
+      fake-indexeddb: 4.0.1
       fast-xml-parser: 4.0.12
       idb: 7.1.1
       p-limit: 4.0.0
@@ -87,7 +87,7 @@ importers:
       '@popperjs/core': 2.11.6
       '@zip.js/zip.js': 2.4.26
       balanced-match: 2.0.0
-      fake-indexeddb: 4.0.0
+      fake-indexeddb: 4.0.1
       fast-xml-parser: 4.0.12
       idb: 7.1.1
       p-limit: 4.0.0
@@ -2199,8 +2199,8 @@ packages:
       strip-final-newline: 3.0.0
     dev: true
 
-  /fake-indexeddb/4.0.0:
-    resolution: {integrity: sha512-oCfWSJ/qvQn1XPZ8SHX6kY3zr1t+bN7faZ/lltGY0SBGhFOPXnWf0+pbO/MOAgfMx6khC2gK3S/bvAgQpuQHDQ==}
+  /fake-indexeddb/4.0.1:
+    resolution: {integrity: sha512-hFRyPmvEZILYgdcLBxVdHLik4Tj3gDTu/g7s9ZDOiU3sTNiGx+vEu1ri/AMsFJUZ/1sdRbAVrEcKndh3sViBcA==}
     dependencies:
       realistic-structured-clone: 3.0.0
     dev: false
