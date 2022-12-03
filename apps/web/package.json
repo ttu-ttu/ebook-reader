@@ -41,7 +41,7 @@
     "idb": "7.1.1",
     "p-limit": "4.0.0",
     "path-browserify": "1.0.1",
-    "rxjs": "7.5.7",
+    "rxjs": "7.6.0",
     "svelte-fa": "3.0.3",
     "svelte-gestures": "1.4.1",
     "svelte-meta-tags": "2.6.4",
