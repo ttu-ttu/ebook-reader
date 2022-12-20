@@ -70,7 +70,7 @@ importers:
       rxjs: 7.8.0
       sass: 1.57.1
       svelte: 3.55.0
-      svelte-check: 2.10.2
+      svelte-check: 2.10.3
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.4
@@ -110,7 +110,7 @@ importers:
       postcss: 8.4.20
       sass: 1.57.1
       svelte: 3.55.0
-      svelte-check: 2.10.2_z65gjjye4e5pmogqkv4yolh7vq
+      svelte-check: 2.10.3_z65gjjye4e5pmogqkv4yolh7vq
       svelte-preprocess: 4.10.7_nq7iz5ahyq7ey7rsxvk46dafhu
       tailwindcss: 3.2.4_postcss@8.4.20
       tslib: 2.4.1
@@ -3992,8 +3992,8 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/2.10.2_z65gjjye4e5pmogqkv4yolh7vq:
-    resolution: {integrity: sha512-h1Tuiir0m8J5yqN+Vx6qgKKk1L871e6a9o7rMwVWfu8Qs6Wg7x2R+wcxS3SO3VpW5JCxCat90rxPsZMYgz+HaQ==}
+  /svelte-check/2.10.3_z65gjjye4e5pmogqkv4yolh7vq:
+    resolution: {integrity: sha512-Nt1aWHTOKFReBpmJ1vPug0aGysqPwJh2seM1OvICfM2oeyaA62mOiy5EvkXhltGfhCcIQcq2LoE0l1CwcWPjlw==}
     hasBin: true
     peerDependencies:
       svelte: ^3.24.0
