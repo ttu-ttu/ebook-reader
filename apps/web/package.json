@@ -20,7 +20,7 @@
     "@types/ua-parser-js": "0.7.36",
     "autoprefixer": "10.4.13",
     "postcss": "8.4.20",
-    "sass": "1.57.0",
+    "sass": "1.57.1",
     "svelte": "3.55.0",
     "svelte-check": "2.10.2",
     "svelte-preprocess": "4.10.7",
