@@ -17,7 +17,7 @@ importers:
       eslint-plugin-import: 2.26.0
       eslint-plugin-rxjs: 5.0.2
       eslint-plugin-svelte3: 4.0.0
-      husky: 8.0.2
+      husky: 8.0.3
       lint-staged: 13.1.0
       prettier: 2.8.1
       prettier-plugin-tailwindcss: 0.2.1
@@ -37,7 +37,7 @@ importers:
       eslint-plugin-import: 2.26.0_cxu27kyieece4tnvunezm4whiq
       eslint-plugin-rxjs: 5.0.2_iukboom6ndih5an6iafl45j2fe
       eslint-plugin-svelte3: 4.0.0_6go7qzsvzihesfwmyvq3tnl5qq
-      husky: 8.0.2
+      husky: 8.0.3
       lint-staged: 13.1.0
       prettier: 2.8.1
       prettier-plugin-tailwindcss: 0.2.1_prettier@2.8.1
@@ -2527,8 +2527,8 @@ packages:
     engines: {node: '>=12.20.0'}
     dev: true
 
-  /husky/8.0.2:
-    resolution: {integrity: sha512-Tkv80jtvbnkK3mYWxPZePGFpQ/tT3HNSs/sasF9P2YfkMezDl3ON37YN6jUUI4eTg5LcyVynlb6r4eyvOmspvg==}
+  /husky/8.0.3:
+    resolution: {integrity: sha512-+dQSyqPh4x1hlO1swXBiNb2HzTDN1I2IGLQx1GrBuiqFJfoMrnZWwVmatvSiO+Iz8fBUnf+lekwNo4c2LlXItg==}
     engines: {node: '>=14'}
     hasBin: true
     dev: true
