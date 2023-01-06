@@ -19,7 +19,7 @@
     "@types/path-browserify": "1.0.0",
     "@types/ua-parser-js": "0.7.36",
     "autoprefixer": "10.4.13",
-    "postcss": "8.4.20",
+    "postcss": "8.4.21",
     "sass": "1.57.1",
     "svelte": "3.55.0",
     "svelte-check": "3.0.1",
