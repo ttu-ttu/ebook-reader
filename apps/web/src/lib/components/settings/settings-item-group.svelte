@@ -1,4 +1,4 @@
-<script type="ts">
+<script lang="ts">
   import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons';
   import Fa from 'svelte-fa';
   import Popover from '../popover/popover.svelte';
