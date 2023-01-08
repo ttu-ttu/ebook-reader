@@ -53,7 +53,8 @@
     verticalCustomReadingPosition$,
     horizontalCustomReadingPosition$,
     customReadingPointEnabled$,
-    selectionToBookmarkEnabled$
+    selectionToBookmarkEnabled$,
+    lineHeight$
   } from '$lib/data/store';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
   import {
@@ -502,9 +503,10 @@
     backgroundColor={$backgroundColor$}
     hintFuriganaFontColor={$themeOption$?.hintFuriganaFontColor}
     hintFuriganaShadowColor={$themeOption$?.hintFuriganaShadowColor}
-    fontSize={$fontSize$}
     fontFamilyGroupOne={$fontFamilyGroupOne$}
     fontFamilyGroupTwo={$fontFamilyGroupTwo$}
+    fontSize={$fontSize$}
+    lineHeight={$lineHeight$}
     hideSpoilerImage={$hideSpoilerImage$}
     hideFurigana={$hideFurigana$}
     furiganaStyle={$furiganaStyle$}

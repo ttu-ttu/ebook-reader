@@ -23,6 +23,8 @@ The first time you enter the page (or have no files loaded yet) you will need to
 You can load files by clicking/tapping on the dropzone or respective Icons.
 Alternatively, you can also drag & drop files or folders on the manager if your device supports it.
 
+**Note**: The character count is mainly based on paragraph nodes in the book. Configuring e. g. a very high line height or similar may update the counter more slowly
+
 You can find most of the reader controls in the reader header which you can open by clicking/tapping in the upper area of the page:
 
 | Control                                          | Description                                                                     |
