@@ -22,7 +22,8 @@
     selectionToBookmarkEnabled$,
     theme$,
     writingMode$,
-    viewMode$
+    viewMode$,
+    lineHeight$
   } from '$lib/data/store';
   import { storage } from '$lib/data/window/navigator/storage';
   import { formatPageTitle } from '$lib/functions/format-page-title';
@@ -79,9 +80,10 @@
     <SettingsContent
       {activeSettings}
       bind:selectedTheme={$theme$}
-      bind:fontSize={$fontSize$}
       bind:fontFamilyGroupOne={$fontFamilyGroupOne$}
       bind:fontFamilyGroupTwo={$fontFamilyGroupTwo$}
+      bind:fontSize={$fontSize$}
+      bind:lineHeight={$lineHeight$}
       bind:blurImage={$hideSpoilerImage$}
       bind:hideFurigana={$hideFurigana$}
       bind:furiganaStyle={$furiganaStyle$}

@@ -42,11 +42,13 @@
 
   export let hintFuriganaShadowColor: string;
 
-  export let fontSize: number;
-
   export let fontFamilyGroupOne: string;
 
   export let fontFamilyGroupTwo: string;
+
+  export let fontSize: number;
+
+  export let lineHeight: number;
 
   export let hideSpoilerImage: boolean;
 
@@ -179,9 +181,10 @@
       {backgroundColor}
       {hintFuriganaFontColor}
       {hintFuriganaShadowColor}
-      {fontSize}
       {fontFamilyGroupOne}
       {fontFamilyGroupTwo}
+      {fontSize}
+      {lineHeight}
       {hideSpoilerImage}
       {hideFurigana}
       {furiganaStyle}
@@ -214,9 +217,10 @@
       {backgroundColor}
       {hintFuriganaFontColor}
       {hintFuriganaShadowColor}
-      {fontSize}
       {fontFamilyGroupOne}
       {fontFamilyGroupTwo}
+      {fontSize}
+      {lineHeight}
       {hideSpoilerImage}
       {hideFurigana}
       {furiganaStyle}
