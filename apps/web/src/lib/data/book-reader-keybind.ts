@@ -13,7 +13,8 @@ export enum BookReaderAvailableKeybind {
   NEXT_CHAPTER = 'nextChapter',
   NEXT_PAGE = 'nextPage',
   PREV_CHAPTER = 'prevChapter',
-  PREV_PAGE = 'prevPage'
+  PREV_PAGE = 'prevPage',
+  SET_READING_POINT = 'setCustomReadingPoint'
 }
 
 export type BookReaderKeybindMap = Record<string, BookReaderAvailableKeybind>;

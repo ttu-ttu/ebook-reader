@@ -30,11 +30,16 @@ You can find most of the reader controls in the reader header which you can open
 | ![Icon](assets/readme/control-toc.svg)           | Opens the table of content if available                                         |
 | ![Icon](assets/readme/control-bookmark.svg)      | Allows you to create a bookmark at your current location (keybind <kbd>b</kbd>) |
 | ![Image](assets/readme/book-scroll-speed.png)    | Displays current auto scroll speed (keybind <kbd>a</kbd>/<kbd>d</kbd>)          |
+| ![Icon](assets/readme/control-reading-point.svg) | Allows you to execute a custom reader point action                              |
 | ![Icon](assets/readme/control-fullscreen.svg)    | Allows you to enter fullscreen mode (keybind <kbd>F11</kbd>)                    |
 | ![Icon](assets/readme/control-settings.svg)      | Navigates you to the settings                                                   |
 | ![Icon](assets/readme/control-manager.svg)       | Navigates you to the book manager or opens the action menu                      |
 | ![Icon](assets/readme/control-bookmark-icon.svg) | Displayed at the current bookmark location                                      |
 | ![Image](assets/readme/book-progress.png)        | Displays your reading progress, click/tap on it to hide                         |
+
+Custom reading points and the respective change in the character count in pagination mode are temporary - changing the current page or resizing the reader window will reset them. When having "Selection to Bookmark" enabled and using a custom reading point at the same time, selected text will be prioritized over a custom reading point for positioning bookmarks etc.
+
+**Note**: Overlapping elements or controls coming from e. g. browser extensions or app wrappers may impact what node will be selected for a custom reading point. Move them out of the reader area or disable them in case of issues. In case the selected node breaks across multiple columns or pages the bookmark may be placed on previous elements instead. You can experiment with the "Avoid Page Break" option, simply fallback to the default bookmark by clearing your selection/custom reading point or selecting a different node.
 
 # Desktop Keybinds
 
@@ -51,6 +56,7 @@ Explanation from [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Keyboard
 | <kbd>d</kbd>        | Decrease auto-scroll speed               |
 | <kbd>b</kbd>        | Create bookmark at your current location |
 | <kbd>r</kbd>        | Return to bookmark location              |
+| <kbd>t</kbd>        | Select a new custom reading point        |
 | <kbd>PageDown</kbd> | Move to next page                        |
 | <kbd>PageUp</kbd>   | Move to previous page                    |
 | <kbd>n</kbd>        | Move to next/previous chapter            |

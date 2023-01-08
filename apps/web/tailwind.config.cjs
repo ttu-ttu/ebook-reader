@@ -32,7 +32,9 @@ const config = {
     {
       pattern: /grid-cols-(2|3)/,
       variants: ['md']
-    }
+    },
+    'animate-[pulse_0.5s_cubic-bezier(0.4,0,0.6,1)_1]',
+    'animate-[pulse_1s_cubic-bezier(0.4,0,0.6,1)_infinite]'
   ]
 };
 

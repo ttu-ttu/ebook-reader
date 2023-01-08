@@ -10,7 +10,9 @@
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
+  import { customReadingPointEnabled$ } from '$lib/data/store';
   import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
+  import { getReferencePoints } from '$lib/functions/range-util';
   import { faBookmark } from '@fortawesome/free-solid-svg-icons';
   import {
     animationFrameScheduler,
@@ -90,6 +92,14 @@
   export let bookmarkManager: BookmarkManager | undefined;
 
   export let pageManager: PageManager | undefined;
+
+  export let customReadingPoint: number;
+
+  export let customReadingPointLeft: number;
+
+  export let customReadingPointTop: number;
+
+  export let customReadingPointScrollOffset: number;
 
   const dispatch = createEventDispatcher<{
     bookmark: void;
@@ -207,6 +217,12 @@
     }
   }
 
+  $: if ($customReadingPointEnabled$ && contentEl && Number.isFinite(customReadingPoint)) {
+    updateCustomReadingPointPosition();
+    onScroll();
+    updateSectionProgress();
+  }
+
   onDestroy(() => {
     destroy$.next();
     destroy$.complete();
@@ -230,14 +246,60 @@
     .subscribe(() => {
       if (!calculator || !pageManagerConcrete) return;
 
-      const scrollPos = calculator.getScrollPosByCharCount(prevIntendedCharCount);
+      const scrollPos =
+        calculator.getScrollPosByCharCount(prevIntendedCharCount) +
+        (verticalMode ? customReadingPointScrollOffset : -customReadingPointScrollOffset);
       isResizeScroll = true;
       pageManagerConcrete.scrollTo(scrollPos);
     });
 
+  function updateCustomReadingPointPosition() {
+    if (!$customReadingPointEnabled$ || !contentEl) {
+      return;
+    }
+
+    const {
+      elLeftReferencePoint,
+      elTopReferencePoint,
+      elRightReferencePoint,
+      elBottomReferencePoint,
+      firstDimensionMargin: firstDimensionMarginValue,
+      pointGap
+    } = getReferencePoints(window, contentEl, verticalMode, firstDimensionMargin);
+
+    if (verticalMode) {
+      customReadingPointTop = elTopReferencePoint;
+      customReadingPointLeft = Math.min(
+        Math.max(
+          firstDimensionMarginValue +
+            (elRightReferencePoint - elLeftReferencePoint) * (customReadingPoint / 100) -
+            2,
+          elLeftReferencePoint + pointGap
+        ),
+        elRightReferencePoint - 2
+      );
+      customReadingPointScrollOffset =
+        window.innerWidth - firstDimensionMarginValue - customReadingPointLeft;
+
+      return;
+    }
+
+    customReadingPointTop = Math.min(
+      Math.max(
+        firstDimensionMarginValue +
+          (elBottomReferencePoint - elTopReferencePoint) * (customReadingPoint / 100),
+        firstDimensionMarginValue
+      ),
+      elBottomReferencePoint - pointGap * 1.5
+    );
+    customReadingPointLeft = elLeftReferencePoint;
+    customReadingPointScrollOffset = customReadingPointTop - firstDimensionMarginValue;
+  }
+
   function onContentDisplayChange(_calculator: CharacterStatsCalculator) {
     _calculator.updateParagraphPos();
-    exploredCharCount = _calculator.calcExploredCharCount();
+    updateCustomReadingPointPosition();
+    exploredCharCount = _calculator.calcExploredCharCount(customReadingPointScrollOffset);
 
     if (scrollWhenReady) {
       scrollWhenReady = false;
@@ -249,7 +311,7 @@
           }
 
           prevIntendedCharCount = data.exploredCharCount || 0;
-          bookmarkManager.scrollToBookmark(data);
+          bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
         })
         .finally(() => {
           if (autoBookmark) {
@@ -314,12 +376,26 @@
 
       entry.progress = verticalMode
         ? (Math.min(
-            Math.max(rect.right + (firstDimensionMargin || 0) - window.innerWidth, 0),
+            Math.max(
+              rect.right +
+                (firstDimensionMargin || 0) -
+                window.innerWidth +
+                customReadingPointScrollOffset,
+              0
+            ),
             rect.width
           ) /
             (rect.width || 1)) *
           100
-        : (Math.abs(Math.min(Math.max(rect.top - (firstDimensionMargin || 0), -rect.height), 0)) /
+        : (Math.abs(
+            Math.min(
+              Math.max(
+                rect.top - (firstDimensionMargin || 0) - customReadingPointScrollOffset,
+                -rect.height
+              ),
+              0
+            )
+          ) /
             (rect.height || 1)) *
           100;
 
@@ -340,9 +416,9 @@
     requestAnimationFrame(() => {
       if (!calculator) return;
 
-      exploredCharCount = calculator.calcExploredCharCount();
+      exploredCharCount = calculator.calcExploredCharCount(customReadingPointScrollOffset);
 
-      if (!isResizeScroll) {
+      if (!isResizeScroll && exploredCharCount) {
         prevIntendedCharCount = exploredCharCount;
       }
       isResizeScroll = false;
@@ -384,11 +460,29 @@
 
     if (verticalMode) {
       window.scrollBy(
-        -(window.innerWidth - rect.right - (firstDimensionMargin || 0) - scrollAdjustment),
+        -(
+          window.innerWidth -
+          rect.right -
+          (firstDimensionMargin || 0) -
+          customReadingPointScrollOffset -
+          (!customReadingPointScrollOffset ||
+          (customReadingPointScrollOffset && scrollAdjustment > customReadingPointScrollOffset)
+            ? scrollAdjustment
+            : 0)
+        ),
         0
       );
     } else {
-      window.scrollBy(0, rect.top - (firstDimensionMargin || 0) - scrollAdjustment);
+      window.scrollBy(
+        0,
+        rect.top -
+          (firstDimensionMargin || 0) -
+          customReadingPointScrollOffset -
+          (!customReadingPointScrollOffset ||
+          (customReadingPointScrollOffset && scrollAdjustment > customReadingPointScrollOffset)
+            ? scrollAdjustment
+            : 0)
+      );
     }
   });
 </script>

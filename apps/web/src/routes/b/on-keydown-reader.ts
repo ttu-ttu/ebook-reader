@@ -19,7 +19,8 @@ export function onKeydownReader(
   autoScroller: AutoScroller | undefined,
   pageManager: PageManager | undefined,
   isVertical: boolean,
-  changeChapter: (offset: number) => void
+  changeChapter: (offset: number) => void,
+  handleSetCustomReadingPoint: () => void
 ) {
   const action = bookReaderKeybindMap[ev.code];
 
@@ -51,6 +52,9 @@ export function onKeydownReader(
       return true;
     case BookReaderAvailableKeybind.NEXT_CHAPTER:
       changeChapter(isVertical ? -1 : 1);
+      return true;
+    case BookReaderAvailableKeybind.SET_READING_POINT:
+      handleSetCustomReadingPoint();
       return true;
     default:
       return false;

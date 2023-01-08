@@ -51,6 +51,16 @@ export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
 
 export const avoidPageBreak$ = writableBooleanLocalStorageSubject()('avoidPageBreak', false);
 
+export const customReadingPointEnabled$ = writableBooleanLocalStorageSubject()(
+  'customReadingPointEnabled',
+  false
+);
+
+export const selectionToBookmarkEnabled$ = writableBooleanLocalStorageSubject()(
+  'selectionToBookmarkEnabled',
+  false
+);
+
 export const autoBookmark$ = writableBooleanLocalStorageSubject()('autoBookmark', false);
 
 export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0);
@@ -69,9 +79,20 @@ export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyA: BookReaderAvailableKeybind.AUTO_SCROLL_INCREASE,
   KeyD: BookReaderAvailableKeybind.AUTO_SCROLL_DECREASE,
   KeyN: BookReaderAvailableKeybind.PREV_CHAPTER,
-  KeyM: BookReaderAvailableKeybind.NEXT_CHAPTER
+  KeyM: BookReaderAvailableKeybind.NEXT_CHAPTER,
+  KeyT: BookReaderAvailableKeybind.SET_READING_POINT
 });
 
 const db = browser ? createBooksDb() : import('fake-indexeddb/auto').then(() => createBooksDb());
 
 export const database = new DatabaseService(db);
+
+export const verticalCustomReadingPosition$ = writableNumberLocalStorageSubject()(
+  'verticalCustomReadingPosition',
+  100
+);
+
+export const horizontalCustomReadingPosition$ = writableNumberLocalStorageSubject()(
+  'horizontalCustomReadingPosition',
+  0
+);

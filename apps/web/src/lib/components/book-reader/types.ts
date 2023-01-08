@@ -12,13 +12,26 @@ export interface AutoScroller {
 }
 
 export interface BookmarkManager {
-  formatBookmarkData: (bookId: number) => BooksDbBookmarkData;
+  formatBookmarkData: (
+    bookId: number,
+    customReadingPointScrollOffset: number
+  ) => BooksDbBookmarkData;
 
-  scrollToBookmark: (bookmarkData: BooksDbBookmarkData) => void;
+  formatBookmarkDataByRange: (
+    bookId: number,
+    customReadingPointRange: Range | undefined
+  ) => BooksDbBookmarkData;
+
+  scrollToBookmark: (
+    bookmarkData: BooksDbBookmarkData,
+    customReadingPointScrollOffset?: number
+  ) => void;
 }
 
 export interface PageManager {
   nextPage: () => void;
 
   prevPage: () => void;
+
+  updateSectionDataByOffset: (offset: number) => void;
 }

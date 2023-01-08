@@ -84,6 +84,18 @@
 
   export let isBookmarkScreen: boolean;
 
+  export let customReadingPoint: number;
+
+  export let customReadingPointTop: number;
+
+  export let customReadingPointLeft: number;
+
+  export let customReadingPointScrollOffset: number;
+
+  export let customReadingPointRange: Range | undefined;
+
+  export let showCustomReadingPoint: boolean;
+
   const width$ = new Subject<number>();
 
   const height$ = new Subject<number>();
@@ -185,6 +197,10 @@
       bind:autoScroller
       bind:bookmarkManager
       bind:pageManager
+      bind:customReadingPoint
+      bind:customReadingPointTop
+      bind:customReadingPointLeft
+      bind:customReadingPointScrollOffset
       on:contentChange={(ev) => contentEl$.next(ev.detail)}
       on:bookmark
     />
@@ -215,6 +231,8 @@
       bind:bookmarkData
       bind:bookmarkManager
       bind:pageManager
+      bind:customReadingPointRange
+      bind:showCustomReadingPoint
       on:contentChange={(ev) => contentEl$.next(ev.detail)}
       on:bookmark
     />

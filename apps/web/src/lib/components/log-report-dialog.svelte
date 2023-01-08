@@ -17,6 +17,8 @@
     hideFurigana$,
     furiganaStyle$,
     avoidPageBreak$,
+    customReadingPointEnabled$,
+    selectionToBookmarkEnabled$,
     pageColumns$,
     autoPositionOnResize$,
     requestPersistentStorage$,
@@ -50,6 +52,8 @@
           hideFurigana: hideFurigana$.getValue(),
           furiganaStyle: furiganaStyle$.getValue(),
           avoidPageBreak: avoidPageBreak$.getValue(),
+          customReadingPointEnabled: customReadingPointEnabled$.getValue(),
+          selectionToBookmarkEnabled: selectionToBookmarkEnabled$.getValue(),
           pageColumns: pageColumns$.getValue(),
           autoPositionOnResize: autoPositionOnResize$.getValue(),
           requestPersistentStorage: requestPersistentStorage$.getValue(),
@@ -70,7 +74,12 @@
     <p>{message}</p>
   </svelte:fragment>
   <svelte:fragment slot="footer">
-    <a class={buttonClasses} href="https://github.com/ttu-ttu/ebook-reader" target="_blank">
+    <a
+      class={buttonClasses}
+      href="https://github.com/ttu-ttu/ebook-reader"
+      target="_blank"
+      rel="noreferrer"
+    >
       Open Repository
       <Ripple />
     </a>
