@@ -9,6 +9,7 @@
     autoBookmark$,
     autoPositionOnResize$,
     avoidPageBreak$,
+    customReadingPointEnabled$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -18,6 +19,7 @@
     hideSpoilerImage$,
     pageColumns$,
     secondDimensionMaxValue$,
+    selectionToBookmarkEnabled$,
     theme$,
     writingMode$,
     viewMode$
@@ -89,6 +91,8 @@
       bind:firstDimensionMargin={$firstDimensionMargin$}
       bind:autoPositionOnResize={$autoPositionOnResize$}
       bind:avoidPageBreak={$avoidPageBreak$}
+      bind:customReadingPointEnabled={$customReadingPointEnabled$}
+      bind:selectionToBookmarkEnabled={$selectionToBookmarkEnabled$}
       bind:pageColumns={$pageColumns$}
       bind:persistentStorage={$persistentStorage$}
       bind:autoBookmark={$autoBookmark$}

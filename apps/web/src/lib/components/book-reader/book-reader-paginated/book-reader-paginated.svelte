@@ -4,7 +4,10 @@
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
+  import { firstDimensionMargin$, selectionToBookmarkEnabled$ } from '$lib/data/store';
+  import { clearRange, createRange, pulseElement } from '$lib/functions/range-util';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
+  import { isMobile$ } from '$lib/functions/utils';
   import { faBookmark, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import {
     BehaviorSubject,
@@ -78,6 +81,10 @@
 
   export let autoBookmark = false;
 
+  export let customReadingPointRange: Range | undefined;
+
+  export let showCustomReadingPoint: boolean;
+
   const dispatch = createEventDispatcher<{
     bookmark: void;
     contentChange: HTMLElement;
@@ -105,6 +112,14 @@
 
   let previousIntendedCount = 0;
 
+  let exploredCharCountAdjustedToBookmark = false;
+
+  let bookmarkTopAdjustment: string | undefined;
+
+  let bookmarkLeftAdjustment: string | undefined;
+
+  let bookmarkRightAdjustment: string | undefined;
+
   const width$ = new Subject<number>();
 
   const height$ = new Subject<number>();
@@ -123,11 +138,14 @@
 
   const cssClassOverflowHidden = 'overflow-hidden';
 
-  const gap = 20;
+  const gap = 40;
 
   const destroy$ = new Subject<void>();
 
-  $: bookmarkData.then(updateBookmarkScreen);
+  $: bookmarkData.then((data) => {
+    exploredCharCountAdjustedToBookmark = false;
+    updateBookmarkScreen(data);
+  });
 
   $: if (width) width$.next(width);
 
@@ -202,6 +220,8 @@
     document.body.classList.add(cssClassOverflowHidden);
   }
 
+  $: updateAfterCustomReadingPointUpdate(customReadingPointRange);
+
   onDestroy(() => {
     document.body.classList.remove(cssClassOverflowHidden);
     destroy$.next();
@@ -224,9 +244,19 @@
   pageChange$.pipe(takeUntil(destroy$)).subscribe((isUser) => {
     if (!calculator) return;
 
-    exploredCharCount = calculator.calcExploredCharCount();
+    showCustomReadingPoint = false;
+
+    pulseElement(customReadingPointRange?.endContainer?.parentElement, 'remove', 1);
+
+    customReadingPointRange = undefined;
+    exploredCharCount = calculator.calcExploredCharCount(customReadingPointRange);
+
     if (isUser) {
       previousIntendedCount = exploredCharCount;
+
+      if ($selectionToBookmarkEnabled$) {
+        clearRange(window);
+      }
     }
 
     bookmarkData.then(updateBookmarkScreen);
@@ -271,6 +301,27 @@
       }
     });
 
+  function updateAfterCustomReadingPointUpdate(updatedCustomReadingPosition: Range | undefined) {
+    if (!calculator) {
+      return;
+    }
+
+    exploredCharCount = calculator.calcExploredCharCount(updatedCustomReadingPosition);
+    previousIntendedCount = exploredCharCount;
+
+    updateSectionData(updatedCustomReadingPosition);
+  }
+
+  function updateSectionData(updatedCustomReadingRange: Range | undefined) {
+    if (!concretePageManager || !calculator) {
+      return;
+    }
+
+    concretePageManager.updateSectionDataByOffset(
+      calculator.getOffsetToRange(updatedCustomReadingRange, columnCount)
+    );
+  }
+
   function onHtmlLoad() {
     if (skipFirstHtmlLoad) {
       skipFirstHtmlLoad = false;
@@ -299,7 +350,7 @@
 
   function onContentDisplayChange(_calculator: SectionCharacterStatsCalculator) {
     _calculator.updateParagraphPos();
-    exploredCharCount = _calculator.calcExploredCharCount();
+    exploredCharCount = _calculator.calcExploredCharCount(customReadingPointRange);
     sectionReady$.next(_calculator);
     bookmarkData.then(updateBookmarkScreen);
 
@@ -307,6 +358,7 @@
       scrollWhenReady = false;
       bookmarkData.then((data) => {
         if (!data || !bookmarkManager) return;
+        exploredCharCount = data.exploredCharCount || 0;
         bookmarkManager.scrollToBookmark(data);
       });
     }
@@ -317,7 +369,62 @@
     const bookmarkCharCount = data?.exploredCharCount;
     if (!calculator || !bookmarkCharCount) return;
 
-    isBookmarkScreen = calculator.isCharOnScreen(bookmarkCharCount);
+    const result = calculator.checkBookmarkOnScreen(bookmarkCharCount);
+
+    if (scrollEl && result.isBookmarkScreen) {
+      const dimentionAdjustment = Number(
+        getComputedStyle(scrollEl)[verticalMode ? 'marginTop' : 'marginRight'].replace(/px$/, '')
+      );
+
+      if (!result.bookmarkPos) {
+        setDefaultBookmarkPositions(dimentionAdjustment);
+      } else if (verticalMode) {
+        bookmarkTopAdjustment = dimentionAdjustment ? `${dimentionAdjustment}px` : '0.5rem';
+        bookmarkLeftAdjustment = `${result.bookmarkPos.left}px`;
+        bookmarkRightAdjustment = undefined;
+      } else {
+        bookmarkTopAdjustment = `${result.bookmarkPos.top}px`;
+        bookmarkRightAdjustment = undefined;
+        bookmarkLeftAdjustment =
+          result.bookmarkPos.left > 0
+            ? `calc(${result.bookmarkPos.left}px - ${$isMobile$ ? '15' : '20'}px)`
+            : `calc(${Math.max($isMobile$ ? 15 : 20, dimentionAdjustment)}px)`;
+      }
+    } else {
+      setDefaultBookmarkPositions(0);
+    }
+
+    if (result.isBookmarkScreen && data.exploredCharCount) {
+      if (result.node && !exploredCharCountAdjustedToBookmark && !result.isFirstNode) {
+        updateSectionData(createRange(result.node));
+      } else if (result.isFirstNode) {
+        updateSectionData(undefined);
+      }
+
+      exploredCharCount = exploredCharCountAdjustedToBookmark
+        ? exploredCharCount
+        : data.exploredCharCount;
+      previousIntendedCount = exploredCharCount;
+      exploredCharCountAdjustedToBookmark = true;
+    }
+
+    isBookmarkScreen = result.isBookmarkScreen;
+  }
+
+  function setDefaultBookmarkPositions(dimensionAdjustment: number) {
+    if (verticalMode) {
+      bookmarkTopAdjustment = dimensionAdjustment ? `${dimensionAdjustment}px` : '0.5rem';
+      bookmarkLeftAdjustment = $firstDimensionMargin$
+        ? `${width - $firstDimensionMargin$}px`
+        : undefined;
+      bookmarkRightAdjustment = $firstDimensionMargin$ ? undefined : '0.75rem';
+    } else {
+      bookmarkTopAdjustment = $firstDimensionMargin$ ? `${$firstDimensionMargin$}px` : '0.5rem';
+      bookmarkLeftAdjustment = dimensionAdjustment
+        ? `calc(${dimensionAdjustment}px + 0.75rem)`
+        : '0.75rem';
+      bookmarkRightAdjustment = undefined;
+    }
   }
 
   function onSwipe(ev: CustomEvent<{ direction: 'top' | 'right' | 'left' | 'bottom' }>) {
@@ -416,7 +523,13 @@
 {/if}
 
 {#if isBookmarkScreen}
-  <div class="fixed top-3 right-3 text-xl opacity-25" style:color={fontColor}>
+  <div
+    class="fixed h-3 w-3 text-base opacity-25 sm:text-xl"
+    style:color={fontColor}
+    style:top={bookmarkTopAdjustment}
+    style:left={bookmarkLeftAdjustment}
+    style:right={bookmarkRightAdjustment}
+  >
     <Fa icon={faBookmark} />
   </div>
 {/if}
@@ -437,7 +550,7 @@
       --book-content-child-column-width,
       auto
     ); // required for WebKit + column-count 1
-    column-gap: 20px;
+    column-gap: 40px;
     column-fill: auto;
     height: var(--book-content-child-height, 95vh);
   }

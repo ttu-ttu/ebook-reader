@@ -1,14 +1,19 @@
 <script lang="ts">
   import {
+    debounceTime,
     EMPTY,
     filter,
     fromEvent,
     map,
+    merge,
     of,
     share,
     shareReplay,
+    skip,
     startWith,
     switchMap,
+    take,
+    takeWhile,
     tap,
     timer
   } from 'rxjs';
@@ -44,12 +49,26 @@
     theme$,
     verticalMode$,
     writingMode$,
-    viewMode$
+    viewMode$,
+    verticalCustomReadingPosition$,
+    horizontalCustomReadingPosition$,
+    customReadingPointEnabled$,
+    selectionToBookmarkEnabled$
   } from '$lib/data/store';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import {
+    getChapterData,
+    nextChapter$,
+    sectionList$,
+    sectionProgress$,
+    tocIsOpen$
+  } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
-  import { availableThemes } from '$lib/data/theme-option';
   import { fullscreenManager } from '$lib/data/fullscreen-manager';
+  import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
+  import { StorageKey } from '$lib/data/storage-manager/storage-source';
+  import { availableThemes } from '$lib/data/theme-option';
+  import { ViewMode } from '$lib/data/view-mode';
   import loadBookData from '$lib/functions/book-data-loader/load-book-data';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
@@ -58,16 +77,16 @@
   import { takeWhenBrowser } from '$lib/functions/rxjs/take-when-browser';
   import { tapDom } from '$lib/functions/rxjs/tap-dom';
   import {
-    getChapterData,
-    nextChapter$,
-    sectionList$,
-    sectionProgress$,
-    tocIsOpen$
-  } from '$lib/components/book-reader/book-toc/book-toc';
-  import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
-  import { StorageKey } from '$lib/data/storage-manager/storage-source';
+    clearRange,
+    getParagraphToPoint,
+    getRangeForUserSelection,
+    getReferencePoints,
+    pulseElement
+  } from '$lib/functions/range-util';
   import { clickOutside } from '$lib/functions/use-click-outside';
+  import { isMobile$ } from '$lib/functions/utils';
   import { onKeydownReader } from './on-keydown-reader';
+  import { tick } from 'svelte';
 
   let showHeader = true;
   let isBookmarkScreen = false;
@@ -78,6 +97,17 @@
   let bookmarkManager: BookmarkManager | undefined;
   let pageManager: PageManager | undefined;
   let bookmarkData: Promise<BooksDbBookmarkData | undefined> = Promise.resolve(undefined);
+  let customReadingPointTop = -2;
+  let customReadingPointLeft = -2;
+  let customReadingPoint = $verticalMode$
+    ? $verticalCustomReadingPosition$
+    : $horizontalCustomReadingPosition$;
+  let customReadingPointScrollOffset = 0;
+  let customReadingPointRange: Range | undefined;
+  let lastSelectedRange: Range | undefined;
+  let lastSelectedRangeWasEmpty = true;
+  let isSelectingCustomReadingPoint = false;
+  let showCustomReadingPoint = false;
 
   const autoHideHeader$ = timer(2500).pipe(
     tap(() => (showHeader = false)),
@@ -180,6 +210,23 @@
     map((sectionProgress) => [...sectionProgress.values()])
   );
 
+  const textSelector$ = iffBrowser(() => fromEvent(document, 'selectionchange')).pipe(
+    debounceTime(200),
+    tap(() => {
+      const currentSelected = window.getSelection()?.toString() || '';
+
+      if (!currentSelected && lastSelectedRangeWasEmpty) {
+        lastSelectedRange = undefined;
+      } else if (currentSelected) {
+        lastSelectedRange = window.getSelection()?.getRangeAt(0);
+        lastSelectedRangeWasEmpty = false;
+      } else {
+        lastSelectedRangeWasEmpty = true;
+      }
+    }),
+    reduceToEmptyString()
+  );
+
   $: if ($tocIsOpen$) {
     autoScroller?.off();
   }
@@ -192,6 +239,19 @@
     document.dispatchEvent(new CustomEvent('ttsu:page.change', { detail: { bookCharCount } }));
   }
 
+  $: if (showCustomReadingPoint) {
+    pulseElement(customReadingPointRange?.endContainer?.parentElement, 'add', 1);
+
+    fromEvent(document, 'click')
+      .pipe(skip(1), take(1))
+      .subscribe(() => {
+        showCustomReadingPoint = false;
+        pulseElement(customReadingPointRange?.endContainer?.parentElement, 'remove', 1);
+      });
+  }
+
+  $: isPaginated = $viewMode$ === ViewMode.Paginated;
+
   function onKeydown(ev: KeyboardEvent) {
     const result = onKeydownReader(
       ev,
@@ -202,7 +262,8 @@
       autoScroller,
       pageManager,
       $verticalMode$,
-      changeChapter
+      changeChapter,
+      handleSetCustomReadingPoint
     );
 
     if (!result) return;
@@ -223,7 +284,27 @@
     const bookId = getBookIdSync();
     if (!bookId || !bookmarkManager) return;
 
-    const data = bookmarkManager.formatBookmarkData(bookId);
+    let data: BooksDbBookmarkData;
+
+    showHeader = false;
+
+    if (isPaginated) {
+      const userSelectedRange = $selectionToBookmarkEnabled$
+        ? getRangeForUserSelection(window, lastSelectedRange)
+        : undefined;
+      const bookmarkRange = userSelectedRange || customReadingPointRange;
+
+      pulseElement(bookmarkRange?.endContainer?.parentElement, 'add', 0.5, 500);
+
+      data = bookmarkManager.formatBookmarkDataByRange(bookId, bookmarkRange);
+
+      if (userSelectedRange) {
+        clearRange(window);
+      }
+    } else {
+      data = bookmarkManager.formatBookmarkData(bookId, customReadingPointScrollOffset);
+    }
+
     await database.putBookmark(data);
     bookmarkData = Promise.resolve(data);
   }
@@ -231,7 +312,8 @@
   async function scrollToBookmark() {
     const data = await bookmarkData;
     if (!data || !bookmarkManager) return;
-    bookmarkManager.scrollToBookmark(data);
+
+    bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
   }
 
   function onBookManagerClick() {
@@ -240,6 +322,8 @@
   }
 
   function onFullscreenClick() {
+    showHeader = false;
+
     if (!fullscreenManager.fullscreenElement) {
       fullscreenManager.requestFullscreen(document.documentElement);
       return;
@@ -263,6 +347,96 @@
 
     nextChapter$.next(mainChapters[currentChapterIndex + offset].reference);
   }
+
+  function handleSetCustomReadingPoint() {
+    const contentEl = document.querySelector('.book-content');
+
+    if (!contentEl) {
+      return;
+    }
+
+    if (isPaginated) {
+      customReadingPointTop = window.innerHeight / 2 - 2;
+      customReadingPointLeft = window.innerWidth / 2 - 2;
+    }
+
+    showHeader = false;
+    isSelectingCustomReadingPoint = true;
+    document.body.classList.add('cursor-crosshair');
+
+    const {
+      elLeftReferencePoint,
+      elTopReferencePoint,
+      elRightReferencePoint,
+      elBottomReferencePoint,
+      pointGap
+    } = getReferencePoints(window, contentEl, $verticalMode$, $firstDimensionMargin$);
+
+    merge(fromEvent(document, 'pointerup'), fromEvent(document, 'pointermove'))
+      // eslint-disable-next-line rxjs/no-ignored-takewhile-value
+      .pipe(takeWhile(() => isSelectingCustomReadingPoint))
+      .subscribe((event: Event) => {
+        if (!(event instanceof PointerEvent)) {
+          return;
+        }
+
+        if (event.type === 'pointerup') {
+          document.body.classList.remove('cursor-crosshair');
+          isSelectingCustomReadingPoint = false;
+
+          tick().then(() => {
+            customReadingPointLeft = $verticalMode$ ? event.x : customReadingPointLeft;
+            customReadingPointTop = $verticalMode$ ? customReadingPointTop : event.y;
+
+            const result = getParagraphToPoint(customReadingPointLeft, customReadingPointTop);
+
+            if (result) {
+              pulseElement(result.parent, 'add', 0.5, 500);
+            }
+
+            if (isPaginated) {
+              customReadingPointRange = result?.range;
+            } else {
+              let newPercentage = 0;
+
+              if ($verticalMode$) {
+                newPercentage = Math.ceil(
+                  (Math.max(0, customReadingPointLeft - elLeftReferencePoint) /
+                    (elRightReferencePoint - elLeftReferencePoint)) *
+                    100
+                );
+
+                verticalCustomReadingPosition$.next(newPercentage);
+              } else {
+                newPercentage = Math.ceil(
+                  (Math.max(0, customReadingPointTop - elTopReferencePoint) /
+                    (elBottomReferencePoint - elTopReferencePoint)) *
+                    100
+                );
+
+                horizontalCustomReadingPosition$.next(newPercentage);
+              }
+
+              customReadingPoint = newPercentage;
+            }
+          });
+        } else {
+          const insideXBound =
+            event.x >= elLeftReferencePoint + pointGap && event.x <= elRightReferencePoint;
+          const insideYBound =
+            event.y >= elTopReferencePoint && event.y <= elBottomReferencePoint - pointGap;
+
+          if (isPaginated) {
+            customReadingPointTop = insideYBound ? event.y : customReadingPointTop;
+            customReadingPointLeft = insideXBound ? event.x : customReadingPointLeft;
+          } else if ($verticalMode$ && insideXBound) {
+            customReadingPointLeft = event.x;
+          } else if (!$verticalMode$ && insideYBound) {
+            customReadingPointTop = event.y;
+          }
+        }
+      });
+  }
 </script>
 
 <svelte:head>
@@ -279,12 +453,35 @@
   >
     <BookReaderHeader
       hasChapterData={!!$sectionData$?.length}
+      hasCustomReadingPoint={!!(
+        $customReadingPointEnabled$ &&
+        ((isPaginated && customReadingPointRange) ||
+          (!isPaginated && customReadingPointLeft > -1 && customReadingPointTop > -1))
+      )}
       showFullscreenButton={fullscreenManager.fullscreenEnabled}
       autoScrollMultiplier={$multiplier$}
       bind:isBookmarkScreen
       on:tocClick={() => {
         showHeader = false;
         tocIsOpen$.next(true);
+      }}
+      on:setCustomReadingPoint={handleSetCustomReadingPoint}
+      on:showCustomReadingPoint={() => {
+        showHeader = false;
+        showCustomReadingPoint = true;
+      }}
+      on:resetCustomReadingPoint={() => {
+        showHeader = false;
+
+        if (isPaginated) {
+          customReadingPointRange = undefined;
+        } else if ($verticalMode$) {
+          verticalCustomReadingPosition$.next(100);
+          customReadingPoint = 100;
+        } else {
+          horizontalCustomReadingPosition$.next(0);
+          customReadingPoint = 0;
+        }
       }}
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
@@ -326,11 +523,18 @@
     bind:autoScroller
     bind:bookmarkManager
     bind:pageManager
+    bind:customReadingPoint
+    bind:customReadingPointTop
+    bind:customReadingPointLeft
+    bind:customReadingPointScrollOffset
+    bind:customReadingPointRange
+    bind:showCustomReadingPoint
     on:bookmark={bookmarkPage}
   />
   {$initBookmarkData$ ?? ''}
   {$setBackgroundColor$ ?? ''}
   {$setWritingMode$ ?? ''}
+  {$textSelector$ ?? ''}
 {:else}
   {$leaveIfBookMissing$ ?? ''}
 {/if}
@@ -345,6 +549,17 @@
   >
     <BookToc sectionData={$sectionData$} verticalMode={$verticalMode$} {exploredCharCount} />
   </div>
+{/if}
+
+{#if (isSelectingCustomReadingPoint && !$isMobile$) || (!isPaginated && showCustomReadingPoint)}
+  <div
+    class="fixed left-0 z-20 h-[1px] w-full border border-red-500"
+    style:top={`${customReadingPointTop}px`}
+  />
+  <div
+    class="fixed top-0 z-20 h-full w-[1px] border border-red-500"
+    style:left={`${customReadingPointLeft}px`}
+  />
 {/if}
 
 {#if showFooter && bookCharCount}

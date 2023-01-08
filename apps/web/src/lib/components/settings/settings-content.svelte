@@ -1,13 +1,18 @@
 <script lang="ts">
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
+  import SettingsDimensionPopover from '$lib/components/settings/settings-dimension-popover.svelte';
+  import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import { inputClasses } from '$lib/css-classes';
+  import {
+    horizontalCustomReadingPosition$,
+    verticalCustomReadingPosition$
+  } from '$lib/data/store';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
-  import SettingsDimensionPopover from './settings-dimension-popover.svelte';
-  import SettingsItemGroup from './settings-item-group.svelte';
+  import { dummyFn } from '$lib/functions/utils';
 
   export let selectedTheme: string;
 
@@ -34,6 +39,10 @@
   export let autoPositionOnResize: boolean;
 
   export let avoidPageBreak: boolean;
+
+  export let customReadingPointEnabled: boolean;
+
+  export let selectionToBookmarkEnabled: boolean;
 
   export let pageColumns: number;
 
@@ -128,7 +137,7 @@
     : 'Uses lower temporary storage.\nMay require bookmark or notification permissions for enablement';
 </script>
 
-<div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:md:gap-8">
+<div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:md:gap-8 lg:grid-cols-3">
   {#if activeSettings === 'Reader'}
     <div class="sm:col-span-2 lg:col-span-3">
       <SettingsItemGroup title="Theme">
@@ -207,6 +216,30 @@
       <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
     </SettingsItemGroup>
     {#if viewMode === ViewMode.Continuous}
+      <SettingsItemGroup
+        title="Custom Reading Point"
+        tooltip={'Allows to set a persistent custom point in the reader from which the current progress and bookmark is calculated when enabled'}
+      >
+        <div class="flex items-center">
+          <ButtonToggleGroup
+            options={optionsForToggle}
+            bind:selectedOptionId={customReadingPointEnabled}
+          />
+          {#if customReadingPointEnabled}
+            <div
+              role="button"
+              class="ml-4 hover:underline"
+              on:click={() => {
+                verticalCustomReadingPosition$.next(100);
+                horizontalCustomReadingPosition$.next(0);
+              }}
+              on:keyup={dummyFn}
+            >
+              Reset Points
+            </div>
+          {/if}
+        </div>
+      </SettingsItemGroup>
       <SettingsItemGroup title="Auto position on resize">
         <ButtonToggleGroup
           options={optionsForToggle}
@@ -216,6 +249,15 @@
     {:else}
       <SettingsItemGroup title="Avoid Page Break" tooltip={avoidPageBreakTooltip}>
         <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Selection to Bookmark"
+        tooltip={'When enabled bookmarks will be placed to a near paragraph of current/previous selected text instead of page start'}
+      >
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={selectionToBookmarkEnabled}
+        />
       </SettingsItemGroup>
       {#if !verticalMode}
         <SettingsItemGroup title="Page Columns">
