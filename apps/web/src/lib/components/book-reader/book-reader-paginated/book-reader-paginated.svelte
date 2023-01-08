@@ -47,11 +47,13 @@
 
   export let hintFuriganaShadowColor: string;
 
-  export let fontSize: number;
-
   export let fontFamilyGroupOne: string;
 
   export let fontFamilyGroupTwo: string;
+
+  export let fontSize: number;
+
+  export let lineHeight: number;
 
   export let hideSpoilerImage: boolean;
 
@@ -470,6 +472,7 @@
   bind:this={scrollEl}
   style:color={fontColor}
   style:font-size="{fontSize}px"
+  style:line-height={lineHeight}
   style:padding-top={!verticalMode && firstDimensionMargin
     ? `${firstDimensionMargin}px`
     : undefined}

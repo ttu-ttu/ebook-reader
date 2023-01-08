@@ -19,9 +19,10 @@ import type { WritingMode } from './writing-mode';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const multiplier$ = writableNumberLocalStorageSubject()('autoScrollMultiplier', 20);
-export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
 export const fontFamilyGroupOne$ = writableStringLocalStorageSubject()('fontFamilyGroupOne', '');
 export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()('fontFamilyGroupTwo', '');
+export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
+export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 1.65);
 export const hideSpoilerImage$ = writableBooleanLocalStorageSubject()('hideSpoilerImage', true);
 export const hideFurigana$ = writableBooleanLocalStorageSubject()('hideFurigana', false);
 export const furiganaStyle$ = writableStringLocalStorageSubject<FuriganaStyle>()(

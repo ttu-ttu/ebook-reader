@@ -16,11 +16,13 @@
 
   export let selectedTheme: string;
 
-  export let fontSize: number;
-
   export let fontFamilyGroupOne: string;
 
   export let fontFamilyGroupTwo: string;
+
+  export let fontSize: number;
+
+  export let lineHeight: number;
 
   export let blurImage: boolean;
 
@@ -144,9 +146,6 @@
         <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
       </SettingsItemGroup>
     </div>
-    <SettingsItemGroup title="Font size">
-      <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
-    </SettingsItemGroup>
     <SettingsItemGroup title="Font family (Group 1)">
       <input
         type="text"
@@ -161,6 +160,23 @@
         class={inputClasses}
         placeholder="Noto Sans JP"
         bind:value={fontFamilyGroupTwo}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Font size">
+      <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Line Height">
+      <input
+        type="number"
+        class={inputClasses}
+        step="0.05"
+        min="1"
+        bind:value={lineHeight}
+        on:change={() => {
+          if (!lineHeight || lineHeight < 1) {
+            lineHeight = 1.65;
+          }
+        }}
       />
     </SettingsItemGroup>
     <SettingsItemGroup
