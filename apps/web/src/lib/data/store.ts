@@ -45,6 +45,13 @@ export const secondDimensionMaxValue$ = writableNumberLocalStorageSubject()(
 );
 export const firstDimensionMargin$ = writableNumberLocalStorageSubject()('firstDimensionMargin', 0);
 
+export const swipeThreshold$ = writableNumberLocalStorageSubject()('swipeThreshold', 10);
+
+export const disableWheelNavigation$ = writableBooleanLocalStorageSubject()(
+  'disableWheelNavigation',
+  false
+);
+
 export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
   'autoPositionOnResize',
   true
