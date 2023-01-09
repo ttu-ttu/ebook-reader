@@ -152,9 +152,11 @@
         <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
       </SettingsItemGroup>
     </div>
-    <SettingsItemGroup title="View mode">
-      <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
-    </SettingsItemGroup>
+    <div class="h-full">
+      <SettingsItemGroup title="View mode">
+        <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
+      </SettingsItemGroup>
+    </div>
     <SettingsItemGroup title="Font family (Group 1)">
       <SettingsFontSelector
         slot="header"
