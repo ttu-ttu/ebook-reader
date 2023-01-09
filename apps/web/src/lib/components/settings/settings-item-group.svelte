@@ -7,7 +7,7 @@
   export let tooltip = '';
 </script>
 
-<section class="pb-8">
+<section class="pb-3">
   <div class="flex">
     <h2 class="mb-2 text-xl font-medium">
       {#if tooltip}
