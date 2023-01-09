@@ -18,6 +18,8 @@
 
   export let selectedTheme: string;
 
+  export let viewMode: ViewMode;
+
   export let fontFamilyGroupOne: string;
 
   export let fontFamilyGroupTwo: string;
@@ -34,11 +36,13 @@
 
   export let writingMode: WritingMode;
 
-  export let viewMode: ViewMode;
-
   export let secondDimensionMaxValue: number;
 
   export let firstDimensionMargin: number;
+
+  export let swipeThreshold: number;
+
+  export let disableWheelNavigation: boolean;
 
   export let autoPositionOnResize: boolean;
 
@@ -141,11 +145,16 @@
     : 'Uses lower temporary storage.\nMay require bookmark or notification permissions for enablement';
 </script>
 
-<div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:md:gap-8 lg:grid-cols-3">
+<div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:md:gap-8">
   {#if activeSettings === 'Reader'}
-    <div class="sm:col-span-2 lg:col-span-3">
+    <div class="lg:col-span-2">
       <SettingsItemGroup title="Theme">
         <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
+      </SettingsItemGroup>
+    </div>
+    <div class="h-full">
+      <SettingsItemGroup title="View mode">
+        <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
       </SettingsItemGroup>
     </div>
     <SettingsItemGroup title="Font family (Group 1)">
@@ -223,11 +232,31 @@
         bind:value={secondDimensionMaxValue}
       />
     </SettingsItemGroup>
-    <SettingsItemGroup title="View mode">
-      <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
+    <SettingsItemGroup
+      title="Swipe Threshold"
+      tooltip={'Distance which you need to swipe in order trigger a navigation'}
+    >
+      <input
+        type="number"
+        step="1"
+        min="10"
+        class={inputClasses}
+        bind:value={swipeThreshold}
+        on:blur={() => {
+          if (swipeThreshold < 10 || typeof swipeThreshold !== 'number') {
+            swipeThreshold = 10;
+          }
+        }}
+      />
     </SettingsItemGroup>
     <SettingsItemGroup title="Writing mode">
       <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Disable Wheel Navigation">
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={disableWheelNavigation}
+      />
     </SettingsItemGroup>
     <SettingsItemGroup
       title="Auto Bookmark"

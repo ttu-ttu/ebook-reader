@@ -10,6 +10,7 @@
     autoPositionOnResize$,
     avoidPageBreak$,
     customReadingPointEnabled$,
+    disableWheelNavigation$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -20,6 +21,7 @@
     pageColumns$,
     secondDimensionMaxValue$,
     selectionToBookmarkEnabled$,
+    swipeThreshold$,
     theme$,
     writingMode$,
     viewMode$,
@@ -91,6 +93,8 @@
       bind:viewMode={$viewMode$}
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
       bind:firstDimensionMargin={$firstDimensionMargin$}
+      bind:swipeThreshold={$swipeThreshold$}
+      bind:disableWheelNavigation={$disableWheelNavigation$}
       bind:autoPositionOnResize={$autoPositionOnResize$}
       bind:avoidPageBreak={$avoidPageBreak$}
       bind:customReadingPointEnabled={$customReadingPointEnabled$}

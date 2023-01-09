@@ -43,6 +43,8 @@ Custom reading points and the respective change in the character count in pagina
 
 **Note**: Overlapping elements or controls coming from e. g. browser extensions or app wrappers may impact what node will be selected for a custom reading point. Move them out of the reader area or disable them in case of issues. In case the selected node breaks across multiple columns or pages the bookmark may be placed on previous elements instead. You can experiment with the "Avoid Page Break" option, simply fallback to the default bookmark by clearing your selection/custom reading point or selecting a different node.
 
+**Note for "Disabled Wheel Navigation"**: If enabled mouse wheel clicks are intercepted and may not work as expected. E. g. for Yomichan you need to keep the wheel pressed while moving the cursor to trigger a popup etc.
+
 # Desktop Keybinds
 
 **Note:** The keys are currently bound to their physical location.  
