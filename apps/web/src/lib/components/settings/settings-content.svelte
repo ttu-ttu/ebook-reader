@@ -153,7 +153,7 @@
         slot="header"
         availableFonts={[
           LocalFont.NOTOSERIFJP,
-          LocalFont.GENREI,
+          LocalFont.GENEI,
           LocalFont.KLEEONE,
           LocalFont.SHIPPORIMINCHO
         ]}

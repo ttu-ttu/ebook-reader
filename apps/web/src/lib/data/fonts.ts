@@ -5,7 +5,7 @@
  */
 
 export enum LocalFont {
-  GENREI = 'Genrei Koburi Mincho v5',
+  GENEI = 'Genei Koburi Mincho v5',
   KLEEONE = 'Klee One',
   NOTOSANSJP = 'Noto Sans JP',
   NOTOSERIFJP = 'Noto Serif JP',
