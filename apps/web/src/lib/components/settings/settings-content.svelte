@@ -2,14 +2,16 @@
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
   import SettingsDimensionPopover from '$lib/components/settings/settings-dimension-popover.svelte';
+  import SettingsFontSelector from '$lib/components/settings/settings-font-selector.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import { inputClasses } from '$lib/css-classes';
+  import { LocalFont } from '$lib/data/fonts';
+  import { FuriganaStyle } from '$lib/data/furigana-style';
   import {
     horizontalCustomReadingPosition$,
     verticalCustomReadingPosition$
   } from '$lib/data/store';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
-  import { FuriganaStyle } from '$lib/data/furigana-style';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
   import { dummyFn } from '$lib/functions/utils';
@@ -147,6 +149,16 @@
       </SettingsItemGroup>
     </div>
     <SettingsItemGroup title="Font family (Group 1)">
+      <SettingsFontSelector
+        slot="header"
+        availableFonts={[
+          LocalFont.NOTOSERIFJP,
+          LocalFont.GENREI,
+          LocalFont.KLEEONE,
+          LocalFont.SHIPPORIMINCHO
+        ]}
+        bind:fontValue={fontFamilyGroupOne}
+      />
       <input
         type="text"
         class={inputClasses}
@@ -155,6 +167,7 @@
       />
     </SettingsItemGroup>
     <SettingsItemGroup title="Font family (Group 2)">
+      <SettingsFontSelector slot="header" bind:fontValue={fontFamilyGroupTwo} />
       <input
         type="text"
         class={inputClasses}
