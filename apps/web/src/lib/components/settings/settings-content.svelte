@@ -384,6 +384,12 @@
     <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
       <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
     </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Close Confirmation"
+      tooltip={`When enabled asks for confirmation on closing/reloading a reader tab and unsaved changes were detected`}
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={confirmClose} />
+    </SettingsItemGroup>
     {#if viewMode === ViewMode.Continuous}
       <SettingsItemGroup
         title="Custom Reading Point"
