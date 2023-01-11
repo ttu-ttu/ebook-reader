@@ -4,11 +4,13 @@
  * All rights reserved.
  */
 
-import type BooksDbV3 from './v3/books-db-v3';
+import type BooksDbV4 from '$lib/data/database/books-db/versions/v4/books-db-v4';
 
-type BooksDb = BooksDbV3;
+type BooksDb = BooksDbV4;
 
 export type BooksDbBookData = BooksDb['data']['value'];
 export type BooksDbBookmarkData = BooksDb['bookmark']['value'];
+export type BooksDbStorageSource = BooksDb['storageSource']['value'];
+export const currentDbVersion = 4;
 
 export default BooksDb;

@@ -62,6 +62,7 @@ importers:
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
+      '@types/wicg-file-system-access': ^2020.9.5
       '@zip.js/zip.js': 2.4.26
       autoprefixer: 10.4.13
       balanced-match: 2.0.0
@@ -110,6 +111,7 @@ importers:
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
+      '@types/wicg-file-system-access': 2020.9.5
       autoprefixer: 10.4.13_postcss@8.4.21
       postcss: 8.4.21
       sass: 1.57.1
@@ -887,6 +889,10 @@ packages:
 
   /@types/ua-parser-js/0.7.36:
     resolution: {integrity: sha512-N1rW+njavs70y2cApeIw1vLMYXRwfBy+7trgavGuuTfOd7j1Yh7QTRc/yqsPl6ncokt72ZXuxEU0PiCp9bSwNQ==}
+    dev: true
+
+  /@types/wicg-file-system-access/2020.9.5:
+    resolution: {integrity: sha512-UYK244awtmcUYQfs7FR8710MJcefL2WvkyHMjA8yJzxd1mo0Gfn88sRZ1Bls7hiUhA2w7ne1gpJ9T5g3G0wOyA==}
     dev: true
 
   /@types/yargs-parser/21.0.0:

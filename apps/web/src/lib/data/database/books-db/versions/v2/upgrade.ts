@@ -68,6 +68,7 @@ export default async function upgradeBooksDbFromV2(
           ...parsedData,
           blobs: {},
           hasThumb: false,
+          characters: 0,
           lastBookModified: 0,
           lastBookOpen: 0
         };
