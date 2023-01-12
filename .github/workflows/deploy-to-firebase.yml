@@ -39,6 +39,9 @@ jobs:
       - name: Build
         run: pnpm build
         working-directory: apps/web
+        env:
+          VITE_GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          VITE_ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
 
       - name: Deploy
         uses: FirebaseExtended/action-hosting-deploy@v0

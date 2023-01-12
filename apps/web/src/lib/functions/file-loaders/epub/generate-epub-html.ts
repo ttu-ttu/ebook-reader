@@ -4,7 +4,6 @@
  * All rights reserved.
  */
 
-import path from 'path-browserify';
 import type { EpubContent } from './types';
 import type { Section } from '../../../data/database/books-db/versions/v3/books-db-v3';
 import buildDummyBookImage from '../utils/build-dummy-book-image';
@@ -12,6 +11,7 @@ import clearAllBadImageRef from '../utils/clear-all-bad-image-ref';
 import fixXHtmlHref from '../utils/fix-xhtml-href';
 import { getCharacterCount } from '$lib/functions/get-character-count';
 import { getParagraphNodes } from '../../../components/book-reader/get-paragraph-nodes';
+import path from 'path-browserify';
 
 export const prependValue = 'ttu-';
 
@@ -190,6 +190,7 @@ export default function generateEpubHtml(
 
   return {
     element: result,
+    characters: currentCharCount,
     sections: sectionData.filter((item: Section) => item.reference.startsWith(prependValue))
   };
 }

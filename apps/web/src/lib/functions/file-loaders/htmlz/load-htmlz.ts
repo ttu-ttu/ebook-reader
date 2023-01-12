@@ -43,6 +43,7 @@ export default async function loadHtmlz(
     elementHtml: element.innerHTML,
     blobs: blobData,
     coverImage,
+    characters: 0,
     lastBookModified,
     lastBookOpen: 0
   };

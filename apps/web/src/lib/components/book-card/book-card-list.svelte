@@ -3,6 +3,7 @@
   import BookCard from '$lib/components/book-card/book-card.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import Popover from '$lib/components/popover/popover.svelte';
+  import { dummyFn } from '$lib/functions/utils';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -34,6 +35,7 @@
   {#each bookCards as bookCard (bookCard.id)}
     <div
       class="relative"
+      class:opacity-60={bookCard.isPlaceholder}
       on:mouseenter={() => (hoveringBookId = bookCard.id)}
       on:mouseleave={() => (hoveringBookId = undefined)}
     >
@@ -48,6 +50,7 @@
           <div
             class="absolute inset-0 cursor-pointer bg-gray-700 bg-opacity-20"
             on:click={() => onBookCardClick(bookCard.id)}
+            on:keyup={dummyFn}
           >
             <Fa class="absolute left-2 top-2 flex text-xl text-white" icon={faCheckCircle} />
           </div>
@@ -62,7 +65,9 @@
               icon={faCircleInfo}
             />
             <div class="p-4" slot="content">
-              <div>Last Read:</div>
+              <div>Characters:</div>
+              <div class="w-40">{bookCard.characters || 'No Data'}</div>
+              <div class="mt-4">Last Read:</div>
               <div class="w-40">{getCardDateInfo(bookCard.lastBookOpen)}</div>
               <div class="mt-4">Bookmarked:</div>
               <div class="w-40">{getCardDateInfo(bookCard.lastBookmarkModified)}</div>
@@ -76,6 +81,7 @@
         <div
           class="mdc-elevation--z2 hover:mdc-elevation--z8 mdc-elevation-transition absolute -top-2 -right-2 h-6 w-6 cursor-pointer rounded-full bg-red-400"
           on:click={() => dispatch('removeBookClick', { id: bookCard.id })}
+          on:keyup={dummyFn}
         >
           <svg role="img" class="w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 504 504">
             <path

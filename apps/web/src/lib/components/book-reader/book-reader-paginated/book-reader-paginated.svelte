@@ -8,6 +8,7 @@
     disableWheelNavigation$,
     firstDimensionMargin$,
     selectionToBookmarkEnabled$,
+    skipKeyDownListener$,
     swipeThreshold$
   } from '$lib/data/store';
   import { clearRange, createRange, pulseElement } from '$lib/functions/range-util';
@@ -299,7 +300,7 @@
 
   iffBrowser(() => fromEvent<WheelEvent>(document.body, 'wheel', { passive: true }))
     .pipe(
-      filter(() => !$disableWheelNavigation$),
+      filter(() => !$disableWheelNavigation$ && !$skipKeyDownListener$),
       throttleTime(50),
       takeUntil(destroy$)
     )
@@ -440,7 +441,7 @@
   }
 
   function onSwipe(ev: CustomEvent<{ direction: 'top' | 'right' | 'left' | 'bottom' }>) {
-    if (!concretePageManager || $tocIsOpen$) return;
+    if (!concretePageManager || $tocIsOpen$ || $skipKeyDownListener$) return;
     if (ev.detail.direction !== 'left' && ev.detail.direction !== 'right') return;
     const swipeLeft = ev.detail.direction === 'left';
     const nextPage = verticalMode ? !swipeLeft : swipeLeft;
@@ -448,7 +449,7 @@
   }
 
   function onKeydown(ev: KeyboardEvent) {
-    if (!concretePageManager || $tocIsOpen$) return;
+    if (!concretePageManager || $tocIsOpen$ || $skipKeyDownListener$) return;
     switch (ev.code) {
       case 'ArrowLeft':
         concretePageManager[verticalMode ? 'nextPage' : 'prevPage']();

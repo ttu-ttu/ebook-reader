@@ -13,7 +13,7 @@ import {
 export function onKeydownReader(
   ev: KeyboardEvent,
   bookReaderKeybindMap: BookReaderKeybindMap,
-  bookmarkPage: () => void,
+  bookmarkPage: (scheduleExport: boolean | CustomEvent) => void,
   scrollToBookmark: () => void,
   multiplierOffsetFn: (offset: number) => void,
   autoScroller: AutoScroller | undefined,
@@ -26,7 +26,7 @@ export function onKeydownReader(
 
   switch (action) {
     case BookReaderAvailableKeybind.BOOKMARK: {
-      bookmarkPage();
+      bookmarkPage(true);
       return true;
     }
     case BookReaderAvailableKeybind.JUMP_TO_BOOKMARK:

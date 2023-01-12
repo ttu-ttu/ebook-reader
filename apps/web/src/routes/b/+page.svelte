@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    auditTime,
     debounceTime,
     EMPTY,
     filter,
@@ -22,14 +23,16 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { faCloudBolt, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import BookReader from '$lib/components/book-reader/book-reader.svelte';
   import type {
     AutoScroller,
     BookmarkManager,
     PageManager
   } from '$lib/components/book-reader/types';
+  import LogReportDialog from '$lib/components/log-report-dialog.svelte';
+  import MessageDialog from '$lib/components/message-dialog.svelte';
   import StyleSheetRenderer from '$lib/components/style-sheet-renderer.svelte';
-  import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import {
     autoBookmark$,
     autoPositionOnResize$,
@@ -50,11 +53,17 @@
     verticalMode$,
     writingMode$,
     viewMode$,
-    verticalCustomReadingPosition$,
-    horizontalCustomReadingPosition$,
     customReadingPointEnabled$,
     selectionToBookmarkEnabled$,
-    lineHeight$
+    lineHeight$,
+    syncTarget$,
+    autoReplication$,
+    skipKeyDownListener$,
+    replicationSaveBehavior$,
+    cacheStorageData$,
+    confirmClose$,
+    verticalCustomReadingPosition$,
+    horizontalCustomReadingPosition$
   } from '$lib/data/store';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
   import {
@@ -65,18 +74,41 @@
     tocIsOpen$
   } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
+  import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
+  import type {
+    BooksDbBookData,
+    BooksDbBookmarkData
+  } from '$lib/data/database/books-db/versions/books-db';
+  import { dialogManager } from '$lib/data/dialog-manager';
+  import { pagePath } from '$lib/data/env';
   import { fullscreenManager } from '$lib/data/fullscreen-manager';
-  import { getStorageHandler } from '$lib/data/storage-manager/storage-manager-factory';
-  import { StorageKey } from '$lib/data/storage-manager/storage-source';
+  import { logger } from '$lib/data/logger';
+  import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
+  import type { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
+  import type { BrowserStorageHandler } from '$lib/data/storage/handler/browser-handler';
+  import {
+    StorageDataType,
+    StorageSourceDefault,
+    StorageKey
+  } from '$lib/data/storage/storage-types';
+  import { storageSource$ } from '$lib/data/storage/storage-view';
   import { availableThemes } from '$lib/data/theme-option';
   import { ViewMode } from '$lib/data/view-mode';
   import loadBookData from '$lib/functions/book-data-loader/load-book-data';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
+  import { AutoReplicationType } from '$lib/functions/replication/replication-options';
+  import { replicateData } from '$lib/functions/replication/replicator';
   import { readableToObservable } from '$lib/functions/rxjs/readable-to-observable';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { takeWhenBrowser } from '$lib/functions/rxjs/take-when-browser';
   import { tapDom } from '$lib/functions/rxjs/tap-dom';
+  import { clickOutside } from '$lib/functions/use-click-outside';
+  import { dummyFn, isMobile$ } from '$lib/functions/utils';
+  import { onKeydownReader } from './on-keydown-reader';
+  import { tick } from 'svelte';
+  import Fa from 'svelte-fa';
+  import { executeReplicate$ } from '$lib/functions/replication/replication-progress';
   import {
     clearRange,
     getParagraphToPoint,
@@ -84,11 +116,8 @@
     getReferencePoints,
     pulseElement
   } from '$lib/functions/range-util';
-  import { clickOutside } from '$lib/functions/use-click-outside';
-  import { isMobile$ } from '$lib/functions/utils';
-  import { onKeydownReader } from './on-keydown-reader';
-  import { tick } from 'svelte';
 
+  let showSpinner = true;
   let showHeader = true;
   let isBookmarkScreen = false;
   let showFooter = true;
@@ -109,6 +138,13 @@
   let lastSelectedRangeWasEmpty = true;
   let isSelectingCustomReadingPoint = false;
   let showCustomReadingPoint = false;
+  let localStorageHandler: BrowserStorageHandler;
+  let dataToReplicate: StorageDataType[] = [];
+  let dataToReplicateQueue: StorageDataType[] = [];
+  let externalStorageHandler: BaseStorageHandler | undefined;
+  let externalStorageErrors = 0;
+  let isReplicating = false;
+  let storedExploredCharacter = 0;
 
   const autoHideHeader$ = timer(2500).pipe(
     tap(() => (showHeader = false)),
@@ -121,14 +157,84 @@
   );
 
   const rawBookData$ = bookId$.pipe(
-    switchMap((id) => database.getData(id)),
+    switchMap(async (id) => {
+      let bookData: BooksDbBookData | undefined;
+
+      try {
+        localStorageHandler = getStorageHandler(
+          window,
+          StorageKey.BROWSER,
+          undefined,
+          true,
+          $cacheStorageData$,
+          $replicationSaveBehavior$
+        );
+
+        localStorageHandler.startContext({ id, title: '' });
+        bookData = await localStorageHandler.getBook();
+
+        if (!bookData) {
+          return bookData;
+        }
+
+        localStorageHandler.startContext({
+          id: bookData.id,
+          title: bookData.title,
+          imagePath: bookData.coverImage
+        });
+
+        if (bookData.storageSource) {
+          externalStorageHandler = await getStorageHandlerByName(bookData.storageSource, true);
+        } else if ($autoReplication$ !== AutoReplicationType.Off) {
+          externalStorageHandler = await getStorageHandlerByName($syncTarget$);
+        }
+
+        bookData.lastBookOpen = new Date().getTime();
+
+        await localStorageHandler.updateLastRead(bookData);
+
+        bookData = await saveExternalLastRead(externalStorageHandler, bookData);
+
+        await syncDownData(externalStorageHandler);
+      } catch (error: any) {
+        const message = `Error loading book: ${error.message}`;
+
+        logger.warn(message);
+
+        dialogManager.dialogs$.next([
+          {
+            component: MessageDialog,
+            props: {
+              title: 'Load Error',
+              message
+            }
+          }
+        ]);
+        return undefined;
+      } finally {
+        showSpinner = false;
+      }
+
+      if (externalStorageHandler) {
+        externalStorageHandler.updateSettings(
+          window,
+          true,
+          $replicationSaveBehavior$,
+          $cacheStorageData$,
+          false,
+          bookData.storageSource || $syncTarget$
+        );
+      }
+
+      return bookData;
+    }),
     share()
   );
 
   const leaveIfBookMissing$ = rawBookData$.pipe(
     tap((data) => {
       if (!data) {
-        goto('/manage');
+        goto(`${pagePath}${mergeEntries.MANAGE.routeId}`);
       }
     }),
     reduceToEmptyString()
@@ -145,14 +251,6 @@
   const bookData$ = rawBookData$.pipe(
     switchMap((rawBookData) => {
       if (!rawBookData) return EMPTY;
-
-      // eslint-disable-next-line no-param-reassign
-      rawBookData.lastBookOpen = new Date().getTime();
-      getStorageHandler(StorageKey.BROWSER, window)
-        .then((handler) => database.upsertData(rawBookData, handler))
-        .catch(() => {
-          // no-op
-        });
 
       sectionList$.next(rawBookData.sections || []);
 
@@ -228,6 +326,12 @@
     reduceToEmptyString()
   );
 
+  const replicator$ = executeReplicate$.pipe(
+    auditTime(60000),
+    switchMap(() => executeReplication()),
+    reduceToEmptyString()
+  );
+
   $: if ($tocIsOpen$) {
     autoScroller?.off();
   }
@@ -253,7 +357,174 @@
 
   $: isPaginated = $viewMode$ === ViewMode.Paginated;
 
+  $: upSyncEnabled =
+    externalStorageHandler &&
+    ($autoReplication$ === AutoReplicationType.Up || $autoReplication$ === AutoReplicationType.All);
+
+  $: bookmarkData.then((data) => (storedExploredCharacter = data?.exploredCharCount || 0));
+
+  function handleUnload(event: BeforeUnloadEvent) {
+    if (
+      $confirmClose$ &&
+      (isReplicating ||
+        storedExploredCharacter !== exploredCharCount ||
+        (upSyncEnabled && dataToReplicate.length) ||
+        (upSyncEnabled && dataToReplicateQueue.length))
+    ) {
+      event.preventDefault();
+      // eslint-disable-next-line no-param-reassign
+      return (event.returnValue = 'Are you sure you want to exit?');
+    }
+
+    return event;
+  }
+
+  async function getStorageHandlerByName(storageSourceName: string, throwIfNotFound = false) {
+    if (!storageSourceName) {
+      if (throwIfNotFound) {
+        throw new Error(`No storage source found`);
+      }
+
+      return undefined;
+    }
+
+    if (storageSourceName === StorageSourceDefault.GDRIVE_DEFAULT) {
+      return getStorageHandler(
+        window,
+        StorageKey.GDRIVE,
+        storageSourceName,
+        true,
+        $cacheStorageData$,
+        $replicationSaveBehavior$
+      );
+    }
+    if (storageSourceName === StorageSourceDefault.ONEDRIVE_DEFAULT) {
+      return getStorageHandler(
+        window,
+        StorageKey.ONEDRIVE,
+        storageSourceName,
+        true,
+        $cacheStorageData$,
+        $replicationSaveBehavior$
+      );
+    }
+    if (storageSourceName) {
+      const db = await database.db;
+      const storageSource = await db.get('storageSource', storageSourceName);
+
+      if (storageSource) {
+        return getStorageHandler(
+          window,
+          storageSource.type,
+          storageSourceName,
+          true,
+          $cacheStorageData$,
+          $replicationSaveBehavior$
+        );
+      }
+      if (throwIfNotFound) {
+        throw new Error(`No storage source with name ${storageSourceName} found`);
+      }
+    }
+
+    const message = `No storage source with name ${storageSourceName} found - skipping auto import/export`;
+
+    logger.warn(message);
+
+    dialogManager.dialogs$.next([
+      {
+        component: MessageDialog,
+        props: {
+          title: 'Configuration Error',
+          message
+        }
+      }
+    ]);
+
+    return undefined;
+  }
+
+  async function saveExternalLastRead(
+    storageHandler: BaseStorageHandler | undefined,
+    localBookData: BooksDbBookData
+  ) {
+    if (!storageHandler) {
+      return localBookData;
+    }
+
+    if (!$cacheStorageData$) {
+      storageHandler.clearData(false);
+    }
+
+    storageHandler.startContext({
+      id: localBookData.id,
+      title: localBookData.title,
+      imagePath: localBookData.coverImage || ''
+    });
+
+    // eslint-disable-next-line prefer-const
+    let { id, ...bookData } = localBookData;
+
+    if (localBookData.storageSource) {
+      const externalBookData = await storageHandler.getBook();
+
+      if (externalBookData && !(externalBookData instanceof File)) {
+        bookData = {
+          ...externalBookData,
+          ...{
+            id: localBookData.id,
+            lastBookOpen: localBookData.lastBookOpen,
+            storageSource: localBookData.storageSource
+          }
+        };
+      }
+    } else if (!localBookData.elementHtml) {
+      throw new Error('Book has no data stored');
+    }
+
+    const dataToReturn = { id, ...bookData };
+
+    await storageHandler.updateLastRead(dataToReturn).catch((error: any) => {
+      const message = `Failed to update last read on external storage: ${error.message}`;
+
+      logger.warn(message);
+
+      dialogManager.dialogs$.next([
+        {
+          component: MessageDialog,
+          props: {
+            title: 'Update Error',
+            message
+          }
+        }
+      ]);
+    });
+
+    return dataToReturn;
+  }
+
+  async function syncDownData(storageHandler: BaseStorageHandler | undefined) {
+    if (
+      localStorageHandler &&
+      storageHandler &&
+      ($autoReplication$ === AutoReplicationType.Down ||
+        $autoReplication$ === AutoReplicationType.All)
+    ) {
+      const externalProgress = await storageHandler.getProgress();
+
+      if (externalProgress && !(externalProgress instanceof File)) {
+        await localStorageHandler.saveProgress(externalProgress);
+
+        storedExploredCharacter = externalProgress.exploredCharCount || 0;
+      }
+    }
+  }
+
   function onKeydown(ev: KeyboardEvent) {
+    if ($skipKeyDownListener$) {
+      return;
+    }
+
     const result = onKeydownReader(
       ev,
       bookReaderKeybindMap$.getValue(),
@@ -281,7 +552,7 @@
     return bookId;
   }
 
-  async function bookmarkPage() {
+  async function bookmarkPage(scheduleExport: boolean | CustomEvent) {
     const bookId = getBookIdSync();
     if (!bookId || !bookmarkManager) return;
 
@@ -306,7 +577,20 @@
       data = bookmarkManager.formatBookmarkData(bookId, customReadingPointScrollOffset);
     }
 
-    await database.putBookmark(data);
+    await localStorageHandler.saveProgress(data);
+
+    if (upSyncEnabled) {
+      const toReplicate = isReplicating ? dataToReplicateQueue : dataToReplicate;
+
+      if (!toReplicate.includes(StorageDataType.PROGRESS)) {
+        toReplicate.push(StorageDataType.PROGRESS);
+      }
+
+      if (scheduleExport) {
+        executeReplicate$.next();
+      }
+    }
+
     bookmarkData = Promise.resolve(data);
   }
 
@@ -317,11 +601,6 @@
     bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
   }
 
-  function onBookManagerClick() {
-    database.deleteLastItem();
-    bookmarkPage();
-  }
-
   function onFullscreenClick() {
     showHeader = false;
 
@@ -330,6 +609,20 @@
       return;
     }
     fullscreenManager.exitFullscreen();
+  }
+
+  function onDomainHintClick() {
+    dialogManager.dialogs$.next([
+      {
+        component: MessageDialog,
+        props: {
+          title: 'Old Domain',
+          message:
+            'You are currently using the old domain of ッツ Reader - consider switching to https://reader.ttsu.app to prevent issues and to ensure full features'
+        },
+        disableCloseOnClick: true
+      }
+    ]);
   }
 
   function changeChapter(offset: number) {
@@ -347,6 +640,149 @@
     }
 
     nextChapter$.next(mainChapters[currentChapterIndex + offset].reference);
+  }
+
+  async function executeReplication(isSilent = true) {
+    if (isReplicating || !dataToReplicate.length || !$rawBookData$ || !externalStorageHandler) {
+      return;
+    }
+
+    isReplicating = true;
+
+    if (!isSilent) {
+      skipKeyDownListener$.next(true);
+      logger.clearHistory();
+      openActionBackdrop();
+    }
+
+    const currentHandlerStorageSource = $rawBookData$.storageSource || $syncTarget$;
+
+    externalStorageHandler.updateSettings(
+      window,
+      false,
+      $replicationSaveBehavior$,
+      $cacheStorageData$,
+      !isSilent,
+      currentHandlerStorageSource
+    );
+
+    const error = await replicateData(
+      localStorageHandler,
+      externalStorageHandler,
+      !isSilent && $storageSource$ === externalStorageHandler.storageType,
+      [
+        {
+          id: $rawBookData$.id,
+          title: $rawBookData$.title,
+          imagePath: $rawBookData$.coverImage
+        }
+      ],
+      dataToReplicate
+    ).catch((err: any) => err.message);
+
+    externalStorageHandler.updateSettings(
+      window,
+      true,
+      $replicationSaveBehavior$,
+      $cacheStorageData$,
+      false,
+      currentHandlerStorageSource
+    );
+
+    isReplicating = false;
+
+    if (error) {
+      if (!isSilent) {
+        const showReport = logger.errorCount > 1;
+
+        logger.warn(error);
+
+        dialogManager.dialogs$.next([
+          {
+            component: showReport ? LogReportDialog : MessageDialog,
+            props: {
+              title: 'Error Processing Data',
+              message: showReport
+                ? `Some or all data could not be stored on an external storage`
+                : error
+            }
+          }
+        ]);
+      }
+
+      externalStorageErrors += 1;
+    } else {
+      externalStorageErrors = 0;
+
+      if (!isSilent) {
+        dialogManager.dialogs$.next([]);
+      }
+
+      if (dataToReplicateQueue.length) {
+        dataToReplicate = JSON.parse(JSON.stringify(dataToReplicateQueue));
+        dataToReplicateQueue = [];
+
+        if (isSilent) {
+          executeReplicate$.next();
+        } else {
+          await executeReplication(false);
+        }
+      } else {
+        dataToReplicate = [];
+      }
+    }
+
+    if (!isSilent) {
+      skipKeyDownListener$.next(false);
+    }
+  }
+
+  function openActionBackdrop() {
+    dialogManager.dialogs$.next([
+      {
+        component: '<div/>',
+        disableCloseOnClick: true
+      }
+    ]);
+  }
+
+  async function leaveReader(routeId: string, deleteLastItem = true) {
+    openActionBackdrop();
+
+    let message;
+
+    try {
+      if (deleteLastItem) {
+        await database.deleteLastItem();
+      }
+
+      await bookmarkPage(false);
+
+      dialogManager.dialogs$.next([]);
+
+      if (upSyncEnabled) {
+        await executeReplication(false);
+      }
+    } catch (error: any) {
+      message = error.message;
+    }
+
+    if (message) {
+      logger.warn(message);
+
+      dialogManager.dialogs$.next([
+        {
+          component: MessageDialog,
+          props: {
+            title: 'Error',
+            message
+          },
+          disableCloseOnClick: true
+        }
+      ]);
+    }
+
+    goto(`${pagePath}${routeId}`);
   }
 
   function handleSetCustomReadingPoint() {
@@ -486,8 +922,9 @@
       }}
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
-      on:bookManagerClick={onBookManagerClick}
-      on:settingsClick={bookmarkPage}
+      on:settingsClick={() => leaveReader(mergeEntries.SETTINGS.routeId, false)}
+      on:domainHintClick={onDomainHintClick}
+      on:bookManagerClick={() => leaveReader(mergeEntries.MANAGE.routeId)}
     />
   </div>
 {/if}
@@ -537,6 +974,7 @@
   {$setBackgroundColor$ ?? ''}
   {$setWritingMode$ ?? ''}
   {$textSelector$ ?? ''}
+  {$replicator$ ?? ''}
 {:else}
   {$leaveIfBookMissing$ ?? ''}
 {/if}
@@ -564,19 +1002,41 @@
   />
 {/if}
 
-{#if showFooter && bookCharCount}
-  <div
-    class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none"
-    style:color={$themeOption$?.tooltipTextFontColor}
-  >
-    {exploredCharCount} / {bookCharCount} ({((exploredCharCount / bookCharCount) * 100).toFixed(
-      2
-    )}%)
+{#if showSpinner}
+  <div class="fixed inset-0 flex h-full w-full items-center justify-center text-7xl">
+    <Fa icon={faSpinner} spin />
   </div>
 {/if}
-<button
-  class="fixed inset-x-0 bottom-0 z-10 h-8 w-full cursor-pointer"
-  on:click={() => (showFooter = !showFooter)}
-/>
 
-<svelte:window on:keydown={onKeydown} />
+<div
+  class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full cursor-pointer items-center justify-between text-xs leading-none"
+  style:color={$themeOption$?.tooltipTextFontColor}
+  on:click={() => (showFooter = !showFooter)}
+  on:keyup={dummyFn}
+>
+  <div class="h-full">
+    {#if dataToReplicate.length}
+      <div
+        class="flex h-full w-8 items-center justify-center text-lg"
+        class:text-red-500={externalStorageErrors > 1}
+        class:animate-pulse={externalStorageErrors > 1 || isReplicating}
+        on:click|stopPropagation={() => executeReplication(false)}
+        on:keyup={dummyFn}
+      >
+        <Fa icon={faCloudBolt} />
+      </div>
+    {/if}
+  </div>
+  {#if showFooter && bookCharCount}
+    <div
+      class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none"
+      style:color={$themeOption$?.tooltipTextFontColor}
+    >
+      {exploredCharCount} / {bookCharCount} ({((exploredCharCount / bookCharCount) * 100).toFixed(
+        2
+      )}%)
+    </div>
+  {/if}
+</div>
+
+<svelte:window on:keydown={onKeydown} on:beforeunload={handleUnload} />
