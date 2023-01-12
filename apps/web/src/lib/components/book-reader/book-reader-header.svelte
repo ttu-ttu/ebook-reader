@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { faBookmark as farBookmark } from '@fortawesome/free-regular-svg-icons';
   import {
     faBookmark as fasBookmark,
@@ -17,7 +18,7 @@
   } from '$lib/css-classes';
   import { customReadingPointEnabled$, viewMode$ } from '$lib/data/store';
   import { ViewMode } from '$lib/data/view-mode';
-  import { dummyFn, isMobile$ } from '$lib/functions/utils';
+  import { dummyFn, isMobile$, isOnOldUrl } from '$lib/functions/utils';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -34,8 +35,9 @@
     setCustomReadingPoint: void;
     resetCustomReadingPoint: void;
     fullscreenClick: void;
-    bookManagerClick: void;
     settingsClick: void;
+    domainHintClick: void;
+    bookManagerClick: void;
   }>();
 
   const customReadingPointMenuItems: {
@@ -48,6 +50,8 @@
   ];
 
   let customReadingPointMenuElm: Popover;
+
+  $: isOldUrl = browser && isOnOldUrl(window);
 
   function dispatchCustomReadingPointAction(action: any) {
     dispatch(action);
@@ -118,10 +122,15 @@
       </div>
     {/if}
     <MergedHeaderIcon
-      items={[mergeEntries.SETTINGS, mergeEntries.MANAGE]}
+      disableRouteNavigation
+      items={isOldUrl
+        ? [mergeEntries.SETTINGS, mergeEntries.DOMAIN_HINT, mergeEntries.MANAGE]
+        : [mergeEntries.SETTINGS, mergeEntries.MANAGE]}
       on:action={({ detail }) => {
         if (detail === mergeEntries.SETTINGS.label) {
           dispatch('settingsClick');
+        } else if (detail === mergeEntries.DOMAIN_HINT.label) {
+          dispatch('domainHintClick');
         } else if (detail === mergeEntries.MANAGE.label) {
           dispatch('bookManagerClick');
         }

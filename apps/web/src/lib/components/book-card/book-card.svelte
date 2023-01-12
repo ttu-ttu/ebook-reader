@@ -34,11 +34,13 @@
 
     const isEqual = (newValue: string | Blob) => {
       if (!prevValue) return false;
+      if (prevValue instanceof Blob && newValue instanceof Blob) {
+        return prevValue.type === newValue.type && prevValue.size === newValue.size;
+      }
       if (typeof prevValue !== 'object' || typeof newValue !== 'object') {
         return prevValue === newValue;
       }
-
-      return prevValue.type === newValue.type && prevValue.size === newValue.size;
+      return false;
     };
 
     return (value: string | Blob) => {
@@ -57,9 +59,10 @@
   let imageLoading = true;
 
   $: imageLoadComplete = imgEl?.complete && !imageLoading;
+  $: alt = `${title}_cover`;
 </script>
 
-<div class="aspect-w-2 aspect-h-3 relative cursor-pointer" role="button" on:click>
+<div class="aspect-w-2 aspect-h-3 relative cursor-pointer" role="button" on:click on:keyup>
   <div class="inline">
     <div class="h-full w-full text-5xl sm:text-7xl">
       {#if !imageLoadComplete}
@@ -68,13 +71,15 @@
 
       {#if imagePath}
         <img
-          src={mapImagePath(imagePath)}
-          class="relative h-full w-full object-cover transition delay-150 duration-700 ease-out"
-          bind:this={imgEl}
-          class:blur={!imageLoadComplete}
-          on:load={() => (imageLoading = false)}
-          alt=""
           decoding="async"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          class="relative h-full w-full object-cover transition delay-150 duration-700 ease-out"
+          class:blur={!imageLoadComplete}
+          src={mapImagePath(imagePath)}
+          {alt}
+          bind:this={imgEl}
+          on:load={() => (imageLoading = false)}
         />
       {/if}
     </div>

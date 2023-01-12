@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import Fa from 'svelte-fa';
   import { dialogManager } from '$lib/data/dialog-manager';
+  import { dummyFn } from '$lib/functions/utils';
   import { getChapterData, nextChapter$, tocIsOpen$, type SectionWithProgress } from './book-toc';
 
   export let sectionData: SectionWithProgress[] = [];
@@ -109,7 +110,11 @@
 
 <div class="flex justify-between p-4">
   <div>Chapter Progress: {currentChapterCharacterProgress} ({currentChapterProgress}%)</div>
-  <div class="flex cursor-pointer items-end md:items-center" on:click={closeTocMenu}>
+  <div
+    class="flex cursor-pointer items-end md:items-center"
+    on:click={closeTocMenu}
+    on:keydown={dummyFn}
+  >
     <Fa icon={faXmark} />
   </div>
 </div>
@@ -123,6 +128,7 @@
         class:hover:opacity-100={chapter.progress === 100 && chapter !== currentChapter}
         class:hover:opacity-60={chapter.progress < 100 || chapter === currentChapter}
         on:click={() => goToChapter(chapter.reference, true)}
+        on:keydown={dummyFn}
       >
         {chapter.label}
       </div>
@@ -137,6 +143,7 @@
     class="cursor-pointer"
     class:opacity-30={!prevChapterAvailable}
     on:click={() => changeChapter(prevChapterAvailable, verticalMode ? 1 : -1)}
+    on:keydown={dummyFn}
   >
     <Fa icon={faChevronLeft} />
   </div>
@@ -144,6 +151,7 @@
     class="cursor-pointer"
     class:opacity-30={!nextChapterAvailable}
     on:click={() => changeChapter(nextChapterAvailable, verticalMode ? -1 : 1)}
+    on:keydown={dummyFn}
   >
     <Fa icon={faChevronRight} />
   </div>
