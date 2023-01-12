@@ -6,14 +6,17 @@
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import Popover from '$lib/components/popover/popover.svelte';
   import { baseIconClasses } from '$lib/css-classes';
+  import { pagePath } from '$lib/data/env';
+  import { dummyFn } from '$lib/functions/utils';
 
   export let leavePageLink = '';
   export let items = [mergeEntries.MANAGE, mergeEntries.BUG_REPORT, mergeEntries.SETTINGS];
   export let mergeTo = mergeEntries.MANAGE;
+  export let disableRouteNavigation = false;
 
   const dispatch = createEventDispatcher<{ action: string }>();
 
-  const actionItems = items.filter((item) => item.routeId !== $page.routeId);
+  const actionItems = items.filter((item) => item.routeId !== $page.route.id);
 
   let menuElm: Popover;
 
@@ -26,10 +29,12 @@
       menuElm.toggleOpen();
     }
 
-    const action = actionItems.find((item) => item.label === target);
+    if (!disableRouteNavigation) {
+      const action = actionItems.find((item) => item.label === target);
 
-    if (action?.routeId) {
-      goto(`/${action.routeId}`);
+      if (action?.routeId) {
+        goto(`${pagePath}${action.routeId}`);
+      }
     }
   }
 
@@ -47,7 +52,11 @@
 {:else}
   <div class="hidden sm:flex">
     {#each actionItems as actionItem (actionItem.label)}
-      <div class={baseIconClasses} on:click={() => handleActionMenuItem(actionItem.label)}>
+      <div
+        class={baseIconClasses}
+        on:click={() => handleActionMenuItem(actionItem.label)}
+        on:keyup={dummyFn}
+      >
         <Fa icon={actionItem.icon} />
       </div>
     {/each}
@@ -68,6 +77,7 @@
             role="button"
             class="cursor-pointer px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
             on:click={() => handleActionMenuItem(actionItem.label)}
+            on:keyup={dummyFn}
           >
             {actionItem.label}
           </div>

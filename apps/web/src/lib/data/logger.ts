@@ -42,6 +42,9 @@ export const logger = {
   get history() {
     return Array.from(logHistory);
   },
+  get errorCount() {
+    return logHistory.filter((log) => log.level === LoggingLevel.ERROR).length;
+  },
   error: print(LoggingLevel.ERROR),
   warn: print(LoggingLevel.WARN),
   info: print(LoggingLevel.INFO),

@@ -10,7 +10,11 @@
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
-  import { customReadingPointEnabled$ } from '$lib/data/store';
+  import {
+    customReadingPointEnabled$,
+    disableWheelNavigation$,
+    skipKeyDownListener$
+  } from '$lib/data/store';
   import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
   import { getReferencePoints } from '$lib/functions/range-util';
   import { faBookmark } from '@fortawesome/free-solid-svg-icons';
@@ -409,7 +413,7 @@
   }
 
   function onWheel(ev: WheelEvent) {
-    if (verticalMode && !$tocIsOpen$) {
+    if (verticalMode && !$tocIsOpen$ && !$disableWheelNavigation$ && !$skipKeyDownListener$) {
       scrollFn(ev, fontSize, window.innerWidth);
     }
   }
@@ -566,7 +570,14 @@
   {/if}
 {/if}
 
-<svelte:body on:wheel|nonpassive={onWheel} />
+<svelte:body
+  on:wheel|nonpassive={onWheel}
+  on:mousedown={(e) => {
+    if ($disableWheelNavigation$ && e.button === 1) {
+      e.preventDefault();
+    }
+  }}
+/>
 <svelte:window on:scroll={onScroll} />
 
 <style lang="scss">

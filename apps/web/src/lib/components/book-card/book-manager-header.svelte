@@ -11,10 +11,29 @@
     pxScreen,
     translateXHeaderFa
   } from '$lib/css-classes';
+  import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
+  import { StorageKey } from '$lib/data/storage/storage-types';
+  import {
+    isStorageSourceAvailable,
+    storageIcon$,
+    storageSource$
+  } from '$lib/data/storage/storage-view';
+  import {
+    cacheStorageData$,
+    fsStorageSource$,
+    gDriveStorageSource$,
+    isOnline$,
+    oneDriveStorageSource$
+  } from '$lib/data/store';
   import { inputAllowDirectory } from '$lib/functions/file-dom/input-allow-directory';
   import { inputFile } from '$lib/functions/file-dom/input-file';
-  import { isMobile$ } from '$lib/functions/utils';
-  import { faCircleXmark, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
+  import { dummyFn, isMobile$, isOnOldUrl } from '$lib/functions/utils';
+  import {
+    faCircleXmark,
+    faCloudArrowUp,
+    faTimes,
+    faTrash
+  } from '@fortawesome/free-solid-svg-icons';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
   import { quintOut } from 'svelte/easing';
@@ -32,9 +51,12 @@
   const dispatch = createEventDispatcher<{
     selectAllClick: void;
     removeClick: void;
+    domainHintClick: void;
     bugReportClick: void;
     backToBookClick: void;
     filesChange: FileList;
+    importBackup: File;
+    replicateData: void;
     cancelReplication: void;
   }>();
 
@@ -52,18 +74,64 @@
   };
 
   const importMenuItems = [mergeEntries.FILE_IMPORT];
+  const storageSourceMenuItems = [
+    { label: 'Browser', key: StorageKey.BROWSER, requiresConnectivity: false }
+  ];
 
   let fileImportElm: HTMLElement;
   let folderImportElm: HTMLElement;
+  let backupImportElm: HTMLElement;
+  let storageSourceElm: Popover;
+  let isOldUrl = false;
 
   $: if (browser) {
-    importMenuItems.push(...($isMobile$ ? [] : [mergeEntries.FOLDER_IMPORT]));
+    isOldUrl = isOnOldUrl(window);
+
+    importMenuItems.push(
+      ...($isMobile$
+        ? [mergeEntries.BACKUP_IMPORT]
+        : [mergeEntries.FOLDER_IMPORT, mergeEntries.BACKUP_IMPORT])
+    );
+
+    storageSourceMenuItems.push(
+      ...(isStorageSourceAvailable(StorageKey.GDRIVE, $gDriveStorageSource$, window)
+        ? [
+            {
+              label: 'GDrive',
+              key: StorageKey.GDRIVE,
+              requiresConnectivity: true
+            }
+          ]
+        : []),
+      ...(isStorageSourceAvailable(StorageKey.ONEDRIVE, $oneDriveStorageSource$, window)
+        ? [
+            {
+              label: 'OneDrive',
+              key: StorageKey.ONEDRIVE,
+              requiresConnectivity: true
+            }
+          ]
+        : []),
+      ...(isStorageSourceAvailable(StorageKey.FS, $fsStorageSource$, window)
+        ? [
+            {
+              label: 'Filesystem',
+              key: StorageKey.FS,
+              requiresConnectivity: false
+            }
+          ]
+        : [])
+    );
   }
 
   function triggerInput(event: CustomEvent<string>) {
     switch (event.detail) {
       case mergeEntries.FOLDER_IMPORT.label:
         folderImportElm.click();
+        break;
+
+      case mergeEntries.BACKUP_IMPORT.label:
+        backupImportElm.click();
         break;
 
       default:
@@ -74,6 +142,10 @@
 
   function dispatchFilesChange(fileList: FileList) {
     dispatch('filesChange', fileList);
+  }
+
+  function dispatchImportBackup(fileList: FileList) {
+    dispatch('importBackup', fileList[0]);
   }
 </script>
 
@@ -93,6 +165,13 @@
   use:inputFile={dispatchFilesChange}
   bind:this={folderImportElm}
 />
+<input
+  hidden
+  type="file"
+  accept=".zip"
+  use:inputFile={dispatchImportBackup}
+  bind:this={backupImportElm}
+/>
 <div class={baseHeaderClasses}>
   {#if !replicationToProgress}
     <div class="flex h-full justify-between {pxScreen}">
@@ -103,12 +182,13 @@
           out:scale={outAnimationParams}
         >
           <svg
+            viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
-            on:click={() => (selectMode = hasBooks && !selectMode)}
             class:opacity-100={selectMode}
             class:opacity-60={!selectMode}
             class={baseIconClasses}
-            viewBox="0 0 24 24"
+            on:click={() => (selectMode = hasBooks && !selectMode)}
+            on:keyup={dummyFn}
           >
             <path
               class="fill-current"
@@ -125,6 +205,7 @@
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
             on:click={() => (selectMode = !selectMode)}
+            on:keyup={dummyFn}
           >
             <Fa icon={faTimes} />
           </div>
@@ -142,10 +223,11 @@
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
+              class={baseIconClasses}
               in:scale={inAnimationParams}
               out:scale={outAnimationParams}
               on:click={() => dispatch('backToBookClick')}
-              class={baseIconClasses}
+              on:keyup={dummyFn}
             >
               <path
                 class="fill-current"
@@ -157,10 +239,11 @@
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
+            class={baseIconClasses}
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
             on:click={() => dispatch('selectAllClick')}
-            class={baseIconClasses}
+            on:keyup={dummyFn}
           >
             <path
               class="fill-current"
@@ -188,10 +271,75 @@
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
           >
+            <Popover
+              placement="bottom"
+              fallbackPlacements={['bottom-end', 'bottom-start']}
+              yOffset={0}
+              bind:this={storageSourceElm}
+            >
+              <div slot="icon">
+                {#key $storageIcon$}
+                  <svg
+                    class={baseIconClasses}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox={$storageIcon$.viewBox}
+                  >
+                    <path class="fill-current" d={$storageIcon$.d} />
+                  </svg>
+                {/key}
+              </div>
+              <div class="w-28 bg-gray-700" slot="content">
+                {#each storageSourceMenuItems as sourceMenuItem (sourceMenuItem.key)}
+                  <div
+                    role="button"
+                    class="cursor-pointer px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
+                    class:hover:bg-white={!sourceMenuItem.requiresConnectivity || $isOnline$}
+                    class:hover:text-gray-700={!sourceMenuItem.requiresConnectivity || $isOnline$}
+                    class:cursor-not-allowed={sourceMenuItem.requiresConnectivity && !$isOnline$}
+                    class:text-gray-500={sourceMenuItem.requiresConnectivity && !$isOnline$}
+                    on:click={async () => {
+                      if (sourceMenuItem.requiresConnectivity && !$isOnline$) {
+                        return;
+                      }
+
+                      if (sourceMenuItem.key !== $storageSource$) {
+                        if (!$cacheStorageData$) {
+                          getStorageHandler(window, sourceMenuItem.key).clearData();
+                        }
+
+                        storageSource$.next(sourceMenuItem.key);
+                      }
+
+                      storageSourceElm.toggleOpen();
+                    }}
+                    on:keyup={dummyFn}
+                  >
+                    {sourceMenuItem.label}
+                  </div>
+                {/each}
+              </div>
+            </Popover>
+          </div>
+          <div
+            class="relative transform-gpu"
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
+          >
             <MergedHeaderIcon
+              items={isOldUrl
+                ? [
+                    mergeEntries.MANAGE,
+                    mergeEntries.DOMAIN_HINT,
+                    mergeEntries.BUG_REPORT,
+                    mergeEntries.SETTINGS
+                  ]
+                : [mergeEntries.MANAGE, mergeEntries.BUG_REPORT, mergeEntries.SETTINGS]}
               on:action={({ detail }) => {
                 if (detail === mergeEntries.BUG_REPORT.label) {
                   dispatch('bugReportClick');
+                }
+                if (detail === mergeEntries.DOMAIN_HINT.label) {
+                  dispatch('domainHintClick');
                 }
               }}
             />
@@ -203,7 +351,17 @@
             class="transform-gpu {baseIconClasses}"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
+            on:click={() => dispatch('replicateData')}
+            on:keyup={dummyFn}
+          >
+            <Fa icon={faCloudArrowUp} />
+          </div>
+          <div
+            class="transform-gpu {baseIconClasses}"
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
             on:click={() => dispatch('removeClick')}
+            on:keyup={dummyFn}
           >
             <Fa icon={faTrash} />
           </div>
@@ -217,7 +375,7 @@
       out:scale={outAnimationParams}
     >
       <Popover contentText={cancelTooltip} contentStyles={'padding: 0.75rem'} eventType="pointer">
-        <div on:click={() => dispatch('cancelReplication')}>
+        <div on:click={() => dispatch('cancelReplication')} on:keyup={dummyFn}>
           <Fa icon={faCircleXmark} class="cursor-pointer" />
         </div>
       </Popover>

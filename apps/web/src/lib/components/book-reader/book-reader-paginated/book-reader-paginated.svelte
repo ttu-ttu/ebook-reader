@@ -4,7 +4,13 @@
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
-  import { firstDimensionMargin$, selectionToBookmarkEnabled$ } from '$lib/data/store';
+  import {
+    disableWheelNavigation$,
+    firstDimensionMargin$,
+    selectionToBookmarkEnabled$,
+    skipKeyDownListener$,
+    swipeThreshold$
+  } from '$lib/data/store';
   import { clearRange, createRange, pulseElement } from '$lib/functions/range-util';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
   import { isMobile$ } from '$lib/functions/utils';
@@ -14,6 +20,7 @@
     combineLatest,
     debounceTime,
     distinctUntilChanged,
+    filter,
     fromEvent,
     map,
     skip,
@@ -292,7 +299,11 @@
   });
 
   iffBrowser(() => fromEvent<WheelEvent>(document.body, 'wheel', { passive: true }))
-    .pipe(throttleTime(50), takeUntil(destroy$))
+    .pipe(
+      filter(() => !$disableWheelNavigation$ && !$skipKeyDownListener$),
+      throttleTime(50),
+      takeUntil(destroy$)
+    )
     .subscribe((ev) => {
       if (!$tocIsOpen$) {
         let multiplier = (ev.deltaX < 0 ? -1 : 1) * (verticalMode ? -1 : 1);
@@ -430,7 +441,7 @@
   }
 
   function onSwipe(ev: CustomEvent<{ direction: 'top' | 'right' | 'left' | 'bottom' }>) {
-    if (!concretePageManager || $tocIsOpen$) return;
+    if (!concretePageManager || $tocIsOpen$ || $skipKeyDownListener$) return;
     if (ev.detail.direction !== 'left' && ev.detail.direction !== 'right') return;
     const swipeLeft = ev.detail.direction === 'left';
     const nextPage = verticalMode ? !swipeLeft : swipeLeft;
@@ -438,7 +449,7 @@
   }
 
   function onKeydown(ev: KeyboardEvent) {
-    if (!concretePageManager || $tocIsOpen$) return;
+    if (!concretePageManager || $tocIsOpen$ || $skipKeyDownListener$) return;
     switch (ev.code) {
       case 'ArrowLeft':
         concretePageManager[verticalMode ? 'nextPage' : 'prevPage']();
@@ -507,7 +518,7 @@
   class:book-content--furigana-style-full={furiganaStyle === FuriganaStyle.Full}
   class:book-content--furigana-style-toggle={furiganaStyle === FuriganaStyle.Toggle}
   class="book-content m-auto"
-  use:swipe={{ timeframe: 500, minSwipeDistance: 10, touchAction: 'pan-y' }}
+  use:swipe={{ timeframe: 500, minSwipeDistance: $swipeThreshold$, touchAction: 'pan-y' }}
   on:swipe={onSwipe}
 >
   <div class="book-content-container" bind:this={contentEl}>

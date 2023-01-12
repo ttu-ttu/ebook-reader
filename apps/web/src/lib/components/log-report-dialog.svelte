@@ -3,15 +3,20 @@
   import Ripple from '$lib/components/ripple.svelte';
   import { buttonClasses } from '$lib/css-classes';
   import { logger } from '$lib/data/logger';
+  import { StorageSourceDefault } from '$lib/data/storage/storage-types';
   import {
     theme$,
-    fontSize$,
+    viewMode$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
+    fontSize$,
+    lineHeight$,
     firstDimensionMargin$,
     secondDimensionMaxValue$,
-    viewMode$,
+    swipeThreshold$,
+    disableWheelNavigation$,
     writingMode$,
+    confirmClose$,
     autoBookmark$,
     hideSpoilerImage$,
     hideFurigana$,
@@ -22,6 +27,15 @@
     pageColumns$,
     autoPositionOnResize$,
     requestPersistentStorage$,
+    cacheStorageData$,
+    autoReplication$,
+    replicationSaveBehavior$,
+    showExternalPlaceholder$,
+    gDriveStorageSource$,
+    oneDriveStorageSource$,
+    fsStorageSource$,
+    syncTarget$,
+    isOnline$,
     multiplier$
   } from '$lib/data/store';
 
@@ -40,13 +54,17 @@
         },
         settings: {
           theme: theme$.getValue(),
-          fontSize: fontSize$.getValue(),
+          viewMode: viewMode$.getValue(),
           fontFamilyGroupOne: fontFamilyGroupOne$.getValue(),
           fontFamilyGroupTwo: fontFamilyGroupTwo$.getValue(),
+          fontSize: fontSize$.getValue(),
+          lineHeight: lineHeight$.getValue(),
           firstDimensionMargin: firstDimensionMargin$.getValue(),
           secondDimensionMaxValue: secondDimensionMaxValue$.getValue(),
-          viewMode: viewMode$.getValue(),
+          swipeThreshold: swipeThreshold$.getValue(),
+          disableWheelNavigation: disableWheelNavigation$.getValue(),
           writingMode: writingMode$.getValue(),
+          confirmClose: confirmClose$.getValue(),
           autoBookmark: autoBookmark$.getValue(),
           hideSpoilerImage: hideSpoilerImage$.getValue(),
           hideFurigana: hideFurigana$.getValue(),
@@ -57,6 +75,17 @@
           pageColumns: pageColumns$.getValue(),
           autoPositionOnResize: autoPositionOnResize$.getValue(),
           requestPersistentStorage: requestPersistentStorage$.getValue(),
+          cacheStorageData: cacheStorageData$.getValue(),
+          autoReplication: autoReplication$.getValue(),
+          replicationSaveBehavior: replicationSaveBehavior$.getValue(),
+          showExternalPlaceholder: showExternalPlaceholder$.getValue(),
+          gDriveStorageSource:
+            gDriveStorageSource$.getValue() === StorageSourceDefault.GDRIVE_DEFAULT,
+          oneDriveStorageSource:
+            oneDriveStorageSource$.getValue() === StorageSourceDefault.ONEDRIVE_DEFAULT,
+          fsStorageSource: !!fsStorageSource$.getValue(),
+          syncTarget: !!syncTarget$.getValue(),
+          isOnline: isOnline$.getValue(),
           multiplier: multiplier$.getValue()
         },
         log: logger.history

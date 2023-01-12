@@ -47,6 +47,7 @@ export default async function loadEpub(
     elementHtml: result.element.innerHTML,
     blobs: blobData,
     coverImage,
+    characters: result.characters,
     sections: result.sections,
     lastBookModified,
     lastBookOpen: 0
