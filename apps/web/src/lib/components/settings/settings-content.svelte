@@ -269,6 +269,7 @@
           LocalFont.NOTOSERIFJP,
           LocalFont.GENEI,
           LocalFont.KLEEONE,
+          LocalFont.KLEEONESEMIBOLD,
           LocalFont.SHIPPORIMINCHO
         ]}
         bind:fontValue={fontFamilyGroupOne}
