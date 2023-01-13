@@ -55,6 +55,8 @@ Custom reading points and the respective change in the character count in pagina
 
 **Note for "Disabled Wheel Navigation"**: If enabled mouse wheel clicks are intercepted and may not work as expected. E. g. for Yomichan you need to keep the wheel pressed while moving the cursor to trigger a popup etc.
 
+**Note for "New Only" Import/Export Behavior:**: The time used for comparison is based on the device time setting. In case you have different settings across used devices you may encounter unexpected results for sync (e. g. data not uploaded, data not downloaded etc.)
+
 # Desktop Keybinds
 
 **Note:** The keys are currently bound to their physical location.
