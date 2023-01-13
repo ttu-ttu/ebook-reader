@@ -83,7 +83,7 @@ You can open the book manager by clicking/tapping on the respective icon in the 
 You will be presented with a list of covers for all the imported books with their respective titles and progress (determined
 by bookmark location). Book placeholder created by loading data from external sources are visible in the browser db manager if configured and displayed as slighty grayed out covers.
 
-Books are sorted in following priority: last opened/read > last modified/added > title.
+Books are sorted based on your selected sort option with ascending title sort for items with equal values
 
 You may:
 
