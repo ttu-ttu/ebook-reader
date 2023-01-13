@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import Popover from '$lib/components/popover/popover.svelte';
@@ -11,6 +12,7 @@
     pxScreen,
     translateXHeaderFa
   } from '$lib/css-classes';
+  import { SortDirection } from '$lib/data/sort-types';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import { StorageKey } from '$lib/data/storage/storage-types';
   import {
@@ -19,6 +21,7 @@
     storageSource$
   } from '$lib/data/storage/storage-view';
   import {
+    booklistSortOptions$,
     cacheStorageData$,
     fsStorageSource$,
     gDriveStorageSource$,
@@ -29,8 +32,12 @@
   import { inputFile } from '$lib/functions/file-dom/input-file';
   import { dummyFn, isMobile$, isOnOldUrl } from '$lib/functions/utils';
   import {
+    faArrowDownShortWide,
+    faArrowDownWideShort,
     faCircleXmark,
     faCloudArrowUp,
+    faSortDown,
+    faSortUp,
     faTimes,
     faTrash
   } from '@fortawesome/free-solid-svg-icons';
@@ -82,6 +89,7 @@
   let folderImportElm: HTMLElement;
   let backupImportElm: HTMLElement;
   let storageSourceElm: Popover;
+  let sortOptionsElm: Popover;
   let isOldUrl = false;
 
   $: if (browser) {
@@ -124,6 +132,16 @@
     );
   }
 
+  $: sortMenuItems = [
+    ...($storageSource$ === StorageKey.BROWSER ? [{ property: 'id', label: 'Added (id)' }] : []),
+    { property: 'title', label: 'Title' },
+    { property: 'characters', label: 'Characters' },
+    { property: 'lastBookModified', label: 'Last Update' },
+    { property: 'lastBookOpen', label: 'Last Read' },
+    { property: 'progress', label: 'Progress' },
+    { property: 'lastBookmarkModified', label: 'Bookmarked' }
+  ];
+
   function triggerInput(event: CustomEvent<string>) {
     switch (event.detail) {
       case mergeEntries.FOLDER_IMPORT.label:
@@ -146,6 +164,27 @@
 
   function dispatchImportBackup(fileList: FileList) {
     dispatch('importBackup', fileList[0]);
+  }
+
+  function changeSortOptions(clickedProperty: string, newDirection: SortDirection) {
+    const { property, direction } = $booklistSortOptions$[$storageSource$];
+
+    if (property !== clickedProperty || direction !== newDirection) {
+      booklistSortOptions$.next({
+        ...$booklistSortOptions$,
+        ...{
+          [$storageSource$]: {
+            property: clickedProperty as Exclude<
+              keyof BookCardProps,
+              'imagePath' | 'isPlaceholder'
+            >,
+            direction: newDirection
+          }
+        }
+      });
+    }
+
+    sortOptionsElm.toggleOpen();
   }
 </script>
 
@@ -315,6 +354,71 @@
                     on:keyup={dummyFn}
                   >
                     {sourceMenuItem.label}
+                  </div>
+                {/each}
+              </div>
+            </Popover>
+          </div>
+          <div
+            class="relative transform-gpu"
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
+          >
+            <Popover
+              placement="bottom"
+              fallbackPlacements={['bottom-end', 'bottom-start']}
+              yOffset={0}
+              bind:this={sortOptionsElm}
+            >
+              <div slot="icon" class={baseIconClasses}>
+                {#if $booklistSortOptions$[$storageSource$].direction === SortDirection.ASC}
+                  <Fa icon={faArrowDownShortWide} />
+                {:else}
+                  <Fa icon={faArrowDownWideShort} />
+                {/if}
+              </div>
+              <div class="w-44 bg-gray-700" slot="content">
+                {#each sortMenuItems as sortMenuItem (sortMenuItem.property)}
+                  {@const isCurrentSort =
+                    $booklistSortOptions$[$storageSource$].property === sortMenuItem.property}
+                  {@const isCurrentSortAsc =
+                    isCurrentSort &&
+                    $booklistSortOptions$[$storageSource$].direction === SortDirection.ASC}
+                  <div
+                    class="grid cursor-default grid-cols-[auto_auto_auto] text-sm hover:bg-white hover:text-gray-700"
+                    class:bg-white={isCurrentSort}
+                    class:text-gray-700={isCurrentSort}
+                    class:hover:opacity-70={isCurrentSort}
+                  >
+                    <div
+                      class="self-center justify-self-start"
+                      role="button"
+                      class:text-red-500={isCurrentSortAsc}
+                      class:hover:text-gray-700={isCurrentSortAsc}
+                      class:hover:text-red-500={!isCurrentSortAsc}
+                      on:click={() => {
+                        changeSortOptions(sortMenuItem.property, SortDirection.ASC);
+                      }}
+                      on:keyup={() => {}}
+                    >
+                      <Fa icon={faSortUp} class="px-4" />
+                    </div>
+                    <div class="py-2">
+                      {sortMenuItem.label}
+                    </div>
+                    <div
+                      class="justify-self-end hover:text-red-500"
+                      role="button"
+                      class:text-red-500={isCurrentSort && !isCurrentSortAsc}
+                      class:hover:text-gray-700={isCurrentSort && !isCurrentSortAsc}
+                      class:hover:text-red-500={!isCurrentSort || isCurrentSortAsc}
+                      on:click={() => {
+                        changeSortOptions(sortMenuItem.property, SortDirection.DESC);
+                      }}
+                      on:keyup={() => {}}
+                    >
+                      <Fa icon={faSortDown} class="mt-1 px-4" />
+                    </div>
                   </div>
                 {/each}
               </div>

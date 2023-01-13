@@ -5,6 +5,7 @@
  */
 
 import { browser } from '$app/environment';
+import { SortDirection, type SortOption } from '$lib/data/sort-types';
 import { StorageDataType, StorageKey, StorageSourceDefault } from '$lib/data/storage/storage-types';
 import {
   AutoReplicationType,
@@ -18,7 +19,10 @@ import { createBooksDb } from './database/books-db/factory';
 import { FuriganaStyle } from './furigana-style';
 import { writableBooleanLocalStorageSubject } from './internal/writable-boolean-local-storage-subject';
 import { writableNumberLocalStorageSubject } from './internal/writable-number-local-storage-subject';
-import { writableArrayLocalStorageSubject } from './internal/writable-object-local-storage-subject';
+import {
+  writableArrayLocalStorageSubject,
+  writableObjectLocalStorageSubject
+} from './internal/writable-object-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
 import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
@@ -146,6 +150,16 @@ const db = browser ? createBooksDb() : import('fake-indexeddb/auto').then(() => 
 export const database = new DatabaseService(db);
 
 export const domainHintSeen$ = writableBooleanLocalStorageSubject()('domainHintSeen', false);
+
+export const booklistSortOptions$ = writableObjectLocalStorageSubject<Record<string, SortOption>>()(
+  'booklistSortOptions',
+  {
+    [StorageKey.BROWSER]: { property: 'lastBookOpen', direction: SortDirection.DESC },
+    [StorageKey.GDRIVE]: { property: 'title', direction: SortDirection.ASC },
+    [StorageKey.ONEDRIVE]: { property: 'title', direction: SortDirection.ASC },
+    [StorageKey.FS]: { property: 'title', direction: SortDirection.ASC }
+  }
+);
 
 export const verticalCustomReadingPosition$ = writableNumberLocalStorageSubject()(
   'verticalCustomReadingPosition',
