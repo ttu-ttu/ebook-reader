@@ -12,10 +12,12 @@
   import { dialogManager } from '$lib/data/dialog-manager';
   import { pagePath } from '$lib/data/env';
   import { logger } from '$lib/data/logger';
+  import { SortDirection, type SortOption } from '$lib/data/sort-types';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import { StorageKey } from '$lib/data/storage/storage-types';
   import { storageSource$ } from '$lib/data/storage/storage-view';
   import {
+    booklistSortOptions$,
     cacheStorageData$,
     database,
     isOnline$,
@@ -44,22 +46,34 @@
 
   const bookCards$: Observable<BookCardProps[]> = combineLatest([
     database.dataList$,
-    database.bookmarks$
+    database.bookmarks$,
+    booklistSortOptions$
   ]).pipe(
     map(([dataList, bookmarks]) => {
+      const sortProp = $booklistSortOptions$[$storageSource$];
+      const isTitleSort = sortProp.property === 'title';
+
       if ($storageSource$ === StorageKey.BROWSER) {
         const bookmarkMap = keyBy(bookmarks, 'dataId');
 
-        return dataList
-          .filter((d) => $showExternalPlaceholder$ || !d.isPlaceholder)
-          .map((d) => ({
-            ...d,
-            ...bookmarkToProgress(bookmarkMap.get(d.id))
-          }))
-          .sort(sortBookCards);
+        return [
+          ...dataList
+            .filter((d) => $showExternalPlaceholder$ || !d.isPlaceholder)
+            .map((d) => ({
+              ...d,
+              ...bookmarkToProgress(bookmarkMap.get(d.id))
+            }))
+            .sort((card1: BookCardProps, card2: BookCardProps) =>
+              sortBookCards(card1, card2, sortProp, isTitleSort)
+            )
+        ];
       }
 
-      return dataList.sort(sortBookCards);
+      return [
+        ...dataList.sort((card1: BookCardProps, card2: BookCardProps) =>
+          sortBookCards(card1, card2, sortProp, isTitleSort)
+        )
+      ];
     }),
     share()
   );
@@ -96,16 +110,25 @@
       : { progress: 0, lastBookmarkModified: 0 };
   }
 
-  function sortBookCards(card1: BookCardProps, card2: BookCardProps) {
+  function sortBookCards(
+    card1: BookCardProps,
+    card2: BookCardProps,
+    sortProp: SortOption,
+    isTitleSort: boolean
+  ) {
+    const card1Prop = card1[sortProp.property] || (isTitleSort ? '' : 0);
+    const card2Prop = card2[sortProp.property] || (isTitleSort ? '' : 0);
+
     let sortDiff = 0;
 
-    const { lastBookModified: card1LastModified = 0, lastBookOpen: card1lastOpen = 0 } = card1;
-    const { lastBookModified: card2LastModified = 0, lastBookOpen: card2lastOpen = 0 } = card2;
-
-    if (card1lastOpen || card2lastOpen) {
-      sortDiff = card2lastOpen - card1lastOpen;
+    if (sortProp.direction === SortDirection.ASC) {
+      sortDiff = isTitleSort
+        ? card1.title.localeCompare(card2.title, 'ja-JP', { numeric: true })
+        : +card1Prop - +card2Prop;
     } else {
-      sortDiff = card2LastModified - card1LastModified;
+      sortDiff = isTitleSort
+        ? card2.title.localeCompare(card1.title, 'ja-JP', { numeric: true })
+        : +card2Prop - +card1Prop;
     }
 
     if (!sortDiff) {
