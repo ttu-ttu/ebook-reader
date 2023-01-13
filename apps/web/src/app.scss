@@ -53,6 +53,15 @@
 }
 
 @font-face {
+  font-family: 'Klee One SemiBold';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local(''), url('/fonts/klee-one-v7-600.woff2') format('woff2'),
+    url('/fonts/klee-one-v7-600.woff') format('woff');
+}
+
+@font-face {
   font-family: 'Noto Sans JP';
   font-style: normal;
   font-weight: 400;
