@@ -4,6 +4,7 @@
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
+  import { logger } from '$lib/data/logger';
   import {
     disableWheelNavigation$,
     firstDimensionMargin$,
@@ -128,6 +129,8 @@
   let bookmarkLeftAdjustment: string | undefined;
 
   let bookmarkRightAdjustment: string | undefined;
+
+  let fontLoadingAdded = false;
 
   const width$ = new Subject<number>();
 
@@ -357,8 +360,26 @@
     previousIntendedCount = 0;
     bookCharCount = calculator.charCount;
 
-    calculator.updateCurrentSection(sectionIndex$.getValue());
-    dispatch('contentChange', scrollEl);
+    let fontLoaded = false;
+
+    try {
+      fontLoaded = document.fonts.check(`${fontSize}px ${fontFamilyGroupOne || 'Noto Serif JP'}`);
+    } catch (error: any) {
+      logger.error(`Error checking Font Load: ${error.message}`);
+      fontLoaded = true;
+    }
+
+    if (fontLoaded) {
+      calculator.updateCurrentSection(sectionIndex$.getValue());
+      dispatch('contentChange', scrollEl);
+    } else if (!fontLoadingAdded) {
+      fontLoadingAdded = true;
+      document.fonts.addEventListener('loadingdone', () => {
+        if (!calculator) return;
+        calculator.updateCurrentSection(sectionIndex$.getValue());
+        dispatch('contentChange', scrollEl);
+      });
+    }
   }
 
   function onContentDisplayChange(_calculator: SectionCharacterStatsCalculator) {

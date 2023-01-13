@@ -10,6 +10,7 @@
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { FuriganaStyle } from '$lib/data/furigana-style';
+  import { logger } from '$lib/data/logger';
   import {
     customReadingPointEnabled$,
     disableWheelNavigation$,
@@ -17,7 +18,7 @@
   } from '$lib/data/store';
   import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
   import { getReferencePoints } from '$lib/functions/range-util';
-  import { faBookmark } from '@fortawesome/free-solid-svg-icons';
+  import { faBookmark, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import {
     animationFrameScheduler,
     combineLatest,
@@ -112,6 +113,8 @@
     contentChange: HTMLElement;
   }>();
 
+  let allowDisplay = false;
+
   let contentEl: HTMLElement | undefined;
 
   let calculator: CharacterStatsCalculator | undefined;
@@ -133,6 +136,8 @@
   let isResizeScroll = false;
 
   let bookmarkAdjustment = window.matchMedia('(min-width: 640px)').matches ? '0.5rem' : '0.25rem';
+
+  let fontLoadingAdded = false;
 
   const scrollFn = browser
     ? horizontalMouseWheel(4, document.documentElement, requestAnimationFrame)
@@ -369,6 +374,7 @@
         });
     }
     contentReadyEvent = {};
+    allowDisplay = true;
   }
 
   function updateSectionProgress() {
@@ -444,7 +450,24 @@
     exploredCharCount = 0;
     prevIntendedCharCount = exploredCharCount;
     bookCharCount = calculator.charCount;
-    dispatch('contentChange', contentEl);
+
+    let fontLoaded = false;
+
+    try {
+      fontLoaded = document.fonts.check(`${fontSize}px ${fontFamilyGroupOne || 'Noto Serif JP'}`);
+    } catch (error: any) {
+      logger.error(`Error checking Font Load: ${error.message}`);
+      fontLoaded = true;
+    }
+
+    if (fontLoaded) {
+      dispatch('contentChange', contentEl);
+    } else if (!fontLoadingAdded) {
+      fontLoadingAdded = true;
+      document.fonts.addEventListener('loadingdone', () => {
+        dispatch('contentChange', contentEl);
+      });
+    }
   }
 
   nextChapter$.pipe(takeUntil(destroy$)).subscribe((chapterId) => {
@@ -568,6 +591,16 @@
       <Fa icon={faBookmark} />
     </div>
   {/if}
+{/if}
+
+{#if !allowDisplay}
+  <div
+    class="fixed inset-0 flex h-full w-full items-center justify-center text-7xl"
+    style:color={fontColor}
+    style:background-color={backgroundColor}
+  >
+    <Fa icon={faSpinner} spin />
+  </div>
 {/if}
 
 <svelte:body
