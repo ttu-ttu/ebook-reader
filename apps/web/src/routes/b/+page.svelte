@@ -63,7 +63,8 @@
     cacheStorageData$,
     confirmClose$,
     verticalCustomReadingPosition$,
-    horizontalCustomReadingPosition$
+    horizontalCustomReadingPosition$,
+    isOnline$
   } from '$lib/data/store';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
   import {
@@ -389,6 +390,21 @@
     }
 
     if (storageSourceName === StorageSourceDefault.GDRIVE_DEFAULT) {
+      if (!$isOnline$) {
+        dialogManager.dialogs$.next([
+          {
+            component: MessageDialog,
+            props: {
+              title: 'Load Error',
+              message:
+                'Sync disabled due to missing Online Connection - refresh Page after going Online to try again'
+            }
+          }
+        ]);
+
+        return undefined;
+      }
+
       return getStorageHandler(
         window,
         StorageKey.GDRIVE,
@@ -399,6 +415,21 @@
       );
     }
     if (storageSourceName === StorageSourceDefault.ONEDRIVE_DEFAULT) {
+      if (!$isOnline$) {
+        dialogManager.dialogs$.next([
+          {
+            component: MessageDialog,
+            props: {
+              title: 'Load Error',
+              message:
+                'Sync disabled due to missing Online Connection - refresh Page after going Online to try again'
+            }
+          }
+        ]);
+
+        return undefined;
+      }
+
       return getStorageHandler(
         window,
         StorageKey.ONEDRIVE,
@@ -413,6 +444,21 @@
       const storageSource = await db.get('storageSource', storageSourceName);
 
       if (storageSource) {
+        if (storageSource.type !== StorageKey.FS && !$isOnline$) {
+          dialogManager.dialogs$.next([
+            {
+              component: MessageDialog,
+              props: {
+                title: 'Load Error',
+                message:
+                  'Sync disabled due to missing Online Connection - refresh Page after going Online to try again'
+              }
+            }
+          ]);
+
+          return undefined;
+        }
+
         return getStorageHandler(
           window,
           storageSource.type,
