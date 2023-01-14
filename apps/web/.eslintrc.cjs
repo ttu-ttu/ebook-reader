@@ -5,7 +5,7 @@ module.exports = {
     project: './tsconfig.eslint.json',
     sourceType: 'module',
     ecmaVersion: 2020,
-    extraFileExtensions: ['.svelte', '.cjs']
+    extraFileExtensions: ['.svelte']
   },
   env: {
     browser: true,
