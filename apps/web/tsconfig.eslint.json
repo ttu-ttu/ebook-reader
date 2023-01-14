@@ -10,7 +10,6 @@
     "postcss.config.cjs",
     "svelte.config.js",
     "vite.config.js",
-    "tailwind.config.cjs",
-    "src/service-worker.ts"
+    "tailwind.config.cjs"
   ]
 }
