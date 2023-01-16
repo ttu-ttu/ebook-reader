@@ -3,6 +3,7 @@
   import { nextChapter$, tocIsOpen$ } from '$lib/components/book-reader/book-toc/book-toc';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
+  import { isStoredFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { logger } from '$lib/data/logger';
   import {
@@ -10,7 +11,8 @@
     firstDimensionMargin$,
     selectionToBookmarkEnabled$,
     skipKeyDownListener$,
-    swipeThreshold$
+    swipeThreshold$,
+    userFonts$
   } from '$lib/data/store';
   import { clearRange, createRange, pulseElement } from '$lib/functions/range-util';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
@@ -370,16 +372,28 @@
     }
 
     if (fontLoaded) {
-      calculator.updateCurrentSection(sectionIndex$.getValue());
-      dispatch('contentChange', scrollEl);
+      triggerContentChange();
     } else if (!fontLoadingAdded) {
       fontLoadingAdded = true;
+
+      const timeout = isStoredFont(fontFamilyGroupOne, $userFonts$) ? 30000 : 10000;
+      const fontLoadTimer = setTimeout(() => {
+        logger.error(`Error loading primary Font: ${fontFamilyGroupOne}`);
+        triggerContentChange();
+      }, timeout);
+
       document.fonts.addEventListener('loadingdone', () => {
-        if (!calculator) return;
-        calculator.updateCurrentSection(sectionIndex$.getValue());
-        dispatch('contentChange', scrollEl);
+        clearTimeout(fontLoadTimer);
+        triggerContentChange();
       });
     }
+  }
+
+  function triggerContentChange() {
+    if (!calculator) return;
+
+    calculator.updateCurrentSection(sectionIndex$.getValue());
+    dispatch('contentChange', scrollEl);
   }
 
   function onContentDisplayChange(_calculator: SectionCharacterStatsCalculator) {

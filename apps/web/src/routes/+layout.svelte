@@ -4,7 +4,8 @@
   import DomainHint from '$lib/components/domain-hint.svelte';
   import { basePath } from '$lib/data/env';
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
-  import { fontFamilyGroupOne$, isOnline$ } from '$lib/data/store';
+  import { userFontsCacheName, type UserFont } from '$lib/data/fonts';
+  import { fontFamilyGroupOne$, isOnline$, userFonts$ } from '$lib/data/store';
   import { dummyFn, isMobile, isMobile$ } from '$lib/functions/utils';
   import { MetaTags } from 'svelte-meta-tags';
   import '../app.scss';
@@ -15,6 +16,51 @@
 
   $: if (browser) {
     isMobile$.next(isMobile(window));
+    addUserFonts($userFonts$);
+  }
+
+  function addUserFonts(userFonts: UserFont[]) {
+    let styleContent = '';
+
+    for (let index = 0, { length } = userFonts; index < length; index += 1) {
+      const userFont = userFonts[index];
+      const ext = userFont.fileName.split('.').pop() || '';
+
+      let format = '';
+
+      switch (ext) {
+        case 'otf':
+          format = 'opentype';
+          break;
+        case 'ttf':
+          format = 'truetype';
+          break;
+        default:
+          format = ext;
+          break;
+      }
+
+      styleContent += `@font-face{font-family: '${userFont.name}';font-style: normal;font-weight: 400;font-display: swap;src: local(''), url('${userFont.path}') format('${format}')}\n`;
+    }
+
+    let styleElement = document.getElementById(userFontsCacheName);
+
+    if (!styleContent) {
+      styleElement?.remove();
+      return;
+    }
+
+    const textNode = document.createTextNode(styleContent);
+
+    if (styleElement) {
+      styleElement.replaceChild(textNode, styleElement.childNodes[0]);
+    } else {
+      styleElement = document.createElement('style');
+      styleElement.id = userFontsCacheName;
+
+      styleElement.appendChild(textNode);
+      document.head.append(styleElement);
+    }
   }
 
   function closeAllDialogs() {

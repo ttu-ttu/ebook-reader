@@ -12,3 +12,26 @@ export enum LocalFont {
   NOTOSERIFJP = 'Noto Serif JP',
   SHIPPORIMINCHO = 'Shippori Mincho'
 }
+
+export interface UserFont {
+  name: string;
+  path: string;
+  fileName: string;
+}
+
+export const userFontsCacheName = 'ttu-userfonts';
+
+export const reservedFontNames = new Set([
+  'Genei Koburi Mincho v5',
+  'Klee One',
+  'Klee One SemiBold',
+  'Noto Sans JP',
+  'Noto Serif JP',
+  'Shippori Mincho'
+]);
+
+export function isStoredFont(fontName: string, userFonts: UserFont[]) {
+  return (
+    reservedFontNames.has(fontName) || !!userFonts.find((userFont) => userFont.name === fontName)
+  );
+}
