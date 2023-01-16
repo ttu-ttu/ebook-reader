@@ -4,6 +4,7 @@ import { build, files, prerendered, version } from '$service-worker';
 
 import { pagePath } from '$lib/data/env';
 import { toSearchParams } from '$lib/functions/to-search-params';
+import { userFontsCacheName } from '$lib/data/fonts';
 
 // eslint-disable-next-line no-restricted-globals
 const worker = self as unknown as ServiceWorkerGlobalScope;
@@ -22,7 +23,9 @@ worker.addEventListener('install', (event) => {
 worker.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      const keysWithOldCache = keys.filter((key) => key !== BUILD_CACHE_NAME);
+      const keysWithOldCache = keys.filter(
+        (key) => key !== BUILD_CACHE_NAME && key !== userFontsCacheName
+      );
       return Promise.all(keysWithOldCache.map((key) => caches.delete(key)));
     })
   );
@@ -48,6 +51,11 @@ worker.addEventListener('fetch', (event) => {
     event.respondWith(
       networkFirstRaceCache(event.request, false, BUILD_CACHE_NAME, requestWithoutParams)
     );
+    return;
+  }
+
+  if (isSelfHost && url.pathname.startsWith('/userfonts/')) {
+    event.respondWith(caches.match(url.pathname).then((r) => r ?? new Response()));
     return;
   }
 

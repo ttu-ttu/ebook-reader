@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
   import SettingsDimensionPopover from '$lib/components/settings/settings-dimension-popover.svelte';
   import SettingsFontSelector from '$lib/components/settings/settings-font-selector.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import SettingsStorageSourceList from '$lib/components/settings/settings-storage-source-list.svelte';
+  import SettingsUserFontDialog from '$lib/components/settings/settings-user-font-dialog.svelte';
   import { inputClasses } from '$lib/css-classes';
+  import { dialogManager } from '$lib/data/dialog-manager';
   import { LocalFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { logger } from '$lib/data/logger';
@@ -14,6 +17,8 @@
   import { isStorageSourceAvailable } from '$lib/data/storage/storage-view';
   import {
     database,
+    fontFamilyGroupOne$,
+    fontFamilyGroupTwo$,
     horizontalCustomReadingPosition$,
     verticalCustomReadingPosition$
   } from '$lib/data/store';
@@ -25,6 +30,8 @@
     ReplicationSaveBehavior,
     AutoReplicationType
   } from '$lib/functions/replication/replication-options';
+  import { faComputer } from '@fortawesome/free-solid-svg-icons';
+  import Fa from 'svelte-fa';
   import { map } from 'rxjs';
 
   export let selectedTheme: string;
@@ -194,6 +201,7 @@
   let autoReplicationTypeTooltip = '';
 
   $: verticalMode = writingMode === 'vertical-rl';
+  $: fontCacheSupported = browser && 'caches' in window;
   $: switch (furiganaStyle) {
     case FuriganaStyle.Full:
       furiganaStyleTooltip = 'Hidden by default, show on hover or click';
@@ -263,17 +271,33 @@
       </SettingsItemGroup>
     </div>
     <SettingsItemGroup title="Font family (Group 1)">
-      <SettingsFontSelector
-        slot="header"
-        availableFonts={[
-          LocalFont.NOTOSERIFJP,
-          LocalFont.GENEI,
-          LocalFont.KLEEONE,
-          LocalFont.KLEEONESEMIBOLD,
-          LocalFont.SHIPPORIMINCHO
-        ]}
-        bind:fontValue={fontFamilyGroupOne}
-      />
+      <div slot="header" class="flex items-center">
+        <SettingsFontSelector
+          availableFonts={[
+            LocalFont.NOTOSERIFJP,
+            LocalFont.GENEI,
+            LocalFont.KLEEONE,
+            LocalFont.KLEEONESEMIBOLD,
+            LocalFont.SHIPPORIMINCHO
+          ]}
+          bind:fontValue={fontFamilyGroupOne}
+        />
+        {#if fontCacheSupported}
+          <div
+            role="button"
+            on:click={() =>
+              dialogManager.dialogs$.next([
+                {
+                  component: SettingsUserFontDialog,
+                  props: { fontFamily: fontFamilyGroupOne$ }
+                }
+              ])}
+            on:keyup={dummyFn}
+          >
+            <Fa icon={faComputer} />
+          </div>
+        {/if}
+      </div>
       <input
         type="text"
         class={inputClasses}
@@ -282,7 +306,24 @@
       />
     </SettingsItemGroup>
     <SettingsItemGroup title="Font family (Group 2)">
-      <SettingsFontSelector slot="header" bind:fontValue={fontFamilyGroupTwo} />
+      <div slot="header" class="flex items-center">
+        <SettingsFontSelector bind:fontValue={fontFamilyGroupTwo} />
+        {#if fontCacheSupported}
+          <div
+            role="button"
+            on:click={() =>
+              dialogManager.dialogs$.next([
+                {
+                  component: SettingsUserFontDialog,
+                  props: { fontFamily: fontFamilyGroupTwo$ }
+                }
+              ])}
+            on:keyup={dummyFn}
+          >
+            <Fa icon={faComputer} />
+          </div>
+        {/if}
+      </div>
       <input
         type="text"
         class={inputClasses}

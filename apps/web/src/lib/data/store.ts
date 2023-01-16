@@ -5,6 +5,7 @@
  */
 
 import { browser } from '$app/environment';
+import type { UserFont } from '$lib/data/fonts';
 import { SortDirection, type SortOption } from '$lib/data/sort-types';
 import { StorageDataType, StorageKey, StorageSourceDefault } from '$lib/data/storage/storage-types';
 import {
@@ -174,3 +175,5 @@ export const horizontalCustomReadingPosition$ = writableNumberLocalStorageSubjec
 export const isOnline$ = writableSubject<boolean>(true);
 
 export const skipKeyDownListener$ = writableSubject<boolean>(false);
+
+export const userFonts$ = writableArrayLocalStorageSubject<UserFont>()('userfonts', []);
