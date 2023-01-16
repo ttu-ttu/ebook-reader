@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { inputClasses } from '$lib/css-classes';
   import { reservedFontNames } from '$lib/data/fonts';
   import { userFonts$ } from '$lib/data/store';
   import { dummyFn } from '$lib/functions/utils';
@@ -13,7 +14,7 @@
   let fontFile: File | undefined;
   let currentError = 'no error';
 
-  $: canSave = !!fontName && !!fontFile;
+  $: canSave = !!fontName && !!fontFile && currentError === 'no error';
 
   function handleFileChange(event: Event) {
     const elm = event.target as HTMLInputElement;
@@ -86,17 +87,35 @@
   }
 </script>
 
-<div class="flex flex-col">
+<div class="flex flex-col min-w-[15rem] md:min-w-[20rem]">
   <span>Font Name</span>
-  <input class="mt-2" type="text" bind:value={fontName} />
+  <input
+    class="mt-2"
+    type="text"
+    bind:value={fontName}
+    on:blur={() => {
+      currentError = 'no error';
+
+      if (
+        reservedFontNames.has(fontName) ||
+        $userFonts$.find((userFont) => userFont.name === fontName)
+      ) {
+        currentError = 'a font file with this name is already stored';
+      }
+    }}
+  />
   <div class:invisible={currentError === 'no error'} class="my-2 text-red-500">{currentError}</div>
-  <div class="flex items-center">
-    <input
-      type="file"
-      bind:this={fileElement}
-      accept=".woff2,.woff,.ttf,.otf"
-      on:change={handleFileChange}
-    />
+  <div class="flex items-center just justify-between">
+    <label role="button" class={`${inputClasses} w-40 text-center py-2 hover:opacity-25 mr-2`}>
+      <input
+        type="file"
+        accept=".woff2,.woff,.ttf,.otf"
+        class="hidden"
+        bind:this={fileElement}
+        on:change={handleFileChange}
+      />
+      Choose File
+    </label>
     <div
       class:cursor-pointer={canSave}
       class:text-gray-500={!canSave}
