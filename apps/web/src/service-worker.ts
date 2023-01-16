@@ -55,7 +55,11 @@ worker.addEventListener('fetch', (event) => {
   }
 
   if (isSelfHost && url.pathname.startsWith('/userfonts/')) {
-    event.respondWith(caches.match(url.pathname).then((r) => r ?? new Response()));
+    event.respondWith(
+      caches
+        .match(url.pathname)
+        .then((r) => r ?? createRedirectResponse('/fonts/noto-serif-v21-regular.woff2'))
+    );
     return;
   }
 
