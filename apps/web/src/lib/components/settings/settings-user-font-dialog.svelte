@@ -107,7 +107,7 @@
         {#if currentTab === 'Stored'}
           {#if $userFonts$.length}
             <div
-              class="grid grid-cols-[max-content,max-content,auto] gap-y-4 gap-x-14 items-center"
+              class="grid grid-cols-[repeat(3,auto)] gap-y-4 gap-x-4 md:gap-x-14 break-all items-center"
             >
               {#each $userFonts$ as userFont (userFont.path)}
                 <div
