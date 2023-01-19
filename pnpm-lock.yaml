@@ -78,7 +78,7 @@ importers:
       svelte-check: 3.0.2
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
-      svelte-meta-tags: 2.6.4
+      svelte-meta-tags: 2.6.5
       svelte-preprocess: 5.0.0
       tailwindcss: 3.2.4
       tslib: 2.4.1
@@ -100,7 +100,7 @@ importers:
       rxjs: 7.8.0
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
-      svelte-meta-tags: 2.6.4_atrrhq7vg4ekua4nnyrpuardle
+      svelte-meta-tags: 2.6.5_atrrhq7vg4ekua4nnyrpuardle
       ua-parser-js: 1.0.32
     devDependencies:
       '@sveltejs/adapter-static': 1.0.5_@sveltejs+kit@1.1.4
@@ -4077,8 +4077,8 @@ packages:
       svelte: 3.55.1
     dev: true
 
-  /svelte-meta-tags/2.6.4_atrrhq7vg4ekua4nnyrpuardle:
-    resolution: {integrity: sha512-S4CfxkLfPzAFRTRlF5YX5BEbU36CpC63cG86pXgsQQZun5kQ1JY7jLFTrb5hfHnvFFjkss52kq4+M53mTLfcig==}
+  /svelte-meta-tags/2.6.5_atrrhq7vg4ekua4nnyrpuardle:
+    resolution: {integrity: sha512-aubQoNalp4UOYY6N3I3DTaSiplxC2j5Lt7xVOCKNg+mXRPRNzZe1HxJCYyCWy1DtBbKAE+uMHjCffzA8qAjwPg==}
     peerDependencies:
       svelte: ^3.44.0
     dependencies:
