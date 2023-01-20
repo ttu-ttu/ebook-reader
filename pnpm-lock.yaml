@@ -55,7 +55,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.2.1
       '@popperjs/core': 2.11.6
       '@sveltejs/adapter-static': 1.0.5
-      '@sveltejs/kit': 1.1.4
+      '@sveltejs/kit': 1.2.0
       '@tailwindcss/aspect-ratio': 0.4.2
       '@tailwindcss/forms': 0.5.3
       '@tailwindcss/line-clamp': 0.4.2
@@ -103,8 +103,8 @@ importers:
       svelte-meta-tags: 2.6.5_atrrhq7vg4ekua4nnyrpuardle
       ua-parser-js: 1.0.32
     devDependencies:
-      '@sveltejs/adapter-static': 1.0.5_@sveltejs+kit@1.1.4
-      '@sveltejs/kit': 1.1.4_svelte@3.55.1+vite@4.0.4
+      '@sveltejs/adapter-static': 1.0.5_@sveltejs+kit@1.2.0
+      '@sveltejs/kit': 1.2.0_svelte@3.55.1+vite@4.0.4
       '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.2.4
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.2.4
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.4
@@ -744,16 +744,16 @@ packages:
     resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
     dev: false
 
-  /@sveltejs/adapter-static/1.0.5_@sveltejs+kit@1.1.4:
+  /@sveltejs/adapter-static/1.0.5_@sveltejs+kit@1.2.0:
     resolution: {integrity: sha512-W5jbgvy9sbYEHs27NQOSFEun+zQwdcL4kpk5qc2kSHl8cKsP5wfXuWDTDRmD1Co40aFcesi5Az5ZzdnPI8KCVg==}
     peerDependencies:
       '@sveltejs/kit': ^1.0.0
     dependencies:
-      '@sveltejs/kit': 1.1.4_svelte@3.55.1+vite@4.0.4
+      '@sveltejs/kit': 1.2.0_svelte@3.55.1+vite@4.0.4
     dev: true
 
-  /@sveltejs/kit/1.1.4_svelte@3.55.1+vite@4.0.4:
-    resolution: {integrity: sha512-FHt8j8PgwhgeA41WTJfD8yQdOmzRY1v6ORtyXjzbzIZ+106LTclRpywnFoKxACEilAQHdGLAivVf9bRHkW1LLQ==}
+  /@sveltejs/kit/1.2.0_svelte@3.55.1+vite@4.0.4:
+    resolution: {integrity: sha512-Burt+zmAlAOkV2jsEJMHCipVI2w7eMyjDzC/63Z+CML4/xz/Kt4Kjl4CJf1o7ldtzP/C3GCjuq70aMrWhzTDRw==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     requiresBuild: true
@@ -774,7 +774,7 @@ packages:
       sirv: 2.0.2
       svelte: 3.55.1
       tiny-glob: 0.2.9
-      undici: 5.15.0
+      undici: 5.15.1
       vite: 4.0.4_sass@1.57.1
     transitivePeerDependencies:
       - supports-color
@@ -4386,8 +4386,8 @@ packages:
       which-boxed-primitive: 1.0.2
     dev: true
 
-  /undici/5.15.0:
-    resolution: {integrity: sha512-wCAZJDyjw9Myv+Ay62LAoB+hZLPW9SmKbQkbHIhMw/acKSlpn7WohdMUc/Vd4j1iSMBO0hWwU8mjB7a5p5bl8g==}
+  /undici/5.15.1:
+    resolution: {integrity: sha512-XLk8g0WAngdvFqTI+VKfBtM4YWXgdxkf1WezC771Es0Dd+Pm1KmNx8t93WTC+Hh9tnghmVxkclU1HN+j+CvIUA==}
     engines: {node: '>=12.18'}
     dependencies:
       busboy: 1.6.0
