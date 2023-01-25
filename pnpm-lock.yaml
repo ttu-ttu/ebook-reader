@@ -67,7 +67,7 @@ importers:
       autoprefixer: 10.4.13
       balanced-match: 2.0.0
       fake-indexeddb: 4.0.1
-      fast-xml-parser: 4.0.14
+      fast-xml-parser: 4.0.15
       idb: 7.1.1
       p-limit: 4.0.0
       path-browserify: 1.0.1
@@ -93,7 +93,7 @@ importers:
       '@zip.js/zip.js': 2.4.26
       balanced-match: 2.0.0
       fake-indexeddb: 4.0.1
-      fast-xml-parser: 4.0.14
+      fast-xml-parser: 4.0.15
       idb: 7.1.1
       p-limit: 4.0.0
       path-browserify: 1.0.1
@@ -2262,8 +2262,8 @@ packages:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
     dev: true
 
-  /fast-xml-parser/4.0.14:
-    resolution: {integrity: sha512-uKe7uxZ9DgNOmHfUmBdhkTBZcMMVxvQ3vELTxUpmotAqRxkpMayEiiQ4AQWTGAVyfzT4Dv79jaszLECWCYbd4w==}
+  /fast-xml-parser/4.0.15:
+    resolution: {integrity: sha512-bF4/E33/K/EZDHV23IJpSK2SU7rZTaSkDH5G85nXX8SKlQ9qBpWQhyPpm2nlTBewDJgtpd6+1x4TNpKmocmthQ==}
     hasBin: true
     dependencies:
       strnum: 1.0.5
