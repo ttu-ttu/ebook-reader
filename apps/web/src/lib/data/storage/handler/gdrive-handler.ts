@@ -122,7 +122,7 @@ export class GDriveStorageHandler extends ApiStorageHandler {
     params.append('fields', 'files(id)');
     params.append(
       'q',
-      `trashed=false and '${parent}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = '${sanitizedName}'`
+      `trashed=false and '${parent}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = "${sanitizedName}"`
     );
 
     let titleId: string = (await this.request(`${this.baseFileApiUrl}?${params.toString()}`))
