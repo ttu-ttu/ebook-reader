@@ -55,7 +55,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.2.1
       '@popperjs/core': 2.11.6
       '@sveltejs/adapter-static': 1.0.5
-      '@sveltejs/kit': 1.3.3
+      '@sveltejs/kit': 1.3.6
       '@tailwindcss/aspect-ratio': 0.4.2
       '@tailwindcss/forms': 0.5.3
       '@tailwindcss/line-clamp': 0.4.2
@@ -103,8 +103,8 @@ importers:
       svelte-meta-tags: 2.6.5_4x7phaipmicbaooxtnresslofa
       ua-parser-js: 1.0.33
     devDependencies:
-      '@sveltejs/adapter-static': 1.0.5_@sveltejs+kit@1.3.3
-      '@sveltejs/kit': 1.3.3_svelte@3.55.1+vite@4.0.4
+      '@sveltejs/adapter-static': 1.0.5_@sveltejs+kit@1.3.6
+      '@sveltejs/kit': 1.3.6_svelte@3.55.1+vite@4.0.4
       '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.2.4
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.2.4
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.4
@@ -744,16 +744,16 @@ packages:
     resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
     dev: false
 
-  /@sveltejs/adapter-static/1.0.5_@sveltejs+kit@1.3.3:
+  /@sveltejs/adapter-static/1.0.5_@sveltejs+kit@1.3.6:
     resolution: {integrity: sha512-W5jbgvy9sbYEHs27NQOSFEun+zQwdcL4kpk5qc2kSHl8cKsP5wfXuWDTDRmD1Co40aFcesi5Az5ZzdnPI8KCVg==}
     peerDependencies:
       '@sveltejs/kit': ^1.0.0
     dependencies:
-      '@sveltejs/kit': 1.3.3_svelte@3.55.1+vite@4.0.4
+      '@sveltejs/kit': 1.3.6_svelte@3.55.1+vite@4.0.4
     dev: true
 
-  /@sveltejs/kit/1.3.3_svelte@3.55.1+vite@4.0.4:
-    resolution: {integrity: sha512-z/Of+rnKhNCvFArymTpmiNsAZZnclD8qR9d/YZJi3ZziLh/OI7L/Ca8/n6Hnd5NqLKB6/NzOC0Fgr12VHMY3nQ==}
+  /@sveltejs/kit/1.3.6_svelte@3.55.1+vite@4.0.4:
+    resolution: {integrity: sha512-SOGTKYiZ0ajIhQ9pUKr9F+h5Srm8Gdn3aza3dZxXWdHjpqv1iyhvt4oS0l5n1a+sXQzKlLpe/CikDBqSVSUS2Q==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     requiresBuild: true
@@ -764,7 +764,7 @@ packages:
       '@sveltejs/vite-plugin-svelte': 2.0.2_svelte@3.55.1+vite@4.0.4
       '@types/cookie': 0.5.1
       cookie: 0.5.0
-      devalue: 4.2.2
+      devalue: 4.2.3
       esm-env: 1.0.0
       kleur: 4.1.5
       magic-string: 0.27.0
@@ -1698,8 +1698,8 @@ packages:
       minimist: 1.2.6
     dev: true
 
-  /devalue/4.2.2:
-    resolution: {integrity: sha512-Pkwd8qrI9O20VJ14fBNHu+on99toTNZFbgWRpZbC0zbDXpnE2WHYcrC1fHhMsF/3Ee+2yaW7vEujAT7fCYgqrA==}
+  /devalue/4.2.3:
+    resolution: {integrity: sha512-JG6Q248aN0pgFL57e3zqTVeFraBe+5W2ugvv1mLXsJP6YYIYJhRZhAl7QP8haJrqob6X10F9NEkuCvNILZTPeQ==}
     dev: true
 
   /didyoumean/1.2.2:
