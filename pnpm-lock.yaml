@@ -19,7 +19,7 @@ importers:
       eslint-plugin-rxjs: 5.0.2
       eslint-plugin-svelte3: 4.0.0
       husky: 8.0.3
-      lint-staged: 13.1.0
+      lint-staged: 13.1.1
       prettier: 2.8.3
       prettier-plugin-svelte: 2.9.0
       prettier-plugin-tailwindcss: 0.2.2
@@ -41,7 +41,7 @@ importers:
       eslint-plugin-rxjs: 5.0.2_4vsywjlpuriuw3tl5oq6zy5a64
       eslint-plugin-svelte3: 4.0.0_4omm2ewoudhgnmf7aocafatnc4
       husky: 8.0.3
-      lint-staged: 13.1.0
+      lint-staged: 13.1.1
       prettier: 2.8.3
       prettier-plugin-svelte: 2.9.0_kdmmghgdi3ngrsq6otxkjilbry
       prettier-plugin-tailwindcss: 0.2.2_2x43trzvpzis5oa6w3yxl4exgi
@@ -2915,8 +2915,8 @@ packages:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
     dev: true
 
-  /lint-staged/13.1.0:
-    resolution: {integrity: sha512-pn/sR8IrcF/T0vpWLilih8jmVouMlxqXxKuAojmbiGX5n/gDnz+abdPptlj0vYnbfE0SQNl3CY/HwtM0+yfOVQ==}
+  /lint-staged/13.1.1:
+    resolution: {integrity: sha512-LLJLO0Kdbcv2a+CvSF4p1M7jBZOajKSMpBUvyR8+bXccsqPER0/NxTFQSpNHjqwV9kM3tkHczYerTB5wI+bksQ==}
     engines: {node: ^14.13.1 || >=16.0.0}
     hasBin: true
     dependencies:
