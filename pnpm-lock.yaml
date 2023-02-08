@@ -80,7 +80,7 @@ importers:
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.5
       svelte-preprocess: 5.0.1
-      tailwindcss: 3.2.4
+      tailwindcss: 3.2.6
       tslib: 2.5.0
       typescript: 4.9.5
       ua-parser-js: 1.0.33
@@ -105,9 +105,9 @@ importers:
     devDependencies:
       '@sveltejs/adapter-static': 2.0.0_@sveltejs+kit@1.5.0
       '@sveltejs/kit': 1.5.0_svelte@3.55.1+vite@4.1.1
-      '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.2.4
-      '@tailwindcss/forms': 0.5.3_tailwindcss@3.2.4
-      '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.4
+      '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.2.6
+      '@tailwindcss/forms': 0.5.3_tailwindcss@3.2.6
+      '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.6
       '@types/balanced-match': 1.0.2
       '@types/path-browserify': 1.0.0
       '@types/ua-parser-js': 0.7.36
@@ -118,7 +118,7 @@ importers:
       svelte: 3.55.1
       svelte-check: 3.0.3_szil5ccxhltas7kuw5btsldmae
       svelte-preprocess: 5.0.1_gvxg7xjxxdbjzh7pybcliknyre
-      tailwindcss: 3.2.4_postcss@8.4.21
+      tailwindcss: 3.2.6_postcss@8.4.21
       tslib: 2.5.0
       typescript: 4.9.5
       vite: 4.1.1_sass@1.58.0
@@ -799,29 +799,29 @@ packages:
       - supports-color
     dev: true
 
-  /@tailwindcss/aspect-ratio/0.4.2_tailwindcss@3.2.4:
+  /@tailwindcss/aspect-ratio/0.4.2_tailwindcss@3.2.6:
     resolution: {integrity: sha512-8QPrypskfBa7QIMuKHg2TA7BqES6vhBrDLOv8Unb6FcFyd3TjKbc6lcmb9UPQHxfl24sXoJ41ux/H7qQQvfaSQ==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.2.4_postcss@8.4.21
+      tailwindcss: 3.2.6_postcss@8.4.21
     dev: true
 
-  /@tailwindcss/forms/0.5.3_tailwindcss@3.2.4:
+  /@tailwindcss/forms/0.5.3_tailwindcss@3.2.6:
     resolution: {integrity: sha512-y5mb86JUoiUgBjY/o6FJSFZSEttfb3Q5gllE4xoKjAAD+vBrnIhE4dViwUuow3va8mpH4s9jyUbUbrRGoRdc2Q==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1'
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.2.4_postcss@8.4.21
+      tailwindcss: 3.2.6_postcss@8.4.21
     dev: true
 
-  /@tailwindcss/line-clamp/0.4.2_tailwindcss@3.2.4:
+  /@tailwindcss/line-clamp/0.4.2_tailwindcss@3.2.6:
     resolution: {integrity: sha512-HFzAQuqYCjyy/SX9sLGB1lroPzmcnWv1FHkIpmypte10hptf4oPUfucryMKovZh2u0uiS9U5Ty3GghWfEJGwVw==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.2.4_postcss@8.4.21
+      tailwindcss: 3.2.6_postcss@8.4.21
     dev: true
 
   /@tsconfig/node10/1.0.8:
@@ -3469,11 +3469,11 @@ packages:
       postcss: ^8.2.14
     dependencies:
       postcss: 8.4.21
-      postcss-selector-parser: 6.0.10
+      postcss-selector-parser: 6.0.11
     dev: true
 
-  /postcss-selector-parser/6.0.10:
-    resolution: {integrity: sha512-IQ7TZdoaqbT+LCpShg46jnZVlhWD2w6iQYAcYXfHARZ7X1t/UGhhceQDs5X0cGqKvYlHNOuv7Oa1xmb0oQuA3w==}
+  /postcss-selector-parser/6.0.11:
+    resolution: {integrity: sha512-zbARubNdogI9j7WY4nQJBiNqQf3sLS3wCP4WfOidu+p28LofJqDH1tcXypGrcmMHhDk2t9wGhCsYe/+szLTy1g==}
     engines: {node: '>=4'}
     dependencies:
       cssesc: 3.0.0
@@ -4190,8 +4190,8 @@ packages:
       tslib: 2.5.0
     dev: true
 
-  /tailwindcss/3.2.4_postcss@8.4.21:
-    resolution: {integrity: sha512-AhwtHCKMtR71JgeYDaswmZXhPcW9iuI9Sp2LvZPo9upDZ7231ZJ7eA9RaURbhpXGVlrjX4cFNlB4ieTetEb7hQ==}
+  /tailwindcss/3.2.6_postcss@8.4.21:
+    resolution: {integrity: sha512-BfgQWZrtqowOQMC2bwaSNe7xcIjdDEgixWGYOd6AL0CbKHJlvhfdbINeAW76l1sO+1ov/MJ93ODJ9yluRituIw==}
     engines: {node: '>=12.13.0'}
     hasBin: true
     peerDependencies:
@@ -4216,7 +4216,7 @@ packages:
       postcss-js: 4.0.0_postcss@8.4.21
       postcss-load-config: 3.1.4_postcss@8.4.21
       postcss-nested: 6.0.0_postcss@8.4.21
-      postcss-selector-parser: 6.0.10
+      postcss-selector-parser: 6.0.11
       postcss-value-parser: 4.2.0
       quick-lru: 5.1.1
       resolve: 1.22.1
