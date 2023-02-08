@@ -20,7 +20,7 @@ importers:
       eslint-plugin-svelte3: 4.0.0
       husky: 8.0.3
       lint-staged: 13.1.1
-      prettier: 2.8.3
+      prettier: 2.8.4
       prettier-plugin-svelte: 2.9.0
       prettier-plugin-tailwindcss: 0.2.2
       svelte: 3.55.1
@@ -42,9 +42,9 @@ importers:
       eslint-plugin-svelte3: 4.0.0_4omm2ewoudhgnmf7aocafatnc4
       husky: 8.0.3
       lint-staged: 13.1.1
-      prettier: 2.8.3
-      prettier-plugin-svelte: 2.9.0_kdmmghgdi3ngrsq6otxkjilbry
-      prettier-plugin-tailwindcss: 0.2.2_2x43trzvpzis5oa6w3yxl4exgi
+      prettier: 2.8.4
+      prettier-plugin-svelte: 2.9.0_jrsxveqmsx2uadbqiuq74wlc4u
+      prettier-plugin-tailwindcss: 0.2.2_yjdjpc7im5hvpskij45owfsns4
       svelte: 3.55.1
       typescript: 4.9.5
 
@@ -3498,17 +3498,17 @@ packages:
     engines: {node: '>= 0.8.0'}
     dev: true
 
-  /prettier-plugin-svelte/2.9.0_kdmmghgdi3ngrsq6otxkjilbry:
+  /prettier-plugin-svelte/2.9.0_jrsxveqmsx2uadbqiuq74wlc4u:
     resolution: {integrity: sha512-3doBi5NO4IVgaNPtwewvrgPpqAcvNv0NwJNflr76PIGgi9nf1oguQV1Hpdm9TI2ALIQVn/9iIwLpBO5UcD2Jiw==}
     peerDependencies:
       prettier: ^1.16.4 || ^2.0.0
       svelte: ^3.2.0
     dependencies:
-      prettier: 2.8.3
+      prettier: 2.8.4
       svelte: 3.55.1
     dev: true
 
-  /prettier-plugin-tailwindcss/0.2.2_2x43trzvpzis5oa6w3yxl4exgi:
+  /prettier-plugin-tailwindcss/0.2.2_yjdjpc7im5hvpskij45owfsns4:
     resolution: {integrity: sha512-5RjUbWRe305pUpc48MosoIp6uxZvZxrM6GyOgsbGLTce+ehePKNm7ziW2dLG2air9aXbGuXlHVSQQw4Lbosq3w==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
@@ -3557,12 +3557,12 @@ packages:
       prettier-plugin-twig-melody:
         optional: true
     dependencies:
-      prettier: 2.8.3
-      prettier-plugin-svelte: 2.9.0_kdmmghgdi3ngrsq6otxkjilbry
+      prettier: 2.8.4
+      prettier-plugin-svelte: 2.9.0_jrsxveqmsx2uadbqiuq74wlc4u
     dev: true
 
-  /prettier/2.8.3:
-    resolution: {integrity: sha512-tJ/oJ4amDihPoufT5sM0Z1SKEuKay8LfVAMlbbhnnkvt6BUserZylqo2PN+p9KeljLr0OHa2rXHU1T8reeoTrw==}
+  /prettier/2.8.4:
+    resolution: {integrity: sha512-vIS4Rlc2FNh0BySk3Wkd6xmwxB0FpOndW5fisM5H8hsZSxU2VWVB5CWIkIjWvrHjIhxk2g3bfMKM87zNTrZddw==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
