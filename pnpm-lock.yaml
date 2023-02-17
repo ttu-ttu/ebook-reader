@@ -73,7 +73,7 @@ importers:
       path-browserify: 1.0.1
       postcss: 8.4.21
       rxjs: 7.8.0
-      sass: 1.58.1
+      sass: 1.58.2
       svelte: 3.55.1
       svelte-check: 3.0.3
       svelte-fa: 3.0.3
@@ -114,14 +114,14 @@ importers:
       '@types/wicg-file-system-access': 2020.9.5
       autoprefixer: 10.4.13_postcss@8.4.21
       postcss: 8.4.21
-      sass: 1.58.1
+      sass: 1.58.2
       svelte: 3.55.1
-      svelte-check: 3.0.3_jb7bp2u3nyyo2a5hx4atp7tjn4
-      svelte-preprocess: 5.0.1_rgy3do4qxjebyt63pviv2xq64e
+      svelte-check: 3.0.3_vfavp5u2finq7i37yihfptr7ku
+      svelte-preprocess: 5.0.1_pioz3wvukpz267vdafe246isaq
       tailwindcss: 3.2.6_postcss@8.4.21
       tslib: 2.5.0
       typescript: 4.9.5
-      vite: 4.1.1_sass@1.58.1
+      vite: 4.1.1_sass@1.58.2
 
 packages:
 
@@ -775,7 +775,7 @@ packages:
       svelte: 3.55.1
       tiny-glob: 0.2.9
       undici: 5.19.1
-      vite: 4.1.1_sass@1.58.1
+      vite: 4.1.1_sass@1.58.2
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -793,7 +793,7 @@ packages:
       magic-string: 0.27.0
       svelte: 3.55.1
       svelte-hmr: 0.15.1_svelte@3.55.1
-      vite: 4.1.1_sass@1.58.1
+      vite: 4.1.1_sass@1.58.2
       vitefu: 0.2.4_vite@4.1.1
     transitivePeerDependencies:
       - supports-color
@@ -3813,8 +3813,8 @@ packages:
       rimraf: 2.7.1
     dev: true
 
-  /sass/1.58.1:
-    resolution: {integrity: sha512-bnINi6nPXbP1XNRaranMFEBZWUfdW/AF16Ql5+ypRxfTvCRTTKrLsMIakyDcayUt2t/RZotmL4kgJwNH5xO+bg==}
+  /sass/1.58.2:
+    resolution: {integrity: sha512-2mbyOWOv/lhEXD6nVrQZQ4KT2DlwcODbTskM42EyqBAFUWOhiiYtAXZqjZz1ygzapYf+N+2GwfIH9M5FM4GUMg==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
@@ -4083,7 +4083,7 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/3.0.3_jb7bp2u3nyyo2a5hx4atp7tjn4:
+  /svelte-check/3.0.3_vfavp5u2finq7i37yihfptr7ku:
     resolution: {integrity: sha512-ByBFXo3bfHRGIsYEasHkdMhLkNleVfszX/Ns1oip58tPJlKdo5Ssr8kgVIuo5oq00hss8AIcdesuy0Xt0BcTvg==}
     hasBin: true
     peerDependencies:
@@ -4096,7 +4096,7 @@ packages:
       picocolors: 1.0.0
       sade: 1.8.1
       svelte: 3.55.1
-      svelte-preprocess: 5.0.1_rgy3do4qxjebyt63pviv2xq64e
+      svelte-preprocess: 5.0.1_pioz3wvukpz267vdafe246isaq
       typescript: 4.9.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -4138,7 +4138,7 @@ packages:
       - typescript
     dev: false
 
-  /svelte-preprocess/5.0.1_rgy3do4qxjebyt63pviv2xq64e:
+  /svelte-preprocess/5.0.1_pioz3wvukpz267vdafe246isaq:
     resolution: {integrity: sha512-0HXyhCoc9rsW4zGOgtInylC6qj259E1hpFnJMJWTf+aIfeqh4O/QHT31KT2hvPEqQfdjmqBR/kO2JDkkciBLrQ==}
     engines: {node: '>= 14.10.0'}
     requiresBuild: true
@@ -4181,7 +4181,7 @@ packages:
       detect-indent: 6.1.0
       magic-string: 0.27.0
       postcss: 8.4.21
-      sass: 1.58.1
+      sass: 1.58.2
       sorcery: 0.11.0
       strip-indent: 3.0.0
       svelte: 3.55.1
@@ -4480,7 +4480,7 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite/4.1.1_sass@1.58.1:
+  /vite/4.1.1_sass@1.58.2:
     resolution: {integrity: sha512-LM9WWea8vsxhr782r9ntg+bhSFS06FJgCvvB0+8hf8UWtvaiDagKYWXndjfX6kGl74keHJUcpzrQliDXZlF5yg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -4509,7 +4509,7 @@ packages:
       postcss: 8.4.21
       resolve: 1.22.1
       rollup: 3.12.1
-      sass: 1.58.1
+      sass: 1.58.2
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
@@ -4522,7 +4522,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 4.1.1_sass@1.58.1
+      vite: 4.1.1_sass@1.58.2
     dev: true
 
   /webidl-conversions/4.0.2:
