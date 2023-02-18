@@ -22,7 +22,7 @@
     "@types/wicg-file-system-access": "2020.9.5",
     "autoprefixer": "10.4.13",
     "postcss": "8.4.21",
-    "sass": "1.58.2",
+    "sass": "1.58.3",
     "svelte": "3.55.1",
     "svelte-check": "3.0.3",
     "svelte-preprocess": "5.0.1",
