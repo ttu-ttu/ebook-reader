@@ -55,7 +55,7 @@ importers:
       '@fortawesome/free-solid-svg-icons': 6.3.0
       '@popperjs/core': 2.11.6
       '@sveltejs/adapter-static': 2.0.1
-      '@sveltejs/kit': 1.8.5
+      '@sveltejs/kit': 1.8.7
       '@tailwindcss/aspect-ratio': 0.4.2
       '@tailwindcss/forms': 0.5.3
       '@tailwindcss/line-clamp': 0.4.2
@@ -103,8 +103,8 @@ importers:
       svelte-meta-tags: 2.6.5_4x7phaipmicbaooxtnresslofa
       ua-parser-js: 1.0.33
     devDependencies:
-      '@sveltejs/adapter-static': 2.0.1_@sveltejs+kit@1.8.5
-      '@sveltejs/kit': 1.8.5_svelte@3.55.1+vite@4.1.4
+      '@sveltejs/adapter-static': 2.0.1_@sveltejs+kit@1.8.7
+      '@sveltejs/kit': 1.8.7_svelte@3.55.1+vite@4.1.4
       '@tailwindcss/aspect-ratio': 0.4.2_tailwindcss@3.2.7
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.2.7
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.2.7
@@ -749,16 +749,16 @@ packages:
     resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
     dev: false
 
-  /@sveltejs/adapter-static/2.0.1_@sveltejs+kit@1.8.5:
+  /@sveltejs/adapter-static/2.0.1_@sveltejs+kit@1.8.7:
     resolution: {integrity: sha512-o5/q3YwD/ErxYCFlK1v3ydvldyNKk1lh3oeyxn4mhz+Pkbx/uuxhzmbOpytTlp5aVqNHDVsb04xadUzOFCDDzw==}
     peerDependencies:
       '@sveltejs/kit': ^1.5.0
     dependencies:
-      '@sveltejs/kit': 1.8.5_svelte@3.55.1+vite@4.1.4
+      '@sveltejs/kit': 1.8.7_svelte@3.55.1+vite@4.1.4
     dev: true
 
-  /@sveltejs/kit/1.8.5_svelte@3.55.1+vite@4.1.4:
-    resolution: {integrity: sha512-b6kbjVAivoPd3oL9IVBaZBWiuHeI0qBKfszSDXcqsPfiSMyUK7ilHDFVSWNn+2EMPO48+87iuho71yTCOXZE3w==}
+  /@sveltejs/kit/1.8.7_svelte@3.55.1+vite@4.1.4:
+    resolution: {integrity: sha512-DQ2JpuL4iFdA4wQw4f0W6yAxWov4xN9JOxbmt0VOHNcWeqIiEzw4GY8g4Ve5gF4f4cwjSlcxvUmS+mEGCLduLA==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     requiresBuild: true
