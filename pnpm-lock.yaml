@@ -22,7 +22,7 @@ importers:
       lint-staged: 13.1.2
       prettier: 2.8.4
       prettier-plugin-svelte: 2.9.0
-      prettier-plugin-tailwindcss: 0.2.3
+      prettier-plugin-tailwindcss: 0.2.4
       svelte: 3.55.1
       typescript: 4.9.5
     devDependencies:
@@ -44,7 +44,7 @@ importers:
       lint-staged: 13.1.2
       prettier: 2.8.4
       prettier-plugin-svelte: 2.9.0_jrsxveqmsx2uadbqiuq74wlc4u
-      prettier-plugin-tailwindcss: 0.2.3_yjdjpc7im5hvpskij45owfsns4
+      prettier-plugin-tailwindcss: 0.2.4_yjdjpc7im5hvpskij45owfsns4
       svelte: 3.55.1
       typescript: 4.9.5
 
@@ -3521,8 +3521,8 @@ packages:
       svelte: 3.55.1
     dev: true
 
-  /prettier-plugin-tailwindcss/0.2.3_yjdjpc7im5hvpskij45owfsns4:
-    resolution: {integrity: sha512-s2N5Dh7Ao5KTV1mao5ZBnn8EKtUcDPJEkGViZIjI0Ij9TTI5zgTz4IHOxW33jOdjHKa8CSjM88scelUiC5TNRQ==}
+  /prettier-plugin-tailwindcss/0.2.4_yjdjpc7im5hvpskij45owfsns4:
+    resolution: {integrity: sha512-wMyugRI2yD8gqmMpZSS8kTA0gGeKozX/R+w8iWE+yiCZL09zY0SvfiHfHabNhjGhzxlQ2S2VuTxPE3T72vppCQ==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
       '@ianvs/prettier-plugin-sort-imports': '*'
