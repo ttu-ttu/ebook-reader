@@ -83,7 +83,7 @@ importers:
       tailwindcss: 3.2.7
       tslib: 2.5.0
       typescript: 4.9.5
-      ua-parser-js: 1.0.33
+      ua-parser-js: 1.0.34
       vite: 4.1.4
     dependencies:
       '@fortawesome/fontawesome-svg-core': 6.3.0
@@ -101,7 +101,7 @@ importers:
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.6.5_4x7phaipmicbaooxtnresslofa
-      ua-parser-js: 1.0.33
+      ua-parser-js: 1.0.34
     devDependencies:
       '@sveltejs/adapter-static': 2.0.1_@sveltejs+kit@1.10.0
       '@sveltejs/kit': 1.10.0_svelte@3.55.1+vite@4.1.4
@@ -4429,8 +4429,8 @@ packages:
     engines: {node: '>=0.1.14'}
     dev: false
 
-  /ua-parser-js/1.0.33:
-    resolution: {integrity: sha512-RqshF7TPTE0XLYAqmjlu5cLLuGdKrNu9O1KLA/qp39QtbZwuzwv1dT46DZSopoUMsYgXpB3Cv8a03FI8b74oFQ==}
+  /ua-parser-js/1.0.34:
+    resolution: {integrity: sha512-K9mwJm/DaB6mRLZfw6q8IMXipcrmuT6yfhYmwhAkuh+81sChuYstYA+znlgaflUPaYUa3odxKPKGw6Vw/lANew==}
     dev: false
 
   /unbox-primitive/1.0.2:
