@@ -20,7 +20,7 @@
     "@types/path-browserify": "1.0.0",
     "@types/ua-parser-js": "0.7.36",
     "@types/wicg-file-system-access": "2020.9.5",
-    "autoprefixer": "10.4.13",
+    "autoprefixer": "10.4.14",
     "postcss": "8.4.21",
     "sass": "1.58.3",
     "svelte": "3.55.1",
