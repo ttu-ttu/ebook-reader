@@ -78,7 +78,7 @@ importers:
       svelte-check: 3.1.2
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
-      svelte-meta-tags: 2.6.5
+      svelte-meta-tags: 2.7.0
       svelte-preprocess: 5.0.1
       tailwindcss: 3.2.7
       tslib: 2.5.0
@@ -100,7 +100,7 @@ importers:
       rxjs: 7.8.0
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
-      svelte-meta-tags: 2.6.5_rx3ssngbibhj4vpczagsdyy47u
+      svelte-meta-tags: 2.7.0_rx3ssngbibhj4vpczagsdyy47u
       ua-parser-js: 1.0.34
     devDependencies:
       '@sveltejs/adapter-static': 2.0.1_@sveltejs+kit@1.11.0
@@ -3839,8 +3839,8 @@ packages:
       source-map-js: 1.0.2
     dev: true
 
-  /schema-dts/1.1.0_typescript@4.9.5:
-    resolution: {integrity: sha512-vdmbs/5ycj4zyKpZIDqTcy+IZi4s7c38RVAYuDmRi7zgxUT8wRWPMLzg0jr7FjdVunYu9yZ00F3+XcZTTFcTOQ==}
+  /schema-dts/1.1.2_typescript@4.9.5:
+    resolution: {integrity: sha512-MpNwH0dZJHinVxk9bT8XUdjKTxMYrA5bLtrrGmFA6PTLwlOKnhi67XoRd6/ty+Djt6ZC0slR57qFhZDNMI6DhQ==}
     peerDependencies:
       typescript: '>=4.1.0'
     dependencies:
@@ -4143,12 +4143,12 @@ packages:
       svelte: 3.56.0
     dev: true
 
-  /svelte-meta-tags/2.6.5_rx3ssngbibhj4vpczagsdyy47u:
-    resolution: {integrity: sha512-aubQoNalp4UOYY6N3I3DTaSiplxC2j5Lt7xVOCKNg+mXRPRNzZe1HxJCYyCWy1DtBbKAE+uMHjCffzA8qAjwPg==}
+  /svelte-meta-tags/2.7.0_rx3ssngbibhj4vpczagsdyy47u:
+    resolution: {integrity: sha512-52mNWYxyfQQobm0zIMs78fcQrabbvmqJ3HnkoyFQD5WwqUVN5fXVB75rY8T3ObnJZn/C2HTPq8eI8f3pjFNlFQ==}
     peerDependencies:
       svelte: ^3.44.0
     dependencies:
-      schema-dts: 1.1.0_typescript@4.9.5
+      schema-dts: 1.1.2_typescript@4.9.5
       svelte: 3.56.0
     transitivePeerDependencies:
       - typescript
