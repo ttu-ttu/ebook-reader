@@ -79,7 +79,7 @@ importers:
       svelte-fa: 3.0.3
       svelte-gestures: 1.4.1
       svelte-meta-tags: 2.7.0
-      svelte-preprocess: 5.0.1
+      svelte-preprocess: 5.0.2
       tailwindcss: 3.2.7
       tslib: 2.5.0
       typescript: 4.9.5
@@ -117,7 +117,7 @@ importers:
       sass: 1.59.3
       svelte: 3.56.0
       svelte-check: 3.1.4_yhvy4yi2prhuovgn2kq54qssrm
-      svelte-preprocess: 5.0.1_rvm2u7e6gxkflv5by2ajogye6m
+      svelte-preprocess: 5.0.2_rvm2u7e6gxkflv5by2ajogye6m
       tailwindcss: 3.2.7_postcss@8.4.21
       tslib: 2.5.0
       typescript: 4.9.5
@@ -894,12 +894,6 @@ packages:
 
   /@types/pug/2.0.6:
     resolution: {integrity: sha512-SnHmG9wN1UVmagJOnyo/qkk0Z7gejYxOYYmaAwr5u2yFYfsupN3sg10kyzN8Hep/2zbHxCnsumxOoRIRMBwKCg==}
-    dev: true
-
-  /@types/sass/1.43.1:
-    resolution: {integrity: sha512-BPdoIt1lfJ6B7rw35ncdwBZrAssjcwzI5LByIrYs+tpXlj/CAkuVdRsgZDdP4lq5EjyWzwxZCqAoFyHKFwp32g==}
-    dependencies:
-      '@types/node': 18.15.3
     dev: true
 
   /@types/semver/7.3.12:
@@ -4122,7 +4116,7 @@ packages:
       picocolors: 1.0.0
       sade: 1.8.1
       svelte: 3.56.0
-      svelte-preprocess: 5.0.1_rvm2u7e6gxkflv5by2ajogye6m
+      svelte-preprocess: 5.0.2_rvm2u7e6gxkflv5by2ajogye6m
       typescript: 4.9.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -4164,8 +4158,8 @@ packages:
       - typescript
     dev: false
 
-  /svelte-preprocess/5.0.1_rvm2u7e6gxkflv5by2ajogye6m:
-    resolution: {integrity: sha512-0HXyhCoc9rsW4zGOgtInylC6qj259E1hpFnJMJWTf+aIfeqh4O/QHT31KT2hvPEqQfdjmqBR/kO2JDkkciBLrQ==}
+  /svelte-preprocess/5.0.2_rvm2u7e6gxkflv5by2ajogye6m:
+    resolution: {integrity: sha512-iXpIoa43VdF7fPkBdoodztZd4H+3EP/GYA66tbuLVtQnM3sWCpsOtc7HjfA7BDR+6VTpqlEnpDmPoXk0dgUa0g==}
     engines: {node: '>= 14.10.0'}
     requiresBuild: true
     peerDependencies:
@@ -4179,7 +4173,7 @@ packages:
       stylus: ^0.55.0
       sugarss: ^2.0.0 || ^3.0.0 || ^4.0.0
       svelte: ^3.23.0
-      typescript: ^3.9.5 || ^4.0.0
+      typescript: '>=3.9.5 || ^4.0.0 || ^5.0.0'
     peerDependenciesMeta:
       '@babel/core':
         optional: true
@@ -4203,7 +4197,6 @@ packages:
         optional: true
     dependencies:
       '@types/pug': 2.0.6
-      '@types/sass': 1.43.1
       detect-indent: 6.1.0
       magic-string: 0.27.0
       postcss: 8.4.21
