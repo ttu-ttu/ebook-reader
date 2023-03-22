@@ -29,7 +29,7 @@
     "husky": "8.0.3",
     "lint-staged": "13.2.0",
     "prettier": "2.8.6",
-    "prettier-plugin-svelte": "2.9.0",
+    "prettier-plugin-svelte": "2.10.0",
     "prettier-plugin-tailwindcss": "0.2.5",
     "svelte": "3.57.0",
     "typescript": "5.0.2"
