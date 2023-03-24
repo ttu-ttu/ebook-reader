@@ -53,7 +53,7 @@ importers:
       '@fortawesome/fontawesome-svg-core': 6.3.0
       '@fortawesome/free-regular-svg-icons': 6.3.0
       '@fortawesome/free-solid-svg-icons': 6.3.0
-      '@popperjs/core': 2.11.6
+      '@popperjs/core': 2.11.7
       '@sveltejs/adapter-static': 2.0.1
       '@sveltejs/kit': 1.13.0
       '@tailwindcss/aspect-ratio': 0.4.2
@@ -89,7 +89,7 @@ importers:
       '@fortawesome/fontawesome-svg-core': 6.3.0
       '@fortawesome/free-regular-svg-icons': 6.3.0
       '@fortawesome/free-solid-svg-icons': 6.3.0
-      '@popperjs/core': 2.11.6
+      '@popperjs/core': 2.11.7
       '@zip.js/zip.js': 2.4.26
       balanced-match: 2.0.0
       fake-indexeddb: 4.0.1
@@ -760,8 +760,8 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
 
-  /@popperjs/core/2.11.6:
-    resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
+  /@popperjs/core/2.11.7:
+    resolution: {integrity: sha512-Cr4OjIkipTtcXKjAsm8agyleBuDHvxzeBoa1v543lbv1YaIwQjESsVcmjiWiPEbC1FIeHOG/Op9kdCmAmiS3Kw==}
     dev: false
 
   /@sveltejs/adapter-static/2.0.1_@sveltejs+kit@1.13.0:
