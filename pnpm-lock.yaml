@@ -73,7 +73,7 @@ importers:
       path-browserify: 1.0.1
       postcss: 8.4.21
       rxjs: 7.8.0
-      sass: 1.59.3
+      sass: 1.60.0
       svelte: 3.57.0
       svelte-check: 3.1.4
       svelte-fa: 3.0.3
@@ -114,14 +114,14 @@ importers:
       '@types/wicg-file-system-access': 2020.9.5
       autoprefixer: 10.4.14_postcss@8.4.21
       postcss: 8.4.21
-      sass: 1.59.3
+      sass: 1.60.0
       svelte: 3.57.0
-      svelte-check: 3.1.4_s2ryk4trtlyjrvi3dnxgjdnpby
-      svelte-preprocess: 5.0.3_ypv53nmpbacfrrfakrkkcgzkee
+      svelte-check: 3.1.4_spii67aetosan52vov2xmacy2e
+      svelte-preprocess: 5.0.3_skveefqr77vvdxoodk3i34hpyy
       tailwindcss: 3.2.7_postcss@8.4.21
       tslib: 2.5.0
       typescript: 5.0.2
-      vite: 4.2.1_sass@1.59.3
+      vite: 4.2.1_sass@1.60.0
 
 packages:
 
@@ -795,7 +795,7 @@ packages:
       svelte: 3.57.0
       tiny-glob: 0.2.9
       undici: 5.21.0
-      vite: 4.2.1_sass@1.59.3
+      vite: 4.2.1_sass@1.60.0
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -813,7 +813,7 @@ packages:
       magic-string: 0.27.0
       svelte: 3.57.0
       svelte-hmr: 0.15.1_svelte@3.57.0
-      vite: 4.2.1_sass@1.59.3
+      vite: 4.2.1_sass@1.60.0
       vitefu: 0.2.4_vite@4.2.1
     transitivePeerDependencies:
       - supports-color
@@ -3833,8 +3833,8 @@ packages:
       rimraf: 2.7.1
     dev: true
 
-  /sass/1.59.3:
-    resolution: {integrity: sha512-QCq98N3hX1jfTCoUAsF3eyGuXLsY7BCnCEg9qAact94Yc21npG2/mVOqoDvE0fCbWDqiM4WlcJQla0gWG2YlxQ==}
+  /sass/1.60.0:
+    resolution: {integrity: sha512-updbwW6fNb5gGm8qMXzVO7V4sWf7LMXnMly/JEyfbfERbVH46Fn6q02BX7/eHTdKpE7d+oTkMMQpFWNUMfFbgQ==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
@@ -4103,7 +4103,7 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/3.1.4_s2ryk4trtlyjrvi3dnxgjdnpby:
+  /svelte-check/3.1.4_spii67aetosan52vov2xmacy2e:
     resolution: {integrity: sha512-25Lb46ZS4IK/XpBMe4IBMrtYf23V8alqBX+szXoccb7uM0D2Wqq5rMRzYBONZnFVuU1bQG3R50lyIT5eRewv2g==}
     hasBin: true
     peerDependencies:
@@ -4116,7 +4116,7 @@ packages:
       picocolors: 1.0.0
       sade: 1.8.1
       svelte: 3.57.0
-      svelte-preprocess: 5.0.3_dgkjhtdnd65wv35nboqyilqqwq
+      svelte-preprocess: 5.0.3_p36mtfmw5gosgtdz4pelrpcmam
       typescript: 4.9.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -4158,7 +4158,7 @@ packages:
       - typescript
     dev: false
 
-  /svelte-preprocess/5.0.3_dgkjhtdnd65wv35nboqyilqqwq:
+  /svelte-preprocess/5.0.3_p36mtfmw5gosgtdz4pelrpcmam:
     resolution: {integrity: sha512-GrHF1rusdJVbOZOwgPWtpqmaexkydznKzy5qIC2FabgpFyKN57bjMUUUqPRfbBXK5igiEWn1uO/DXsa2vJ5VHA==}
     engines: {node: '>= 14.10.0'}
     requiresBuild: true
@@ -4200,14 +4200,14 @@ packages:
       detect-indent: 6.1.0
       magic-string: 0.27.0
       postcss: 8.4.21
-      sass: 1.59.3
+      sass: 1.60.0
       sorcery: 0.11.0
       strip-indent: 3.0.0
       svelte: 3.57.0
       typescript: 4.9.5
     dev: true
 
-  /svelte-preprocess/5.0.3_ypv53nmpbacfrrfakrkkcgzkee:
+  /svelte-preprocess/5.0.3_skveefqr77vvdxoodk3i34hpyy:
     resolution: {integrity: sha512-GrHF1rusdJVbOZOwgPWtpqmaexkydznKzy5qIC2FabgpFyKN57bjMUUUqPRfbBXK5igiEWn1uO/DXsa2vJ5VHA==}
     engines: {node: '>= 14.10.0'}
     requiresBuild: true
@@ -4249,7 +4249,7 @@ packages:
       detect-indent: 6.1.0
       magic-string: 0.27.0
       postcss: 8.4.21
-      sass: 1.59.3
+      sass: 1.60.0
       sorcery: 0.11.0
       strip-indent: 3.0.0
       svelte: 3.57.0
@@ -4554,7 +4554,7 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite/4.2.1_sass@1.59.3:
+  /vite/4.2.1_sass@1.60.0:
     resolution: {integrity: sha512-7MKhqdy0ISo4wnvwtqZkjke6XN4taqQ2TBaTccLIpOKv7Vp2h4Y+NpmWCnGDeSvvn45KxvWgGyb0MkHvY1vgbg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -4583,7 +4583,7 @@ packages:
       postcss: 8.4.21
       resolve: 1.22.1
       rollup: 3.19.1
-      sass: 1.59.3
+      sass: 1.60.0
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
@@ -4596,7 +4596,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 4.2.1_sass@1.59.3
+      vite: 4.2.1_sass@1.60.0
     dev: true
 
   /webidl-conversions/4.0.2:
