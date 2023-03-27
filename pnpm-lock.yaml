@@ -16,7 +16,7 @@ importers:
       eslint-import-resolver-typescript: 3.5.3
       eslint-plugin-header: 3.1.1
       eslint-plugin-import: 2.27.5
-      eslint-plugin-rxjs: 5.0.2
+      eslint-plugin-rxjs: 5.0.3
       eslint-plugin-svelte3: 4.0.0
       husky: 8.0.3
       lint-staged: 13.2.0
@@ -38,7 +38,7 @@ importers:
       eslint-import-resolver-typescript: 3.5.3_eakrjjutlgqjxe5ydhtnd4qdmy
       eslint-plugin-header: 3.1.1_eslint@8.36.0
       eslint-plugin-import: 2.27.5_pd4t7prljtzlsex5wwnvwlxguy
-      eslint-plugin-rxjs: 5.0.2_j4766f7ecgqbon3u7zlxn5zszu
+      eslint-plugin-rxjs: 5.0.3_j4766f7ecgqbon3u7zlxn5zszu
       eslint-plugin-svelte3: 4.0.0_wzem237sbvnwe7n34ytc5phasy
       husky: 8.0.3
       lint-staged: 13.2.0
@@ -1426,7 +1426,7 @@ packages:
     dev: true
 
   /caseless/0.12.0:
-    resolution: {integrity: sha1-G2gcIf+EAzyCZUMJBolCDRhxUdw=}
+    resolution: {integrity: sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw==}
     dev: true
 
   /chalk/2.4.2:
@@ -2066,11 +2066,11 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-rxjs/5.0.2_j4766f7ecgqbon3u7zlxn5zszu:
-    resolution: {integrity: sha512-Q2wsEHWInhZ3uz5df+YbD4g/NPQqAeYHjJuEsxqgVS+XAsYCuVE2pj9kADdMFy4GsQy2jt7KP+TOrnq1i6bI5Q==}
+  /eslint-plugin-rxjs/5.0.3_j4766f7ecgqbon3u7zlxn5zszu:
+    resolution: {integrity: sha512-fcVkqLmYLRfRp+ShafjpUKuaZ+cw/sXAvM5dfSxiEr7M28QZ/NY7vaOr09FB4rSaZsQyLBnNPh5SL+4EgKjh8Q==}
     peerDependencies:
       eslint: ^8.0.0
-      typescript: ^4.0.0
+      typescript: '>=4.0.0'
     dependencies:
       '@typescript-eslint/experimental-utils': 5.22.0_j4766f7ecgqbon3u7zlxn5zszu
       common-tags: 1.8.2
@@ -4334,7 +4334,7 @@ packages:
     dev: true
 
   /to-fast-properties/2.0.0:
-    resolution: {integrity: sha1-3F5pjL0HkmW8c+A3doGk5Og/YW4=}
+    resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
     engines: {node: '>=4'}
     dev: true
 
