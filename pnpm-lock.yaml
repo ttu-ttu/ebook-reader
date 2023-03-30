@@ -132,8 +132,8 @@ importers:
         specifier: 0.5.3
         version: 0.5.3(tailwindcss@3.3.0)
       '@tailwindcss/line-clamp':
-        specifier: 0.4.3
-        version: 0.4.3(tailwindcss@3.3.0)
+        specifier: 0.4.4
+        version: 0.4.4(tailwindcss@3.3.0)
       '@types/balanced-match':
         specifier: 1.0.2
         version: 1.0.2
@@ -890,12 +890,11 @@ packages:
       tailwindcss: 3.3.0(postcss@8.4.21)(ts-node@10.9.1)
     dev: true
 
-  /@tailwindcss/line-clamp@0.4.3(tailwindcss@3.3.0):
-    resolution: {integrity: sha512-PMe52WfDNKyfh85o/GKZt3nJwhE3FOeaNKwCR1vaW4qaR6caS2Cz+0lnHRkqcc3c6vV590H0cIhetAPEXm+Hxg==}
+  /@tailwindcss/line-clamp@0.4.4(tailwindcss@3.3.0):
+    resolution: {integrity: sha512-5U6SY5z8N42VtrCrKlsTAA35gy2VSyYtHWCsg1H87NU1SXnEfekTVlrga9fzUDrrHcGi2Lb5KenUWb4lRQT5/g==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      semver: 7.3.8
       tailwindcss: 3.3.0(postcss@8.4.21)(ts-node@10.9.1)
     dev: true
 
