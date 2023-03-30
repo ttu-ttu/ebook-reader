@@ -127,13 +127,13 @@ importers:
         version: 1.14.0(svelte@3.58.0)(vite@4.2.1)
       '@tailwindcss/aspect-ratio':
         specifier: 0.4.2
-        version: 0.4.2(tailwindcss@3.3.0)
+        version: 0.4.2(tailwindcss@3.3.1)
       '@tailwindcss/forms':
         specifier: 0.5.3
-        version: 0.5.3(tailwindcss@3.3.0)
+        version: 0.5.3(tailwindcss@3.3.1)
       '@tailwindcss/line-clamp':
         specifier: 0.4.4
-        version: 0.4.4(tailwindcss@3.3.0)
+        version: 0.4.4(tailwindcss@3.3.1)
       '@types/balanced-match':
         specifier: 1.0.2
         version: 1.0.2
@@ -165,8 +165,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(postcss@8.4.21)(sass@1.60.0)(svelte@3.58.0)(typescript@5.0.2)
       tailwindcss:
-        specifier: 3.3.0
-        version: 3.3.0(postcss@8.4.21)(ts-node@10.9.1)
+        specifier: 3.3.1
+        version: 3.3.1(postcss@8.4.21)(ts-node@10.9.1)
       tslib:
         specifier: 2.5.0
         version: 2.5.0
@@ -873,29 +873,29 @@ packages:
       - supports-color
     dev: true
 
-  /@tailwindcss/aspect-ratio@0.4.2(tailwindcss@3.3.0):
+  /@tailwindcss/aspect-ratio@0.4.2(tailwindcss@3.3.1):
     resolution: {integrity: sha512-8QPrypskfBa7QIMuKHg2TA7BqES6vhBrDLOv8Unb6FcFyd3TjKbc6lcmb9UPQHxfl24sXoJ41ux/H7qQQvfaSQ==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.3.0(postcss@8.4.21)(ts-node@10.9.1)
+      tailwindcss: 3.3.1(postcss@8.4.21)(ts-node@10.9.1)
     dev: true
 
-  /@tailwindcss/forms@0.5.3(tailwindcss@3.3.0):
+  /@tailwindcss/forms@0.5.3(tailwindcss@3.3.1):
     resolution: {integrity: sha512-y5mb86JUoiUgBjY/o6FJSFZSEttfb3Q5gllE4xoKjAAD+vBrnIhE4dViwUuow3va8mpH4s9jyUbUbrRGoRdc2Q==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1'
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.3.0(postcss@8.4.21)(ts-node@10.9.1)
+      tailwindcss: 3.3.1(postcss@8.4.21)(ts-node@10.9.1)
     dev: true
 
-  /@tailwindcss/line-clamp@0.4.4(tailwindcss@3.3.0):
+  /@tailwindcss/line-clamp@0.4.4(tailwindcss@3.3.1):
     resolution: {integrity: sha512-5U6SY5z8N42VtrCrKlsTAA35gy2VSyYtHWCsg1H87NU1SXnEfekTVlrga9fzUDrrHcGi2Lb5KenUWb4lRQT5/g==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.3.0(postcss@8.4.21)(ts-node@10.9.1)
+      tailwindcss: 3.3.1(postcss@8.4.21)(ts-node@10.9.1)
     dev: true
 
   /@tsconfig/node10@1.0.8:
@@ -4340,8 +4340,8 @@ packages:
       tslib: 2.5.0
     dev: true
 
-  /tailwindcss@3.3.0(postcss@8.4.21)(ts-node@10.9.1):
-    resolution: {integrity: sha512-hOXlFx+YcklJ8kXiCAfk/FMyr4Pm9ck477G0m/us2344Vuj355IpoEDB5UmGAsSpTBmr+4ZhjzW04JuFXkb/fw==}
+  /tailwindcss@3.3.1(postcss@8.4.21)(ts-node@10.9.1):
+    resolution: {integrity: sha512-Vkiouc41d4CEq0ujXl6oiGFQ7bA3WEhUZdTgXAhtKxSy49OmKs8rEfQmupsfF0IGW8fv2iQkp1EVUuapCFrZ9g==}
     engines: {node: '>=12.13.0'}
     hasBin: true
     peerDependencies:
