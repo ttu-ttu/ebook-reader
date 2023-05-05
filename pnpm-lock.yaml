@@ -11,8 +11,8 @@ importers:
         specifier: 17.6.3
         version: 17.6.3
       '@types/node':
-        specifier: 18.16.3
-        version: 18.16.3
+        specifier: 18.16.4
+        version: 18.16.4
       '@typescript-eslint/eslint-plugin':
         specifier: 5.59.2
         version: 5.59.2(@typescript-eslint/parser@5.59.2)(eslint@8.39.0)(typescript@5.0.4)
@@ -175,7 +175,7 @@ importers:
         version: 5.0.4
       vite:
         specifier: 4.3.4
-        version: 4.3.4(@types/node@18.16.3)(sass@1.62.1)
+        version: 4.3.4(@types/node@18.16.4)(sass@1.62.1)
 
 packages:
 
@@ -372,15 +372,15 @@ packages:
       '@commitlint/execute-rule': 17.4.0
       '@commitlint/resolve-extends': 17.4.4
       '@commitlint/types': 17.4.4
-      '@types/node': 18.16.3
+      '@types/node': 18.16.4
       chalk: 4.1.2
       cosmiconfig: 8.0.0
-      cosmiconfig-typescript-loader: 4.0.0(@types/node@18.16.3)(cosmiconfig@8.0.0)(ts-node@10.9.1)(typescript@5.0.4)
+      cosmiconfig-typescript-loader: 4.0.0(@types/node@18.16.4)(cosmiconfig@8.0.0)(ts-node@10.9.1)(typescript@5.0.4)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
       resolve-from: 5.0.0
-      ts-node: 10.9.1(@types/node@18.16.3)(typescript@5.0.4)
+      ts-node: 10.9.1(@types/node@18.16.4)(typescript@5.0.4)
       typescript: 5.0.4
     transitivePeerDependencies:
       - '@swc/core'
@@ -863,7 +863,7 @@ packages:
       svelte: 3.58.0
       tiny-glob: 0.2.9
       undici: 5.22.0
-      vite: 4.3.4(@types/node@18.16.3)(sass@1.62.1)
+      vite: 4.3.4(@types/node@18.16.4)(sass@1.62.1)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -881,7 +881,7 @@ packages:
       magic-string: 0.30.0
       svelte: 3.58.0
       svelte-hmr: 0.15.1(svelte@3.58.0)
-      vite: 4.3.4(@types/node@18.16.3)(sass@1.62.1)
+      vite: 4.3.4(@types/node@18.16.4)(sass@1.62.1)
       vitefu: 0.2.4(vite@4.3.4)
     transitivePeerDependencies:
       - supports-color
@@ -948,8 +948,8 @@ packages:
     resolution: {integrity: sha512-jhuKLIRrhvCPLqwPcx6INqmKeiA5EWrsCOPhrlFSrbrmU4ZMPjj5Ul/oLCMDO98XRUIwVm78xICz4EPCektzeQ==}
     dev: true
 
-  /@types/node@18.16.3:
-    resolution: {integrity: sha512-OPs5WnnT1xkCBiuQrZA4+YAV4HEJejmHneyraIaxsbev5yCEr6KMwINNFP9wQeFIw8FWcoTqF3vQsa5CDaI+8Q==}
+  /@types/node@18.16.4:
+    resolution: {integrity: sha512-LUhvPmAKAbgm+p/K11IWszLZVoZDlMF4NRmqbhEzDz/CnCuehPkZXwZbBCKGJsgjnuVejotBwM7B3Scrq4EqDw==}
     dev: true
 
   /@types/normalize-package-data@2.4.1:
@@ -1645,7 +1645,7 @@ packages:
     engines: {node: '>= 0.6'}
     dev: true
 
-  /cosmiconfig-typescript-loader@4.0.0(@types/node@18.16.3)(cosmiconfig@8.0.0)(ts-node@10.9.1)(typescript@5.0.4):
+  /cosmiconfig-typescript-loader@4.0.0(@types/node@18.16.4)(cosmiconfig@8.0.0)(ts-node@10.9.1)(typescript@5.0.4):
     resolution: {integrity: sha512-cVpucSc2Tf+VPwCCR7SZzmQTQkPbkk4O01yXsYqXBIbjE1bhwqSyAgYQkRK1un4i0OPziTleqFhdkmOc4RQ/9g==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
@@ -1654,9 +1654,9 @@ packages:
       ts-node: '>=10'
       typescript: '>=3'
     dependencies:
-      '@types/node': 18.16.3
+      '@types/node': 18.16.4
       cosmiconfig: 8.0.0
-      ts-node: 10.9.1(@types/node@18.16.3)(typescript@5.0.4)
+      ts-node: 10.9.1(@types/node@18.16.4)(typescript@5.0.4)
       typescript: 5.0.4
     dev: true
 
@@ -3562,7 +3562,7 @@ packages:
     dependencies:
       lilconfig: 2.1.0
       postcss: 8.4.23
-      ts-node: 10.9.1(@types/node@18.16.3)(typescript@5.0.4)
+      ts-node: 10.9.1(@types/node@18.16.4)(typescript@5.0.4)
       yaml: 2.2.2
     dev: true
 
@@ -4423,7 +4423,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-node@10.9.1(@types/node@18.16.3)(typescript@5.0.4):
+  /ts-node@10.9.1(@types/node@18.16.4)(typescript@5.0.4):
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -4442,7 +4442,7 @@ packages:
       '@tsconfig/node12': 1.0.9
       '@tsconfig/node14': 1.0.1
       '@tsconfig/node16': 1.0.2
-      '@types/node': 18.16.3
+      '@types/node': 18.16.4
       acorn: 8.8.0
       acorn-walk: 8.2.0
       arg: 4.1.3
@@ -4609,7 +4609,7 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite@4.3.4(@types/node@18.16.3)(sass@1.62.1):
+  /vite@4.3.4(@types/node@18.16.4)(sass@1.62.1):
     resolution: {integrity: sha512-f90aqGBoxSFxWph2b39ae2uHAxm5jFBBdnfueNxZAT1FTpM13ccFQExCaKbR2xFW5atowjleRniQ7onjJ22QEg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -4634,7 +4634,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 18.16.3
+      '@types/node': 18.16.4
       esbuild: 0.17.11
       postcss: 8.4.23
       rollup: 3.21.0
@@ -4651,7 +4651,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 4.3.4(@types/node@18.16.3)(sass@1.62.1)
+      vite: 4.3.4(@types/node@18.16.4)(sass@1.62.1)
     dev: true
 
   /webidl-conversions@4.0.2:
