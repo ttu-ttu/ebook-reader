@@ -159,8 +159,8 @@ importers:
         specifier: 3.59.1
         version: 3.59.1
       svelte-check:
-        specifier: 3.3.1
-        version: 3.3.1(postcss@8.4.23)(sass@1.62.1)(svelte@3.59.1)
+        specifier: 3.3.2
+        version: 3.3.2(postcss@8.4.23)(sass@1.62.1)(svelte@3.59.1)
       svelte-preprocess:
         specifier: 5.0.3
         version: 5.0.3(postcss@8.4.23)(sass@1.62.1)(svelte@3.59.1)(typescript@5.0.4)
@@ -4203,8 +4203,8 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check@3.3.1(postcss@8.4.23)(sass@1.62.1)(svelte@3.59.1):
-    resolution: {integrity: sha512-+Yb1F50M76JRPdZlxB8/blg75GiqKH/8QJTNtC3cKvxCbrRK7zpgmOg2oxem9n4eDAIllesm74guR3AnlAtNVg==}
+  /svelte-check@3.3.2(postcss@8.4.23)(sass@1.62.1)(svelte@3.59.1):
+    resolution: {integrity: sha512-67j3rI0LDc2DvL0ON/2pvCasVVD3nHDrTkZNr4eITNfo2oFXdw7SIyMOiFj4swu+pjmFQAigytBK1IWyik8dBw==}
     hasBin: true
     peerDependencies:
       svelte: ^3.55.0
