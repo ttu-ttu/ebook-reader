@@ -121,10 +121,10 @@ importers:
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: 2.0.2
-        version: 2.0.2(@sveltejs/kit@1.16.3)
+        version: 2.0.2(@sveltejs/kit@1.17.0)
       '@sveltejs/kit':
-        specifier: 1.16.3
-        version: 1.16.3(svelte@3.59.1)(vite@4.3.7)
+        specifier: 1.17.0
+        version: 1.17.0(svelte@3.59.1)(vite@4.3.7)
       '@tailwindcss/aspect-ratio':
         specifier: 0.4.2
         version: 0.4.2(tailwindcss@3.3.2)
@@ -832,16 +832,16 @@ packages:
     resolution: {integrity: sha512-Cr4OjIkipTtcXKjAsm8agyleBuDHvxzeBoa1v543lbv1YaIwQjESsVcmjiWiPEbC1FIeHOG/Op9kdCmAmiS3Kw==}
     dev: false
 
-  /@sveltejs/adapter-static@2.0.2(@sveltejs/kit@1.16.3):
+  /@sveltejs/adapter-static@2.0.2(@sveltejs/kit@1.17.0):
     resolution: {integrity: sha512-9wYtf6s6ew7DHUHMrt55YpD1FgV7oWql2IGsW5BXquLxqcY9vjrqCFo0TzzDpo+ZPZkW/v77k0eOP6tsAb8HmQ==}
     peerDependencies:
       '@sveltejs/kit': ^1.5.0
     dependencies:
-      '@sveltejs/kit': 1.16.3(svelte@3.59.1)(vite@4.3.7)
+      '@sveltejs/kit': 1.17.0(svelte@3.59.1)(vite@4.3.7)
     dev: true
 
-  /@sveltejs/kit@1.16.3(svelte@3.59.1)(vite@4.3.7):
-    resolution: {integrity: sha512-8uv0udYRpVuE1BweFidcWHfL+u2gAANKmvIal1dN/FWPBl7DJYbt9zYEtr3bNTiXystT8Sn0Wp54RfwpbPqHjQ==}
+  /@sveltejs/kit@1.17.0(svelte@3.59.1)(vite@4.3.7):
+    resolution: {integrity: sha512-0xm/AdXI2xZ9mtfFhYr9SeS76cCr0I8MSHC+WF9nM8PQxXnL+cbcFUkdrRiEnf1n1Rm1yRXL74nvRpaRAdpAsg==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     requiresBuild: true
@@ -852,7 +852,7 @@ packages:
       '@sveltejs/vite-plugin-svelte': 2.1.1(svelte@3.59.1)(vite@4.3.7)
       '@types/cookie': 0.5.1
       cookie: 0.5.0
-      devalue: 4.3.0
+      devalue: 4.3.1
       esm-env: 1.0.0
       kleur: 4.1.5
       magic-string: 0.30.0
@@ -1762,8 +1762,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /devalue@4.3.0:
-    resolution: {integrity: sha512-n94yQo4LI3w7erwf84mhRUkUJfhLoCZiLyoOZ/QFsDbcWNZePrLwbQpvZBUG2TNxwV3VjCKPxkiiQA6pe3TrTA==}
+  /devalue@4.3.1:
+    resolution: {integrity: sha512-Kc0TSP9IUU9eg55au5Q3YtqaYI2cgntVpunJV9Exbm9nvlBeTE5p2NqYHfpuXK6+VF2hF5PI+BPFPUti7e2N1g==}
     dev: true
 
   /didyoumean@1.2.2:
