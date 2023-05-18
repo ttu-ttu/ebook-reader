@@ -110,8 +110,8 @@ importers:
         specifier: 3.0.3
         version: 3.0.3
       svelte-gestures:
-        specifier: 1.4.1
-        version: 1.4.1
+        specifier: 1.5.0
+        version: 1.5.0
       svelte-meta-tags:
         specifier: 2.7.2
         version: 2.7.2(svelte@3.59.1)(typescript@5.0.4)
@@ -4224,8 +4224,8 @@ packages:
     resolution: {integrity: sha512-GIikJjcVCD+5Y/x9hZc2R4gvuA0gVftacuWu1a+zVQWSFjFYZ+hhU825x+QNs2slsppfrgmFiUyU9Sz9gj4Rdw==}
     dev: false
 
-  /svelte-gestures@1.4.1:
-    resolution: {integrity: sha512-TAmfcz+DgdfrRDFSQ9UsXxhqDjQR7LaUaALauqITaTCVSHPWXIZ9WSBPP6DrXh9MYqgVZwy85wJdv7NQPwsZfA==}
+  /svelte-gestures@1.5.0:
+    resolution: {integrity: sha512-Ieqh/I3U2g1vHOO5kO/a7mTs74eiIZeKtOZTckOdqtBx1yccev3BjNxFVICps/YwEPUIXaKvoCZCQznW4IIPcA==}
     dev: false
 
   /svelte-hmr@0.15.1(svelte@3.59.1):
