@@ -80,8 +80,8 @@ importers:
         specifier: 6.4.0
         version: 6.4.0
       '@popperjs/core':
-        specifier: 2.11.7
-        version: 2.11.7
+        specifier: 2.11.8
+        version: 2.11.8
       '@zip.js/zip.js':
         specifier: 2.4.26
         version: 2.4.26
@@ -828,8 +828,8 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
 
-  /@popperjs/core@2.11.7:
-    resolution: {integrity: sha512-Cr4OjIkipTtcXKjAsm8agyleBuDHvxzeBoa1v543lbv1YaIwQjESsVcmjiWiPEbC1FIeHOG/Op9kdCmAmiS3Kw==}
+  /@popperjs/core@2.11.8:
+    resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
     dev: false
 
   /@sveltejs/adapter-static@2.0.2(@sveltejs/kit@1.19.0):
