@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "2.0.2",
-    "@sveltejs/kit": "1.19.0",
+    "@sveltejs/kit": "1.20.0",
     "@tailwindcss/aspect-ratio": "0.4.2",
     "@tailwindcss/forms": "0.5.3",
     "@tailwindcss/line-clamp": "0.4.4",
@@ -45,7 +45,7 @@
     "path-browserify": "1.0.1",
     "rxjs": "7.8.1",
     "svelte-fa": "3.0.4",
-    "svelte-gestures": "1.5.0",
+    "svelte-gestures": "1.5.2",
     "svelte-meta-tags": "2.7.2",
     "ua-parser-js": "1.0.35"
   }
