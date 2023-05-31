@@ -1,4 +1,8 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
 
 importers:
 
@@ -110,8 +114,8 @@ importers:
         specifier: 3.0.4
         version: 3.0.4
       svelte-gestures:
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: 1.5.2
+        version: 1.5.2
       svelte-meta-tags:
         specifier: 2.7.2
         version: 2.7.2(svelte@3.59.1)(typescript@5.0.4)
@@ -4223,8 +4227,8 @@ packages:
     resolution: {integrity: sha512-y04vEuAoV1wwVDItSCzPW7lzT6v1bj/y1p+W1V+NtIMpQ+8hj8MBkx7JFD7JHSnalPU1QiI8BVfguqheEA3nPg==}
     dev: false
 
-  /svelte-gestures@1.5.0:
-    resolution: {integrity: sha512-Ieqh/I3U2g1vHOO5kO/a7mTs74eiIZeKtOZTckOdqtBx1yccev3BjNxFVICps/YwEPUIXaKvoCZCQznW4IIPcA==}
+  /svelte-gestures@1.5.2:
+    resolution: {integrity: sha512-bXGFqpNAAYCM4XsxjaHMAoPQC3IRjrgGS+Sm/pE1ZftYu9gGRWvDF8g6cwl2b751R2kN1SwNEd6XV7zVh9mcew==}
     dev: false
 
   /svelte-hmr@0.15.1(svelte@3.59.1):
