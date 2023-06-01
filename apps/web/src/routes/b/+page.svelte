@@ -64,7 +64,8 @@
     confirmClose$,
     verticalCustomReadingPosition$,
     horizontalCustomReadingPosition$,
-    isOnline$
+    isOnline$,
+    manualBookmark$
   } from '$lib/data/store';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
   import {
@@ -146,6 +147,7 @@
   let externalStorageErrors = 0;
   let isReplicating = false;
   let storedExploredCharacter = 0;
+  let hasBookmarkData = false;
 
   const autoHideHeader$ = timer(2500).pipe(
     tap(() => (showHeader = false)),
@@ -362,7 +364,10 @@
     externalStorageHandler &&
     ($autoReplication$ === AutoReplicationType.Up || $autoReplication$ === AutoReplicationType.All);
 
-  $: bookmarkData.then((data) => (storedExploredCharacter = data?.exploredCharCount || 0));
+  $: bookmarkData.then((data) => {
+    hasBookmarkData = !!data;
+    storedExploredCharacter = data?.exploredCharCount || 0;
+  });
 
   function handleUnload(event: BeforeUnloadEvent) {
     if (
@@ -802,7 +807,9 @@
         await database.deleteLastItem();
       }
 
-      await bookmarkPage(false);
+      if (!$manualBookmark$) {
+        await bookmarkPage(false);
+      }
 
       dialogManager.dialogs$.next([]);
 
@@ -943,6 +950,7 @@
       )}
       showFullscreenButton={fullscreenManager.fullscreenEnabled}
       autoScrollMultiplier={$multiplier$}
+      {hasBookmarkData}
       bind:isBookmarkScreen
       on:tocClick={() => {
         showHeader = false;
@@ -968,6 +976,10 @@
       }}
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
+      on:scrollToBookmarkClick={() => {
+        showHeader = false;
+        scrollToBookmark();
+      }}
       on:settingsClick={() => leaveReader(mergeEntries.SETTINGS.routeId, false)}
       on:domainHintClick={onDomainHintClick}
       on:bookManagerClick={() => leaveReader(mergeEntries.MANAGE.routeId)}

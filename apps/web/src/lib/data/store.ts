@@ -82,6 +82,8 @@ export const selectionToBookmarkEnabled$ = writableBooleanLocalStorageSubject()(
 
 export const confirmClose$ = writableBooleanLocalStorageSubject()('confirmClose', false);
 
+export const manualBookmark$ = writableBooleanLocalStorageSubject()('manualBookmark', false);
+
 export const autoBookmark$ = writableBooleanLocalStorageSubject()('autoBookmark', false);
 
 export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0);

@@ -7,7 +7,8 @@
 </script>
 
 <div
-  class="cursor-pointer border border-transparent py-4 text-center hover:border hover:border-current"
+  class="cursor-pointer border py-4 text-center hover:border hover:border-current"
+  class:border-transparent={!selected}
   class:border-current={selected}
   class:opacity-5={disabled}
   class:cursor-not-allowed={disabled}

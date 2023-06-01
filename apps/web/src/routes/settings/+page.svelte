@@ -22,6 +22,7 @@
     hideFurigana$,
     hideSpoilerImage$,
     lineHeight$,
+    manualBookmark$,
     pageColumns$,
     replicationSaveBehavior$,
     secondDimensionMaxValue$,
@@ -109,6 +110,7 @@
       bind:pageColumns={$pageColumns$}
       bind:persistentStorage={$persistentStorage$}
       bind:confirmClose={$confirmClose$}
+      bind:manualBookmark={$manualBookmark$}
       bind:autoBookmark={$autoBookmark$}
       bind:cacheStorageData={$cacheStorageData$}
       bind:replicationSaveBehavior={$replicationSaveBehavior$}
