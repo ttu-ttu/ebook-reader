@@ -76,6 +76,8 @@
 
   export let confirmClose: boolean;
 
+  export let manualBookmark: boolean;
+
   export let autoBookmark: boolean;
 
   export let activeSettings: string;
@@ -284,6 +286,7 @@
         />
         {#if fontCacheSupported}
           <div
+            tabindex="0"
             role="button"
             on:click={() =>
               dialogManager.dialogs$.next([
@@ -310,6 +313,7 @@
         <SettingsFontSelector bind:fontValue={fontFamilyGroupTwo} />
         {#if fontCacheSupported}
           <div
+            tabindex="0"
             role="button"
             on:click={() =>
               dialogManager.dialogs$.next([
@@ -412,8 +416,14 @@
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={confirmClose} />
     </SettingsItemGroup>
     <SettingsItemGroup
+      title="Manual Bookmark"
+      tooltip={'If enabled current position will not be bookmarked when leaving the reader via menu elements'}
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={manualBookmark} />
+    </SettingsItemGroup>
+    <SettingsItemGroup
       title="Auto Bookmark"
-      tooltip={'Set a bookmark after 3 seconds without scrolling/page change'}
+      tooltip={'If enabled sets a bookmark after 3 seconds without scrolling/page change'}
     >
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
     </SettingsItemGroup>
@@ -438,6 +448,7 @@
           />
           {#if customReadingPointEnabled}
             <div
+              tabindex="0"
               role="button"
               class="ml-4 hover:underline"
               on:click={() => {
