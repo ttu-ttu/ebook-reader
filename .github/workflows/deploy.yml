@@ -1,4 +1,4 @@
-name: Deploy to Firebase
+name: Deploy
 on:
   push:
     branches:
@@ -44,10 +44,11 @@ jobs:
           VITE_ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
 
       - name: Deploy
-        uses: FirebaseExtended/action-hosting-deploy@v0
+        uses: cloudflare/pages-action@v1.5.0
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TTU_EBOOK }}'
-          channelId: live
-          projectId: ttu-ebook
-          entryPoint: apps/web
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+          directory: build
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          workingDirectory: apps/web
