@@ -32,7 +32,7 @@
     "prettier-plugin-svelte": "2.10.1",
     "prettier-plugin-tailwindcss": "0.3.0",
     "svelte": "4.0.0",
-    "typescript": "5.1.5"
+    "typescript": "5.1.6"
   },
   "lint-staged": {
     "*.{js,cjs,mjs,ts,svelte}": [
