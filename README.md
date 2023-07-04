@@ -321,7 +321,7 @@ docker run --name ebook-reader -d -p 8080:80 ebook-reader
 docker-compose up
 ```
 
-3. Visit [http://localhost:8080](http://localhost:8080) to use the app
+3. Visit [http://localhost:9010](http://localhost:9010) to use the app
 
 ### Using HTTP Hosting App
 
