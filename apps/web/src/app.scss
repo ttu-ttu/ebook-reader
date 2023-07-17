@@ -25,12 +25,15 @@
     -webkit-tap-highlight-color: transparent;
   }
 }
+
 @font-face {
   font-family: 'BIZ UDMincho';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/biz-udmincho-v1-400.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/biz-udmincho-v1-400.woff2') format('woff2'),
     url('/fonts/biz-udmincho-v1-400.woff') format('woff');
 }
 
@@ -39,15 +42,20 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: local(''), url('/fonts/biz-udmincho-v1-700.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/biz-udmincho-v1-700.woff2') format('woff2'),
     url('/fonts/biz-udmincho-v1-700.woff') format('woff');
 }
+
 @font-face {
   font-family: 'BIZ UDGothic';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/biz-udgothic-v1-400.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/biz-udgothic-v1-400.woff2') format('woff2'),
     url('/fonts/biz-udgothic-v1-400.woff') format('woff');
 }
 
@@ -56,15 +64,20 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: local(''), url('/fonts/biz-udgothic-v1-700.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/biz-udgothic-v1-700.woff2') format('woff2'),
     url('/fonts/biz-udgothic-v1-700.woff') format('woff');
 }
+
 @font-face {
   font-family: 'Genei Koburi Mincho v5';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/genEiKoburiMin5.ttf') format('truetype');
+  src:
+    local(''),
+    url('/fonts/genEiKoburiMin5.ttf') format('truetype');
 }
 
 @font-face {
@@ -72,7 +85,9 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/klee-one-v7-regular.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/klee-one-v7-regular.woff2') format('woff2'),
     url('/fonts/klee-one-v7-regular.woff') format('woff');
 }
 
@@ -81,7 +96,9 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: local(''), url('/fonts/klee-one-v7-600.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/klee-one-v7-600.woff2') format('woff2'),
     url('/fonts/klee-one-v7-600.woff') format('woff');
 }
 
@@ -90,7 +107,9 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/klee-one-v7-600.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/klee-one-v7-600.woff2') format('woff2'),
     url('/fonts/klee-one-v7-600.woff') format('woff');
 }
 
@@ -99,7 +118,9 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/noto-sans-v42-regular.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/noto-sans-v42-regular.woff2') format('woff2'),
     url('/fonts/noto-sans-v42-regular.woff') format('woff');
 }
 
@@ -108,7 +129,9 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: local(''), url('/fonts/noto-sans-v42-500.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/noto-sans-v42-500.woff2') format('woff2'),
     url('/fonts/noto-sans-v42-500.woff') format('woff');
 }
 
@@ -117,7 +140,9 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: local(''), url('/fonts/noto-sans-v42-700.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/noto-sans-v42-700.woff2') format('woff2'),
     url('/fonts/noto-sans-v42-700.woff') format('woff');
 }
 
@@ -126,7 +151,9 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/noto-serif-v21-regular.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/noto-serif-v21-regular.woff2') format('woff2'),
     url('/fonts/noto-serif-v21-regular.woff') format('woff');
 }
 
@@ -135,7 +162,9 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: local(''), url('/fonts/noto-serif-v21-500.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/noto-serif-v21-500.woff2') format('woff2'),
     url('/fonts/noto-serif-v21-500.woff') format('woff');
 }
 
@@ -144,7 +173,9 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: local(''), url('/fonts/noto-serif-v21-700.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/noto-serif-v21-700.woff2') format('woff2'),
     url('/fonts/noto-serif-v21-700.woff') format('woff');
 }
 
@@ -153,7 +184,9 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local(''), url('/fonts/shippori-mincho-v14-regular.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/shippori-mincho-v14-regular.woff2') format('woff2'),
     url('/fonts/shippori-mincho-v14-regular.woff') format('woff');
 }
 
@@ -162,7 +195,9 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: local(''), url('/fonts/shippori-mincho-v14-500.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/shippori-mincho-v14-500.woff2') format('woff2'),
     url('/fonts/shippori-mincho-v14-500.woff') format('woff');
 }
 
@@ -171,6 +206,8 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: local(''), url('/fonts/shippori-mincho-v14-700.woff2') format('woff2'),
+  src:
+    local(''),
+    url('/fonts/shippori-mincho-v14-700.woff2') format('woff2'),
     url('/fonts/shippori-mincho-v14-700.woff') format('woff');
 }
