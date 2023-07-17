@@ -5,6 +5,8 @@
  */
 
 export enum LocalFont {
+  BIZUDGOTHIC = 'BIZ UDGothic',
+  BIZUDMINCHO = 'BIZ UDMincho',
   GENEI = 'Genei Koburi Mincho v5',
   KLEEONE = 'Klee One',
   KLEEONESEMIBOLD = 'Klee One SemiBold',
@@ -22,6 +24,8 @@ export interface UserFont {
 export const userFontsCacheName = 'ttu-userfonts';
 
 export const reservedFontNames = new Set([
+  'BIZ UDGothic',
+  'BIZ UDMincho',
   'Genei Koburi Mincho v5',
   'Klee One',
   'Klee One SemiBold',
