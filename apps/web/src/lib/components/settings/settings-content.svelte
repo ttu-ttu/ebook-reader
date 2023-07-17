@@ -276,6 +276,7 @@
       <div slot="header" class="flex items-center">
         <SettingsFontSelector
           availableFonts={[
+            LocalFont.BIZUDMINCHO,
             LocalFont.NOTOSERIFJP,
             LocalFont.GENEI,
             LocalFont.KLEEONE,
@@ -310,7 +311,13 @@
     </SettingsItemGroup>
     <SettingsItemGroup title="Font family (Group 2)">
       <div slot="header" class="flex items-center">
-        <SettingsFontSelector bind:fontValue={fontFamilyGroupTwo} />
+        <SettingsFontSelector
+          availableFonts={[
+            LocalFont.BIZUDGOTHIC,
+            LocalFont.NOTOSANSJP
+          ]}
+          bind:fontValue={fontFamilyGroupTwo}
+        />
         {#if fontCacheSupported}
           <div
             tabindex="0"
