@@ -162,6 +162,20 @@ const availableThemesCamelCase = {
       b: 0x12
     }
   },
+  kimDarkTheme: {
+    ...darkTheme,
+    fontColor: {
+      r: 0xc7,
+      g: 0xc0,
+      b: 0xb5,
+      a: 1
+    },
+    backgroundColor: {
+      r: 0x24,
+      g: 0x25,
+      b: 0x25
+    }
+  },
   blackTheme: {
     ...darkTheme,
     backgroundColor: {
