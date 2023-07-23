@@ -125,6 +125,20 @@ function themeObjValueToStringValue<T extends string>(objValue: Record<T, ColorO
 
 const availableThemesCamelCase = {
   lightTheme,
+  pixLightTheme: {
+    ...lightTheme,
+    fontColor: {
+      r: 0x1e,
+      g: 0x1e,
+      b: 0x1e,
+      a: 1
+    },
+    backgroundColor: {
+      r: 0xfa,
+      g: 0xfa,
+      b: 0xfa
+    }
+  },
   ecruTheme: {
     ...lightTheme,
     backgroundColor: {
@@ -148,20 +162,6 @@ const availableThemesCamelCase = {
   /**
    * Called dark theme for legacy reasons
    */
-  darkTheme: {
-    ...darkTheme,
-    fontColor: {
-      r: 0xff,
-      g: 0xff,
-      b: 0xff,
-      a: 0.6
-    },
-    backgroundColor: {
-      r: 0x12,
-      g: 0x12,
-      b: 0x12
-    }
-  },
   kimDarkTheme: {
     ...darkTheme,
     fontColor: {
@@ -174,6 +174,34 @@ const availableThemesCamelCase = {
       r: 0x24,
       g: 0x25,
       b: 0x25
+    }
+  },
+  pixDarkTheme: {
+    ...darkTheme,
+    fontColor: {
+      r: 0xb7,
+      g: 0xb7,
+      b: 0xb7,
+      a: 1
+    },
+    backgroundColor: {
+      r: 0x1F,
+      g: 0x1F,
+      b: 0x1F
+    }
+  },
+  darkTheme: {
+    ...darkTheme,
+    fontColor: {
+      r: 0xff,
+      g: 0xff,
+      b: 0xff,
+      a: 0.6
+    },
+    backgroundColor: {
+      r: 0x12,
+      g: 0x12,
+      b: 0x12
     }
   },
   blackTheme: {
