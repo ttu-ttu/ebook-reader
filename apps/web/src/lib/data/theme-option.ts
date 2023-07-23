@@ -162,20 +162,6 @@ const availableThemesCamelCase = {
   /**
    * Called dark theme for legacy reasons
    */
-  kimDarkTheme: {
-    ...darkTheme,
-    fontColor: {
-      r: 0xc7,
-      g: 0xc0,
-      b: 0xb5,
-      a: 1
-    },
-    backgroundColor: {
-      r: 0x24,
-      g: 0x25,
-      b: 0x25
-    }
-  },
   pixDarkTheme: {
     ...darkTheme,
     fontColor: {
