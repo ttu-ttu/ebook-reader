@@ -27,7 +27,8 @@ export class BookmarkManagerPaginated implements BookmarkManager {
     const index = this.calculator.getSectionIndexByCharCount(charCount);
 
     const scroll = (calc: SectionCharacterStatsCalculator) => {
-      const scrollPos = calc.getScrollPosByCharCount(charCount);
+      const scrollPos = (calc.getScreenSize() === bookmarkData.screenSize && bookmarkData.scrollPos) 
+        ? bookmarkData.scrollPos : calc.getScrollPosByCharCount(charCount);
       this.pageManager.scrollTo(scrollPos, false);
       this.setIntendedCharCount(charCount);
     };
@@ -55,11 +56,15 @@ export class BookmarkManagerPaginated implements BookmarkManager {
     customReadingPointRange: Range | undefined
   ): BooksDbBookmarkData {
     const exploredCharCount = this.calculator.calcExploredCharCount(customReadingPointRange);
+    const scrollPos = this.calculator.getScrollPos();
+    const screenSize = this.calculator.getScreenSize();
     const bookCharCount = this.calculator.charCount;
 
     return {
       dataId: bookId,
       exploredCharCount,
+      scrollPos,
+      screenSize,
       progress: exploredCharCount / bookCharCount,
       lastBookmarkModified: new Date().getTime()
     };

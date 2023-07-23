@@ -28,6 +28,8 @@ interface BooksDbV4BookmarkData {
   scrollX?: number;
   scrollY?: number;
   exploredCharCount?: number;
+  scrollPos?: number;
+  screenSize?: number;
   progress: number | string | undefined;
   lastBookmarkModified: number;
 }
