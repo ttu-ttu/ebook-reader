@@ -16,7 +16,7 @@
     "@tailwindcss/aspect-ratio": "0.4.2",
     "@tailwindcss/forms": "0.5.4",
     "@tailwindcss/line-clamp": "0.4.4",
-    "@types/balanced-match": "1.0.2",
+    "@types/balanced-match": "1.0.3",
     "@types/path-browserify": "1.0.0",
     "@types/ua-parser-js": "0.7.36",
     "@types/wicg-file-system-access": "2020.9.6",
