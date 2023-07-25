@@ -77,7 +77,8 @@
   font-display: swap;
   src:
     local(''),
-    url('/fonts/genEiKoburiMin5.ttf') format('truetype');
+    url('/fonts/genEiKoburiMin5.woff2') format('woff2'),
+    url('/fonts/genEiKoburiMin5.woff') format('woff');
 }
 
 @font-face {
