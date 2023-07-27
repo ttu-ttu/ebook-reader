@@ -2,6 +2,8 @@
   import { browser } from '$app/environment';
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
+  import Ripple from '$lib/components/ripple.svelte';
+  import SettingsCustomTheme from '$lib/components/settings/settings-custom-theme.svelte';
   import SettingsDimensionPopover from '$lib/components/settings/settings-dimension-popover.svelte';
   import SettingsFontSelector from '$lib/components/settings/settings-font-selector.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
@@ -16,10 +18,12 @@
   import { defaultStorageSources } from '$lib/data/storage/storage-types';
   import { isStorageSourceAvailable } from '$lib/data/storage/storage-view';
   import {
+    customThemes$,
     database,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
     horizontalCustomReadingPosition$,
+    theme$,
     verticalCustomReadingPosition$
   } from '$lib/data/store';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
@@ -30,7 +34,7 @@
     ReplicationSaveBehavior,
     AutoReplicationType
   } from '$lib/functions/replication/replication-options';
-  import { faComputer } from '@fortawesome/free-solid-svg-icons';
+  import { faComputer, faPlus } from '@fortawesome/free-solid-svg-icons';
   import Fa from 'svelte-fa';
   import { map } from 'rxjs';
 
@@ -90,19 +94,24 @@
 
   export let showExternalPlaceholder: boolean;
 
-  const availableThemes = Array.from(availableThemesMap.entries()).map(([theme, option]) => ({
+  $: availableThemes = (
+    browser
+      ? [...Array.from(availableThemesMap.entries()), ...Object.entries($customThemes$)]
+      : Array.from(availableThemesMap.entries())
+  ).map(([theme, option]) => ({
     theme,
     option
   }));
 
-  const optionsForTheme: ToggleOption<string>[] = availableThemes.map(({ theme, option }) => ({
+  $: optionsForTheme = availableThemes.map(({ theme, option }) => ({
     id: theme,
     text: 'ぁあ',
     style: {
       color: option.fontColor,
       'background-color': option.backgroundColor
     },
-    thickBorders: true
+    thickBorders: true,
+    showIcons: true
   }));
 
   const optionsForToggle: ToggleOption<boolean>[] = [
@@ -264,7 +273,38 @@
   {#if activeSettings === 'Reader'}
     <div class="lg:col-span-2">
       <SettingsItemGroup title="Theme">
-        <ButtonToggleGroup options={optionsForTheme} bind:selectedOptionId={selectedTheme} />
+        <ButtonToggleGroup
+          options={optionsForTheme}
+          bind:selectedOptionId={selectedTheme}
+          on:edit={({ detail }) =>
+            dialogManager.dialogs$.next([
+              {
+                component: SettingsCustomTheme,
+                props: { selectedTheme: detail, existingThemes: optionsForTheme }
+              }
+            ])}
+          on:delete={({ detail }) => {
+            $theme$ = optionsForTheme[optionsForTheme.length - 2]?.id || 'light-theme';
+            delete $customThemes$[detail];
+            $customThemes$ = { ...$customThemes$ };
+          }}
+        >
+          {#if browser}
+            <button
+              class="m-1 rounded-md border-2 border-gray-400 p-2 text-lg"
+              on:click={() =>
+                dialogManager.dialogs$.next([
+                  {
+                    component: SettingsCustomTheme,
+                    props: { existingThemes: optionsForTheme }
+                  }
+                ])}
+            >
+              <Fa icon={faPlus} slot="icon" class="mx-2" />
+              <Ripple />
+            </button>
+          {/if}
+        </ButtonToggleGroup>
       </SettingsItemGroup>
     </div>
     <div class="h-full">
@@ -312,10 +352,7 @@
     <SettingsItemGroup title="Font family (Group 2)">
       <div slot="header" class="flex items-center">
         <SettingsFontSelector
-          availableFonts={[
-            LocalFont.BIZUDGOTHIC,
-            LocalFont.NOTOSANSJP
-          ]}
+          availableFonts={[LocalFont.BIZUDGOTHIC, LocalFont.NOTOSANSJP]}
           bind:fontValue={fontFamilyGroupTwo}
         />
         {#if fontCacheSupported}
