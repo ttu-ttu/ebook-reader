@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-interface ColorObject {
+export interface ColorObject {
   r: number;
   g: number;
   b: number;
@@ -19,6 +19,12 @@ export interface ThemeOption {
   hintFuriganaShadowColor: string;
   hintFuriganaFontColor: string;
   tooltipTextFontColor: string;
+}
+
+export interface CustomThemeValue {
+  hexExpression: string;
+  alphaValue: number;
+  rgbaExpression: string;
 }
 
 function updateHintFuriganaFontColor(theme: Record<keyof ThemeOption, ColorObject>) {
