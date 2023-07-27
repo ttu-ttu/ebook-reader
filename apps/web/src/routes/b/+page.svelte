@@ -65,7 +65,8 @@
     verticalCustomReadingPosition$,
     horizontalCustomReadingPosition$,
     isOnline$,
-    manualBookmark$
+    manualBookmark$,
+    customThemes$
   } from '$lib/data/store';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
   import {
@@ -279,8 +280,12 @@
   );
 
   const themeOption$ = theme$.pipe(
-    map((theme) => availableThemes.get(theme)),
-    filter((o): o is NonNullable<typeof o> => !!o)
+    map(
+      (theme) =>
+        availableThemes.get(theme) || $customThemes$[theme] || availableThemes.get('light-theme')
+    ),
+    filter((o): o is NonNullable<typeof o> => !!o),
+    takeWhenBrowser()
   );
 
   const backgroundColor$ = themeOption$.pipe(map((o) => o.backgroundColor));
@@ -1067,7 +1072,9 @@
 {/if}
 
 <div
-  class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full cursor-pointer items-center justify-between text-xs leading-none"
+  role="button"
+  tabindex="0"
+  class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full items-center justify-between text-xs leading-none"
   style:color={$themeOption$?.tooltipTextFontColor}
   on:click={() => (showFooter = !showFooter)}
   on:keyup={dummyFn}
@@ -1075,6 +1082,8 @@
   <div class="h-full">
     {#if dataToReplicate.length}
       <div
+        role="button"
+        tabindex="0"
         class="flex h-full w-8 items-center justify-center text-lg"
         class:text-red-500={externalStorageErrors > 1}
         class:animate-pulse={externalStorageErrors > 1 || isReplicating}

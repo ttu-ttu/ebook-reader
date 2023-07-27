@@ -9,4 +9,5 @@ export interface ToggleOption<T> {
   text: string;
   style?: Record<string, string>;
   thickBorders?: boolean;
+  showIcons?: boolean;
 }

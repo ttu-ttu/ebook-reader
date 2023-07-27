@@ -25,10 +25,15 @@ import {
   writableObjectLocalStorageSubject
 } from './internal/writable-object-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
+import type { ThemeOption } from './theme-option';
 import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
+export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
+  'customThemes',
+  {}
+);
 export const multiplier$ = writableNumberLocalStorageSubject()('autoScrollMultiplier', 20);
 export const fontFamilyGroupOne$ = writableStringLocalStorageSubject()('fontFamilyGroupOne', '');
 export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()('fontFamilyGroupTwo', '');
