@@ -106,10 +106,10 @@
   />
   <div class:invisible={currentError === 'no error'} class="my-2 text-red-500">{currentError}</div>
   <div class="flex items-center just justify-between">
-    <label role="button" class={`${inputClasses} w-40 text-center py-2 hover:opacity-25 mr-2`}>
+    <label class={`${inputClasses} w-40 text-center py-2 hover:opacity-25 mr-2`}>
       <input
         type="file"
-        accept=".woff2,.woff,.ttf,.otf"
+        accept=".woff2,.woff,.ttf,.otf,application/font-woff2,application/font-woff,application/font-ttf,application/font-otf"
         class="hidden"
         bind:this={fileElement}
         on:change={handleFileChange}
@@ -117,6 +117,8 @@
       Choose File
     </label>
     <div
+      role="button"
+      tabindex="0"
       class:cursor-pointer={canSave}
       class:text-gray-500={!canSave}
       class:cursor-not-allowed={!canSave}

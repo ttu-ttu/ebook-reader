@@ -580,6 +580,8 @@
 </div>
 
 <div
+  role="button"
+  tabindex="0"
   class="{pxScreen} h-full pt-16 xl:pt-14"
   on:dragenter={(ev) => ev.preventDefault()}
   on:dragover={(ev) => ev.preventDefault()}
@@ -604,7 +606,13 @@
       </div>
     </div>
     <label class="fixed inset-0 z-0">
-      <input type="file" accept=".htmlz,.epub" multiple hidden use:inputFile={onFilesChange} />
+      <input
+        type="file"
+        accept=".htmlz,.epub,application/epub+zip"
+        multiple
+        hidden
+        use:inputFile={onFilesChange}
+      />
     </label>
   {/if}
 </div>
