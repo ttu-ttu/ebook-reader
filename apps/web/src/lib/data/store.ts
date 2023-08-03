@@ -142,15 +142,25 @@ export const lastExportedTypes$ = writableArrayLocalStorageSubject<StorageDataTy
 
 export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyB: BookReaderAvailableKeybind.BOOKMARK,
+  b: BookReaderAvailableKeybind.BOOKMARK,
   KeyR: BookReaderAvailableKeybind.JUMP_TO_BOOKMARK,
+  r: BookReaderAvailableKeybind.JUMP_TO_BOOKMARK,
   PageDown: BookReaderAvailableKeybind.NEXT_PAGE,
+  pagedown: BookReaderAvailableKeybind.NEXT_PAGE,
   PageUp: BookReaderAvailableKeybind.PREV_PAGE,
+  pageup: BookReaderAvailableKeybind.PREV_PAGE,
   Space: BookReaderAvailableKeybind.AUTO_SCROLL_TOGGLE,
+  ' ': BookReaderAvailableKeybind.AUTO_SCROLL_TOGGLE,
   KeyA: BookReaderAvailableKeybind.AUTO_SCROLL_INCREASE,
+  a: BookReaderAvailableKeybind.AUTO_SCROLL_INCREASE,
   KeyD: BookReaderAvailableKeybind.AUTO_SCROLL_DECREASE,
+  d: BookReaderAvailableKeybind.AUTO_SCROLL_DECREASE,
   KeyN: BookReaderAvailableKeybind.PREV_CHAPTER,
+  n: BookReaderAvailableKeybind.PREV_CHAPTER,
   KeyM: BookReaderAvailableKeybind.NEXT_CHAPTER,
-  KeyT: BookReaderAvailableKeybind.SET_READING_POINT
+  m: BookReaderAvailableKeybind.NEXT_CHAPTER,
+  KeyT: BookReaderAvailableKeybind.SET_READING_POINT,
+  t: BookReaderAvailableKeybind.SET_READING_POINT
 });
 
 const db = browser ? createBooksDb() : import('fake-indexeddb/auto').then(() => createBooksDb());
