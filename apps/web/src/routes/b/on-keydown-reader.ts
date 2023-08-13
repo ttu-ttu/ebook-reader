@@ -22,7 +22,7 @@ export function onKeydownReader(
   changeChapter: (offset: number) => void,
   handleSetCustomReadingPoint: () => void
 ) {
-  const action = bookReaderKeybindMap[ev.code || ev.key.toLowerCase()];
+  const action = bookReaderKeybindMap[ev.code || ev.key?.toLowerCase()];
 
   switch (action) {
     case BookReaderAvailableKeybind.BOOKMARK: {
