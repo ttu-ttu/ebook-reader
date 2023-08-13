@@ -14,6 +14,7 @@ export interface EpubManifestItem {
   '@_id': string;
   '@_media-type': string;
   '@_properties'?: string;
+  '@_fallback'?: string;
 }
 
 export interface EpubSpineItemRef {
