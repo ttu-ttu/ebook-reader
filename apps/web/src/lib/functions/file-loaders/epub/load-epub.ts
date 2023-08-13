@@ -35,7 +35,7 @@ export default async function loadEpub(
     }
   }
   const blobData = reduceObjToBlobs(data);
-  const coverImageFilename = getEpubCoverImageFilename(contents);
+  const coverImageFilename = await getEpubCoverImageFilename(blobData, contents);
   let coverImage: Blob | undefined;
 
   if (coverImageFilename) {

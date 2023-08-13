@@ -6,11 +6,15 @@
 
 import type { EpubContent, EpubMetadataMeta } from './types';
 
-export default function getEpubCoverImageFilename(contents: EpubContent) {
+export default async function getEpubCoverImageFilename(
+  blobData: Record<string, Blob>,
+  contents: EpubContent
+) {
   const itemByProperty = contents.package.manifest.item.find(
     (item) => item['@_properties'] === 'cover-image'
   );
-  if (itemByProperty) {
+
+  if (itemByProperty && (await coverValidated(blobData[itemByProperty['@_href']]))) {
     return itemByProperty['@_href'];
   }
 
@@ -23,7 +27,35 @@ export default function getEpubCoverImageFilename(contents: EpubContent) {
 
   if (!coverItemId) return undefined;
 
-  return contents.package.manifest.item.find((item) => item['@_id'] === coverItemId)?.['@_href'];
+  const coverHref = contents.package.manifest.item.find((item) => item['@_id'] === coverItemId)?.[
+    '@_href'
+  ];
+  const isValidCover = coverHref ? await coverValidated(blobData[coverHref]) : false;
+
+  return isValidCover ? coverHref : undefined;
+}
+
+function coverValidated(blob: Blob) {
+  return new Promise((resolve) => {
+    if (!blob) {
+      resolve(false);
+      return;
+    }
+
+    const image = new Image();
+
+    image.addEventListener('load', () => {
+      URL.revokeObjectURL(image.src);
+      resolve(true);
+    });
+
+    image.addEventListener('error', () => {
+      URL.revokeObjectURL(image.src);
+      resolve(false);
+    });
+
+    image.src = URL.createObjectURL(blob);
+  });
 }
 
 function getCoverItemIdFromMeta(meta: EpubMetadataMeta) {
