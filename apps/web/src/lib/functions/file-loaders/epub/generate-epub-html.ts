@@ -20,11 +20,17 @@ export default function generateEpubHtml(
   contents: EpubContent,
   document: Document
 ) {
+  const fallbackData = new Map<string, string>();
+
   let tocData = { type: 3, content: '' };
   let navKey = '';
 
   const itemIdToHtmlRef = contents.package.manifest.item.reduce<Record<string, string>>(
     (acc, item) => {
+      if (item['@_fallback']) {
+        fallbackData.set(item['@_id'], item['@_fallback']);
+      }
+
       if (item['@_media-type'] === 'application/xhtml+xml') {
         acc[item['@_id']] = item['@_href'];
 
@@ -102,8 +108,13 @@ export default function generateEpubHtml(
     );
 
     if (firstChapterMatchIndex !== 0) {
+      const firstRef = itemRefs[0]['@_idref'];
+      const firstHTMLRef = itemIdToHtmlRef[firstRef];
+      const fallbackRef = fallbackData.get(firstRef);
+      const reference = firstHTMLRef || (fallbackRef ? itemIdToHtmlRef[fallbackRef] : firstHTMLRef);
+
       mainChapters.unshift({
-        reference: itemIdToHtmlRef[itemRefs[0]['@_idref']],
+        reference,
         charactersWeight: 1,
         label: 'Preface',
         startCharacter: 0
@@ -118,8 +129,13 @@ export default function generateEpubHtml(
   let currentCharCount = 0;
 
   itemRefs.forEach((item) => {
-    const itemIdRef = item['@_idref'];
-    const htmlHref = itemIdToHtmlRef[itemIdRef];
+    let itemIdRef = item['@_idref'];
+    let htmlHref = itemIdToHtmlRef[itemIdRef];
+
+    if (!htmlHref && fallbackData.has(itemIdRef)) {
+      itemIdRef = fallbackData.get(itemIdRef) as string;
+      htmlHref = itemIdToHtmlRef[itemIdRef];
+    }
 
     const regexResult = /.*<body(?:[^>]*id="(?<id>.+?)")*[^>]*>(?<body>(.|\s)+)<\/body>.*/.exec(
       data[htmlHref] as string
