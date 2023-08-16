@@ -39,3 +39,26 @@ export interface EpubContent {
     };
   };
 }
+
+export interface EpubOPFContent {
+  'opf:package': {
+    'opf:metadata': {
+      'dc:title':
+        | string
+        | {
+            '#text': string;
+          };
+      'opf:meta'?: EpubMetadataMeta | EpubMetadataMeta[];
+    };
+    'opf:manifest': {
+      'opf:item': EpubManifestItem[];
+    };
+    'opf:spine': {
+      'opf:itemref': EpubSpineItemRef[];
+    };
+  };
+}
+
+export function isOPFType(contents: EpubContent | EpubOPFContent): contents is EpubOPFContent {
+  return (contents as EpubOPFContent)['opf:package'] !== undefined;
+}

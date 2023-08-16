@@ -5,11 +5,12 @@
  */
 
 import { BlobReader, BlobWriter, TextWriter, ZipReader } from '@zip.js/zip.js';
+import { isOPFType, type EpubContent, type EpubOPFContent } from './types';
+
 import type { Entry } from '@zip.js/zip.js';
 import { XMLParser } from 'fast-xml-parser';
-import path from 'path-browserify';
 import initZipSettings from '../utils/init-zip-settings';
-import type { EpubContent } from './types';
+import path from 'path-browserify';
 
 initZipSettings();
 
@@ -20,7 +21,7 @@ export default async function extractEpub(blob: Blob) {
 
   const result: Record<string, string | Blob> = {};
   let contentsDirectory = '';
-  let contents!: EpubContent;
+  let contents!: EpubContent | EpubOPFContent;
   if (entries.length) {
     const fileMap = entries.reduce<Record<string, Entry>>((acc, cur) => {
       acc[cur.filename] = cur;
@@ -46,7 +47,10 @@ export default async function extractEpub(blob: Blob) {
     contents = parser.parse(contentsXml);
 
     await Promise.all(
-      contents.package.manifest.item.map(async (item) => {
+      (isOPFType(contents)
+        ? contents['opf:package']['opf:manifest']['opf:item']
+        : contents.package.manifest.item
+      ).map(async (item) => {
         const fileRelativePath = item['@_href'];
         const entry = fileMap[path.join(contentsDirectory, fileRelativePath)];
         if (entry.getData && !entry.directory) {

@@ -4,21 +4,25 @@
  * All rights reserved.
  */
 
-import type { EpubContent, EpubMetadataMeta } from './types';
+import { isOPFType, type EpubContent, type EpubMetadataMeta, type EpubOPFContent } from './types';
 
 export default async function getEpubCoverImageFilename(
   blobData: Record<string, Blob>,
-  contents: EpubContent
+  contents: EpubContent | EpubOPFContent
 ) {
-  const itemByProperty = contents.package.manifest.item.find(
-    (item) => item['@_properties'] === 'cover-image'
-  );
+  const manifestItem = isOPFType(contents)
+    ? contents['opf:package']['opf:manifest']['opf:item']
+    : contents.package.manifest.item;
+
+  const itemByProperty = manifestItem.find((item) => item['@_properties'] === 'cover-image');
 
   if (itemByProperty && (await coverValidated(blobData[itemByProperty['@_href']]))) {
     return itemByProperty['@_href'];
   }
 
-  const { meta } = contents.package.metadata;
+  const meta = isOPFType(contents)
+    ? contents['opf:package']['opf:metadata']['opf:meta']
+    : contents.package.metadata.meta;
   if (!meta) return undefined;
 
   const coverItemId = Array.isArray(meta)
@@ -27,9 +31,7 @@ export default async function getEpubCoverImageFilename(
 
   if (!coverItemId) return undefined;
 
-  const coverHref = contents.package.manifest.item.find((item) => item['@_id'] === coverItemId)?.[
-    '@_href'
-  ];
+  const coverHref = manifestItem.find((item) => item['@_id'] === coverItemId)?.['@_href'];
   const isValidCover = coverHref ? await coverValidated(blobData[coverHref]) : false;
 
   return isValidCover ? coverHref : undefined;

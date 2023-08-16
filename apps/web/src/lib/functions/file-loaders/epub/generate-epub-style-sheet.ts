@@ -4,15 +4,19 @@
  * All rights reserved.
  */
 
-import type { EpubContent } from './types';
+import { isOPFType, type EpubContent, type EpubOPFContent } from './types';
 
 export default function generateEpubStyleSheet(
   data: Record<string, string | Blob>,
-  contents: EpubContent
+  contents: EpubContent | EpubOPFContent
 ) {
   let styleSheet = '';
 
-  const cssFiles = contents.package.manifest.item
+  const cssFiles = (
+    isOPFType(contents)
+      ? contents['opf:package']['opf:manifest']['opf:item']
+      : contents.package.manifest.item
+  )
     .filter((item) => item['@_media-type'] === 'text/css')
     .map((item) => item['@_href']);
 
