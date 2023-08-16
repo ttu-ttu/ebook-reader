@@ -9,6 +9,7 @@ import extractEpub from './extract-epub';
 import generateEpubHtml from './generate-epub-html';
 import generateEpubStyleSheet from './generate-epub-style-sheet';
 import getEpubCoverImageFilename from './get-epub-cover-image-filename';
+import { isOPFType } from './types';
 import reduceObjToBlobs from '../utils/reduce-obj-to-blobs';
 
 export default async function loadEpub(
@@ -25,7 +26,10 @@ export default async function loadEpub(
     styleSheet: generateEpubStyleSheet(data, contents)
   };
 
-  const { metadata } = contents.package;
+  const metadata = isOPFType(contents)
+    ? contents['opf:package']['opf:metadata']
+    : contents.package.metadata;
+
   if (metadata) {
     const dcTitle = metadata['dc:title'];
     if (typeof dcTitle === 'string') {

@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-import type { EpubContent } from './types';
+import { isOPFType, type EpubContent, type EpubOPFContent } from './types';
 import type { Section } from '../../../data/database/books-db/versions/v3/books-db-v3';
 import buildDummyBookImage from '../utils/build-dummy-book-image';
 import clearAllBadImageRef from '../utils/clear-all-bad-image-ref';
@@ -17,7 +17,7 @@ export const prependValue = 'ttu-';
 
 export default function generateEpubHtml(
   data: Record<string, string | Blob>,
-  contents: EpubContent,
+  contents: EpubContent | EpubOPFContent,
   document: Document
 ) {
   const fallbackData = new Map<string, string>();
@@ -25,23 +25,24 @@ export default function generateEpubHtml(
   let tocData = { type: 3, content: '' };
   let navKey = '';
 
-  const itemIdToHtmlRef = contents.package.manifest.item.reduce<Record<string, string>>(
-    (acc, item) => {
-      if (item['@_fallback']) {
-        fallbackData.set(item['@_id'], item['@_fallback']);
-      }
+  const itemIdToHtmlRef = (
+    isOPFType(contents)
+      ? contents['opf:package']['opf:manifest']['opf:item']
+      : contents.package.manifest.item
+  ).reduce<Record<string, string>>((acc, item) => {
+    if (item['@_fallback']) {
+      fallbackData.set(item['@_id'], item['@_fallback']);
+    }
 
-      if (item['@_media-type'] === 'application/xhtml+xml') {
-        acc[item['@_id']] = item['@_href'];
+    if (item['@_media-type'] === 'application/xhtml+xml') {
+      acc[item['@_id']] = item['@_href'];
 
-        if (item['@_properties'] === 'nav') {
-          navKey = item['@_href'];
-        }
+      if (item['@_properties'] === 'nav') {
+        navKey = item['@_href'];
       }
-      return acc;
-    },
-    {}
-  );
+    }
+    return acc;
+  }, {});
 
   const blobLocations = Object.entries(data).reduce<string[]>((acc, [key, value]) => {
     const isV2Toc = key.endsWith('.ncx') && !tocData.content;
@@ -60,9 +61,10 @@ export default function generateEpubHtml(
   }, []);
 
   const parser = new DOMParser();
-  const itemRefs = Array.isArray(contents.package.spine.itemref)
-    ? contents.package.spine.itemref
-    : [contents.package.spine.itemref];
+  const spineItemRef = isOPFType(contents)
+    ? contents['opf:package']['opf:spine']['opf:itemref']
+    : contents.package.spine.itemref;
+  const itemRefs = Array.isArray(spineItemRef) ? spineItemRef : [spineItemRef];
   const sectionData: Section[] = [];
   const result = document.createElement('div');
 
