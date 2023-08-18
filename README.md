@@ -331,6 +331,7 @@ docker-compose up
 ```sh
 cd apps/web
 pnpm install --frozen-lockfile
+pnpm svelte-kit sync
 pnpm build
 ```
 
