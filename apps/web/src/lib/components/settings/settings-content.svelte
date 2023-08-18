@@ -3,6 +3,7 @@
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
   import Ripple from '$lib/components/ripple.svelte';
+  import SettingsPresetDialog from '$lib/components/settings/settings-preset-dialog.svelte';
   import SettingsCustomTheme from '$lib/components/settings/settings-custom-theme.svelte';
   import SettingsDimensionPopover from '$lib/components/settings/settings-dimension-popover.svelte';
   import SettingsFontSelector from '$lib/components/settings/settings-font-selector.svelte';
@@ -24,8 +25,11 @@
     fontFamilyGroupTwo$,
     horizontalCustomReadingPosition$,
     theme$,
-    verticalCustomReadingPosition$
+    verticalCustomReadingPosition$,
+    presetStorage,
+    bookPresets$
   } from '$lib/data/store';
+  import { PresetStorage } from '$lib/data/window/preset-storage';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
@@ -34,9 +38,11 @@
     ReplicationSaveBehavior,
     AutoReplicationType
   } from '$lib/functions/replication/replication-options';
-  import { faComputer, faPlus } from '@fortawesome/free-solid-svg-icons';
+  import { faComputer, faPlus, faTrash, faPen } from '@fortawesome/free-solid-svg-icons';
   import Fa from 'svelte-fa';
   import { map } from 'rxjs';
+
+  export let bookId: number;
 
   export let selectedTheme: string;
 
@@ -267,10 +273,122 @@
         database.storageSourcesChanged$.next([]);
       });
   }
+
+  let bookName: string = 'Loading...';
+
+  $: presetOptions = bookId ? PresetStorage.getPresetList() : ['Global'];
+  $: presetName = $bookPresets$[bookId.toString()] ?? 'Global';
+  $: presetStorage.setPreset(presetName);
+
+  $: presetDeleteStyling =
+    presetName !== 'Global'
+      ? 'border-gray-700 bg-gray-700 text-white'
+      : 'border-gray-300 bg-gray-300 text-gray-400';
+  $: presetRenameStyling = presetName !== 'Global' ? 'text-gray-500' : 'text-gray-300';
+
+  $: presetTooltip = bookId
+    ? 'Select preset to be applied to the current book. Changes to this preset will affect other books using the same preset.'
+    : 'Default preset for loaded books. Changes to this preset will affect other books using the same preset.';
+
+  $: if (bookId) {
+    database.getData(bookId).then((bookData) => {
+      if (bookData) {
+        bookName = bookData.title;
+      } else {
+        bookName = '???';
+      }
+    });
+  }
+
+  function handlePresetChange() {
+    if (bookId) {
+      $bookPresets$[bookId.toString()] = presetName;
+    }
+  }
+
+  function createPreset(newPresetName: string) {
+    presetStorage.createNew(newPresetName);
+    presetStorage.setPreset(newPresetName);
+
+    presetOptions = PresetStorage.getPresetList();
+    presetName = newPresetName;
+    handlePresetChange();
+  }
+
+  function renamePreset(newPresetName: string) {
+    presetStorage.rename(newPresetName);
+    presetOptions = PresetStorage.getPresetList();
+    presetName = newPresetName;
+  }
+
+  function deletePreset() {
+    presetStorage.delete();
+    presetStorage.setPreset('Global');
+    presetName = 'Global';
+    presetOptions = PresetStorage.getPresetList();
+  }
 </script>
 
 <div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:md:gap-8 lg:grid-cols-3">
   {#if activeSettings === 'Reader'}
+    <div class="sm:col-span-2 lg:col-span-3">
+      <SettingsItemGroup title="Preset{bookId ? ` for "${bookName}"` : ''}" tooltip={presetTooltip}>
+        <div class="flex flex-wrap">
+          <div class="flex flex-grow">
+            <select class="flex-grow" bind:value={presetName} on:change={handlePresetChange}>
+              {#each presetOptions as option}
+                <option value={option}>{option}</option>
+              {/each}
+            </select>
+            {#if bookId}
+              <button
+                class="m-1 mr-4 rounded-md border-2 border-transparent bg-transparent p-2 text-lg relative overflow-hidden {presetRenameStyling}"
+                disabled={presetName === 'Global'}
+                on:click={() =>
+                  dialogManager.dialogs$.next([
+                    {
+                      component: SettingsPresetDialog,
+                      props: {
+                        affirmativeText: 'Rename',
+                        initValue: presetName,
+                        onConfirm: renamePreset
+                      }
+                    }
+                  ])}
+              >
+                <Fa icon={faPen} slot="icon" class="mx-2" />
+                <Ripple />
+              </button>
+            {/if}
+          </div>
+          {#if bookId}
+            <div class="flex">
+              <button
+                class="m-1 ml-0 sm:ml-1 rounded-md border-2 p-2 text-lg relative overflow-hidden border-gray-700 bg-gray-700 text-white"
+                on:click={() =>
+                  dialogManager.dialogs$.next([
+                    {
+                      component: SettingsPresetDialog,
+                      props: { onConfirm: createPreset }
+                    }
+                  ])}
+              >
+                <Fa icon={faPlus} slot="icon" class="mx-2" />
+                <Ripple />
+              </button>
+              <button
+                class="m-1 rounded-md border-2 p-2 text-lg relative overflow-hidden {presetDeleteStyling}"
+                disabled={presetName === 'Global'}
+                on:click={deletePreset}
+              >
+                <Fa icon={faTrash} slot="icon" class="mx-2" />
+                <Ripple />
+              </button>
+            </div>
+          {/if}
+        </div>
+      </SettingsItemGroup>
+    </div>
     <div class="lg:col-span-2">
       <SettingsItemGroup title="Theme">
         <ButtonToggleGroup

@@ -5,9 +5,9 @@
  */
 
 import { writableStorageSubject } from './writable-storage-subject';
-import { localStorage } from '../window/local-storage';
+import { localStorage, type LocalStorage } from '../window/local-storage';
 
-export function writableNumberLocalStorageSubject(storage = localStorage) {
+export function writableNumberLocalStorageSubject(storage: LocalStorage = localStorage) {
   return writableStorageSubject(
     storage,
     (x) => +x,

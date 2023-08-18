@@ -25,6 +25,7 @@
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
+  import { presetStorage, database, bookPresets$ } from '$lib/data/store';
 
   export let htmlContent: string;
 
@@ -147,9 +148,20 @@
     share()
   );
 
+  const currentBookId$ = database.lastItem$.pipe(
+    map((item) => item?.dataId),
+    share()
+  );
+
   $: width$.next(width);
 
   $: height$.next(height);
+
+  currentBookId$.subscribe((bookId) => {
+    if (bookId) {
+      presetStorage.setPreset($bookPresets$[bookId.toString()] ?? 'Global');
+    }
+  });
 
   function getAdjustedWidth(widthValue: number) {
     if (ViewMode.Paginated === viewMode && !verticalMode && secondDimensionMaxValue) {

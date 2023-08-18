@@ -4,7 +4,9 @@
  * All rights reserved.
  */
 
-class WindowStorage {
+import type { PresetStorage } from './preset-storage';
+
+export class WindowStorage {
   private _store = new Map<string, string>();
 
   setItem(key: string, value: string) {
@@ -23,6 +25,8 @@ class WindowStorage {
     this._store = new Map();
   }
 }
+
+export type LocalStorage = Storage | WindowStorage | PresetStorage;
 
 export const localStorage =
   typeof window === 'undefined' ? new WindowStorage() : window.localStorage;
