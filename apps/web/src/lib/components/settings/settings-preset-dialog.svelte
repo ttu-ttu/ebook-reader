@@ -3,7 +3,7 @@
   import Ripple from '$lib/components/ripple.svelte';
   import { buttonClasses } from '$lib/css-classes';
   import { createEventDispatcher, onMount } from 'svelte';
-  import { presetStorage } from '$lib/data/store';
+  import { PresetStorage } from '$lib/data/window/preset-storage';
 
   export let affirmativeText: string = 'Save';
   export let negativeText: string = 'Cancel';
@@ -30,7 +30,7 @@
       return;
     }
 
-    if (presetStorage.getPresetList().includes(presetName)) {
+    if (PresetStorage.getPresetList().includes(presetName)) {
       presetNameElm.setCustomValidity('This name is already in use!');
       presetNameElm.reportValidity();
       return;
