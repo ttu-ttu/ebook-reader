@@ -5,13 +5,11 @@
  */
 
 import { skip } from 'rxjs';
-import type { localStorage } from '../window/local-storage';
+import type { LocalStorage } from '../window/local-storage';
 import { writableSubject } from '$lib/functions/svelte/store';
 
-type Storage = typeof localStorage;
-
 export function writableStorageSubject<T>(
-  storage: Storage,
+  storage: LocalStorage,
   mapFromString: (s: string) => T,
   mapToString: (t: T) => string
 ) {
@@ -21,11 +19,18 @@ export function writableStorageSubject<T>(
     subject.pipe(skip(1)).subscribe((updatedValue) => {
       storage.setItem(key, mapToString(updatedValue ?? defaultValue));
     });
+
+    if ('presetChanged' in storage) {
+      storage.presetChanged.subscribe(() => {
+        subject.next(getStoredOrDefault(storage)(key, defaultValue, mapFromString));
+      });
+    }
+
     return subject;
   };
 }
 
-function getStoredOrDefault(storage: Storage) {
+function getStoredOrDefault(storage: LocalStorage) {
   return <T>(key: string, defaultVal: T, mapFn: (s: string) => T) => {
     const stored = storage.getItem(key);
     return stored ? mapFn(stored) : defaultVal;

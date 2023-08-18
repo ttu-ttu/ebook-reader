@@ -4,10 +4,13 @@
  * All rights reserved.
  */
 
-import { localStorage } from '$lib/data/window/local-storage';
+import { localStorage, type LocalStorage } from '$lib/data/window/local-storage';
 import { writableStorageSubject } from '$lib/data/internal/writable-storage-subject';
 
-function createWritableObjectLocalStorageSubject<T>(fallback: string, storage = localStorage) {
+function createWritableObjectLocalStorageSubject<T>(
+  fallback: string,
+  storage: LocalStorage = localStorage
+) {
   return writableStorageSubject(
     storage,
     (x) => JSON.parse(x || fallback) as T,

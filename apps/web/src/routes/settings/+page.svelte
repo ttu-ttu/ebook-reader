@@ -31,7 +31,8 @@
     swipeThreshold$,
     theme$,
     viewMode$,
-    writingMode$
+    writingMode$,
+    database
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { pagePath } from '$lib/data/env';
@@ -39,6 +40,7 @@
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { writableSubject } from '$lib/functions/svelte/store';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
+  import { map, share } from 'rxjs';
 
   const persistentStorage$ = writableSubject(false);
   let persistentStorageReactive = false;
@@ -75,6 +77,11 @@
     persistentStorage$.next(value);
     persistentStorageReactive = true;
   }
+
+  const currentBookId$ = database.lastItem$.pipe(
+    map((item) => item?.dataId),
+    share()
+  );
 </script>
 
 <svelte:head>
@@ -89,6 +96,7 @@
   <div class="max-w-5xl">
     <SettingsContent
       {activeSettings}
+      bookId={$currentBookId$ ?? 0}
       bind:selectedTheme={$theme$}
       bind:fontFamilyGroupOne={$fontFamilyGroupOne$}
       bind:fontFamilyGroupTwo={$fontFamilyGroupTwo$}

@@ -25,73 +25,110 @@ import {
   writableObjectLocalStorageSubject
 } from './internal/writable-object-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
+import { PresetStorage } from './window/preset-storage';
 import type { ThemeOption } from './theme-option';
 import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
 
-export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
+export const bookPresets$ = writableObjectLocalStorageSubject<Record<string, string>>()(
+  'bookPresets',
+  {}
+);
+export const presetStorage = new PresetStorage('Global', bookPresets$);
+
+export const theme$ = writableStringLocalStorageSubject(presetStorage)('theme', 'light-theme');
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
   'customThemes',
   {}
 );
 export const multiplier$ = writableNumberLocalStorageSubject()('autoScrollMultiplier', 20);
-export const fontFamilyGroupOne$ = writableStringLocalStorageSubject()('fontFamilyGroupOne', '');
-export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()('fontFamilyGroupTwo', '');
-export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
-export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 1.65);
-export const hideSpoilerImage$ = writableBooleanLocalStorageSubject()('hideSpoilerImage', true);
-export const hideFurigana$ = writableBooleanLocalStorageSubject()('hideFurigana', false);
-export const furiganaStyle$ = writableStringLocalStorageSubject<FuriganaStyle>()(
+export const fontFamilyGroupOne$ = writableStringLocalStorageSubject(presetStorage)(
+  'fontFamilyGroupOne',
+  ''
+);
+export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject(presetStorage)(
+  'fontFamilyGroupTwo',
+  ''
+);
+export const fontSize$ = writableNumberLocalStorageSubject(presetStorage)('fontSize', 20);
+export const lineHeight$ = writableNumberLocalStorageSubject(presetStorage)('lineHeight', 1.65);
+export const hideSpoilerImage$ = writableBooleanLocalStorageSubject(presetStorage)(
+  'hideSpoilerImage',
+  true
+);
+export const hideFurigana$ = writableBooleanLocalStorageSubject(presetStorage)(
+  'hideFurigana',
+  false
+);
+export const furiganaStyle$ = writableStringLocalStorageSubject<FuriganaStyle>(presetStorage)(
   'furiganaStyle',
   FuriganaStyle.Partial
 );
-export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()(
+export const writingMode$ = writableStringLocalStorageSubject<WritingMode>(presetStorage)(
   'writingMode',
   'vertical-rl'
 );
 export const verticalMode$ = writingMode$.pipe(map((writingMode) => writingMode === 'vertical-rl'));
-export const viewMode$ = writableStringLocalStorageSubject<ViewMode>()(
+export const viewMode$ = writableStringLocalStorageSubject<ViewMode>(presetStorage)(
   'viewMode',
   ViewMode.Paginated
 );
 
-export const secondDimensionMaxValue$ = writableNumberLocalStorageSubject()(
+export const secondDimensionMaxValue$ = writableNumberLocalStorageSubject(presetStorage)(
   'secondDimensionMaxValue',
   0
 );
-export const firstDimensionMargin$ = writableNumberLocalStorageSubject()('firstDimensionMargin', 0);
+export const firstDimensionMargin$ = writableNumberLocalStorageSubject(presetStorage)(
+  'firstDimensionMargin',
+  0
+);
 
-export const swipeThreshold$ = writableNumberLocalStorageSubject()('swipeThreshold', 10);
+export const swipeThreshold$ = writableNumberLocalStorageSubject(presetStorage)(
+  'swipeThreshold',
+  10
+);
 
-export const disableWheelNavigation$ = writableBooleanLocalStorageSubject()(
+export const disableWheelNavigation$ = writableBooleanLocalStorageSubject(presetStorage)(
   'disableWheelNavigation',
   false
 );
 
-export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
+export const autoPositionOnResize$ = writableBooleanLocalStorageSubject(presetStorage)(
   'autoPositionOnResize',
   true
 );
 
-export const avoidPageBreak$ = writableBooleanLocalStorageSubject()('avoidPageBreak', false);
+export const avoidPageBreak$ = writableBooleanLocalStorageSubject(presetStorage)(
+  'avoidPageBreak',
+  false
+);
 
-export const customReadingPointEnabled$ = writableBooleanLocalStorageSubject()(
+export const customReadingPointEnabled$ = writableBooleanLocalStorageSubject(presetStorage)(
   'customReadingPointEnabled',
   false
 );
 
-export const selectionToBookmarkEnabled$ = writableBooleanLocalStorageSubject()(
+export const selectionToBookmarkEnabled$ = writableBooleanLocalStorageSubject(presetStorage)(
   'selectionToBookmarkEnabled',
   false
 );
 
-export const confirmClose$ = writableBooleanLocalStorageSubject()('confirmClose', false);
+export const confirmClose$ = writableBooleanLocalStorageSubject(presetStorage)(
+  'confirmClose',
+  false
+);
 
-export const manualBookmark$ = writableBooleanLocalStorageSubject()('manualBookmark', false);
+export const manualBookmark$ = writableBooleanLocalStorageSubject(presetStorage)(
+  'manualBookmark',
+  false
+);
 
-export const autoBookmark$ = writableBooleanLocalStorageSubject()('autoBookmark', false);
+export const autoBookmark$ = writableBooleanLocalStorageSubject(presetStorage)(
+  'autoBookmark',
+  false
+);
 
-export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0);
+export const pageColumns$ = writableNumberLocalStorageSubject(presetStorage)('pageColumns', 0);
 
 export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(
   'requestPersistentStorage',
