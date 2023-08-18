@@ -29,6 +29,7 @@
     presetStorage,
     bookPresets$
   } from '$lib/data/store';
+  import { PresetStorage } from '$lib/data/window/preset-storage';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
@@ -275,7 +276,7 @@
 
   let bookName: string = 'Loading...';
 
-  $: presetOptions = bookId ? presetStorage.getPresetList() : ['Global'];
+  $: presetOptions = bookId ? PresetStorage.getPresetList() : ['Global'];
   $: presetName = $bookPresets$[bookId.toString()] ?? 'Global';
   $: presetStorage.setPreset(presetName);
 
@@ -309,14 +310,14 @@
     presetStorage.createNew(newPresetName);
     presetStorage.setPreset(newPresetName);
 
-    presetOptions = presetStorage.getPresetList();
+    presetOptions = PresetStorage.getPresetList();
     presetName = newPresetName;
     handlePresetChange();
   }
 
   function renamePreset(newPresetName: string) {
     presetStorage.rename(newPresetName);
-    presetOptions = presetStorage.getPresetList();
+    presetOptions = PresetStorage.getPresetList();
     presetName = newPresetName;
   }
 
@@ -324,7 +325,7 @@
     presetStorage.delete();
     presetStorage.setPreset('Global');
     presetName = 'Global';
-    presetOptions = presetStorage.getPresetList();
+    presetOptions = PresetStorage.getPresetList();
   }
 </script>
 
