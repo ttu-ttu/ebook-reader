@@ -18,7 +18,7 @@
     "@tailwindcss/line-clamp": "0.4.4",
     "@types/balanced-match": "1.0.3",
     "@types/path-browserify": "1.0.0",
-    "@types/ua-parser-js": "0.7.36",
+    "@types/ua-parser-js": "0.7.37",
     "@types/wicg-file-system-access": "2020.9.6",
     "autoprefixer": "10.4.15",
     "postcss": "8.4.29",
