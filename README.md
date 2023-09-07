@@ -42,11 +42,11 @@ You can find most of the reader controls in the reader header which you can open
 
 You may find the following controls in the reader footer:
 
-| Control                                        | Description                                                                                                                              |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| ![Icon](assets/readme/control-reader-sync.svg) | Indicates that there is data which will be exported if a sync target and auto export is configured. Click/Tap to execute a manual export |
-| ![Icon](assets/readme/control-sync-error.svg)  | Indicates that multiple auto export attempts failed. Click/Tap to execute a manual export                                                |
-| ![Image](assets/readme/book-progress.png)      | Displays your reading progress. Click/Tap on it to hide                                                                                  |
+| Control                                        | Description                                                                                                                                                                                                                                           |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![Icon](assets/readme/control-reader-sync.svg) | Indicates that there is data which will be exported if a sync target and auto export is configured. Click/Tap to execute a manual export                                                                                                              |
+| ![Icon](assets/readme/control-sync-error.svg)  | Indicates that multiple auto export attempts failed. Click/Tap to execute a manual export                                                                                                                                                             |
+| ![Image](assets/readme/book-progress.png)      | Displays your reading progress. Click/Tap on it to hide<br/>The book progress is calculated by dividing the current character location by total book characters. Characters counted are Japanese Glyphs without latin letters, punctuation or similar |
 
 **Note**: The setting "Close Confirmation" will handle reloading and closing tabs but not other ways of navigation like e. g. clicking/tapping the back button / closing pages via mobile browser menu etc. There are known limitations on mobile iOS and therefore this functionality may not work as expected on this platform
 
