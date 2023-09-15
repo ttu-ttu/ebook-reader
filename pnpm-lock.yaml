@@ -139,8 +139,8 @@ importers:
         specifier: 0.4.4
         version: 0.4.4(tailwindcss@3.3.3)
       '@types/balanced-match':
-        specifier: 1.0.3
-        version: 1.0.3
+        specifier: 1.0.4
+        version: 1.0.4
       '@types/path-browserify':
         specifier: 1.0.0
         version: 1.0.0
@@ -947,8 +947,8 @@ packages:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
     dev: true
 
-  /@types/balanced-match@1.0.3:
-    resolution: {integrity: sha512-nBZFt2r4snsIMicyNwgdga4wcoJtGRF39xX4Le3GjA2oSJcQlGAD8XrmlRddYcINFK8dypxJEUS6bVgKBQ7FyA==}
+  /@types/balanced-match@1.0.4:
+    resolution: {integrity: sha512-sLf9sSU59HlbUuaHGkWRp7T9fEoVQALBeu5gtXTU6NhSAIazEsPTJmnYuqo+0ZsgWw7e63r478wo8ba5r5dL5A==}
     dev: true
 
   /@types/cookie@0.5.1:
