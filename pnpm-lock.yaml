@@ -96,8 +96,8 @@ importers:
         specifier: 4.0.2
         version: 4.0.2
       fast-xml-parser:
-        specifier: 4.2.7
-        version: 4.2.7
+        specifier: 4.3.0
+        version: 4.3.0
       idb:
         specifier: 7.1.1
         version: 7.1.1
@@ -2452,8 +2452,8 @@ packages:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
     dev: true
 
-  /fast-xml-parser@4.2.7:
-    resolution: {integrity: sha512-J8r6BriSLO1uj2miOk1NW0YVm8AGOOu3Si2HQp/cSmo6EA4m3fcwu2WKjJ4RK9wMLBtg69y1kS8baDiQBR41Ig==}
+  /fast-xml-parser@4.3.0:
+    resolution: {integrity: sha512-5Wln/SBrtlN37aboiNNFHfSALwLzpUx1vJhDgDVPKKG3JrNe8BWTUoNKqkeKk/HqNbKxC8nEAJaBydq30yHoLA==}
     hasBin: true
     dependencies:
       strnum: 1.0.5
