@@ -19,7 +19,7 @@
     "@types/balanced-match": "1.0.4",
     "@types/path-browserify": "1.0.0",
     "@types/ua-parser-js": "0.7.37",
-    "@types/wicg-file-system-access": "2020.9.6",
+    "@types/wicg-file-system-access": "2020.9.7",
     "autoprefixer": "10.4.16",
     "postcss": "8.4.30",
     "sass": "1.68.0",
