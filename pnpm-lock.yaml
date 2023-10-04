@@ -148,8 +148,8 @@ importers:
         specifier: 0.7.37
         version: 0.7.37
       '@types/wicg-file-system-access':
-        specifier: 2020.9.8
-        version: 2020.9.8
+        specifier: 2023.10.0
+        version: 2023.10.0
       autoprefixer:
         specifier: 10.4.16
         version: 10.4.16(postcss@8.4.31)
@@ -998,8 +998,8 @@ packages:
     resolution: {integrity: sha512-4sOxS3ZWXC0uHJLYcWAaLMxTvjRX3hT96eF4YWUh1ovTaenvibaZOE5uXtIp4mksKMLRwo7YDiCBCw6vBiUPVg==}
     dev: true
 
-  /@types/wicg-file-system-access@2020.9.8:
-    resolution: {integrity: sha512-ggMz8nOygG7d/stpH40WVaNvBwuyYLnrg5Mbyf6bmsj/8+gb6Ei4ZZ9/4PNpcPNTT8th9Q8sM8wYmWGjMWLX/A==}
+  /@types/wicg-file-system-access@2023.10.0:
+    resolution: {integrity: sha512-grp7HBsK3ypYBh2zf/ChIYi8FA44REm7/k4+wa7wN5Y2wBoEbEThTW3UfSxpbaRP44ddOapamnLS3CtM60SkvA==}
     dev: true
 
   /@types/yargs-parser@21.0.0:
