@@ -90,8 +90,8 @@ importers:
         specifier: 2.4.26
         version: 2.4.26
       balanced-match:
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.0.1
+        version: 3.0.1
       fake-indexeddb:
         specifier: 4.0.2
         version: 4.0.2
@@ -1434,8 +1434,8 @@ packages:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: true
 
-  /balanced-match@3.0.0:
-    resolution: {integrity: sha512-roy6f9Ri49dpBe1EUBikUsqhJfEVlW+oLV7JFwGm17PdkZ81xVreEYNEIsytl9NQ6fvvvJRXHyVe60O5ve6i1w==}
+  /balanced-match@3.0.1:
+    resolution: {integrity: sha512-vjtV3hiLqYDNRoiAv0zC4QaGAMPomEoq83PRmYIofPswwZurCeWR5LByXm7SyoL0Zh5+2z0+HC7jG8gSZJUh0w==}
     engines: {node: '>= 16'}
     dev: false
 
