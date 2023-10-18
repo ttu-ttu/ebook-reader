@@ -142,8 +142,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@types/path-browserify':
-        specifier: 1.0.0
-        version: 1.0.0
+        specifier: 1.0.1
+        version: 1.0.1
       '@types/ua-parser-js':
         specifier: 0.7.37
         version: 0.7.37
@@ -982,8 +982,8 @@ packages:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
     dev: true
 
-  /@types/path-browserify@1.0.0:
-    resolution: {integrity: sha512-XMCcyhSvxcch8b7rZAtFAaierBYdeHXVvg2iYnxOV0MCQHmPuRRmGZPFDRzPayxcGiiSL1Te9UIO+f3cuj0tfw==}
+  /@types/path-browserify@1.0.1:
+    resolution: {integrity: sha512-rUSqIy7fAfK6sRasdFCukWO4S77pXcTxViURlLdo1VKuekTDS8ASMdX1LA0TFlbzT3fZgFlgQTCrqmJBuTHpxA==}
     dev: true
 
   /@types/pug@2.0.6:
