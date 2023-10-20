@@ -12,8 +12,8 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "@commitlint/cli": "17.8.1",
-    "@commitlint/config-conventional": "17.8.1",
+    "@commitlint/cli": "18.0.0",
+    "@commitlint/config-conventional": "18.0.0",
     "@types/node": "18.18.6",
     "@typescript-eslint/eslint-plugin": "6.8.0",
     "@typescript-eslint/parser": "6.8.0",
