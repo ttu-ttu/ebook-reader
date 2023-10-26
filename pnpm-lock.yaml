@@ -93,8 +93,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       fake-indexeddb:
-        specifier: 5.0.0
-        version: 5.0.0
+        specifier: 5.0.1
+        version: 5.0.1
       fast-xml-parser:
         specifier: 4.3.2
         version: 4.3.2
@@ -2407,8 +2407,8 @@ packages:
       strip-final-newline: 3.0.0
     dev: true
 
-  /fake-indexeddb@5.0.0:
-    resolution: {integrity: sha512-hGMsl73XgJAk5OtC8hFDSLUVzJ3Z1/C06YpFwI7DzCsEsmH5Mvkxplv3PK6uUL7XCYVBTzayp/4gD+cp7Qi8xQ==}
+  /fake-indexeddb@5.0.1:
+    resolution: {integrity: sha512-vxybH29Owtc6khV/Usy47B1g+eKwyhFiX8nwpCC4td320jvwrKQDH6vNtcJZgUzVxmfsSIlHzLKQzT76JMCO7A==}
     engines: {node: '>=18'}
     dev: false
 
