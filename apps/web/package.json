@@ -41,7 +41,7 @@
     "fake-indexeddb": "5.0.1",
     "fast-xml-parser": "4.3.2",
     "idb": "7.1.1",
-    "p-limit": "4.0.0",
+    "p-limit": "5.0.0",
     "path-browserify": "1.0.1",
     "rxjs": "7.8.1",
     "svelte-fa": "3.0.4",
