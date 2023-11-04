@@ -22,7 +22,6 @@ const config = {
   },
   plugins: [
     require('@tailwindcss/aspect-ratio'),
-    require('@tailwindcss/line-clamp'),
     require('@tailwindcss/forms'),
     plugin(({ addUtilities }) => {
       addUtilities(require('./tailwindcss/material-elevation.cjs'));
