@@ -136,8 +136,8 @@ importers:
         specifier: 0.5.6
         version: 0.5.6(tailwindcss@3.3.5)
       '@types/balanced-match':
-        specifier: 3.0.1
-        version: 3.0.1
+        specifier: 3.0.2
+        version: 3.0.2
       '@types/path-browserify':
         specifier: 1.0.1
         version: 1.0.1
@@ -907,8 +907,8 @@ packages:
       tailwindcss: 3.3.5
     dev: true
 
-  /@types/balanced-match@3.0.1:
-    resolution: {integrity: sha512-F8nKL2TW3g2uT0LLPWGcwAYM+EjUYzdTXIQGD1K9RIiKfuArwjqHbtd+u2GzzhvVc6fEbH7LglObXliqjKABqA==}
+  /@types/balanced-match@3.0.2:
+    resolution: {integrity: sha512-It1j6doJHkoGoxfOj3c7sHVHQXYMHo3c0kpcnPhEO4KfitNE5SqiSGKV0Hx5/cwyYKJfEhin0tZYBmqpjEcavw==}
     dev: true
 
   /@types/cookie@0.5.1:
