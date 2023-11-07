@@ -142,8 +142,8 @@ importers:
         specifier: 1.0.2
         version: 1.0.2
       '@types/ua-parser-js':
-        specifier: 0.7.38
-        version: 0.7.38
+        specifier: 0.7.39
+        version: 0.7.39
       '@types/wicg-file-system-access':
         specifier: 2023.10.2
         version: 2023.10.2
@@ -956,8 +956,8 @@ packages:
     resolution: {integrity: sha512-G8hZ6XJiHnuhQKR7ZmysCeJWE08o8T0AXtk5darsCaTVsYZhhgUrq53jizaR2FvsoeCwJhlmwTjkXBY5Pn/ZHw==}
     dev: true
 
-  /@types/ua-parser-js@0.7.38:
-    resolution: {integrity: sha512-59CA5oavBEWSNLtS/BChj9xntiWMsIf9IytjxmBo9OuZEYuRzRf3K1ARzFPlXTOz5Zm2wXI38AP9RlLqDYMToQ==}
+  /@types/ua-parser-js@0.7.39:
+    resolution: {integrity: sha512-P/oDfpofrdtF5xw433SPALpdSchtJmY7nsJItf8h3KXqOslkbySh8zq4dSWXH2oTjRvJ5PczVEoCZPow6GicLg==}
     dev: true
 
   /@types/wicg-file-system-access@2023.10.2:
