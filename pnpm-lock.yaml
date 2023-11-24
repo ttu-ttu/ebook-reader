@@ -15,8 +15,8 @@ importers:
         specifier: 18.4.3
         version: 18.4.3
       '@types/node':
-        specifier: 20.9.5
-        version: 20.9.5
+        specifier: 20.10.0
+        version: 20.10.0
       '@typescript-eslint/eslint-plugin':
         specifier: 6.12.0
         version: 6.12.0(@typescript-eslint/parser@6.12.0)(eslint@8.54.0)(typescript@5.3.2)
@@ -176,7 +176,7 @@ importers:
         version: 5.3.2
       vite:
         specifier: 5.0.2
-        version: 5.0.2(@types/node@20.9.5)(sass@1.69.5)
+        version: 5.0.2(@types/node@20.10.0)(sass@1.69.5)
 
 packages:
 
@@ -945,7 +945,7 @@ packages:
       svelte: 4.2.7
       tiny-glob: 0.2.9
       undici: 5.26.3
-      vite: 5.0.2(@types/node@20.9.5)(sass@1.69.5)
+      vite: 5.0.2(@types/node@20.10.0)(sass@1.69.5)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -961,7 +961,7 @@ packages:
       '@sveltejs/vite-plugin-svelte': 2.5.0(svelte@4.2.7)(vite@5.0.2)
       debug: 4.3.4
       svelte: 4.2.7
-      vite: 5.0.2(@types/node@20.9.5)(sass@1.69.5)
+      vite: 5.0.2(@types/node@20.10.0)(sass@1.69.5)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -980,7 +980,7 @@ packages:
       magic-string: 0.30.5
       svelte: 4.2.7
       svelte-hmr: 0.15.3(svelte@4.2.7)
-      vite: 5.0.2(@types/node@20.9.5)(sass@1.69.5)
+      vite: 5.0.2(@types/node@20.10.0)(sass@1.69.5)
       vitefu: 0.2.4(vite@5.0.2)
     transitivePeerDependencies:
       - supports-color
@@ -1030,8 +1030,8 @@ packages:
     resolution: {integrity: sha512-wf3Vz+jCmOQ2HV1YUJuCWdL64adYxumkrxtc+H1VUQlnQI04+5HtH+qZCOE21lBE7gIrt+CwX2Wv8Acrw5Ak6w==}
     dev: true
 
-  /@types/node@20.9.5:
-    resolution: {integrity: sha512-Uq2xbNq0chGg+/WQEU0LJTSs/1nKxz6u1iemLcGomkSnKokbW1fbLqc3HOqCf2JP7KjlL4QkS7oZZTrOQHQYgQ==}
+  /@types/node@20.10.0:
+    resolution: {integrity: sha512-D0WfRmU9TQ8I9PFx9Yc+EBHw+vSpIub4IDvQivcp26PtPrdMGAq5SDcpXEo/epqa/DXotVpekHiLNTg3iaKXBQ==}
     dependencies:
       undici-types: 5.26.5
     dev: true
@@ -4760,7 +4760,7 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite@5.0.2(@types/node@20.9.5)(sass@1.69.5):
+  /vite@5.0.2(@types/node@20.10.0)(sass@1.69.5):
     resolution: {integrity: sha512-6CCq1CAJCNM1ya2ZZA7+jS2KgnhbzvxakmlIjN24cF/PXhRMzpM/z8QgsVJA/Dm5fWUWnVEsmtBoMhmerPxT0g==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -4788,7 +4788,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 20.9.5
+      '@types/node': 20.10.0
       esbuild: 0.19.5
       postcss: 8.4.31
       rollup: 4.4.1
@@ -4805,7 +4805,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 5.0.2(@types/node@20.9.5)(sass@1.69.5)
+      vite: 5.0.2(@types/node@20.10.0)(sass@1.69.5)
     dev: true
 
   /which-boxed-primitive@1.0.2:
