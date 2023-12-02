@@ -20,7 +20,7 @@
     "@types/ua-parser-js": "0.7.39",
     "@types/wicg-file-system-access": "2023.10.4",
     "autoprefixer": "10.4.16",
-    "postcss": "8.4.31",
+    "postcss": "8.4.32",
     "sass": "1.69.5",
     "svelte": "4.2.8",
     "svelte-check": "3.6.2",
