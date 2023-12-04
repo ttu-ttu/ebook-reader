@@ -131,10 +131,10 @@ importers:
         version: 1.27.6(svelte@4.2.8)(vite@5.0.5)
       '@tailwindcss/aspect-ratio':
         specifier: 0.4.2
-        version: 0.4.2(tailwindcss@3.3.5)
+        version: 0.4.2(tailwindcss@3.3.6)
       '@tailwindcss/forms':
         specifier: 0.5.7
-        version: 0.5.7(tailwindcss@3.3.5)
+        version: 0.5.7(tailwindcss@3.3.6)
       '@types/balanced-match':
         specifier: 3.0.2
         version: 3.0.2
@@ -166,8 +166,8 @@ importers:
         specifier: 5.1.1
         version: 5.1.1(postcss@8.4.32)(sass@1.69.5)(svelte@4.2.8)(typescript@5.3.2)
       tailwindcss:
-        specifier: 3.3.5
-        version: 3.3.5
+        specifier: 3.3.6
+        version: 3.3.6
       tslib:
         specifier: 2.6.2
         version: 2.6.2
@@ -986,21 +986,21 @@ packages:
       - supports-color
     dev: true
 
-  /@tailwindcss/aspect-ratio@0.4.2(tailwindcss@3.3.5):
+  /@tailwindcss/aspect-ratio@0.4.2(tailwindcss@3.3.6):
     resolution: {integrity: sha512-8QPrypskfBa7QIMuKHg2TA7BqES6vhBrDLOv8Unb6FcFyd3TjKbc6lcmb9UPQHxfl24sXoJ41ux/H7qQQvfaSQ==}
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.3.5
+      tailwindcss: 3.3.6
     dev: true
 
-  /@tailwindcss/forms@0.5.7(tailwindcss@3.3.5):
+  /@tailwindcss/forms@0.5.7(tailwindcss@3.3.6):
     resolution: {integrity: sha512-QE7X69iQI+ZXwldE+rzasvbJiyV/ju1FGHH0Qn2W3FKbuYtqp8LKcy6iSw79fVUT5/Vvf+0XgLCeYVG+UV6hOw==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1'
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.3.5
+      tailwindcss: 3.3.6
     dev: true
 
   /@types/balanced-match@3.0.2:
@@ -2595,7 +2595,7 @@ packages:
   /get-intrinsic@1.2.1:
     resolution: {integrity: sha512-2DcsyfABl+gVHEfCOaTrWgyt+tb6MSEGmKq+kI5HwLbIYgjgmMcV8KQ41uaKz1xxUcn9tJtgFbQUEVcEbd0FYw==}
     dependencies:
-      function-bind: 1.1.1
+      function-bind: 1.1.2
       has: 1.0.3
       has-proto: 1.0.1
       has-symbols: 1.0.3
@@ -4505,8 +4505,8 @@ packages:
       magic-string: 0.30.5
       periscopic: 3.1.0
 
-  /tailwindcss@3.3.5:
-    resolution: {integrity: sha512-5SEZU4J7pxZgSkv7FP1zY8i2TIAOooNZ1e/OGtxIEv6GltpoiXUqWvLy89+a10qYTB1N5Ifkuw9lqQkN9sscvA==}
+  /tailwindcss@3.3.6:
+    resolution: {integrity: sha512-AKjF7qbbLvLaPieoKeTjG1+FyNZT6KaJMJPFeQyLfIp7l82ggH1fbHJSsYIvnbTFQOlkh+gBYpyby5GT1LIdLw==}
     engines: {node: '>=14.0.0'}
     hasBin: true
     dependencies:
