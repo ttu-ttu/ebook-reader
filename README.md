@@ -309,9 +309,10 @@ You can read books from external sources without having a local book copy (this 
 
 Other Data which can be imported/exported include:
 
-| Data          | Location                                                |
-| ------------- | ------------------------------------------------------- |
-| Reading Goals | Sync Button in "Statistics" Tab / Reading Goals Section |
+| Data          | Location                                                                |
+| ------------- | ----------------------------------------------------------------------- |
+| Reading Goals | Sync Button in "Statistics" Tab / Reading Goals Section                 |
+| Statistics    | Regular Book Data Export or Export Buttons in "Statistics" Tab Settings |
 
 # Storage Sources
 
