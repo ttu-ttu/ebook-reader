@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { faBookOpenReader, faDatabase } from '@fortawesome/free-solid-svg-icons';
+  import { faBookOpenReader, faClock, faDatabase } from '@fortawesome/free-solid-svg-icons';
   import Fa from 'svelte-fa';
   import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import Ripple from '$lib/components/ripple.svelte';
@@ -16,6 +16,10 @@
     {
       label: 'Data',
       icon: faDatabase
+    },
+    {
+      label: 'Statistics',
+      icon: faClock
     }
   ];
 </script>

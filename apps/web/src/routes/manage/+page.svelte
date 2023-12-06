@@ -6,7 +6,9 @@
   import BookManagerHeader from '$lib/components/book-card/book-manager-header.svelte';
   import BookExportDialog from '$lib/components/book-export/book-export-dialog.svelte';
   import LogReportDialog from '$lib/components/log-report-dialog.svelte';
+  import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MessageDialog from '$lib/components/message-dialog.svelte';
+  import { preFilteredTitlesForStatistics$ } from '$lib/components/statistics/statistics-types';
   import { pxScreen } from '$lib/css-classes';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
@@ -21,10 +23,13 @@
     cacheStorageData$,
     database,
     isOnline$,
+    keepLocalStatisticsOnDeletion$,
     lastExportedTarget$,
     lastExportedTypes$,
+    readingGoalsMergeMode$,
     replicationSaveBehavior$,
-    showExternalPlaceholder$
+    showExternalPlaceholder$,
+    statisticsMergeMode$
   } from '$lib/data/store';
   import { cloneMutateSet } from '$lib/functions/clone-mutate-set';
   import { getDropEventFiles } from '$lib/functions/file-dom/get-drop-event-files';
@@ -37,10 +42,10 @@
     executeReplicate$,
     type ReplicationProgress
   } from '$lib/functions/replication/replication-progress';
+  import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { combineLatest, map, Observable, share, Subject, switchMap, takeUntil } from 'rxjs';
   import { tick } from 'svelte';
   import Fa from 'svelte-fa';
-  import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
 
   const booksAreLoading$ = database.listLoading$.pipe(map((isLoading) => isLoading));
 
@@ -167,7 +172,9 @@
           '',
           isForBrowser,
           $cacheStorageData$,
-          $replicationSaveBehavior$
+          $replicationSaveBehavior$,
+          $statisticsMergeMode$,
+          $readingGoalsMergeMode$
         );
 
         if (!cacheStorageData$) {
@@ -272,7 +279,7 @@
       return;
     }
 
-    const { error, dataId } = await importData(
+    const error = await importData(
       document,
       getStorageHandler(
         window,
@@ -280,18 +287,18 @@
         '',
         $storageSource$ === StorageKey.BROWSER,
         $cacheStorageData$,
-        $replicationSaveBehavior$
+        $replicationSaveBehavior$,
+        $statisticsMergeMode$,
+        $readingGoalsMergeMode$
       ),
       files,
       cancelSignal
-    ).catch((catchedError) => ({ error: catchedError.message, dataId: 0 }));
+    ).catch((catchedError) => catchedError.message);
 
     resetProgress();
 
     if (error) {
       showError(errorTitle, error, 'Error(s) occurred during bookimport');
-    } else if ($storageSource$ === StorageKey.BROWSER && dataId) {
-      openBook(dataId);
     }
   }
 
@@ -364,7 +371,8 @@
         }
         return toDelete;
       }, [] as string[]),
-      cancelSignal
+      cancelSignal,
+      $keepLocalStatisticsOnDeletion$
     );
 
     resetProgress();
@@ -409,7 +417,9 @@
         undefined,
         $storageSource$ === StorageKey.BROWSER,
         $cacheStorageData$,
-        $replicationSaveBehavior$
+        $replicationSaveBehavior$,
+        $statisticsMergeMode$,
+        $readingGoalsMergeMode$
       ),
       getStorageHandler(
         window,
@@ -417,7 +427,9 @@
         '',
         $storageSource$ === StorageKey.BROWSER,
         $cacheStorageData$,
-        $replicationSaveBehavior$
+        $replicationSaveBehavior$,
+        $statisticsMergeMode$,
+        $readingGoalsMergeMode$
       ),
       file,
       cancelSignal
@@ -517,7 +529,9 @@
           '',
           $lastExportedTarget$ === StorageKey.BROWSER,
           $cacheStorageData$,
-          $replicationSaveBehavior$
+          $replicationSaveBehavior$,
+          $statisticsMergeMode$,
+          $readingGoalsMergeMode$
         )
       );
       const books = $bookCards$.filter((card) => selectedBookIds.has(card.id));
@@ -574,14 +588,21 @@
         replicationProgressRemaining = 'Canceling ...';
       }
     }}
+    on:selectionToStatistics={() => {
+      $preFilteredTitlesForStatistics$ = new Set(
+        $bookCards$.filter((card) => selectedBookIds.has(card.id)).map((book) => book.title)
+      );
+
+      goto(`${pagePath}${mergeEntries.STATISTICS.routeId}`);
+    }}
     on:replicateData={onReplicateData}
     on:importBackup={(ev) => onImportBackup(ev.detail)}
   />
 </div>
 
 <div
-  role="button"
   tabindex="0"
+  role="button"
   class="{pxScreen} h-full pt-16 xl:pt-14"
   on:dragenter={(ev) => ev.preventDefault()}
   on:dragover={(ev) => ev.preventDefault()}

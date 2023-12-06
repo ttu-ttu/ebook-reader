@@ -4,13 +4,14 @@
  * All rights reserved.
  */
 
-import { StorageKey, internalStorageSourceName } from '$lib/data/storage/storage-types';
+import { InternalStorageSources, StorageKey } from '$lib/data/storage/storage-types';
 
 import { BackupStorageHandler } from '$lib/data/storage/handler/backup-handler';
 import type { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
 import { BrowserStorageHandler } from '$lib/data/storage/handler/browser-handler';
 import { FilesystemStorageHandler } from '$lib/data/storage/handler/filesystem-handler';
 import { GDriveStorageHandler } from '$lib/data/storage/handler/gdrive-handler';
+import { MergeMode } from '$lib/data/merge-mode';
 import { OneDriveStorageHandler } from '$lib/data/storage/handler/onedrive-handler';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 
@@ -27,6 +28,8 @@ export function getStorageHandler(
   isForBrowser?: boolean,
   cacheStorageData?: boolean,
   saveBehavior?: ReplicationSaveBehavior,
+  statisticsMergeMode?: MergeMode,
+  readingGoalsMergeMode?: MergeMode,
   askForStorageUnlock?: boolean
 ): BackupStorageHandler;
 export function getStorageHandler(
@@ -36,6 +39,8 @@ export function getStorageHandler(
   isForBrowser?: boolean,
   cacheStorageData?: boolean,
   saveBehavior?: ReplicationSaveBehavior,
+  statisticsMergeMode?: MergeMode,
+  readingGoalsMergeMode?: MergeMode,
   askForStorageUnlock?: boolean
 ): BrowserStorageHandler;
 export function getStorageHandler(
@@ -45,6 +50,8 @@ export function getStorageHandler(
   isForBrowser?: boolean,
   cacheStorageData?: boolean,
   saveBehavior?: ReplicationSaveBehavior,
+  statisticsMergeMode?: MergeMode,
+  readingGoalsMergeMode?: MergeMode,
   askForStorageUnlock?: boolean
 ): GDriveStorageHandler;
 export function getStorageHandler(
@@ -54,6 +61,8 @@ export function getStorageHandler(
   isForBrowser?: boolean,
   cacheStorageData?: boolean,
   saveBehavior?: ReplicationSaveBehavior,
+  statisticsMergeMode?: MergeMode,
+  readingGoalsMergeMode?: MergeMode,
   askForStorageUnlock?: boolean
 ): OneDriveStorageHandler;
 export function getStorageHandler(
@@ -63,6 +72,8 @@ export function getStorageHandler(
   isForBrowser?: boolean,
   cacheStorageData?: boolean,
   saveBehavior?: ReplicationSaveBehavior,
+  statisticsMergeMode?: MergeMode,
+  readingGoalsMergeMode?: MergeMode,
   askForStorageUnlock?: boolean
 ): FilesystemStorageHandler;
 export function getStorageHandler(
@@ -72,28 +83,44 @@ export function getStorageHandler(
   isForBrowser?: boolean,
   cacheStorageData?: boolean,
   saveBehavior?: ReplicationSaveBehavior,
+  statisticsMergeMode?: MergeMode,
+  readingGoalsMergeMode?: MergeMode,
   askForStorageUnlock?: boolean
 ): BaseStorageHandler;
 export function getStorageHandler(
   window: Window,
   storageType: StorageKey,
-  storageSourceName = internalStorageSourceName,
+  storageSourceName = InternalStorageSources.INTERNAL_DEFAULT as string,
   isForBrowser = false,
   cacheStorageData = false,
   saveBehavior = ReplicationSaveBehavior.NewOnly,
+  statisticsMergeMode = MergeMode.MERGE,
+  readingGoalsMergeMode = MergeMode.MERGE,
   askForStorageUnlock = true
 ) {
   switch (storageType) {
     case StorageKey.BACKUP:
       backupStorageHandler =
         backupStorageHandler || new BackupStorageHandler(window, StorageKey.BACKUP);
-      backupStorageHandler.updateSettings(window, isForBrowser);
+      backupStorageHandler.updateSettings(
+        window,
+        isForBrowser,
+        saveBehavior,
+        statisticsMergeMode,
+        readingGoalsMergeMode
+      );
 
       return backupStorageHandler;
     case StorageKey.BROWSER:
       browserStorageHandler =
         browserStorageHandler || new BrowserStorageHandler(window, StorageKey.BROWSER);
-      browserStorageHandler.updateSettings(window, true, saveBehavior);
+      browserStorageHandler.updateSettings(
+        window,
+        true,
+        saveBehavior,
+        statisticsMergeMode,
+        readingGoalsMergeMode
+      );
 
       return browserStorageHandler;
     case StorageKey.GDRIVE:
@@ -102,6 +129,8 @@ export function getStorageHandler(
         window,
         isForBrowser,
         saveBehavior,
+        statisticsMergeMode,
+        readingGoalsMergeMode,
         cacheStorageData,
         askForStorageUnlock,
         storageSourceName
@@ -114,6 +143,8 @@ export function getStorageHandler(
         window,
         isForBrowser,
         saveBehavior,
+        statisticsMergeMode,
+        readingGoalsMergeMode,
         cacheStorageData,
         askForStorageUnlock,
         storageSourceName
@@ -126,6 +157,8 @@ export function getStorageHandler(
         window,
         isForBrowser,
         saveBehavior,
+        statisticsMergeMode,
+        readingGoalsMergeMode,
         cacheStorageData,
         askForStorageUnlock,
         storageSourceName

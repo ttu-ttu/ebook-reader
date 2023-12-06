@@ -180,6 +180,23 @@ export class GDriveStorageHandler extends ApiStorageHandler {
     return this.titleToFiles.get(this.currentContext.title) || [];
   }
 
+  protected async setRootFiles() {
+    if ((!this.cacheStorageData || !this.rootFileListFetched) && !this.rootFiles.size) {
+      const rootFiles = await this.list(
+        `trashed=false and mimeType!='application/vnd.google-apps.folder' and '${this.rootId}' in parents`,
+        'files(id,name)'
+      );
+
+      for (let index = 0, { length } = rootFiles; index < length; index += 1) {
+        const rootFile = rootFiles[index];
+
+        this.setRootFile(rootFile.name, rootFile);
+      }
+
+      this.rootFileListFetched = true;
+    }
+  }
+
   protected retrieve(
     file: GDriveFile,
     typeToRetrieve: XMLHttpRequestResponseType,
@@ -203,6 +220,7 @@ export class GDriveStorageHandler extends ApiStorageHandler {
     files: GDriveFile[],
     externalFile: GDriveFile | undefined,
     data: Blob | string | undefined,
+    rootFilePrefix?: string,
     progressBase = 0.8
   ): Promise<GDriveFile> {
     const form = new FormData();
@@ -240,9 +258,16 @@ export class GDriveStorageHandler extends ApiStorageHandler {
       progressBase
     );
 
-    this.updateAfterUpload(response.id, response.name, files, externalFile, {
-      parents: [folderId]
-    });
+    this.updateAfterUpload(
+      response.id,
+      response.name,
+      files,
+      externalFile,
+      {
+        parents: [folderId]
+      },
+      rootFilePrefix
+    );
 
     return response;
   }

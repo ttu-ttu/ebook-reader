@@ -14,6 +14,7 @@ import {
   pairwise,
   switchMap,
   takeUntil,
+  tap,
   type Observable,
   type SchedulerLike
 } from 'rxjs';
@@ -21,6 +22,8 @@ import type { AutoScroller } from '../types';
 
 export class AutoScrollerContinuous implements AutoScroller {
   private enabled$ = new BehaviorSubject<boolean>(false);
+
+  wasAutoScrollerEnabled$ = new BehaviorSubject<boolean>(false);
 
   constructor(
     public multiplier: number,
@@ -31,6 +34,9 @@ export class AutoScrollerContinuous implements AutoScroller {
   ) {
     this.enabled$
       .pipe(
+        tap((isEnabled) => {
+          this.wasAutoScrollerEnabled$.next(isEnabled);
+        }),
         switchMap((b) => {
           if (!b) {
             return EMPTY;

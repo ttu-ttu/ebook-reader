@@ -5,9 +5,32 @@
  */
 
 import { browser } from '$app/environment';
+import {
+  ReadingGoalFrequency,
+  TrackerAutoPause,
+  TrackerSkipThresholdAction
+} from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
+import { HeatmapDataAggregration } from '$lib/components/statistics/statistics-heatmap/statistics-heatmap';
+import {
+  StatisticsRangeTemplate,
+  StatisticsTab,
+  type BookStatistic,
+  StatisticsReadingDataAggregationMode
+} from '$lib/components/statistics/statistics-types';
 import type { UserFont } from '$lib/data/fonts';
+import { MergeMode } from '$lib/data/merge-mode';
+import type { ReadingGoal } from '$lib/data/reading-goal';
 import { SortDirection, type SortOption } from '$lib/data/sort-types';
-import { StorageDataType, StorageKey, StorageSourceDefault } from '$lib/data/storage/storage-types';
+import {
+  StatisticsTabAvailableKeybind,
+  type StatisticsTabKeybindMap
+} from '$lib/data/statistics-tab-keybind';
+import {
+  InternalStorageSources,
+  StorageDataType,
+  StorageKey,
+  StorageSourceDefault
+} from '$lib/data/storage/storage-types';
 import {
   AutoReplicationType,
   ReplicationSaveBehavior
@@ -28,6 +51,7 @@ import { writableStringLocalStorageSubject } from './internal/writable-string-lo
 import type { ThemeOption } from './theme-option';
 import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
+import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
@@ -74,6 +98,11 @@ export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
 );
 
 export const avoidPageBreak$ = writableBooleanLocalStorageSubject()('avoidPageBreak', false);
+
+export const pauseTrackerOnCustomPointChange$ = writableBooleanLocalStorageSubject()(
+  'pauseTrackerOnCustomPointChange',
+  true
+);
 
 export const customReadingPointEnabled$ = writableBooleanLocalStorageSubject()(
   'customReadingPointEnabled',
@@ -130,6 +159,84 @@ export const fsStorageSource$ = writableStringLocalStorageSubject()('fsStorageSo
 
 export const syncTarget$ = writableStringLocalStorageSubject()('syncTarget', '');
 
+export const keepLocalStatisticsOnDeletion$ = writableBooleanLocalStorageSubject()(
+  'keepLocalStatisticsOnDeletion',
+  true
+);
+
+export const overwriteBookCompletion$ = writableBooleanLocalStorageSubject()(
+  'overwriteBookCompletion',
+  false
+);
+
+export const startDayHoursForTracker$ = writableNumberLocalStorageSubject()(
+  'startDayHoursForTracker',
+  0
+);
+
+export const statisticsEnabled$ = writableBooleanLocalStorageSubject()('statisticsEnabled', false);
+
+export const statisticsMergeMode$ = writableStringLocalStorageSubject<MergeMode>()(
+  'statisticsMergeMode',
+  MergeMode.MERGE
+);
+
+export const readingGoalsMergeMode$ = writableStringLocalStorageSubject<MergeMode>()(
+  'readingGoalsMergeMode',
+  MergeMode.MERGE
+);
+
+export const trackerAutoPause$ = writableStringLocalStorageSubject<TrackerAutoPause>()(
+  'trackerAutoPause',
+  TrackerAutoPause.MODERATE
+);
+
+export const openTrackerOnCompletion$ = writableBooleanLocalStorageSubject()(
+  'openTrackerOnCompletion',
+  true
+);
+
+export const addCharactersOnCompletion$ = writableBooleanLocalStorageSubject()(
+  'addCharactersOnCompletion',
+  false
+);
+
+export const trackerIdleTime$ = writableNumberLocalStorageSubject()('trackerIdleTime', 0);
+
+export const trackerForwardSkipThreshold$ = writableNumberLocalStorageSubject()(
+  'trackerForwardSkipThreshold',
+  2700
+);
+
+export const trackerBackwardSkipThreshold$ = writableNumberLocalStorageSubject()(
+  'trackerBackwardSkipThreshold',
+  2700
+);
+
+export const trackerSkipThresholdAction$ =
+  writableStringLocalStorageSubject<TrackerSkipThresholdAction>()(
+    'trackerSkipThresholdAction',
+    TrackerSkipThresholdAction.IGNORE
+  );
+
+export const trackerPopupDetection$ = writableBooleanLocalStorageSubject()(
+  'trackerPopupDetection',
+  false
+);
+
+export const adjustStatisticsAfterIdleTime$ = writableBooleanLocalStorageSubject()(
+  'adjustStatisticsAfterIdleTime',
+  true
+);
+
+export const readingGoal$ = writableObjectLocalStorageSubject<ReadingGoal>()('readingGoal', {
+  timeGoal: 0,
+  characterGoal: 0,
+  goalFrequency: ReadingGoalFrequency.DAILY,
+  goalStartDate: '',
+  lastGoalModified: Date.now()
+});
+
 export const lastExportedTarget$ = writableStringLocalStorageSubject<StorageKey>()(
   'lastExportedTarget',
   StorageKey.BACKUP
@@ -137,8 +244,104 @@ export const lastExportedTarget$ = writableStringLocalStorageSubject<StorageKey>
 
 export const lastExportedTypes$ = writableArrayLocalStorageSubject<StorageDataType>()(
   'lastExportedTypes',
-  [StorageDataType.PROGRESS]
+  [StorageDataType.PROGRESS, StorageDataType.STATISTICS]
 );
+
+export const lastBlurredTrackerItems$ = writableSetLocalStorageSubject<string>()(
+  'lastBlurredTrackerItems',
+  new Set<string>()
+);
+
+export const lastSyncedSettingsSource$ = writableStringLocalStorageSubject()(
+  'lastSyncedSettingsSource',
+  InternalStorageSources.INTERNAL_BROWSER
+);
+
+export const lastSyncedSettingsTarget$ = writableStringLocalStorageSubject()(
+  'lastSyncedSettingsTarget',
+  InternalStorageSources.INTERNAL_ZIP
+);
+
+export const lastReadingGoalsModified$ = writableNumberLocalStorageSubject()(
+  'lastReadingGoalsModified',
+  0
+);
+
+export const lastStatisticsTab$ = writableStringLocalStorageSubject<StatisticsTab>()(
+  'lastStatisticsTab',
+  StatisticsTab.OVERVIEW
+);
+
+export const lastStatisticsRangeTemplate$ =
+  writableStringLocalStorageSubject<StatisticsRangeTemplate>()(
+    'lastStatisticsRangeTemplate',
+    StatisticsRangeTemplate.TODAY
+  );
+
+export const lastStatisticsStartDate$ = writableStringLocalStorageSubject()(
+  'lastStatisticsStartDate',
+  ''
+);
+
+export const lastStatisticsEndDate$ = writableStringLocalStorageSubject()(
+  'lastStatisticsEndDate',
+  ''
+);
+
+export const lastStartDayOfWeek$ = writableNumberLocalStorageSubject()('lastStartDayOfWeek', 1);
+
+export const lastReadingTimeDataSource$ = writableStringLocalStorageSubject<keyof BookStatistic>()(
+  'lastReadingTimeDataSource',
+  'readingTime'
+);
+
+export const lastCharactersDataSource$ = writableStringLocalStorageSubject<keyof BookStatistic>()(
+  'lastCharactersDataSource',
+  'charactersRead'
+);
+
+export const lastReadingSpeedDataSource$ = writableStringLocalStorageSubject<keyof BookStatistic>()(
+  'lastReadingSpeedDataSource',
+  'lastReadingSpeed'
+);
+
+export const lastPrimaryReadingDataAggregationMode$ =
+  writableStringLocalStorageSubject<StatisticsReadingDataAggregationMode>()(
+    'lastPrimaryReadingDataAggregationMode',
+    StatisticsReadingDataAggregationMode.NONE
+  );
+
+export const lastStatisticsFilterDateRangeOnly$ = writableBooleanLocalStorageSubject()(
+  'lastStatisticsFilterDateRangeOnly',
+  false
+);
+
+export const lastStatisticsFilterShowSelectedTitlesOnly$ = writableBooleanLocalStorageSubject()(
+  'lastStatisticsFilterShowSelectedTitlesOnly',
+  false
+);
+
+export const lastReadingDataHeatmapAggregationMode$ =
+  writableStringLocalStorageSubject<HeatmapDataAggregration>()(
+    'lastReadingDataHeatmapAggregationMode',
+    HeatmapDataAggregration.ALL_TIME
+  );
+
+export const lastReadingGoalsHeatmapAggregationMode$ =
+  writableStringLocalStorageSubject<HeatmapDataAggregration>()(
+    'lastReadingGoalsHeatmapAggregationMode',
+    HeatmapDataAggregration.ALL_TIME
+  );
+
+export const lastStatisticsSummarySortProperty$ = writableStringLocalStorageSubject<
+  keyof BookStatistic
+>()('lastStatisticsSummarySortProperty', 'readingTime');
+
+export const lastStatisticsSummarySortDirection$ =
+  writableStringLocalStorageSubject<SortDirection>()(
+    'lastStatisticsSummarySortDirection',
+    SortDirection.DESC
+  );
 
 export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyB: BookReaderAvailableKeybind.BOOKMARK,
@@ -160,7 +363,18 @@ export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyM: BookReaderAvailableKeybind.NEXT_CHAPTER,
   m: BookReaderAvailableKeybind.NEXT_CHAPTER,
   KeyT: BookReaderAvailableKeybind.SET_READING_POINT,
-  t: BookReaderAvailableKeybind.SET_READING_POINT
+  t: BookReaderAvailableKeybind.SET_READING_POINT,
+  KeyP: BookReaderAvailableKeybind.TOGGLE_TRACKING,
+  p: BookReaderAvailableKeybind.TOGGLE_TRACKING,
+  KeyF: BookReaderAvailableKeybind.TOGGLE_TRACKING_FREEZE,
+  f: BookReaderAvailableKeybind.TOGGLE_TRACKING_FREEZE
+});
+
+export const statisticsTabKeybindMap$ = writableSubject<StatisticsTabKeybindMap>({
+  KeyT: StatisticsTabAvailableKeybind.RANGE_TEMPLATE_TOGGLE,
+  t: StatisticsTabAvailableKeybind.RANGE_TEMPLATE_TOGGLE,
+  KeyA: StatisticsTabAvailableKeybind.AGGREGRATION_TOGGLE,
+  a: StatisticsTabAvailableKeybind.AGGREGRATION_TOGGLE
 });
 
 const db = browser ? createBooksDb() : import('fake-indexeddb/auto').then(() => createBooksDb());

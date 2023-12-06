@@ -9,7 +9,7 @@ import { openDB } from 'idb';
 import upgradeBooksDbFromV2 from './versions/v2/upgrade';
 
 export function createBooksDb(name = 'books') {
-  return openDB<BooksDb>(name, 4, {
+  return openDB<BooksDb>(name, 5, {
     async upgrade(oldDb, oldVersion, newVersion, transaction) {
       // eslint-disable-next-line default-case
       switch (oldVersion) {
@@ -29,6 +29,24 @@ export function createBooksDb(name = 'books') {
           oldDb.createObjectStore('storageSource', {
             keyPath: 'name'
           });
+
+          const statisticsStore = oldDb.createObjectStore('statistic', {
+            keyPath: ['title', 'dateKey']
+          });
+
+          statisticsStore.createIndex('dateKey', 'dateKey');
+          statisticsStore.createIndex('completedBook', ['completedBook', 'title']);
+
+          const readingGoalsStore = oldDb.createObjectStore('readingGoal', {
+            keyPath: 'goalStartDate'
+          });
+
+          readingGoalsStore.createIndex('goalEndDate', 'goalEndDate');
+
+          oldDb.createObjectStore('lastModified', {
+            keyPath: ['title', 'dataType']
+          });
+
           break;
         }
         case 2: {
@@ -39,6 +57,26 @@ export function createBooksDb(name = 'books') {
           oldDb.createObjectStore('storageSource', {
             keyPath: 'name'
           });
+          break;
+        }
+        case 4: {
+          const statisticsStore = oldDb.createObjectStore('statistic', {
+            keyPath: ['title', 'dateKey']
+          });
+
+          statisticsStore.createIndex('dateKey', 'dateKey');
+          statisticsStore.createIndex('completedBook', ['completedBook', 'title']);
+
+          const readingGoalsStore = oldDb.createObjectStore('readingGoal', {
+            keyPath: 'goalStartDate'
+          });
+
+          readingGoalsStore.createIndex('goalEndDate', 'goalEndDate');
+
+          oldDb.createObjectStore('lastModified', {
+            keyPath: ['title', 'dataType']
+          });
+
           break;
         }
       }

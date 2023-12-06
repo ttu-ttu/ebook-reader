@@ -6,9 +6,14 @@
 
 import type {
   BooksDbBookData,
-  BooksDbBookmarkData
+  BooksDbBookmarkData,
+  BooksDbReadingGoal,
+  BooksDbStatistic
 } from '$lib/data/database/books-db/versions/books-db';
+import type { MergeMode } from '$lib/data/merge-mode';
+import { readingGoalSortFunction } from '$lib/data/reading-goal';
 import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
+import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import type { ReplicationContext } from '$lib/functions/replication/replication-progress';
 import { BlobReader, BlobWriter, ZipReader, type Entry, type ZipWriter } from '@zip.js/zip.js';
 
@@ -32,11 +37,6 @@ export class BackupStorageHandler extends BaseStorageHandler {
     return Promise.resolve();
   }
 
-  getFilenameForRecentCheck() {
-    BaseStorageHandler.reportProgress();
-    return Promise.resolve(undefined);
-  }
-
   isBookPresentAndUpToDate() {
     BaseStorageHandler.reportProgress();
     return Promise.resolve(false);
@@ -47,14 +47,33 @@ export class BackupStorageHandler extends BaseStorageHandler {
     return Promise.resolve(false);
   }
 
+  areStatisticsPresentAndUpToDate() {
+    BaseStorageHandler.reportProgress();
+    return Promise.resolve(false);
+  }
+
+  areReadingGoalsPresentAndUpToDate() {
+    BaseStorageHandler.reportProgress();
+    return Promise.resolve(false);
+  }
+
   deleteBookData() {
     return Promise.resolve({ error: '', deleted: [] });
   }
   /* eslint-enable class-methods-use-this */
 
-  updateSettings(window: Window, isForBrowser: boolean) {
+  updateSettings(
+    window: Window,
+    isForBrowser: boolean,
+    saveBehavior: ReplicationSaveBehavior,
+    statisticsMergeMode: MergeMode,
+    readingGoalsMergeMode: MergeMode
+  ) {
     this.window = window;
     this.isForBrowser = isForBrowser;
+    this.saveBehavior = saveBehavior;
+    this.statisticsMergeMode = statisticsMergeMode;
+    this.readingGoalsMergeMode = readingGoalsMergeMode;
   }
 
   clearData(clearAll = true) {
@@ -73,18 +92,39 @@ export class BackupStorageHandler extends BaseStorageHandler {
 
     for (let index = 0, { length } = this.importEntries; index < length; index += 1) {
       const entry = this.importEntries[index];
-      const sanitizedTitle = entry.filename.split('/')[0];
+      const nameParts = entry.filename.split('/');
+      const sanitizedTitle = nameParts[0];
       const title = BaseStorageHandler.desanitizeFilename(sanitizedTitle);
-      const context = titles.get(title) || { title, imagePath: '' };
 
-      if (entry.filename.startsWith(`${sanitizedTitle}/cover_`)) {
-        context.imagePath = entry;
+      if (nameParts.length === 1) {
+        this.setRootFile(title, { id: title, name: title });
+      } else if (nameParts.length > 1) {
+        const context = titles.get(title) || { title, imagePath: '' };
+
+        if (entry.filename.startsWith(`${sanitizedTitle}/cover_`)) {
+          context.imagePath = entry;
+        }
+
+        titles.set(title, context);
       }
-
-      titles.set(title, context);
     }
 
     return [...titles.values()];
+  }
+
+  async getFilenameForRecentCheck(fileIdentifier: string) {
+    if (this.saveBehavior === ReplicationSaveBehavior.Overwrite) {
+      BaseStorageHandler.reportProgress();
+      return undefined;
+    }
+
+    const { filename } = this.validRootFiles.includes(fileIdentifier)
+      ? this.getRootFile(fileIdentifier)
+      : this.findEntry(fileIdentifier);
+
+    BaseStorageHandler.completeStep();
+
+    return filename;
   }
 
   async getBook() {
@@ -113,16 +153,34 @@ export class BackupStorageHandler extends BaseStorageHandler {
       return undefined;
     }
 
+    if (this.isForBrowser) {
+      return this.extractAsJSON(zipEntry, 'Unable to read progress data');
+    }
+
     const progressBlob = await this.readFromZip(
       new BlobWriter(),
       'Unable to read progress data',
       zipEntry,
-      this.isForBrowser ? 0.8 : 0.9
+      0.9
     );
 
-    return this.isForBrowser
-      ? this.extractProgress(zipEntry, 0.1)
-      : new File([progressBlob], filename, { type: 'application/json' });
+    return new File([progressBlob], filename, { type: 'application/json' });
+  }
+
+  async getStatistics() {
+    const { zipEntry, filename } = this.findEntry('statistics_');
+
+    if (!zipEntry) {
+      return { statistics: undefined, lastStatisticModified: 0 };
+    }
+
+    const statistics = await this.extractAsJSON(zipEntry, 'Unable to read statistics');
+
+    return {
+      statistics,
+      lastStatisticModified:
+        BaseStorageHandler.getStatisticsMetadata(filename).lastStatisticModified
+    };
   }
 
   async getCover() {
@@ -146,6 +204,21 @@ export class BackupStorageHandler extends BaseStorageHandler {
     );
 
     return cover;
+  }
+
+  async getReadingGoals() {
+    const { zipEntry, filename } = this.getRootFile(BaseStorageHandler.readingGoalsFilePrefix);
+
+    if (!zipEntry) {
+      return { readingGoals: undefined, lastGoalModified: 0 };
+    }
+
+    const readingGoals = await this.extractAsJSON(zipEntry, 'Unable to read reading goals');
+
+    return {
+      readingGoals,
+      lastGoalModified: BaseStorageHandler.getReadingGoalsMetadata(filename).lastGoalModified
+    };
   }
 
   async saveBook(data: Omit<BooksDbBookData, 'id'> | File) {
@@ -179,6 +252,21 @@ export class BackupStorageHandler extends BaseStorageHandler {
     }
   }
 
+  async saveStatistics(data: BooksDbStatistic[], lastStatisticModified: number) {
+    const filename = `${this.sanitizedTitle}/${BaseStorageHandler.getStatisticsFileName(
+      data,
+      lastStatisticModified
+    )}`;
+
+    data.sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
+
+    this.exportZipWriter = await this.addDataToZip(
+      filename,
+      JSON.stringify(data),
+      this.exportZipWriter
+    );
+  }
+
   async saveCover(data: Blob | undefined) {
     if (!data) {
       BaseStorageHandler.reportProgress();
@@ -189,6 +277,18 @@ export class BackupStorageHandler extends BaseStorageHandler {
     this.exportZipWriter = await this.addDataToZip(
       `${this.sanitizedTitle}/${filename}`,
       data,
+      this.exportZipWriter
+    );
+  }
+
+  async saveReadingGoals(data: BooksDbReadingGoal[], lastGoalModified: number) {
+    const filename = `${BaseStorageHandler.getReadingGoalsFileName(lastGoalModified)}`;
+
+    data.sort(readingGoalSortFunction);
+
+    this.exportZipWriter = await this.addDataToZip(
+      filename,
+      JSON.stringify(data),
       this.exportZipWriter
     );
   }
@@ -231,5 +331,16 @@ export class BackupStorageHandler extends BaseStorageHandler {
     BaseStorageHandler.reportProgress(progressBase);
 
     return { zipEntry, filename: zipEntry?.filename.replace(`${this.sanitizedTitle}/`, '') || '' };
+  }
+
+  private getRootFile(filePrefix: string, progressBase = 0.1) {
+    const rootFile = this.rootFiles.get(filePrefix);
+    const zipEntry = rootFile
+      ? this.importEntries.find((entry) => entry.filename === rootFile.name)
+      : undefined;
+
+    BaseStorageHandler.reportProgress(progressBase);
+
+    return { zipEntry, filename: zipEntry?.filename || '' };
   }
 }

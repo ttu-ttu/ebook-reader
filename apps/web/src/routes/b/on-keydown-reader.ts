@@ -9,24 +9,30 @@ import {
   BookReaderAvailableKeybind,
   type BookReaderKeybindMap
 } from '$lib/data/book-reader-keybind';
+import {
+  StatisticsTabAvailableKeybind,
+  type StatisticsTabKeybindMap
+} from '$lib/data/statistics-tab-keybind';
 
 export function onKeydownReader(
   ev: KeyboardEvent,
   bookReaderKeybindMap: BookReaderKeybindMap,
-  bookmarkPage: (scheduleExport: boolean | CustomEvent) => void,
+  bookmarkPage: () => void,
   scrollToBookmark: () => void,
   multiplierOffsetFn: (offset: number) => void,
   autoScroller: AutoScroller | undefined,
   pageManager: PageManager | undefined,
   isVertical: boolean,
   changeChapter: (offset: number) => void,
-  handleSetCustomReadingPoint: () => void
+  handleSetCustomReadingPoint: () => void,
+  toggleTracker: () => void,
+  freezeTrackerPosition: () => void
 ) {
   const action = bookReaderKeybindMap[ev.code || ev.key?.toLowerCase()];
 
   switch (action) {
     case BookReaderAvailableKeybind.BOOKMARK: {
-      bookmarkPage(true);
+      bookmarkPage();
       return true;
     }
     case BookReaderAvailableKeybind.JUMP_TO_BOOKMARK:
@@ -55,6 +61,32 @@ export function onKeydownReader(
       return true;
     case BookReaderAvailableKeybind.SET_READING_POINT:
       handleSetCustomReadingPoint();
+      return true;
+    case BookReaderAvailableKeybind.TOGGLE_TRACKING:
+      toggleTracker();
+      return true;
+    case BookReaderAvailableKeybind.TOGGLE_TRACKING_FREEZE:
+      freezeTrackerPosition();
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function onKeyUpStatisticsTab(
+  ev: KeyboardEvent,
+  statisticsTabKeybindMap: StatisticsTabKeybindMap,
+  toggleStatisticsRangeTemplate: () => void,
+  toggleAggregationMode: () => void
+) {
+  const action = statisticsTabKeybindMap[ev.code || ev.key?.toLowerCase()];
+
+  switch (action) {
+    case StatisticsTabAvailableKeybind.RANGE_TEMPLATE_TOGGLE:
+      toggleStatisticsRangeTemplate();
+      return true;
+    case StatisticsTabAvailableKeybind.AGGREGRATION_TOGGLE:
+      toggleAggregationMode();
       return true;
     default:
       return false;

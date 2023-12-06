@@ -5,6 +5,7 @@
     faBookmark as fasBookmark,
     faCrosshairs,
     faExpand,
+    faFlag,
     faList,
     faRotateLeft
   } from '@fortawesome/free-solid-svg-icons';
@@ -34,10 +35,12 @@
     tocClick: void;
     bookmarkClick: void;
     scrollToBookmarkClick: void;
+    completeBook: void;
+    fullscreenClick: void;
     showCustomReadingPoint: void;
     setCustomReadingPoint: void;
     resetCustomReadingPoint: void;
-    fullscreenClick: void;
+    statisticsClick: void;
     settingsClick: void;
     domainHintClick: void;
     bookManagerClick: void;
@@ -95,12 +98,21 @@
         <Fa icon={faRotateLeft} />
       </div>
     {/if}
-    {#if !$isMobile$}
+    {#if $viewMode$ === ViewMode.Continuous && !$isMobile$}
       <div class="flex items-center px-4 text-xl xl:px-3 xl:text-lg">{autoScrollMultiplier}x</div>
     {/if}
   </div>
 
   <div class="flex transform-gpu {translateXHeaderFa}">
+    <div
+      tabindex="0"
+      role="button"
+      class={baseIconClasses}
+      on:click={() => dispatch('completeBook')}
+      on:keyup={dummyFn}
+    >
+      <Fa icon={faFlag} />
+    </div>
     {#if $customReadingPointEnabled$ || $viewMode$ === ViewMode.Paginated}
       <div class="flex">
         <Popover
@@ -143,9 +155,11 @@
       disableRouteNavigation
       items={isOldUrl
         ? [mergeEntries.SETTINGS, mergeEntries.DOMAIN_HINT, mergeEntries.MANAGE]
-        : [mergeEntries.SETTINGS, mergeEntries.MANAGE]}
+        : [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE]}
       on:action={({ detail }) => {
-        if (detail === mergeEntries.SETTINGS.label) {
+        if (detail === mergeEntries.STATISTICS.label) {
+          dispatch('statisticsClick');
+        } else if (detail === mergeEntries.SETTINGS.label) {
           dispatch('settingsClick');
         } else if (detail === mergeEntries.DOMAIN_HINT.label) {
           dispatch('domainHintClick');

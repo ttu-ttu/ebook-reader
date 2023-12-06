@@ -6,12 +6,17 @@
 
 import type {
   BooksDbBookData,
-  BooksDbBookmarkData
+  BooksDbBookmarkData,
+  BooksDbReadingGoal,
+  BooksDbStatistic
 } from '$lib/data/database/books-db/versions/books-db';
 import { database, fsStorageSource$ } from '$lib/data/store';
+import { mergeReadingGoals, readingGoalSortFunction } from '$lib/data/reading-goal';
+import { mergeStatistics, updateStatisticToStore } from '$lib/functions/statistic-util';
 
 import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
 import type { BookCardProps } from '$lib/components/book-card/book-card-props';
+import { MergeMode } from '$lib/data/merge-mode';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import { StorageKey } from '$lib/data/storage/storage-types';
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
@@ -30,10 +35,14 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
 
   private titleToFiles = new Map<string, FileSystemFileHandle[]>();
 
+  private rootFileHandles = new Map<string, FileSystemFileHandle>();
+
   updateSettings(
     window: Window,
     isForBrowser: boolean,
     saveBehavior: ReplicationSaveBehavior,
+    statisticsMergeMode: MergeMode,
+    readingGoalsMergeMode: MergeMode,
     cacheStorageData: boolean,
     askForStorageUnlock: boolean,
     storageSourceName: string
@@ -41,6 +50,8 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     this.window = window;
     this.isForBrowser = isForBrowser;
     this.saveBehavior = saveBehavior;
+    this.statisticsMergeMode = statisticsMergeMode;
+    this.readingGoalsMergeMode = readingGoalsMergeMode;
     this.cacheStorageData = cacheStorageData;
     this.askForStorageUnlock = askForStorageUnlock;
 
@@ -73,6 +84,9 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
 
   clearData(clearAll = true) {
     this.titleToFiles.clear();
+    this.rootFileHandles.clear();
+    this.rootFiles.clear();
+    this.rootFileListFetched = false;
 
     if (clearAll) {
       this.rootDirectory = undefined;
@@ -153,7 +167,9 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
       return undefined;
     }
 
-    const { file } = await this.getExternalFile(fileIdentifier, 1);
+    const { file } = this.validRootFiles.includes(fileIdentifier)
+      ? await this.getRootFile(fileIdentifier)
+      : await this.getExternalFile(fileIdentifier, 1);
 
     return file?.name;
   }
@@ -168,7 +184,7 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
 
     let isPresentAndUpToDate = false;
 
-    if (file && this.saveBehavior === ReplicationSaveBehavior.NewOnly) {
+    if (file) {
       const { lastBookModified, lastBookOpen } =
         BaseStorageHandler.getBookMetadata(referenceFilename);
       const { lastBookModified: existingBookModified, lastBookOpen: existingBookOpen } =
@@ -193,21 +209,44 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
 
     const { file } = await this.getExternalFile('progress_', 1);
 
-    let isPresentAndUpToDate = false;
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getProgressMetadata,
+      'lastBookmarkModified',
+      referenceFilename,
+      file?.name
+    );
+  }
 
-    if (file && this.saveBehavior === ReplicationSaveBehavior.NewOnly) {
-      const { lastBookmarkModified } = BaseStorageHandler.getProgressMetadata(referenceFilename);
-      const { lastBookmarkModified: existingBookmarkModified } =
-        BaseStorageHandler.getProgressMetadata(file.name);
-
-      isPresentAndUpToDate = !!(
-        existingBookmarkModified &&
-        lastBookmarkModified &&
-        (existingBookmarkModified || 0) >= (lastBookmarkModified || 0)
-      );
+  async areStatisticsPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
     }
 
-    return isPresentAndUpToDate;
+    const { file } = await this.getExternalFile('statistics_', 1);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getStatisticsMetadata,
+      'lastStatisticModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
+  async areReadingGoalsPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const { file } = await this.getRootFile(BaseStorageHandler.readingGoalsFilePrefix);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getReadingGoalsMetadata,
+      'lastGoalModified',
+      referenceFilename,
+      file?.name
+    );
   }
 
   async getBook() {
@@ -241,6 +280,26 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     return progressFile;
   }
 
+  async getStatistics() {
+    const { file } = await this.getExternalFile('statistics_', 0.6);
+
+    if (!file) {
+      return { statistics: undefined, lastStatisticModified: 0 };
+    }
+
+    const statisticsFile = await file.getFile();
+    const statisticsFileData = await FilesystemStorageHandler.readFileObject(statisticsFile);
+    const statistics = JSON.parse(statisticsFileData);
+
+    BaseStorageHandler.reportProgress(0.4);
+
+    return {
+      statistics,
+      lastStatisticModified: BaseStorageHandler.getStatisticsMetadata(file.name)
+        .lastStatisticModified
+    };
+  }
+
   async getCover() {
     if (this.currentContext.imagePath instanceof Blob) {
       BaseStorageHandler.reportProgress();
@@ -257,6 +316,25 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     const cover = await file.getFile();
 
     return cover;
+  }
+
+  async getReadingGoals() {
+    const { file } = await this.getRootFile(BaseStorageHandler.readingGoalsFilePrefix, 0.6);
+
+    if (!file) {
+      return { readingGoals: undefined, lastGoalModified: 0 };
+    }
+
+    const readingGoalsFile = await file.getFile();
+    const readingGoalsFileData = await FilesystemStorageHandler.readFileObject(readingGoalsFile);
+    const readingGoals = JSON.parse(readingGoalsFileData);
+
+    BaseStorageHandler.reportProgress(0.4);
+
+    return {
+      readingGoals,
+      lastGoalModified: BaseStorageHandler.getReadingGoalsMetadata(file.name).lastGoalModified
+    };
   }
 
   async saveBook(data: Omit<BooksDbBookData, 'id'> | File, skipTimestampFallback = true) {
@@ -304,19 +382,6 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     const { lastBookmarkModified, progress } = BaseStorageHandler.getProgressMetadata(filename);
     const { file, files, rootDirectory } = await this.getExternalFile('progress_');
 
-    if (file && this.saveBehavior === ReplicationSaveBehavior.NewOnly) {
-      const { lastBookmarkModified: existingBookmarkModified } =
-        BaseStorageHandler.getProgressMetadata(file.name);
-
-      if (
-        existingBookmarkModified &&
-        lastBookmarkModified &&
-        (existingBookmarkModified || 0) >= (lastBookmarkModified || 0)
-      ) {
-        return;
-      }
-    }
-
     await this.writeFile(
       rootDirectory,
       filename,
@@ -327,6 +392,51 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     );
 
     this.addBookCard(this.currentContext.title, { lastBookmarkModified, progress });
+  }
+
+  async saveStatistics(statistics: BooksDbStatistic[], lastStatisticModified: number) {
+    const isMerge = this.statisticsMergeMode === MergeMode.MERGE;
+    const { file, files, rootDirectory } = await this.getExternalFile('statistics_');
+
+    let statisticsToStore: BooksDbStatistic[] = statistics;
+    let newStatisticModified = lastStatisticModified;
+
+    if (isMerge) {
+      let existingData = [];
+
+      if (file) {
+        const existingDataFile = await file.getFile();
+
+        existingData = JSON.parse(await FilesystemStorageHandler.readFileObject(existingDataFile));
+      }
+
+      statisticsToStore = mergeStatistics(
+        statistics,
+        existingData,
+        this.saveBehavior === ReplicationSaveBehavior.NewOnly
+      );
+    }
+
+    ({ statisticsToStore, newStatisticModified } = updateStatisticToStore(
+      statisticsToStore,
+      newStatisticModified
+    ));
+
+    const filename = BaseStorageHandler.getStatisticsFileName(
+      statisticsToStore,
+      newStatisticModified
+    );
+
+    await this.writeFile(
+      rootDirectory,
+      filename,
+      JSON.stringify(statisticsToStore),
+      files,
+      file,
+      0.6
+    );
+
+    this.addBookCard(this.currentContext.title, {});
   }
 
   async saveCover(data: Blob | undefined) {
@@ -346,6 +456,48 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     if (this.titleToBookCard.has(this.currentContext.title)) {
       this.addBookCard(this.currentContext.title, { imagePath: data });
     }
+  }
+
+  async saveReadingGoals(readingGoals: BooksDbReadingGoal[], lastGoalModified: number) {
+    const isMerge = this.readingGoalsMergeMode === MergeMode.MERGE;
+    const { file, rootDirectory } = await this.getRootFile(
+      BaseStorageHandler.readingGoalsFilePrefix,
+      0.4
+    );
+
+    let readingGoalsToStore: BooksDbReadingGoal[] = readingGoals;
+    let newReadingGoalModified = lastGoalModified;
+
+    if (isMerge) {
+      let existingData = [];
+
+      if (file) {
+        const existingDataFile = await file.getFile();
+
+        existingData = JSON.parse(await FilesystemStorageHandler.readFileObject(existingDataFile));
+      }
+
+      ({ readingGoalsToStore, newReadingGoalModified } = mergeReadingGoals(
+        readingGoals,
+        existingData,
+        this.saveBehavior === ReplicationSaveBehavior.NewOnly,
+        lastGoalModified
+      ));
+    }
+
+    readingGoalsToStore.sort(readingGoalSortFunction);
+
+    const filename = BaseStorageHandler.getReadingGoalsFileName(newReadingGoalModified);
+
+    await this.writeFile(
+      rootDirectory,
+      filename,
+      JSON.stringify(readingGoalsToStore),
+      [],
+      file,
+      0.6,
+      BaseStorageHandler.readingGoalsFilePrefix
+    );
   }
 
   async deleteBookData(booksToDelete: string[], cancelSignal: AbortSignal) {
@@ -546,6 +698,17 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     return { file, files, rootDirectory };
   }
 
+  private async getRootFile(fileIdentifier: string, progressBase = 1) {
+    const progressPerStep = progressBase / 2;
+    const rootDirectory = await this.ensureRoot();
+
+    BaseStorageHandler.reportProgress(progressPerStep);
+
+    await this.setRootFiles(rootDirectory);
+
+    return { file: this.rootFileHandles.get(fileIdentifier), rootDirectory };
+  }
+
   private async getExternalFiles(
     rootHandle: FileSystemDirectoryHandle
   ): Promise<FileSystemFileHandle[]> {
@@ -567,18 +730,44 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     return this.titleToFiles.get(this.currentContext.title) || [];
   }
 
+  private async setRootFiles(rootHandle: FileSystemDirectoryHandle) {
+    if ((!this.cacheStorageData || !this.rootFileListFetched) && !this.rootFiles.size) {
+      const files = (await FilesystemStorageHandler.list(rootHandle)) as FileSystemFileHandle[];
+
+      for (let index = 0, { length } = files; index < length; index += 1) {
+        const file = files[index];
+
+        for (
+          let index2 = 0, { length: length2 } = this.validRootFiles;
+          index2 < length2;
+          index2 += 1
+        ) {
+          const validRootFile = this.validRootFiles[index2];
+
+          if (file.name.startsWith(validRootFile)) {
+            this.rootFileHandles.set(validRootFile, file);
+          }
+        }
+      }
+
+      this.rootFileListFetched = true;
+    }
+  }
+
   private async writeFile(
     rootDirectory: FileSystemDirectoryHandle,
     filename: string,
     data: any,
     files: FileSystemFileHandle[],
     file: FileSystemFileHandle | undefined,
-    progressBase = 0.4
+    progressBase = 0.4,
+    rootFilePrefix?: string
   ) {
     const progressPerStep = progressBase / 2;
-    const directory =
-      this.titleToDirectory.get(this.currentContext.title) ||
-      (await rootDirectory.getDirectoryHandle(this.sanitizedTitle, { create: true }));
+    const directory = rootFilePrefix
+      ? rootDirectory
+      : this.titleToDirectory.get(this.currentContext.title) ||
+        (await rootDirectory.getDirectoryHandle(this.sanitizedTitle, { create: true }));
     const savedFile = await directory.getFileHandle(filename, { create: true });
     const writer = await savedFile.createWritable();
 
@@ -592,18 +781,23 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
         await directory.removeEntry(file.name);
       }
 
-      const titleFiles = files.filter((entry) => entry.name !== file.name);
+      if (!rootFilePrefix) {
+        const titleFiles = files.filter((entry) => entry.name !== file.name);
+        titleFiles.push(savedFile);
 
-      titleFiles.push(savedFile);
-
-      this.titleToFiles.set(this.currentContext.title, titleFiles);
-    } else {
+        this.titleToFiles.set(this.currentContext.title, titleFiles);
+      }
+    } else if (!rootFilePrefix) {
       files.push(savedFile);
 
       this.titleToFiles.set(this.currentContext.title, files);
     }
 
-    this.titleToDirectory.set(this.currentContext.title, directory);
+    if (rootFilePrefix) {
+      this.rootFileHandles.set(rootFilePrefix, savedFile);
+    } else {
+      this.titleToDirectory.set(this.currentContext.title, directory);
+    }
 
     BaseStorageHandler.reportProgress(progressPerStep);
   }
@@ -631,7 +825,7 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     while (!entry.done) {
       if (entry.value.kind === 'directory' && listDirectories) {
         entries.push(entry.value);
-      } else if (entry.value.kind === 'file') {
+      } else if (entry.value.kind === 'file' && !listDirectories) {
         entries.push(entry.value);
       }
 

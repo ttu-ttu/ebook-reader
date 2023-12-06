@@ -1,14 +1,17 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { popovers } from '$lib/components/popover/popover';
+  import { CLOSE_POPOVER } from '$lib/data/events';
   import { clickOutside } from '$lib/functions/use-click-outside';
   import type { Instance, Placement } from '@popperjs/core';
   import flip from '@popperjs/core/lib/modifiers/flip';
   import offset from '@popperjs/core/lib/modifiers/offset';
   import { createPopper } from '@popperjs/core/lib/popper-lite';
-  import { tick } from 'svelte';
-  import { popovers } from './popover';
+  import { createEventDispatcher, tick } from 'svelte';
 
   export let contentText = '';
+  export let containerStyles = '';
+  export let innerContainerStyles = '';
   export let contentStyles = 'padding: 0';
   export let eventType = 'click';
   export let fallbackPlacements = ['left', 'bottom', 'right'];
@@ -16,6 +19,10 @@
   export let singlePopover = true;
   export let xOffset = 0;
   export let yOffset = 10;
+
+  const dispatch = createEventDispatcher<{
+    open: void;
+  }>();
 
   let contentElement: HTMLElement;
   let iconElement: HTMLElement;
@@ -32,7 +39,7 @@
     isOpen = false;
   }
 
-  export async function toggleOpen() {
+  export async function toggleOpen(referenceElement?: HTMLElement | Event) {
     if (isOpen) {
       popovers.remove(id);
     } else if (singlePopover) {
@@ -45,10 +52,15 @@
     await tick();
 
     if (isOpen && instance) {
+      instance.state.elements.reference = getTargetElement(referenceElement);
       instance.state.elements.popper = popoverElement;
-      instance.update();
+      await instance.update().catch(() => {
+        // no-op
+      });
+      await tick();
+      dispatch('open');
     } else if (isOpen) {
-      instance = createPopper($$slots.icon ? iconElement : contentElement, popoverElement, {
+      instance = createPopper(getTargetElement(referenceElement), popoverElement, {
         placement,
         modifiers: [
           flip,
@@ -67,6 +79,9 @@
           }
         ]
       });
+
+      await tick();
+      dispatch('open');
     }
   }
 
@@ -100,10 +115,36 @@
       }
     };
   }
+
+  function externalClose(node: HTMLElement) {
+    node.addEventListener(CLOSE_POPOVER, toggleOpen, false);
+
+    return {
+      destroy() {
+        node.removeEventListener(CLOSE_POPOVER, toggleOpen, false);
+      }
+    };
+  }
+
+  function getTargetElement(referenceElement?: HTMLElement | Event) {
+    let targetElement;
+
+    if (referenceElement instanceof HTMLElement) {
+      targetElement = referenceElement;
+    } else {
+      targetElement = $$slots.icon ? iconElement : contentElement;
+    }
+
+    return targetElement;
+  }
 </script>
 
-<div data-popover class="flex items-center">
-  <div use:conditionalClickHandlerAndClass={!$$slots.icon} bind:this={contentElement}>
+<div data-popover class="flex items-center" style={containerStyles}>
+  <div
+    style={innerContainerStyles}
+    use:conditionalClickHandlerAndClass={!$$slots.icon}
+    bind:this={contentElement}
+  >
     <slot />
   </div>
   <div use:conditionalClickHandlerAndClass={$$slots.icon} bind:this={iconElement}>
@@ -120,6 +161,7 @@
   >
     <div
       style={contentStyles}
+      use:externalClose
       use:clickOutside={({ target }) => {
         if (!(target instanceof Element && target.closest('[data-popover]'))) {
           toggleOpen();

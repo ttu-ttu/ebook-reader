@@ -7,7 +7,9 @@
 </script>
 
 <div
-  class="cursor-pointer border py-4 text-center hover:border hover:border-current"
+  tabindex="0"
+  role="button"
+  class="border py-4 text-center hover:border hover:border-current"
   class:border-transparent={!selected}
   class:border-current={selected}
   class:opacity-5={disabled}

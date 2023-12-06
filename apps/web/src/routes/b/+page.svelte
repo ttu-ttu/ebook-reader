@@ -7,6 +7,7 @@
     fromEvent,
     map,
     merge,
+    NEVER,
     of,
     share,
     shareReplay,
@@ -23,7 +24,7 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { faCloudBolt, faSpinner } from '@fortawesome/free-solid-svg-icons';
+  import { faClock, faCloudBolt, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import BookReader from '$lib/components/book-reader/book-reader.svelte';
   import type {
     AutoScroller,
@@ -53,7 +54,6 @@
     verticalMode$,
     writingMode$,
     viewMode$,
-    customReadingPointEnabled$,
     selectionToBookmarkEnabled$,
     lineHeight$,
     syncTarget$,
@@ -64,11 +64,27 @@
     confirmClose$,
     verticalCustomReadingPosition$,
     horizontalCustomReadingPosition$,
+    customReadingPointEnabled$,
+    statisticsEnabled$,
+    openTrackerOnCompletion$,
+    addCharactersOnCompletion$,
+    statisticsMergeMode$,
     isOnline$,
     manualBookmark$,
-    customThemes$
+    customThemes$,
+    overwriteBookCompletion$,
+    startDayHoursForTracker$,
+    readingGoalsMergeMode$,
+    pauseTrackerOnCustomPointChange$
   } from '$lib/data/store';
+  import BookCompletionConfetti from '$lib/components/book-reader/book-completion-confetti/book-completion-confetti.svelte';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import {
+    getDefaultStatistic,
+    isTrackerMenuOpen$,
+    isTrackerPaused$
+  } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
+  import BookReadingTracker from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker.svelte';
   import {
     getChapterData,
     nextChapter$,
@@ -77,17 +93,22 @@
     tocIsOpen$
   } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
+  import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
+  import { preFilteredTitlesForStatistics$ } from '$lib/components/statistics/statistics-types';
   import type {
     BooksDbBookData,
-    BooksDbBookmarkData
+    BooksDbBookmarkData,
+    BooksDbStatistic
   } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
   import { pagePath } from '$lib/data/env';
+  import { PAGE_CHANGE } from '$lib/data/events';
   import { fullscreenManager } from '$lib/data/fullscreen-manager';
   import { logger } from '$lib/data/logger';
+  import { MergeMode } from '$lib/data/merge-mode';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
-  import type { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
+  import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
   import type { BrowserStorageHandler } from '$lib/data/storage/handler/browser-handler';
   import {
     StorageDataType,
@@ -100,18 +121,26 @@
   import loadBookData from '$lib/functions/book-data-loader/load-book-data';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
-  import { AutoReplicationType } from '$lib/functions/replication/replication-options';
+  import {
+    AutoReplicationType,
+    ReplicationSaveBehavior
+  } from '$lib/functions/replication/replication-options';
   import { replicateData } from '$lib/functions/replication/replicator';
   import { readableToObservable } from '$lib/functions/rxjs/readable-to-observable';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { takeWhenBrowser } from '$lib/functions/rxjs/take-when-browser';
   import { tapDom } from '$lib/functions/rxjs/tap-dom';
+  import { multiClickHandler } from '$lib/functions/multi-click-handler';
+  import {
+    executeReplicate$,
+    type ReplicationContext
+  } from '$lib/functions/replication/replication-progress';
+  import { getDateKey } from '$lib/functions/statistic-util';
   import { clickOutside } from '$lib/functions/use-click-outside';
   import { dummyFn, isMobile$ } from '$lib/functions/utils';
   import { onKeydownReader } from './on-keydown-reader';
   import { tick } from 'svelte';
   import Fa from 'svelte-fa';
-  import { executeReplicate$ } from '$lib/functions/replication/replication-progress';
   import {
     clearRange,
     getParagraphToPoint,
@@ -149,6 +178,15 @@
   let isReplicating = false;
   let storedExploredCharacter = 0;
   let hasBookmarkData = false;
+  let blockDataUpdates = false;
+  let trackerElm: BookReadingTracker;
+  let showTrackerIcon = false;
+  let wasTrackerPaused = true;
+  let frozenPosition = -1;
+  let skipFirstFreezeChange = false;
+  let bookCompleted = false;
+  let confettiWidthModifier = 36;
+  let confettiMaxRuns = 0;
 
   const autoHideHeader$ = timer(2500).pipe(
     tap(() => (showHeader = false)),
@@ -171,7 +209,9 @@
           undefined,
           true,
           $cacheStorageData$,
-          $replicationSaveBehavior$
+          $replicationSaveBehavior$,
+          $statisticsMergeMode$,
+          $readingGoalsMergeMode$
         );
 
         localStorageHandler.startContext({ id, title: '' });
@@ -181,11 +221,13 @@
           return bookData;
         }
 
-        localStorageHandler.startContext({
+        const currentContext = {
           id: bookData.id,
           title: bookData.title,
           imagePath: bookData.coverImage
-        });
+        };
+
+        localStorageHandler.startContext(currentContext);
 
         if (bookData.storageSource) {
           externalStorageHandler = await getStorageHandlerByName(bookData.storageSource, true);
@@ -196,10 +238,19 @@
         bookData.lastBookOpen = new Date().getTime();
 
         await localStorageHandler.updateLastRead(bookData);
+        await syncDownData(externalStorageHandler, currentContext);
+
+        if (!$statisticsEnabled$) {
+          const wasNew = (
+            await database.setFirstBookRead(currentContext.title, $startDayHoursForTracker$)
+          )[1];
+
+          if (wasNew) {
+            scheduleReplication(StorageDataType.STATISTICS);
+          }
+        }
 
         bookData = await saveExternalLastRead(externalStorageHandler, bookData);
-
-        await syncDownData(externalStorageHandler);
       } catch (error: any) {
         const message = `Error loading book: ${error.message}`;
 
@@ -224,6 +275,8 @@
           window,
           true,
           $replicationSaveBehavior$,
+          $statisticsMergeMode$,
+          $readingGoalsMergeMode$,
           $cacheStorageData$,
           false,
           bookData.storageSource || $syncTarget$
@@ -345,14 +398,16 @@
   }
 
   $: if (browser && bookCharCount) {
-    document.dispatchEvent(new CustomEvent('ttsu:page.change', { detail: { exploredCharCount } }));
+    document.dispatchEvent(new CustomEvent(PAGE_CHANGE, { detail: { exploredCharCount } }));
   }
 
   $: if (browser) {
-    document.dispatchEvent(new CustomEvent('ttsu:page.change', { detail: { bookCharCount } }));
+    document.dispatchEvent(new CustomEvent(PAGE_CHANGE, { detail: { bookCharCount } }));
   }
 
   $: if (showCustomReadingPoint) {
+    pauseTracker();
+
     pulseElement(customReadingPointRange?.endContainer?.parentElement, 'add', 1);
 
     fromEvent(document, 'click')
@@ -360,7 +415,16 @@
       .subscribe(() => {
         showCustomReadingPoint = false;
         pulseElement(customReadingPointRange?.endContainer?.parentElement, 'remove', 1);
+        restartTrackerAfterCharacterChangeOrTime(1);
       });
+  }
+
+  $: if (frozenPosition !== -1 && exploredCharCount >= frozenPosition) {
+    if (skipFirstFreezeChange) {
+      skipFirstFreezeChange = false;
+    } else {
+      frozenPosition = -1;
+    }
   }
 
   $: isPaginated = $viewMode$ === ViewMode.Paginated;
@@ -388,6 +452,199 @@
     }
 
     return event;
+  }
+
+  function trackerSingleClickHandler() {
+    if (!statisticsEnabled$) {
+      return;
+    }
+
+    wasTrackerPaused = $isTrackerPaused$;
+    isTrackerPaused$.next(true);
+    isTrackerMenuOpen$.next(true);
+  }
+
+  function trackerDblClickHandler() {
+    if (!statisticsEnabled$) {
+      return;
+    }
+
+    dialogManager.dialogs$.next([]);
+    wasTrackerPaused = !$isTrackerPaused$;
+    isTrackerPaused$.next(wasTrackerPaused);
+  }
+
+  async function completeBook() {
+    if (!$rawBookData$) {
+      return;
+    }
+
+    const wasAutoscrollerEnabled = autoScroller?.wasAutoScrollerEnabled$.getValue();
+    const wasTrackerPausedBefore = $statisticsEnabled$ ? $isTrackerPaused$ : true;
+
+    showHeader = false;
+    autoScroller?.off();
+
+    if ($statisticsEnabled$) {
+      wasTrackerPaused = true;
+      isTrackerPaused$.next(true);
+    }
+
+    const diffToComplete =
+      $statisticsEnabled$ && $addCharactersOnCompletion$
+        ? Math.max(0, bookCharCount - exploredCharCount)
+        : 0;
+    const wasCanceled = await new Promise((resolver) => {
+      dialogManager.dialogs$.next([
+        {
+          component: ConfirmDialog,
+          props: {
+            dialogHeader: 'Complete Book',
+            dialogMessage: `Would you like to complete this Book${
+              diffToComplete ? ` and capture ${diffToComplete} characters read` : ''
+            }?`,
+            resolver
+          }
+        }
+      ]);
+    });
+
+    if (wasCanceled) {
+      if ($statisticsEnabled$ && !wasTrackerPausedBefore) {
+        wasTrackerPaused = false;
+        $isTrackerPaused$ = false;
+      }
+
+      if (wasAutoscrollerEnabled) {
+        autoScroller?.toggle();
+      }
+
+      return;
+    }
+
+    dialogManager.dialogs$.next([
+      {
+        component: '<div/>',
+        disableCloseOnClick: true
+      }
+    ]);
+
+    try {
+      if (diffToComplete) {
+        const [hadError] = await trackerElm.processStatistics(diffToComplete);
+
+        if (hadError) {
+          throw new Error('Character Update failed');
+        }
+      }
+
+      const finishedStatistic = await database.getStatisticForCompletedBook($rawBookData$.title);
+      const todayKey = getDateKey($startDayHoursForTracker$);
+      const statisticsUntilToday = await database.getStatisticsUntilDate(
+        $rawBookData$.title,
+        todayKey
+      );
+      const todayStatistic =
+        statisticsUntilToday.find((statistic) => statistic.dateKey === todayKey) ||
+        getDefaultStatistic($rawBookData$.title, todayKey);
+      const statisticsToStore: BooksDbStatistic[] = [];
+      const lastStatisticModified = Date.now();
+
+      todayStatistic.lastStatisticModified = lastStatisticModified;
+      todayStatistic.completedBook = 1;
+      todayStatistic.completedData = {
+        ...{ dateKey: todayKey },
+        ...BaseStorageHandler.getStatisticsMetadata(
+          BaseStorageHandler.getStatisticsFileName(
+            statisticsUntilToday,
+            todayStatistic.lastStatisticModified
+          )
+        )
+      };
+
+      let updateFinishedStatistic = false;
+
+      if (!finishedStatistic) {
+        statisticsToStore.push(todayStatistic);
+      } else if (
+        $overwriteBookCompletion$ &&
+        finishedStatistic.dateKey !== todayStatistic.dateKey
+      ) {
+        delete finishedStatistic.completedBook;
+        delete finishedStatistic.completedData;
+        finishedStatistic.lastStatisticModified = lastStatisticModified;
+        statisticsToStore.push(todayStatistic, finishedStatistic);
+        updateFinishedStatistic = true;
+      } else if ($overwriteBookCompletion$) {
+        statisticsToStore.push(todayStatistic);
+      }
+
+      if (statisticsToStore.length) {
+        await database.storeStatistics(
+          $rawBookData$.title,
+          statisticsToStore,
+          ReplicationSaveBehavior.Overwrite,
+          MergeMode.LOCAL,
+          lastStatisticModified
+        );
+
+        trackerElm?.updateCompletedBook(
+          todayStatistic,
+          updateFinishedStatistic ? finishedStatistic : undefined
+        );
+
+        scheduleReplication(StorageDataType.STATISTICS);
+      }
+
+      if ($statisticsEnabled$ && $openTrackerOnCompletion$) {
+        confettiWidthModifier = 36;
+        confettiMaxRuns = 0;
+        bookCompleted = window.matchMedia('(min-width: 900px)').matches;
+        isTrackerMenuOpen$.next(true);
+      } else {
+        dialogManager.dialogs$.next([]);
+        confettiWidthModifier = 0;
+        confettiMaxRuns = 3;
+        bookCompleted = true;
+
+        merge(fromEvent(document, 'pointerup'), timer(10000))
+          .pipe(take(1))
+          .subscribe(() => {
+            bookCompleted = false;
+          });
+      }
+    } catch ({ message }: any) {
+      dialogManager.dialogs$.next([
+        {
+          component: MessageDialog,
+          props: {
+            title: 'Error',
+            message: `Error completing Book: ${message}`
+          }
+        }
+      ]);
+    }
+  }
+
+  function copyCurrentProgress(currentProgress: string) {
+    try {
+      navigator.clipboard.writeText(currentProgress);
+    } catch (error: any) {
+      logger.error(`Error writing Progress to Clipboard: ${error.message}`);
+    }
+  }
+
+  function freezeTrackerPosition() {
+    if (!$statisticsEnabled$) {
+      return;
+    }
+
+    if (frozenPosition > -1) {
+      frozenPosition = -1;
+    } else {
+      skipFirstFreezeChange = true;
+      frozenPosition = exploredCharCount;
+    }
   }
 
   async function getStorageHandlerByName(storageSourceName: string, throwIfNotFound = false) {
@@ -421,7 +678,9 @@
         storageSourceName,
         true,
         $cacheStorageData$,
-        $replicationSaveBehavior$
+        $replicationSaveBehavior$,
+        $statisticsMergeMode$,
+        $readingGoalsMergeMode$
       );
     }
     if (storageSourceName === StorageSourceDefault.ONEDRIVE_DEFAULT) {
@@ -446,7 +705,9 @@
         storageSourceName,
         true,
         $cacheStorageData$,
-        $replicationSaveBehavior$
+        $replicationSaveBehavior$,
+        $statisticsMergeMode$,
+        $readingGoalsMergeMode$
       );
     }
     if (storageSourceName) {
@@ -475,7 +736,9 @@
           storageSourceName,
           true,
           $cacheStorageData$,
-          $replicationSaveBehavior$
+          $replicationSaveBehavior$,
+          $statisticsMergeMode$,
+          $readingGoalsMergeMode$
         );
       }
       if (throwIfNotFound) {
@@ -507,16 +770,6 @@
     if (!storageHandler) {
       return localBookData;
     }
-
-    if (!$cacheStorageData$) {
-      storageHandler.clearData(false);
-    }
-
-    storageHandler.startContext({
-      id: localBookData.id,
-      title: localBookData.title,
-      imagePath: localBookData.coverImage || ''
-    });
 
     // eslint-disable-next-line prefer-const
     let { id, ...bookData } = localBookData;
@@ -559,19 +812,26 @@
     return dataToReturn;
   }
 
-  async function syncDownData(storageHandler: BaseStorageHandler | undefined) {
+  async function syncDownData(
+    storageHandler: BaseStorageHandler | undefined,
+    context: ReplicationContext
+  ) {
     if (
       localStorageHandler &&
       storageHandler &&
       ($autoReplication$ === AutoReplicationType.Down ||
         $autoReplication$ === AutoReplicationType.All)
     ) {
-      const externalProgress = await storageHandler.getProgress();
+      const error = await replicateData(
+        storageHandler,
+        localStorageHandler,
+        false,
+        [context],
+        [StorageDataType.PROGRESS, StorageDataType.STATISTICS, StorageDataType.READING_GOALS]
+      );
 
-      if (externalProgress && !(externalProgress instanceof File)) {
-        await localStorageHandler.saveProgress(externalProgress);
-
-        storedExploredCharacter = externalProgress.exploredCharCount || 0;
+      if (error) {
+        throw new Error(error);
       }
     }
   }
@@ -591,7 +851,9 @@
       pageManager,
       $verticalMode$,
       changeChapter,
-      handleSetCustomReadingPoint
+      handleSetCustomReadingPoint,
+      trackerDblClickHandler,
+      freezeTrackerPosition
     );
 
     if (!result) return;
@@ -608,7 +870,7 @@
     return bookId;
   }
 
-  async function bookmarkPage(scheduleExport: boolean | CustomEvent) {
+  async function bookmarkPage() {
     const bookId = getBookIdSync();
     if (!bookId || !bookmarkManager) return;
 
@@ -633,26 +895,20 @@
       data = bookmarkManager.formatBookmarkData(bookId, customReadingPointScrollOffset);
     }
 
-    await localStorageHandler.saveProgress(data);
-
-    if (upSyncEnabled) {
-      const toReplicate = isReplicating ? dataToReplicateQueue : dataToReplicate;
-
-      if (!toReplicate.includes(StorageDataType.PROGRESS)) {
-        toReplicate.push(StorageDataType.PROGRESS);
-      }
-
-      if (scheduleExport) {
-        executeReplicate$.next();
-      }
-    }
+    await database.putBookmark(data);
 
     bookmarkData = Promise.resolve(data);
+
+    scheduleReplication(StorageDataType.PROGRESS);
   }
 
   async function scrollToBookmark() {
     const data = await bookmarkData;
     if (!data || !bookmarkManager) return;
+
+    if (data.exploredCharCount !== exploredCharCount) {
+      pauseTracker(true);
+    }
 
     bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
   }
@@ -695,7 +951,17 @@
       return;
     }
 
-    nextChapter$.next(mainChapters[currentChapterIndex + offset].reference);
+    const nextChapter = mainChapters[currentChapterIndex + offset];
+
+    if (!nextChapter) {
+      return;
+    }
+
+    if (nextChapter.startCharacter !== exploredCharCount) {
+      pauseTracker(true);
+    }
+
+    nextChapter$.next(nextChapter.reference);
   }
 
   async function executeReplication(isSilent = true) {
@@ -717,6 +983,8 @@
       window,
       false,
       $replicationSaveBehavior$,
+      $statisticsMergeMode$,
+      $readingGoalsMergeMode$,
       $cacheStorageData$,
       !isSilent,
       currentHandlerStorageSource
@@ -740,6 +1008,8 @@
       window,
       true,
       $replicationSaveBehavior$,
+      $statisticsMergeMode$,
+      $readingGoalsMergeMode$,
       $cacheStorageData$,
       false,
       currentHandlerStorageSource
@@ -803,17 +1073,61 @@
   }
 
   async function leaveReader(routeId: string, deleteLastItem = true) {
-    openActionBackdrop();
-
     let message;
 
     try {
+      blockDataUpdates = true;
+
+      await tick();
+
+      autoScroller?.off();
+      wasTrackerPaused = true;
+      isTrackerPaused$.next(true);
+
+      if ($confirmClose$ && storedExploredCharacter !== exploredCharCount) {
+        const wasCanceled = await new Promise((resolver) => {
+          dialogManager.dialogs$.next([
+            {
+              component: ConfirmDialog,
+              props: {
+                dialogHeader: 'Confirm Exit',
+                dialogMessage: 'Your current location was not bookmarked. Continue leaving?',
+                resolver
+              },
+
+              disableCloseOnClick: true
+            }
+          ]);
+        });
+
+        if (wasCanceled) {
+          blockDataUpdates = false;
+          return;
+        }
+
+        await tick();
+      }
+
+      openActionBackdrop();
+
       if (deleteLastItem) {
         await database.deleteLastItem();
       }
 
       if (!$manualBookmark$) {
-        await bookmarkPage(false);
+        await bookmarkPage();
+      }
+
+      if ($statisticsEnabled$ && trackerElm) {
+        const [hadError, updated] = await trackerElm.flushUpdates(true);
+
+        if (hadError) {
+          throw new Error('Error updating Statistics');
+        }
+
+        if (updated) {
+          scheduleReplication(StorageDataType.STATISTICS);
+        }
       }
 
       dialogManager.dialogs$.next([]);
@@ -826,7 +1140,7 @@
     }
 
     if (message) {
-      logger.warn(message);
+      logger.error(message);
 
       dialogManager.dialogs$.next([
         {
@@ -844,10 +1158,20 @@
   }
 
   function handleSetCustomReadingPoint() {
+    if (!$customReadingPointEnabled$ && !isPaginated) {
+      return;
+    }
+
     const contentEl = document.querySelector('.book-content');
 
     if (!contentEl) {
       return;
+    }
+
+    autoScroller?.off();
+
+    if ($pauseTrackerOnCustomPointChange$) {
+      pauseTracker();
     }
 
     if (isPaginated) {
@@ -914,6 +1238,10 @@
 
               customReadingPoint = newPercentage;
             }
+
+            if ($pauseTrackerOnCustomPointChange$) {
+              restartTrackerAfterCharacterChangeOrTime(1000);
+            }
           });
         } else {
           const insideXBound =
@@ -932,6 +1260,48 @@
         }
       });
   }
+
+  function pauseTracker(restartAfterCharacterChange = false) {
+    if ($statisticsEnabled$ && !$isTrackerPaused$) {
+      wasTrackerPaused = false;
+      $isTrackerPaused$ = true;
+
+      if (restartAfterCharacterChange) {
+        restartTrackerAfterCharacterChangeOrTime();
+      }
+    }
+  }
+
+  function restartTrackerAfterCharacterChangeOrTime(timerAmount = 0) {
+    if (!$statisticsEnabled$ || wasTrackerPaused) {
+      return;
+    }
+
+    merge(fromEvent(document, PAGE_CHANGE), timerAmount ? timer(timerAmount) : NEVER)
+      .pipe(debounceTime(200), take(1))
+      .subscribe(() => {
+        wasTrackerPaused = false;
+        $isTrackerPaused$ = false;
+      });
+  }
+
+  function scheduleReplication(dataType: StorageDataType) {
+    if (upSyncEnabled) {
+      const toReplicate = isReplicating ? dataToReplicateQueue : dataToReplicate;
+
+      if (!toReplicate.includes(dataType)) {
+        toReplicate.push(dataType);
+      }
+
+      if (!isReplicating) {
+        dataToReplicate = [...dataToReplicate];
+      }
+
+      if (!blockDataUpdates) {
+        executeReplicate$.next();
+      }
+    }
+  }
 </script>
 
 <svelte:head>
@@ -949,7 +1319,7 @@
     <BookReaderHeader
       hasChapterData={!!$sectionData$?.length}
       hasCustomReadingPoint={!!(
-        $customReadingPointEnabled$ &&
+        ($customReadingPointEnabled$ || isPaginated) &&
         ((isPaginated && customReadingPointRange) ||
           (!isPaginated && customReadingPointLeft > -1 && customReadingPointTop > -1))
       )}
@@ -958,9 +1328,12 @@
       {hasBookmarkData}
       bind:isBookmarkScreen
       on:tocClick={() => {
+        pauseTracker();
+
         showHeader = false;
         tocIsOpen$.next(true);
       }}
+      on:completeBook={completeBook}
       on:setCustomReadingPoint={handleSetCustomReadingPoint}
       on:showCustomReadingPoint={() => {
         showHeader = false;
@@ -968,6 +1341,10 @@
       }}
       on:resetCustomReadingPoint={() => {
         showHeader = false;
+
+        if ($pauseTrackerOnCustomPointChange$) {
+          pauseTracker();
+        }
 
         if (isPaginated) {
           customReadingPointRange = undefined;
@@ -978,12 +1355,23 @@
           horizontalCustomReadingPosition$.next(0);
           customReadingPoint = 0;
         }
+
+        if ($pauseTrackerOnCustomPointChange$) {
+          restartTrackerAfterCharacterChangeOrTime(1000);
+        }
       }}
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
       on:scrollToBookmarkClick={() => {
         showHeader = false;
         scrollToBookmark();
+      }}
+      on:statisticsClick={() => {
+        if ($rawBookData$) {
+          $preFilteredTitlesForStatistics$ = new Set([$rawBookData$.title]);
+        }
+
+        leaveReader(mergeEntries.STATISTICS.routeId, false);
       }}
       on:settingsClick={() => leaveReader(mergeEntries.SETTINGS.routeId, false)}
       on:domainHintClick={onDomainHintClick}
@@ -992,7 +1380,37 @@
   </div>
 {/if}
 
-{#if $bookData$}
+{#if $bookData$ && $rawBookData$}
+  {#if $statisticsEnabled$}
+    <BookReadingTracker
+      fontColor={$themeOption$.fontColor}
+      backgroundColor={$backgroundColor$}
+      bookTitle={$rawBookData$.title}
+      {frozenPosition}
+      {exploredCharCount}
+      {bookCharCount}
+      {autoScroller}
+      {blockDataUpdates}
+      bind:wasTrackerPaused
+      bind:this={trackerElm}
+      on:freezeCurrentLocation={freezeTrackerPosition}
+      on:statisticsSaved={() => {
+        if (!blockDataUpdates) {
+          scheduleReplication(StorageDataType.STATISTICS);
+        }
+      }}
+      on:trackerAvailable={() => (showTrackerIcon = true)}
+      on:trackerMenuClosed={() => {
+        if (!wasTrackerPaused) {
+          isTrackerPaused$.next(false);
+        }
+
+        isTrackerMenuOpen$.next(false);
+
+        bookCompleted = false;
+      }}
+    />
+  {/if}
   <StyleSheetRenderer styleSheet={$bookData$.styleSheet} />
   <BookReader
     htmlContent={$bookData$.htmlContent}
@@ -1042,15 +1460,25 @@
   {$leaveIfBookMissing$ ?? ''}
 {/if}
 
-{#if $tocIsOpen$}
+{#if $tocIsOpen$ && $sectionData$}
   <div
     class="writing-horizontal-tb fixed top-0 left-0 z-[60] flex h-full w-full max-w-xl flex-col justify-between"
     style:color={$themeOption$?.fontColor}
     style:background-color={$backgroundColor$}
     in:fly|local={{ x: -100, duration: 100, easing: quintInOut }}
-    use:clickOutside={() => tocIsOpen$.next(false)}
+    use:clickOutside={() => {
+      if ($statisticsEnabled$ && !wasTrackerPaused) {
+        isTrackerPaused$.next(false);
+      }
+      tocIsOpen$.next(false);
+    }}
   >
-    <BookToc sectionData={$sectionData$} verticalMode={$verticalMode$} {exploredCharCount} />
+    <BookToc
+      sectionData={$sectionData$}
+      verticalMode={$verticalMode$}
+      {exploredCharCount}
+      {wasTrackerPaused}
+    />
   </div>
 {/if}
 
@@ -1072,22 +1500,44 @@
 {/if}
 
 <div
-  role="button"
   tabindex="0"
+  role="button"
   class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full items-center justify-between text-xs leading-none"
   style:color={$themeOption$?.tooltipTextFontColor}
   on:click={() => (showFooter = !showFooter)}
   on:keyup={dummyFn}
 >
-  <div class="h-full">
-    {#if dataToReplicate.length}
+  <div class="flex h-full">
+    {#if showTrackerIcon}
       <div
         role="button"
+        class="flex h-full w-8 items-center justify-center text-sm sm:text-lg"
+        class:text-red-500={$isTrackerPaused$}
+        class:animate-pulse={$isTrackerPaused$ || frozenPosition > -1}
+        use:multiClickHandler={[trackerSingleClickHandler, trackerDblClickHandler]}
+      >
+        <Fa icon={faClock} />
+      </div>
+    {/if}
+    {#if dataToReplicate.length}
+      <div
         tabindex="0"
-        class="flex h-full w-8 items-center justify-center text-lg"
+        role="button"
+        class="flex h-full w-8 items-center justify-center text-sm sm:text-lg"
         class:text-red-500={externalStorageErrors > 1}
         class:animate-pulse={externalStorageErrors > 1 || isReplicating}
-        on:click|stopPropagation={() => executeReplication(false)}
+        on:click|stopPropagation={() => {
+          if ($statisticsEnabled$) {
+            wasTrackerPaused = $isTrackerPaused$;
+            isTrackerPaused$.next(true);
+          }
+
+          executeReplication(false).finally(() => {
+            if ($statisticsEnabled$ && !wasTrackerPaused) {
+              isTrackerPaused$.next(false);
+            }
+          });
+        }}
         on:keyup={dummyFn}
       >
         <Fa icon={faCloudBolt} />
@@ -1095,15 +1545,45 @@
     {/if}
   </div>
   {#if showFooter && bookCharCount}
+    {@const currentProgress = `${exploredCharCount} / ${bookCharCount} ${(
+      (exploredCharCount / bookCharCount) *
+      100
+    ).toFixed(2)}%`}
     <div
-      class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none"
+      tabindex="0"
+      role="button"
+      class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none"
       style:color={$themeOption$?.tooltipTextFontColor}
+      on:click|stopPropagation={({ target }) => {
+        copyCurrentProgress(currentProgress);
+
+        if (target instanceof HTMLElement) {
+          pulseElement(target, 'add', 0.5, 500);
+        }
+      }}
+      on:keyup={dummyFn}
     >
-      {exploredCharCount} / {bookCharCount} ({((exploredCharCount / bookCharCount) * 100).toFixed(
-        2
-      )}%)
+      {currentProgress}
     </div>
   {/if}
 </div>
 
-<svelte:window on:keydown={onKeydown} on:beforeunload={handleUnload} />
+{#if bookCompleted}
+  <BookCompletionConfetti {confettiWidthModifier} {confettiMaxRuns} {window} />
+{/if}
+
+<svelte:window
+  on:keydown={onKeydown}
+  on:beforeunload={handleUnload}
+  on:resize={() => {
+    if ($statisticsEnabled$ && !$isTrackerPaused$) {
+      pauseTracker();
+
+      merge(fromEvent(document, PAGE_CHANGE), timer(1000))
+        .pipe(debounceTime(1000), take(1))
+        .subscribe(() => {
+          restartTrackerAfterCharacterChangeOrTime(1000);
+        });
+    }
+  }}
+/>

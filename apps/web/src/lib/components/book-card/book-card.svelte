@@ -62,7 +62,7 @@
   $: alt = `${title}_cover`;
 </script>
 
-<div class="aspect-w-2 aspect-h-3 relative cursor-pointer" role="button" on:click on:keyup>
+<div tabindex="0" role="button" class="aspect-w-2 aspect-h-3 relative" on:click on:keyup>
   <div class="inline">
     <div class="h-full w-full text-5xl sm:text-7xl">
       {#if !imageLoadComplete}
@@ -90,7 +90,7 @@
       >
         <span class="line-clamp-3">{title}</span>
       </div>
-      <div class="h-2.5 bg-gray-400	bg-opacity-80">
+      <div class="h-2.5 bg-gray-400 bg-opacity-80">
         <div
           class="h-full rounded bg-gradient-to-b from-red-600 to-red-900"
           style:width="{progress * 100}%"

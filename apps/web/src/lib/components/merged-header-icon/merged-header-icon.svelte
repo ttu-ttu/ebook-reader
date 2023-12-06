@@ -10,7 +10,7 @@
   import { dummyFn } from '$lib/functions/utils';
 
   export let leavePageLink = '';
-  export let items = [mergeEntries.MANAGE, mergeEntries.BUG_REPORT, mergeEntries.SETTINGS];
+  export let items = [mergeEntries.MANAGE, mergeEntries.SETTINGS, mergeEntries.BUG_REPORT];
   export let mergeTo = mergeEntries.MANAGE;
   export let disableRouteNavigation = false;
 
@@ -53,6 +53,8 @@
   <div class="hidden sm:flex">
     {#each actionItems as actionItem (actionItem.label)}
       <div
+        tabindex="0"
+        role="button"
         class={baseIconClasses}
         on:click={() => handleActionMenuItem(actionItem.label)}
         on:keyup={dummyFn}
@@ -61,7 +63,7 @@
       </div>
     {/each}
   </div>
-  <div class="flex sm:hidden ">
+  <div class="flex sm:hidden">
     <Popover
       placement="bottom"
       fallbackPlacements={['bottom-end', 'bottom-start']}
@@ -74,8 +76,9 @@
       <div class="w-40 bg-gray-700 md:w-32" slot="content">
         {#each actionItems as actionItem (actionItem.label)}
           <div
+            tabindex="0"
             role="button"
-            class="cursor-pointer px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
+            class="px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
             on:click={() => handleActionMenuItem(actionItem.label)}
             on:keyup={dummyFn}
           >
