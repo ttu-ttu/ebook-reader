@@ -61,11 +61,11 @@ export class StorageOAuthManager {
 
   private authCloseIntervalTime = 500;
 
-  private authCloseInterval: NodeJS.Timer | undefined;
+  private authCloseInterval: number | undefined;
 
   private authTimeout = 45000;
 
-  private authTimeoutTimer: NodeJS.Timeout | undefined;
+  private authTimeoutTimer: number | undefined;
 
   constructor(type: StorageKey, refreshEndpoint: string) {
     this.storageType = type;
@@ -211,7 +211,7 @@ export class StorageOAuthManager {
     let errorMessage = '';
 
     try {
-      token = await this.waitForAuth();
+      token = await this.waitForAuth(window);
 
       storageOAuthTokens.set(storageSourceName, token);
 
@@ -346,7 +346,7 @@ export class StorageOAuthManager {
       .replace(/=+$/, '');
   }
 
-  private waitForAuth(): Promise<OAuthTokenData> {
+  private waitForAuth(window: Window): Promise<OAuthTokenData> {
     return new Promise((resolve, reject) => {
       if (!this.parentWindow) {
         reject(new Error('Parent window not defined'));
@@ -358,13 +358,13 @@ export class StorageOAuthManager {
       this.rebindedWinHandler = this.winHandler.bind(this);
       this.parentWindow.addEventListener('message', this.rebindedWinHandler, false);
 
-      this.authCloseInterval = setInterval(() => {
+      this.authCloseInterval = window.setInterval(() => {
         if (this.authWindow?.closed) {
           reject(new Error('Window was closed before login'));
         }
       }, this.authCloseIntervalTime);
 
-      this.authTimeoutTimer = setTimeout(() => {
+      this.authTimeoutTimer = window.setTimeout(() => {
         reject(new Error('Login timeout'));
       }, this.authTimeout);
     });
@@ -428,8 +428,8 @@ export class StorageOAuthManager {
   }
 
   private clearAuthData() {
-    clearTimeout(this.authTimeoutTimer as NodeJS.Timeout);
-    clearInterval(this.authCloseInterval as NodeJS.Timer);
+    clearTimeout(this.authTimeoutTimer);
+    clearInterval(this.authCloseInterval);
 
     if (this.parentWindow && this.rebindedWinHandler) {
       this.parentWindow.removeEventListener('message', this.rebindedWinHandler, false);

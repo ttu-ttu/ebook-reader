@@ -6,18 +6,30 @@
 
 import type {
   BooksDbBookData,
-  BooksDbBookmarkData
+  BooksDbBookmarkData,
+  BooksDbReadingGoal,
+  BooksDbStatistic
 } from '$lib/data/database/books-db/versions/books-db';
+import { database, lastReadingGoalsModified$ } from '$lib/data/store';
 
 import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
+import type { MergeMode } from '$lib/data/merge-mode';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
-import { database } from '$lib/data/store';
+import { StorageDataType } from '$lib/data/storage/storage-types';
 
 export class BrowserStorageHandler extends BaseStorageHandler {
-  updateSettings(window: Window, isForBrowser: boolean, saveBehavior: ReplicationSaveBehavior) {
+  updateSettings(
+    window: Window,
+    isForBrowser: boolean,
+    saveBehavior: ReplicationSaveBehavior,
+    statisticsMergeMode: MergeMode,
+    readingGoalsMergeMode: MergeMode
+  ) {
     this.window = window;
     this.isForBrowser = isForBrowser;
     this.saveBehavior = saveBehavior;
+    this.statisticsMergeMode = statisticsMergeMode;
+    this.readingGoalsMergeMode = readingGoalsMergeMode;
   }
 
   async getBookList() {
@@ -96,6 +108,115 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     this.addBookCard(this.currentContext.title, { characters, lastBookModified, lastBookOpen });
   }
 
+  async getFilenameForRecentCheck(fileIdentifier: string) {
+    if (this.saveBehavior === ReplicationSaveBehavior.Overwrite) {
+      BaseStorageHandler.reportProgress();
+      return undefined;
+    }
+
+    let fileName: string | undefined;
+
+    if (fileIdentifier === 'bookdata_') {
+      const book = await database.getDataByTitle(this.currentContext.title);
+
+      fileName = book ? BaseStorageHandler.getBookFileName(book) : undefined;
+    } else if (fileIdentifier === 'progress_') {
+      const progress = await this.getProgress();
+
+      fileName = progress ? BaseStorageHandler.getProgressFileName(progress) : undefined;
+    } else if (fileIdentifier === 'statistics_') {
+      const lastStatisticModifed = await database.getLastModifiedForType(
+        this.currentContext.title,
+        StorageDataType.STATISTICS
+      );
+
+      fileName = lastStatisticModifed
+        ? BaseStorageHandler.getStatisticsFileName([], lastStatisticModifed)
+        : undefined;
+    } else if (fileIdentifier === BaseStorageHandler.readingGoalsFilePrefix) {
+      const lastGoalModified = lastReadingGoalsModified$.getValue();
+
+      fileName = lastGoalModified
+        ? BaseStorageHandler.getReadingGoalsFileName(lastGoalModified)
+        : undefined;
+    }
+
+    BrowserStorageHandler.reportProgress(0.5);
+    BrowserStorageHandler.completeStep();
+
+    return fileName;
+  }
+
+  async isBookPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const book = await database.getDataByTitle(this.currentContext.title);
+
+    BrowserStorageHandler.reportProgress(0.5);
+
+    let isPresentAndUpToDate = false;
+
+    if (book) {
+      const { lastBookModified, lastBookOpen } =
+        BaseStorageHandler.getBookMetadata(referenceFilename);
+      const { lastBookModified: existingBookModified, lastBookOpen: existingBookOpen } = book;
+
+      isPresentAndUpToDate = !!(
+        existingBookModified &&
+        lastBookModified &&
+        existingBookModified >= lastBookModified &&
+        (existingBookOpen || 0) >= (lastBookOpen || 0)
+      );
+    }
+
+    BrowserStorageHandler.reportProgress(0.5);
+    return isPresentAndUpToDate;
+  }
+
+  async isProgressPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const progress = await this.getProgress();
+    const fileName = progress ? BaseStorageHandler.getProgressFileName(progress) : undefined;
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getProgressMetadata,
+      'lastBookmarkModified',
+      referenceFilename,
+      fileName
+    );
+  }
+
+  async areStatisticsPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const existingLastModified = await database.getLastModifiedForType(
+      this.currentContext.title,
+      StorageDataType.STATISTICS
+    );
+    const fileName = existingLastModified
+      ? BaseStorageHandler.getStatisticsFileName([], existingLastModified)
+      : undefined;
+
+    BaseStorageHandler.reportProgress();
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getStatisticsMetadata,
+      'lastStatisticModified',
+      referenceFilename,
+      fileName
+    );
+  }
+
   async getBook() {
     const book = this.currentContext.id
       ? await database.getData(this.currentContext.id)
@@ -115,6 +236,23 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     const progress = dataId ? await database.getBookmark(dataId) : undefined;
 
     return progress;
+  }
+
+  async getStatistics() {
+    const statistics = await database.getStatisticsForBook(this.currentContext.title);
+
+    BaseStorageHandler.reportProgress(0.5);
+
+    const lastStatisticModified = await database.getLastModifiedForType(
+      this.currentContext.title,
+      StorageDataType.STATISTICS
+    );
+
+    if (!lastStatisticModified) {
+      return { statistics: undefined, lastStatisticModified: 0 };
+    }
+
+    return { statistics, lastStatisticModified };
   }
 
   async getCover() {
@@ -176,8 +314,31 @@ export class BrowserStorageHandler extends BaseStorageHandler {
 
       bookmarkData.dataId = dataId;
 
-      await database.putBookmark(bookmarkData, this.saveBehavior);
+      await database.putBookmark(bookmarkData);
     }
+  }
+
+  async saveStatistics(data: BooksDbStatistic[], lastStatisticModified: number) {
+    await database.storeStatistics(
+      this.currentContext.title,
+      data,
+      this.saveBehavior,
+      this.statisticsMergeMode,
+      lastStatisticModified
+    );
+
+    BaseStorageHandler.reportProgress();
+  }
+
+  async saveReadingGoals(data: BooksDbReadingGoal[], lastGoalModified: number) {
+    await database.storeReadingGoals(
+      data,
+      this.saveBehavior,
+      this.readingGoalsMergeMode,
+      lastGoalModified
+    );
+
+    BaseStorageHandler.reportProgress();
   }
 
   saveCover(data: Blob | undefined) {
@@ -190,23 +351,48 @@ export class BrowserStorageHandler extends BaseStorageHandler {
   }
 
   /* eslint-disable class-methods-use-this */
-  getFilenameForRecentCheck() {
-    BrowserStorageHandler.reportProgress();
-    return Promise.resolve(undefined);
+  areReadingGoalsPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return Promise.resolve(false);
+    }
+
+    const existingLastModified = lastReadingGoalsModified$.getValue();
+    const fileName = existingLastModified
+      ? BaseStorageHandler.getReadingGoalsFileName(existingLastModified)
+      : undefined;
+
+    BaseStorageHandler.reportProgress();
+
+    return Promise.resolve(
+      BaseStorageHandler.checkIsPresentAndUpToDate(
+        BaseStorageHandler.getReadingGoalsMetadata,
+        'lastGoalModified',
+        referenceFilename,
+        fileName
+      )
+    );
   }
 
-  isBookPresentAndUpToDate() {
-    BrowserStorageHandler.reportProgress();
-    return Promise.resolve(false);
-  }
+  async getReadingGoals() {
+    const readingGoals = await database.getReadingGoals();
+    const lastGoalModified = lastReadingGoalsModified$.getValue();
 
-  isProgressPresentAndUpToDate() {
-    BrowserStorageHandler.reportProgress();
-    return Promise.resolve(false);
+    BaseStorageHandler.reportProgress();
+
+    if (!lastGoalModified) {
+      return { readingGoals: undefined, lastGoalModified: 0 };
+    }
+
+    return { readingGoals, lastGoalModified };
   }
   /* eslint-enable class-methods-use-this */
 
-  async deleteBookData(booksToDelete: string[], cancelSignal: AbortSignal) {
+  async deleteBookData(
+    booksToDelete: string[],
+    cancelSignal: AbortSignal,
+    keepLocalStatistics: boolean
+  ) {
     const ids: number[] = [];
     const idToTitle = new Map<number, string>();
 
@@ -220,7 +406,7 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     }
 
     const { error, deleted } = await database
-      .deleteData(ids, cancelSignal)
+      .deleteData(ids, idToTitle, cancelSignal, keepLocalStatistics)
       .catch((catchedError) => ({ error: catchedError.message, deleted: [] }));
 
     for (let index = 0, { length } = deleted; index < length; index += 1) {

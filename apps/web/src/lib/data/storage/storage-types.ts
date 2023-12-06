@@ -14,7 +14,9 @@ export enum StorageKey {
 
 export enum StorageDataType {
   DATA = 'data',
-  PROGRESS = 'bookmark'
+  PROGRESS = 'bookmark',
+  STATISTICS = 'statistic',
+  READING_GOALS = 'readingGoal'
 }
 
 export enum StorageSourceDefault {
@@ -22,7 +24,17 @@ export enum StorageSourceDefault {
   ONEDRIVE_DEFAULT = 'ttu-onedrive-default'
 }
 
-export const internalStorageSourceName = 'ttu-internal-source';
+export enum InternalStorageSources {
+  INTERNAL_DEFAULT = 'ttu-internal-source',
+  INTERNAL_BROWSER = 'ttu-internal-browser',
+  INTERNAL_ZIP = 'ttu-internal-zip'
+}
+
+export const internalStorageSourceName = new Set<string>([
+  InternalStorageSources.INTERNAL_DEFAULT,
+  InternalStorageSources.INTERNAL_BROWSER,
+  InternalStorageSources.INTERNAL_ZIP
+]);
 
 export const defaultStorageSources = [
   { name: StorageSourceDefault.GDRIVE_DEFAULT, type: StorageKey.GDRIVE },

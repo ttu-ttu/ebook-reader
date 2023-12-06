@@ -4,7 +4,6 @@
     nextChapter$,
     sectionList$,
     sectionProgress$,
-    tocIsOpen$,
     type SectionWithProgress
   } from '$lib/components/book-reader/book-toc/book-toc';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
@@ -421,7 +420,7 @@
   }
 
   function onWheel(ev: WheelEvent) {
-    if (verticalMode && !$tocIsOpen$ && !$disableWheelNavigation$ && !$skipKeyDownListener$) {
+    if (verticalMode && !$disableWheelNavigation$ && !$skipKeyDownListener$) {
       scrollFn(ev, fontSize, window.innerWidth);
     }
   }
@@ -469,13 +468,20 @@
 
       const timeout = isStoredFont(fontFamilyGroupOne, $userFonts$) ? 30000 : 10000;
       const fontLoadTimer = setTimeout(() => {
+        if (!contentEl) {
+          return;
+        }
+
         logger.error(`Error loading primary Font: ${fontFamilyGroupOne}`);
         dispatch('contentChange', contentEl);
       }, timeout);
 
       document.fonts.addEventListener('loadingdone', () => {
         clearTimeout(fontLoadTimer);
-        dispatch('contentChange', contentEl);
+
+        if (contentEl) {
+          dispatch('contentChange', contentEl);
+        }
       });
     }
   }

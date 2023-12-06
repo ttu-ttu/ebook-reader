@@ -1,11 +1,18 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { faComputer, faPlus, faSpinner } from '@fortawesome/free-solid-svg-icons';
+  import {
+    TrackerAutoPause,
+    TrackerSkipThresholdAction
+  } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
+  import MessageDialog from '$lib/components/message-dialog.svelte';
   import Ripple from '$lib/components/ripple.svelte';
   import SettingsCustomTheme from '$lib/components/settings/settings-custom-theme.svelte';
   import SettingsDimensionPopover from '$lib/components/settings/settings-dimension-popover.svelte';
   import SettingsFontSelector from '$lib/components/settings/settings-font-selector.svelte';
+  import SettingsReadingGoals from '$lib/components/settings/settings-reading-goals.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import SettingsStorageSourceList from '$lib/components/settings/settings-storage-source-list.svelte';
   import SettingsUserFontDialog from '$lib/components/settings/settings-user-font-dialog.svelte';
@@ -14,6 +21,7 @@
   import { LocalFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { logger } from '$lib/data/logger';
+  import { MergeMode } from '$lib/data/merge-mode';
   import { isAppDefault } from '$lib/data/storage/storage-source-manager';
   import { defaultStorageSources } from '$lib/data/storage/storage-types';
   import { isStorageSourceAvailable } from '$lib/data/storage/storage-view';
@@ -29,12 +37,12 @@
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
+  import { secondsToMinutes } from '$lib/functions/statistic-util';
   import { dummyFn } from '$lib/functions/utils';
   import {
     ReplicationSaveBehavior,
     AutoReplicationType
   } from '$lib/functions/replication/replication-options';
-  import { faComputer, faPlus } from '@fortawesome/free-solid-svg-icons';
   import Fa from 'svelte-fa';
   import { map } from 'rxjs';
 
@@ -70,6 +78,8 @@
 
   export let avoidPageBreak: boolean;
 
+  export let pauseTrackerOnCustomPointChange: boolean;
+
   export let customReadingPointEnabled: boolean;
 
   export let selectionToBookmarkEnabled: boolean;
@@ -93,6 +103,36 @@
   export let replicationSaveBehavior: string;
 
   export let showExternalPlaceholder: boolean;
+
+  export let keepLocalStatisticsOnDeletion: boolean;
+
+  export let overwriteBookCompletion: boolean;
+
+  export let startDayHoursForTracker: number;
+
+  export let statisticsMergeMode: string;
+
+  export let readingGoalsMergeMode: string;
+
+  export let statisticsEnabled: boolean;
+
+  export let trackerAutoPause: string;
+
+  export let openTrackerOnCompletion: boolean;
+
+  export let addCharactersOnCompletion: boolean;
+
+  export let trackerIdleTime: number;
+
+  export let trackerForwardSkipThreshold: number;
+
+  export let trackerBackwardSkipThreshold: number;
+
+  export let trackerSkipThresholdAction: string;
+
+  export let trackerPopupDetection: boolean;
+
+  export let adjustStatisticsAfterIdleTime: boolean;
 
   $: availableThemes = (
     browser
@@ -192,6 +232,43 @@
     }
   ];
 
+  const optionsForTrackerAutoPause: ToggleOption<TrackerAutoPause>[] = [
+    {
+      id: TrackerAutoPause.OFF,
+      text: 'Off'
+    },
+    {
+      id: TrackerAutoPause.MODERATE,
+      text: 'Moderate'
+    },
+    {
+      id: TrackerAutoPause.STRICT,
+      text: 'Strict'
+    }
+  ];
+
+  const optionsForTrackerSkipThresholdAction: ToggleOption<TrackerSkipThresholdAction>[] = [
+    {
+      id: TrackerSkipThresholdAction.IGNORE,
+      text: 'Ignore'
+    },
+    {
+      id: TrackerSkipThresholdAction.PAUSE,
+      text: 'Pause Tracker'
+    }
+  ];
+
+  const optionsForMergeMode: ToggleOption<MergeMode>[] = [
+    {
+      id: MergeMode.MERGE,
+      text: 'Merge'
+    },
+    {
+      id: MergeMode.REPLACE,
+      text: 'Replace'
+    }
+  ];
+
   const storageSources$ = database.storageSourcesChanged$.pipe(
     map((storageSources) => [
       ...defaultStorageSources
@@ -208,8 +285,10 @@
     ])
   );
 
+  let showSpinner = false;
   let furiganaStyleTooltip = '';
   let autoReplicationTypeTooltip = '';
+  let trackerAutoPauseTooltip = '';
 
   $: verticalMode = writingMode === 'vertical-rl';
   $: fontCacheSupported = browser && 'caches' in window;
@@ -256,7 +335,25 @@
     ? 'Placeholder data for external books is shown in the browser source manager'
     : 'Placeholder data for external books is hidden';
 
-  $: if (activeSettings === 'Data' && !$storageSources$) {
+  $: startOfDayHours = `${`${startDayHoursForTracker}`.padStart(2, '0')}:00`;
+
+  $: trackerIdleTimeInMin = secondsToMinutes(trackerIdleTime);
+
+  $: switch (trackerAutoPause) {
+    case TrackerAutoPause.OFF:
+      trackerAutoPauseTooltip = 'Tracker does not auto pause except for certain reader events';
+      break;
+    case TrackerAutoPause.STRICT:
+      trackerAutoPauseTooltip =
+        'Tracker will auto pause on certain reader events and any kind of site focus loss (e. g. dictionary popup)';
+      break;
+    default:
+      trackerAutoPauseTooltip =
+        'Tracker will auto pause on certain reader events and when the reader tab loses focus';
+      break;
+  }
+
+  $: if ((activeSettings === 'Data' || activeSettings === 'Statistics') && !$storageSources$) {
     database
       .getStorageSources()
       .then((storageSources) => {
@@ -480,6 +577,17 @@
     <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
       <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
     </SettingsItemGroup>
+    {#if statisticsEnabled}
+      <SettingsItemGroup
+        title="Custom Point pauses Tracker"
+        tooltip={'When enabled the tracker will auto pause and unpause while setting a custom reading point'}
+      >
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={pauseTrackerOnCustomPointChange}
+        />
+      </SettingsItemGroup>
+    {/if}
     {#if viewMode === ViewMode.Continuous}
       <SettingsItemGroup
         title="Custom Reading Point"
@@ -531,7 +639,7 @@
         </SettingsItemGroup>
       {/if}
     {/if}
-  {:else}
+  {:else if activeSettings === 'Data'}
     <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
     </SettingsItemGroup>
@@ -557,5 +665,211 @@
       />
     </SettingsItemGroup>
     <SettingsStorageSourceList storageSources={$storageSources$} />
+  {:else}
+    <SettingsItemGroup
+      title="Keep Local Data on Deletion"
+      tooltip={'Determines if local statistics will be deleted or not when removing a local book copy'}
+    >
+      <div class="flex items-center">
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={keepLocalStatisticsOnDeletion}
+        />
+        <div
+          tabindex="0"
+          role="button"
+          class="ml-4 hover:underline"
+          on:click={() => {
+            showSpinner = true;
+            database
+              .clearZombieStatistics()
+              .catch(({ message }) =>
+                dialogManager.dialogs$.next([
+                  {
+                    component: MessageDialog,
+                    props: {
+                      title: 'Error',
+                      message: `Error clearing Zombie Statistics: ${message}`
+                    }
+                  }
+                ])
+              )
+              .finally(() => (showSpinner = false));
+          }}
+          on:keyup={() => {}}
+        >
+          Clear Zombie Statistics
+        </div>
+      </div>
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Overwrite Book Completion"
+      tooltip={`Determines if only the first Book Completion will be tracked or if it always updates to the latest one`}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={overwriteBookCompletion}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title={`Start Day Hours: ${startOfDayHours}`}
+      tooltip={'Determines at which time a new day starts.\nData before this point will be counted towards the previous day'}
+    >
+      <input
+        type="range"
+        step="1"
+        min="0"
+        max="23"
+        class={inputClasses}
+        bind:value={startDayHoursForTracker}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Statistics Merge"
+      tooltip={`Determines if statistics will be merged entry by entry or replaced completely on a sync`}
+    >
+      <ButtonToggleGroup
+        options={optionsForMergeMode}
+        bind:selectedOptionId={statisticsMergeMode}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Reading Goals Merge"
+      tooltip={`Determines if reading goals will be merged entry by entry or replaced completely on a sync`}
+    >
+      <ButtonToggleGroup
+        options={optionsForMergeMode}
+        bind:selectedOptionId={readingGoalsMergeMode}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Enable Statistics">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={statisticsEnabled} />
+    </SettingsItemGroup>
+    {#if statisticsEnabled}
+      <SettingsItemGroup title="Tracker Auto Pause" tooltip={trackerAutoPauseTooltip}>
+        <ButtonToggleGroup
+          options={optionsForTrackerAutoPause}
+          bind:selectedOptionId={trackerAutoPause}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup title="Open Tracker on Completion">
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={openTrackerOnCompletion}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Update on Completion"
+        tooltip={`Determines if the missing amount of characters between the current position and the book total will be added to the statistics or not`}
+      >
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={addCharactersOnCompletion}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Idle Time (min)"
+        tooltip={'Time in minutes after which the tracker will auto pause without page interaction (0 = disabled, max 12h)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          step="0.5"
+          min="0"
+          bind:value={trackerIdleTimeInMin}
+          on:blur={() => {
+            if (!trackerIdleTimeInMin || trackerIdleTimeInMin < 0) {
+              trackerIdleTime = 0;
+            } else if (trackerIdleTimeInMin > 43200) {
+              trackerIdleTime = 900;
+            } else {
+              trackerIdleTime = Math.floor(trackerIdleTimeInMin * 60);
+            }
+          }}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Forward Skip Threshold"
+        tooltip={'Amount of positive characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          step="1"
+          min="0"
+          bind:value={trackerForwardSkipThreshold}
+          on:blur={() => {
+            if (trackerForwardSkipThreshold === 0) {
+              trackerForwardSkipThreshold = 0;
+            } else if (!trackerForwardSkipThreshold || trackerForwardSkipThreshold < 0) {
+              trackerForwardSkipThreshold = 2700;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Backward Skip Threshold"
+        tooltip={'Amount of negative characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          step="1"
+          bind:value={trackerBackwardSkipThreshold}
+          on:blur={() => {
+            if (trackerBackwardSkipThreshold < 0) {
+              trackerBackwardSkipThreshold = Math.abs(trackerBackwardSkipThreshold);
+            } else if (trackerBackwardSkipThreshold === 0) {
+              trackerBackwardSkipThreshold = 0;
+            } else if (!trackerBackwardSkipThreshold) {
+              trackerBackwardSkipThreshold = 2700;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+      {#if trackerForwardSkipThreshold || trackerBackwardSkipThreshold}
+        <SettingsItemGroup
+          title="Threshold Action"
+          tooltip={`Determines what action will be executed in case a skip threshold was triggered`}
+        >
+          <ButtonToggleGroup
+            options={optionsForTrackerSkipThresholdAction}
+            bind:selectedOptionId={trackerSkipThresholdAction}
+          />
+        </SettingsItemGroup>
+      {/if}
+      {#if trackerAutoPause === TrackerAutoPause.STRICT}
+        <SettingsItemGroup
+          title="Yomichan Detection"
+          tooltip={`Skips auto pause if yomichan was detected. Requires disabled "Secure Container" settings`}
+        >
+          <ButtonToggleGroup
+            options={optionsForToggle}
+            bind:selectedOptionId={trackerPopupDetection}
+          />
+        </SettingsItemGroup>
+      {/if}
+      {#if trackerIdleTime > 0}
+        <SettingsItemGroup
+          title="Rollback Statistics on Idle"
+          tooltip={`If enabled attempts to rollback statistics by subtracting the idled time value back from the session`}
+        >
+          <ButtonToggleGroup
+            options={optionsForToggle}
+            bind:selectedOptionId={adjustStatisticsAfterIdleTime}
+          />
+        </SettingsItemGroup>
+      {/if}
+      <SettingsReadingGoals
+        storageSources={$storageSources$}
+        on:spinner={({ detail }) => (showSpinner = detail)}
+      />
+    {/if}
+  {/if}
+  {#if showSpinner}
+    <div class="tap-highlight-transparent fixed inset-0 bg-black/[.2]" />
+    <div class="fixed inset-0 flex h-full w-full items-center justify-center text-7xl">
+      <Fa icon={faSpinner} spin />
+    </div>
   {/if}
 </div>

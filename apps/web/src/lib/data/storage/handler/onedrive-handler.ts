@@ -252,7 +252,7 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
       (!this.cacheStorageData || !this.dataListFetched) &&
       !this.titleToFiles.has(this.currentContext.title)
     ) {
-      const externalFiles = await this.list(remoteTitleId, true);
+      const externalFiles = await this.list(remoteTitleId, true, true);
 
       if (externalFiles.length) {
         this.setTitleData(this.currentContext.title, externalFiles);
@@ -260,6 +260,20 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
     }
 
     return this.titleToFiles.get(this.currentContext.title) || [];
+  }
+
+  protected async setRootFiles() {
+    if ((!this.cacheStorageData || !this.rootFileListFetched) && !this.rootFiles.size) {
+      const rootFiles = await this.list(this.rootId, false, true);
+
+      for (let index = 0, { length } = rootFiles; index < length; index += 1) {
+        const rootFile = rootFiles[index];
+
+        this.setRootFile(rootFile.name, rootFile);
+      }
+
+      this.rootFileListFetched = true;
+    }
   }
 
   protected retrieve(
@@ -281,6 +295,7 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
     files: OneDriveFile[],
     remoteFile?: OneDriveFile,
     body?: Blob | string,
+    rootFilePrefix?: string,
     progressBase = 0.8
   ) {
     const params = new URLSearchParams();
@@ -322,14 +337,21 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
         );
 
         if (remoteFile && name !== remoteFile.name) {
-          const renameResponse = await this.rename(name, files, remoteFile, params);
+          const renameResponse = await this.rename(name, files, remoteFile, params, rootFilePrefix);
 
           return renameResponse;
         }
 
-        this.updateAfterUpload(response.id, response.name, files, remoteFile, {
-          thumbnails: response.thumbnails
-        });
+        this.updateAfterUpload(
+          response.id,
+          response.name,
+          files,
+          remoteFile,
+          {
+            thumbnails: response.thumbnails
+          },
+          rootFilePrefix
+        );
 
         return response;
       } catch (error) {
@@ -344,7 +366,7 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
       throw new Error('Renaming requires a remote id');
     }
 
-    const renameResponse = await this.rename(name, files, remoteFile, params);
+    const renameResponse = await this.rename(name, files, remoteFile, params, rootFilePrefix);
 
     return renameResponse;
   }
@@ -356,6 +378,7 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
   private async list(
     parent = 'root',
     withThumbnail = false,
+    listFiles = false,
     files: OneDriveFile[] = [],
     nextLink = ''
   ) {
@@ -365,6 +388,8 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
       response = await this.request(nextLink);
     } else {
       const params = new URLSearchParams();
+
+      params.append('filter', listFiles ? 'file ne null' : 'folder ne null');
       params.append('select', `id,name`);
 
       if (withThumbnail) {
@@ -378,7 +403,7 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
       files.push(...(response.value || []));
 
       if (response['@odata.nextLink']) {
-        await this.list(parent, withThumbnail, files, response?.['@odata.nextLink']);
+        await this.list(parent, withThumbnail, listFiles, files, response?.['@odata.nextLink']);
       }
     }
 
@@ -433,7 +458,8 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
     name: string,
     files: OneDriveFile[],
     remoteFile: OneDriveFile,
-    params: URLSearchParams
+    params: URLSearchParams,
+    rootFilePrefix?: string
   ) {
     const renameResponse = await this.request(
       `${this.baseEndpoint}/${remoteFile.id}?${params.toString()}`,
@@ -444,9 +470,16 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
       }
     );
 
-    this.updateAfterUpload(renameResponse.id, renameResponse.name, files, remoteFile, {
-      thumbnails: renameResponse?.thumbnails || []
-    });
+    this.updateAfterUpload(
+      renameResponse.id,
+      renameResponse.name,
+      files,
+      remoteFile,
+      {
+        thumbnails: renameResponse?.thumbnails || []
+      },
+      rootFilePrefix
+    );
 
     return renameResponse;
   }

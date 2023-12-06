@@ -2,7 +2,7 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import DomainHint from '$lib/components/domain-hint.svelte';
-  import { basePath } from '$lib/data/env';
+  import { basePath, clearConsoleOnReload } from '$lib/data/env';
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { userFontsCacheName, type UserFont } from '$lib/data/fonts';
   import { fontFamilyGroupOne$, isOnline$, userFonts$ } from '$lib/data/store';
@@ -17,6 +17,11 @@
   $: if (browser) {
     isMobile$.next(isMobile(window));
     addUserFonts($userFonts$);
+  }
+
+  if (clearConsoleOnReload && import.meta.hot) {
+    // eslint-disable-next-line no-console
+    import.meta.hot.on('vite:beforeUpdate', () => console.clear());
   }
 
   function addUserFonts(userFonts: UserFont[]) {
@@ -99,6 +104,8 @@
 {#if dialogs.length > 0}
   <div class="writing-horizontal-tb fixed inset-0 z-50 h-full w-full">
     <div
+      tabindex="0"
+      role="button"
       class="tap-highlight-transparent absolute inset-0 bg-black/[.32]"
       on:click={() => {
         if (!clickOnCloseDisabled) {

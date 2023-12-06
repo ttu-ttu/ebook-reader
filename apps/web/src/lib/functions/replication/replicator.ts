@@ -87,10 +87,7 @@ export async function importData(
 
   await Promise.all(tasks).catch(() => {});
 
-  return {
-    error: errorMessage,
-    dataId: files.length === 1 ? dataIds[dataIds.length - 1] : undefined
-  };
+  return errorMessage;
 }
 
 export async function importBackup(
@@ -104,7 +101,12 @@ export async function importBackup(
     targetHandler,
     true,
     await sourceHandler.setBackupZip(file),
-    [StorageDataType.DATA, StorageDataType.PROGRESS],
+    [
+      StorageDataType.DATA,
+      StorageDataType.PROGRESS,
+      StorageDataType.STATISTICS,
+      StorageDataType.READING_GOALS
+    ],
     cancelSignal
   );
 }
@@ -117,19 +119,28 @@ export async function replicateData(
   dataToReplicate: StorageDataType[],
   cancelSignal?: AbortSignal
 ) {
-  const progressBase = dataToReplicate.length * 4 + 2; // recent check -> source retrieval -> target storage per data type + retrieve and store cover
-  const maxProgress = progressBase * contexts.length;
+  const bookOperationsLength = dataToReplicate.filter(
+    (entry) => entry !== StorageDataType.READING_GOALS
+  ).length;
+  const otherOperationsLength = dataToReplicate.length - bookOperationsLength;
+  // recent check -> source retrieval -> target storage per data type + retrieve and store cover
+  const progressBaseForBookOperations = bookOperationsLength ? bookOperationsLength * 4 + 2 : 0;
+  const progressBaseForOtherOperations = otherOperationsLength * 4;
+  const maxProgress =
+    progressBaseForBookOperations * contexts.length + progressBaseForOtherOperations;
   const processBookData = dataToReplicate.includes(StorageDataType.DATA);
   const processProgressData = dataToReplicate.includes(StorageDataType.PROGRESS);
+  const processStatistics = dataToReplicate.includes(StorageDataType.STATISTICS);
+  const processReadingGoals = dataToReplicate.includes(StorageDataType.READING_GOALS);
   const replicationLimiter = pLimit(1);
   const replicationTasks: Promise<void>[] = [];
 
   let errorMessage = '';
   let processed = 0;
 
-  replicationProgress$.next({ progressBase, maxProgress });
+  replicationProgress$.next({ maxProgress });
 
-  await persistStorage(targetHandler.storageType);
+  await persistStorage(targetHandler.storageType).catch(() => {});
 
   [sourceHandler, targetHandler].forEach((handler) => {
     if (handler.isCacheDisabled()) {
@@ -166,7 +177,7 @@ export async function replicateData(
                 dataProcessed = true;
               }
 
-              checkCancelAndProgress(cancelSignal, dataToReplicate.length === 1, !bookData);
+              checkCancelAndProgress(cancelSignal, bookOperationsLength === 1, !bookData);
             }
           }
 
@@ -190,6 +201,29 @@ export async function replicateData(
               }
 
               checkCancelAndProgress(cancelSignal, !dataProcessed, !progressData);
+            }
+          }
+
+          if (processStatistics) {
+            if (
+              await targetHandler.areStatisticsPresentAndUpToDate(
+                await sourceHandler.getFilenameForRecentCheck('statistics_')
+              )
+            ) {
+              checkCancelAndProgress(cancelSignal, !dataProcessed, true);
+              checkCancelAndProgress(cancelSignal, !dataProcessed, true);
+            } else {
+              const { statistics, lastStatisticModified } = await sourceHandler.getStatistics();
+
+              checkCancelAndProgress(cancelSignal, !dataProcessed);
+
+              if (statistics) {
+                await targetHandler.saveStatistics(statistics, lastStatisticModified);
+
+                dataProcessed = true;
+              }
+
+              checkCancelAndProgress(cancelSignal, !dataProcessed, !statistics);
             }
           }
 
@@ -219,12 +253,51 @@ export async function replicateData(
           errorMessage = handleErrorDuringReplication(
             error,
             `Error Processing ${context.title}: `,
-            [replicationLimiter]
+            [replicationLimiter],
+            progressBaseForBookOperations
           );
         }
       })
     )
   );
+
+  if (processReadingGoals) {
+    replicationTasks.push(
+      replicationLimiter(async () => {
+        try {
+          if (
+            await targetHandler.areReadingGoalsPresentAndUpToDate(
+              await sourceHandler.getFilenameForRecentCheck(
+                BaseStorageHandler.readingGoalsFilePrefix
+              )
+            )
+          ) {
+            checkCancelAndProgress(cancelSignal, true, true);
+            checkCancelAndProgress(cancelSignal, true, true);
+          } else {
+            const { readingGoals, lastGoalModified } = await sourceHandler.getReadingGoals();
+
+            checkCancelAndProgress(cancelSignal);
+
+            if (readingGoals) {
+              await targetHandler.saveReadingGoals(readingGoals, lastGoalModified);
+            }
+
+            checkCancelAndProgress(cancelSignal, false, !readingGoals);
+          }
+
+          processed += 1;
+        } catch (error) {
+          errorMessage = handleErrorDuringReplication(
+            error,
+            `Error Processing Reading Goals: `,
+            [replicationLimiter],
+            progressBaseForOtherOperations
+          );
+        }
+      })
+    );
+  }
 
   await Promise.all(replicationTasks).catch(() => {});
 
