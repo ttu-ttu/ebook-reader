@@ -379,10 +379,6 @@ To create such custom credentials follow these steps for the hoster you want to 
 </details>
 <br/>
 
-If you add a storage source for an external hoster your data will be encrypted and stored locally. Therefore you have to set a password for it
-which you will have to (re)enter whenever you want to delete/edit the storage source or ッツ Ebook Reader needs to access it. The password
-should follow common best practices in terms of complexity and length but there are no rules enforced on it on the site. This password will not be saved and therefore can't be restored - if you forget it you will not be able to interact with this storage source anymore.
-
 You may find following additional controls for storage source settings:
 
 | Control                                           | Description                                                                                                                                                                                                                                                                                         |
@@ -441,6 +437,12 @@ VITE_ONEDRIVE_CLIENT_SECRET1="gfedcba"
 **GDrive Note**: Permissions are scoped to the client id and client secret which means different GDrive storage sources can only see their own data and will create their own "ttu-reader-data" folder. Also data added by you manually on the google website will not be displayed - you should use the functionality provided by ッツ Ebook Reader in order to add/delete books etc.
 
 **OneDrive Note**: OneDrive only allows to add localhost addresses - in case you host or develop on 127.0.0.1 you should either switch to localhost or need to manually type in the localhost address in the address bar in order to use OneDrive. The maximum file size of a book for this storage source is currently 60 MB. In case you encounter an ETag Error simply retry your export attempt - typically it should work the 2nd time
+
+## Security Considerations
+
+If you add a storage source for an external hoster your data will be encrypted and stored locally. Therefore you have to set a password for it
+which you will have to (re)enter whenever you want to delete/edit the storage source or ッツ Ebook Reader needs to access it. The password
+should follow common best practices in terms of complexity and length but there are no rules enforced on it on the site. This password will not be saved and therefore can't be restored - if you forget it you will not be able to interact with this storage source anymore.
 
 # Storage Limits
 
