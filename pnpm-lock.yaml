@@ -145,7 +145,7 @@ importers:
         specifier: 0.7.39
         version: 0.7.39
       '@types/webappsec-credential-management':
-        specifier: ^0.6.8
+        specifier: 0.6.8
         version: 0.6.8
       '@types/wicg-file-system-access':
         specifier: 2023.10.4
