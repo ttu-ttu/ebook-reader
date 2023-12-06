@@ -111,6 +111,7 @@
             >
               {#each $userFonts$ as userFont (userFont.path)}
                 <div
+                  tabindex="0"
                   role="button"
                   class="hover:text-blue-700"
                   on:click={() => selectFont(userFont.name)}
@@ -119,6 +120,7 @@
                   {userFont.name}
                 </div>
                 <div
+                  tabindex="0"
                   role="button"
                   class="hover:text-blue-700"
                   on:click={() => selectFont(userFont.name)}
@@ -127,6 +129,7 @@
                   {userFont.fileName}
                 </div>
                 <div
+                  tabindex="0"
                   role="button"
                   class="hover:text-blue-700"
                   on:click={() => removeFont(userFont.path)}

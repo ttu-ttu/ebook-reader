@@ -34,6 +34,7 @@
 <div class="grid grid-cols-3 justify-between gap-5 pb-4 md:grid-cols-4 lg:grid-cols-5">
   {#each bookCards as bookCard (bookCard.id)}
     <div
+      role="banner"
       class="relative"
       class:opacity-60={bookCard.isPlaceholder}
       on:mouseenter={() => (hoveringBookId = bookCard.id)}
@@ -48,7 +49,9 @@
 
         {#if selectedBookIds.has(bookCard.id)}
           <div
-            class="absolute inset-0 cursor-pointer bg-gray-700 bg-opacity-20"
+            tabindex="0"
+            role="button"
+            class="absolute inset-0 bg-gray-700 bg-opacity-20"
             on:click={() => onBookCardClick(bookCard.id)}
             on:keyup={dummyFn}
           >
@@ -79,7 +82,9 @@
       {/if}
       {#if bookCard.id === hoveringBookId}
         <div
-          class="mdc-elevation--z2 hover:mdc-elevation--z8 mdc-elevation-transition absolute -top-2 -right-2 h-6 w-6 cursor-pointer rounded-full bg-red-400"
+          tabindex="0"
+          role="button"
+          class="mdc-elevation--z2 hover:mdc-elevation--z8 mdc-elevation-transition absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-400"
           on:click={() => dispatch('removeBookClick', { id: bookCard.id })}
           on:keyup={dummyFn}
         >

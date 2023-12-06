@@ -6,6 +6,7 @@
 
 export const basePath = import.meta.env.VITE_BASE_PATH || 'https://reader.ttsu.app';
 export const pagePath = import.meta.env.VITE_PAGE_PATH || '';
+export const clearConsoleOnReload = !!import.meta.env.VITE_CLEAR_ON_RELOAD || false;
 export const storageRootName = import.meta.env.VITE_STORAGE_ROOT_NAME || 'ttu-reader-data';
 export const gDriveAuthEndpoint =
   import.meta.env.VITE_GDRIVE_AUTH_ENDPOINT || 'https://accounts.google.com/o/oauth2/v2/auth';

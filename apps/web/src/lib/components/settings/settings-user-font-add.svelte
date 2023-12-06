@@ -117,9 +117,8 @@
       Choose File
     </label>
     <div
-      role="button"
       tabindex="0"
-      class:cursor-pointer={canSave}
+      role="button"
       class:text-gray-500={!canSave}
       class:cursor-not-allowed={!canSave}
       on:click={() => {

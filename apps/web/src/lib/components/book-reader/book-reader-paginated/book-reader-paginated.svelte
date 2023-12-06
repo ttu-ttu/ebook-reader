@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { nextChapter$, tocIsOpen$ } from '$lib/components/book-reader/book-toc/book-toc';
+  import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import { isStoredFont } from '$lib/data/fonts';
@@ -124,7 +124,9 @@
 
   let previousIntendedCount = 0;
 
-  let exploredCharCountAdjustedToBookmark = false;
+  let useExploredCharCount = false;
+
+  let wasResized = false;
 
   let bookmarkTopAdjustment: string | undefined;
 
@@ -157,7 +159,7 @@
   const destroy$ = new Subject<void>();
 
   $: bookmarkData.then((data) => {
-    exploredCharCountAdjustedToBookmark = false;
+    useExploredCharCount = false;
     updateBookmarkScreen(data);
   });
 
@@ -249,10 +251,27 @@
       takeUntil(destroy$)
     )
     .subscribe(() => {
-      if (!calculator || !concretePageManager) return;
-      const scrollPos = calculator.getScrollPosByCharCount(previousIntendedCount);
-      if (scrollPos < 0) return;
-      concretePageManager.scrollTo(scrollPos, false);
+      bookmarkData.then((data) => {
+        if (!calculator || !concretePageManager) return;
+
+        const useBookmark =
+          data?.exploredCharCount &&
+          isBookmarkScreen &&
+          (data.exploredCharCount === exploredCharCount ||
+            data.exploredCharCount === previousIntendedCount);
+
+        const scrollPos = calculator.getScrollPosByCharCount(
+          useBookmark && data.exploredCharCount === exploredCharCount
+            ? data.exploredCharCount
+            : previousIntendedCount
+        );
+
+        if (scrollPos < 0) return;
+
+        wasResized = !useBookmark;
+
+        concretePageManager.scrollTo(scrollPos, false);
+      });
     });
 
   pageChange$.pipe(takeUntil(destroy$)).subscribe((isUser) => {
@@ -273,7 +292,11 @@
       }
     }
 
-    bookmarkData.then(updateBookmarkScreen);
+    bookmarkData.then((data) => {
+      useExploredCharCount = isUser || wasResized;
+      updateBookmarkScreen(data);
+      wasResized = false;
+    });
   });
 
   if (autoBookmark) {
@@ -310,13 +333,11 @@
       takeUntil(destroy$)
     )
     .subscribe((ev) => {
-      if (!$tocIsOpen$) {
-        let multiplier = (ev.deltaX < 0 ? -1 : 1) * (verticalMode ? -1 : 1);
-        if (!ev.deltaX) {
-          multiplier = ev.deltaY < 0 ? -1 : 1;
-        }
-        concretePageManager?.flipPage(multiplier as -1 | 1);
+      let multiplier = (ev.deltaX < 0 ? -1 : 1) * (verticalMode ? -1 : 1);
+      if (!ev.deltaX) {
+        multiplier = ev.deltaY < 0 ? -1 : 1;
       }
+      concretePageManager?.flipPage(multiplier as -1 | 1);
     });
 
   function updateAfterCustomReadingPointUpdate(updatedCustomReadingPosition: Range | undefined) {
@@ -390,7 +411,7 @@
   }
 
   function triggerContentChange() {
-    if (!calculator) return;
+    if (!calculator || !scrollEl) return;
 
     calculator.updateCurrentSection(sectionIndex$.getValue());
     dispatch('contentChange', scrollEl);
@@ -400,7 +421,6 @@
     _calculator.updateParagraphPos();
     exploredCharCount = _calculator.calcExploredCharCount(customReadingPointRange);
     sectionReady$.next(_calculator);
-    bookmarkData.then(updateBookmarkScreen);
 
     if (scrollWhenReady) {
       scrollWhenReady = false;
@@ -409,6 +429,8 @@
         exploredCharCount = data.exploredCharCount || 0;
         bookmarkManager.scrollToBookmark(data);
       });
+    } else if (!wasResized) {
+      bookmarkData.then(updateBookmarkScreen);
     }
     allowDisplay = true;
   }
@@ -443,19 +465,17 @@
     }
 
     if (result.isBookmarkScreen && data.exploredCharCount) {
-      if (result.node && !exploredCharCountAdjustedToBookmark && !result.isFirstNode) {
+      if (result.node && !useExploredCharCount && !result.isFirstNode) {
         updateSectionData(createRange(result.node));
       } else if (result.isFirstNode) {
         updateSectionData(undefined);
       }
 
-      exploredCharCount = exploredCharCountAdjustedToBookmark
-        ? exploredCharCount
-        : data.exploredCharCount;
+      exploredCharCount = useExploredCharCount ? exploredCharCount : data.exploredCharCount;
       previousIntendedCount = exploredCharCount;
-      exploredCharCountAdjustedToBookmark = true;
     }
 
+    useExploredCharCount = true;
     isBookmarkScreen = result.isBookmarkScreen;
   }
 
@@ -476,7 +496,7 @@
   }
 
   function onSwipe(ev: CustomEvent<{ direction: 'top' | 'right' | 'left' | 'bottom' }>) {
-    if (!concretePageManager || $tocIsOpen$ || $skipKeyDownListener$) return;
+    if (!concretePageManager || $skipKeyDownListener$) return;
     if (ev.detail.direction !== 'left' && ev.detail.direction !== 'right') return;
     const swipeLeft = ev.detail.direction === 'left';
     const nextPage = verticalMode ? !swipeLeft : swipeLeft;
@@ -484,7 +504,7 @@
   }
 
   function onKeydown(ev: KeyboardEvent) {
-    if (!concretePageManager || $tocIsOpen$ || $skipKeyDownListener$) return;
+    if (!concretePageManager || $skipKeyDownListener$) return;
     switch (ev.code) {
       case 'ArrowLeft':
         concretePageManager[verticalMode ? 'nextPage' : 'prevPage']();

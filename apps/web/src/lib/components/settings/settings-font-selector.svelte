@@ -16,6 +16,7 @@
   <div slot="content">
     {#each availableFonts as font (font)}
       <div
+        tabindex="0"
         role="button"
         class="px-4 py-2 hover:bg-gray-900"
         on:click={() => {

@@ -6,9 +6,13 @@
 
 import type {
   BooksDbBookData,
-  BooksDbBookmarkData
+  BooksDbBookmarkData,
+  BooksDbReadingGoal,
+  BooksDbStatistic
 } from '$lib/data/database/books-db/versions/books-db';
 import { logger } from '$lib/data/logger';
+import { MergeMode } from '$lib/data/merge-mode';
+import { mergeReadingGoals, readingGoalSortFunction } from '$lib/data/reading-goal';
 import { BaseStorageHandler, type ExternalFile } from '$lib/data/storage/handler/base-handler';
 import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
 import { StorageOAuthManager } from '$lib/data/storage/storage-oauth-manager';
@@ -21,6 +25,7 @@ import {
 import { AbortError, throwIfAborted } from '$lib/functions/replication/replication-error';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import { replicationProgress$ } from '$lib/functions/replication/replication-progress';
+import { mergeStatistics, updateStatisticToStore } from '$lib/functions/statistic-util';
 import pLimit from 'p-limit';
 
 interface RequestOptions {
@@ -42,6 +47,8 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
   protected abstract getExternalFiles(remoteTitleId: string): Promise<ExternalFile[]>;
 
+  protected abstract setRootFiles(): Promise<void>;
+
   protected abstract retrieve(
     file: ExternalFile,
     typeToRetrieve: XMLHttpRequestResponseType,
@@ -54,6 +61,7 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     files: ExternalFile[],
     externalFile: ExternalFile | undefined,
     data: Blob | string | undefined,
+    rootFilePrefix?: string,
     progressBase?: number
   ): Promise<ExternalFile>;
 
@@ -76,6 +84,8 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     window: Window,
     isForBrowser: boolean,
     saveBehavior: ReplicationSaveBehavior,
+    statisticsMergeMode: MergeMode,
+    readingGoalsMergeMode: MergeMode,
     cacheStorageData: boolean,
     askForStorageUnlock: boolean,
     storageSourceName: string
@@ -85,11 +95,15 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     this.saveBehavior = saveBehavior;
     this.cacheStorageData = cacheStorageData;
     this.askForStorageUnlock = askForStorageUnlock;
+    this.statisticsMergeMode = statisticsMergeMode;
+    this.readingGoalsMergeMode = readingGoalsMergeMode;
     this.setInternalSettings(storageSourceName);
   }
 
   clearData(clearAll = true) {
     this.titleToFiles.clear();
+    this.rootFiles.clear();
+    this.rootFileListFetched = false;
 
     if (clearAll) {
       this.rootId = '';
@@ -169,7 +183,9 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
       return undefined;
     }
 
-    const { file } = await this.getExternalFile(fileIdentifier);
+    const { file } = this.validRootFiles.includes(fileIdentifier)
+      ? await this.getRootFile(fileIdentifier)
+      : await this.getExternalFile(fileIdentifier);
 
     BaseStorageHandler.completeStep();
 
@@ -186,7 +202,7 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
     let isPresentAndUpToDate = false;
 
-    if (file && this.saveBehavior === ReplicationSaveBehavior.NewOnly) {
+    if (file) {
       const { lastBookModified, lastBookOpen } =
         BaseStorageHandler.getBookMetadata(referenceFilename);
       const { lastBookModified: existingBookModified, lastBookOpen: existingBookOpen } =
@@ -213,23 +229,44 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
     const { file } = await this.getExternalFile('progress_');
 
-    let isPresentAndUpToDate = false;
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getProgressMetadata,
+      'lastBookmarkModified',
+      referenceFilename,
+      file?.name
+    );
+  }
 
-    if (file && this.saveBehavior === ReplicationSaveBehavior.NewOnly) {
-      const { lastBookmarkModified } = BaseStorageHandler.getProgressMetadata(referenceFilename);
-      const { lastBookmarkModified: existingBookmarkModified } =
-        BaseStorageHandler.getProgressMetadata(file.name);
-
-      isPresentAndUpToDate = !!(
-        existingBookmarkModified &&
-        lastBookmarkModified &&
-        (existingBookmarkModified || 0) >= (lastBookmarkModified || 0)
-      );
+  async areStatisticsPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
     }
 
-    BaseStorageHandler.completeStep();
+    const { file } = await this.getExternalFile('statistics_');
 
-    return isPresentAndUpToDate;
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getStatisticsMetadata,
+      'lastStatisticModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
+  async areReadingGoalsPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const { file } = await this.getRootFile(BaseStorageHandler.readingGoalsFilePrefix);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getReadingGoalsMetadata,
+      'lastGoalModified',
+      referenceFilename,
+      file?.name
+    );
   }
 
   async getBook() {
@@ -260,6 +297,20 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
       : new File([new Blob([JSON.stringify(data)])], file.name, { type: 'application/json' });
   }
 
+  async getStatistics() {
+    const { file, data } = await this.getExternalFile('statistics_', 'json');
+
+    if (!file) {
+      return { statistics: undefined, lastStatisticModified: 0 };
+    }
+
+    return {
+      statistics: data,
+      lastStatisticModified: BaseStorageHandler.getStatisticsMetadata(file.name)
+        .lastStatisticModified
+    };
+  }
+
   async getCover() {
     if (this.currentContext.imagePath instanceof Blob) {
       BaseStorageHandler.reportProgress();
@@ -270,6 +321,22 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     const { data } = await this.getExternalFile('cover_', 'blob');
 
     return data;
+  }
+
+  async getReadingGoals() {
+    const { file, data } = await this.getRootFile(
+      BaseStorageHandler.readingGoalsFilePrefix,
+      'json'
+    );
+
+    if (!file) {
+      return { readingGoals: undefined, lastGoalModified: 0 };
+    }
+
+    return {
+      readingGoals: data,
+      lastGoalModified: BaseStorageHandler.getReadingGoalsMetadata(file.name).lastGoalModified
+    };
   }
 
   async saveBook(data: Omit<BooksDbBookData, 'id'> | File, skipTimestampFallback = true) {
@@ -298,7 +365,7 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     if (data instanceof File) {
       await this.upload(titleId, filename, files, file, data);
     } else {
-      await this.upload(titleId, filename, files, file, await this.zipBookData(data, 0.2), 0.6);
+      await this.upload(titleId, filename, files, file, await this.zipBookData(data, 0.2), '', 0.6);
     }
 
     this.addBookCard(this.currentContext.title, { characters, lastBookModified, lastBookOpen });
@@ -312,22 +379,44 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     const { titleId, files, file } = await this.getExternalFile('progress_', '', 0.2, false);
     const { lastBookmarkModified, progress } = BaseStorageHandler.getProgressMetadata(filename);
 
-    if (file && this.saveBehavior === ReplicationSaveBehavior.NewOnly) {
-      const { lastBookmarkModified: existingBookmarkModified } =
-        BaseStorageHandler.getProgressMetadata(file.name);
-
-      if (
-        existingBookmarkModified &&
-        lastBookmarkModified &&
-        (existingBookmarkModified || 0) >= (lastBookmarkModified || 0)
-      ) {
-        return;
-      }
-    }
-
     await this.upload(titleId, filename, files, file, progressData);
 
     this.addBookCard(this.currentContext.title, { lastBookmarkModified, progress });
+  }
+
+  async saveStatistics(statistics: BooksDbStatistic[], lastStatisticModified: number) {
+    const isMerge = this.statisticsMergeMode === MergeMode.MERGE;
+    const {
+      titleId,
+      files,
+      file,
+      data: existingData
+    } = await this.getExternalFile('statistics_', isMerge ? 'json' : '', 0.2, false);
+
+    let statisticsToStore: BooksDbStatistic[] = statistics;
+    let newStatisticModified = lastStatisticModified;
+
+    if (isMerge) {
+      statisticsToStore = mergeStatistics(
+        statistics,
+        existingData,
+        this.saveBehavior === ReplicationSaveBehavior.NewOnly
+      );
+    }
+
+    ({ statisticsToStore, newStatisticModified } = updateStatisticToStore(
+      statisticsToStore,
+      newStatisticModified
+    ));
+
+    const filename = BaseStorageHandler.getStatisticsFileName(
+      statisticsToStore,
+      newStatisticModified
+    );
+
+    await this.upload(titleId, filename, files, file, JSON.stringify(statisticsToStore));
+
+    this.addBookCard(this.currentContext.title, {});
   }
 
   async saveCover(data: Blob | undefined) {
@@ -347,6 +436,40 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     if (this.titleToBookCard.has(this.currentContext.title)) {
       this.addBookCard(this.currentContext.title, { imagePath: data });
     }
+  }
+
+  async saveReadingGoals(readingGoals: BooksDbReadingGoal[], lastGoalModified: number) {
+    const isMerge = this.readingGoalsMergeMode === MergeMode.MERGE;
+    const { file, data: existingData } = await this.getRootFile(
+      BaseStorageHandler.readingGoalsFilePrefix,
+      isMerge ? 'json' : '',
+      0.2
+    );
+
+    let readingGoalsToStore: BooksDbReadingGoal[] = readingGoals;
+    let newReadingGoalModified = lastGoalModified;
+
+    if (isMerge) {
+      ({ readingGoalsToStore, newReadingGoalModified } = mergeReadingGoals(
+        readingGoals,
+        existingData,
+        this.saveBehavior === ReplicationSaveBehavior.NewOnly,
+        lastGoalModified
+      ));
+    }
+
+    const filename = BaseStorageHandler.getReadingGoalsFileName(newReadingGoalModified);
+
+    readingGoalsToStore.sort(readingGoalSortFunction);
+
+    await this.upload(
+      this.rootId,
+      filename,
+      [],
+      file,
+      JSON.stringify(readingGoalsToStore),
+      BaseStorageHandler.readingGoalsFilePrefix
+    );
   }
 
   async deleteBookData(booksToDelete: string[], cancelSignal: AbortSignal) {
@@ -533,14 +656,47 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     return { titleId, file, files, data };
   }
 
+  protected async getRootFile(
+    fileIdentifier: string,
+    typeToRetrieve: XMLHttpRequestResponseType = '',
+    progressBase = 1
+  ) {
+    const progressPerStep = progressBase / 3;
+
+    await this.ensureTitle();
+
+    BaseStorageHandler.reportProgress(progressPerStep);
+
+    await this.setRootFiles();
+
+    const file = this.rootFiles.get(fileIdentifier);
+
+    BaseStorageHandler.reportProgress(progressPerStep);
+
+    if (!file) {
+      return { file: undefined, data: undefined };
+    }
+
+    let data;
+
+    if (typeToRetrieve) {
+      data = await this.retrieve(file, typeToRetrieve, progressPerStep);
+    }
+
+    return { file, data };
+  }
+
   protected updateAfterUpload(
     id: string,
     name: string,
     files: ExternalFile[],
     remoteFile: ExternalFile | undefined,
-    extraData = {}
+    extraData = {},
+    rootFilePrefix?: string
   ) {
-    if (remoteFile) {
+    if (rootFilePrefix) {
+      this.rootFiles.set(rootFilePrefix, { id, name });
+    } else if (remoteFile) {
       const titleFiles = files.map((file) => {
         const updatedFile = file;
         if (file.name === remoteFile.name) {

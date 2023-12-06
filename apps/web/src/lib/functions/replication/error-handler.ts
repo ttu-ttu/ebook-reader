@@ -11,7 +11,8 @@ import { replicationProgress$ } from '$lib/functions/replication/replication-pro
 export function handleErrorDuringReplication(
   error: any,
   baseError = '',
-  limiters?: LimitFunction[]
+  limiters?: LimitFunction[],
+  currentProgressBase?: number
 ) {
   if (error.name !== 'AbortError') {
     logger.error(`${baseError}${error.message}`);
@@ -27,7 +28,11 @@ export function handleErrorDuringReplication(
     throw error;
   }
 
-  replicationProgress$.next({ skipStep: true });
+  if (currentProgressBase !== undefined) {
+    replicationProgress$.next({ progressBase: currentProgressBase, skipStep: true });
+  } else {
+    replicationProgress$.next({ skipStep: true });
+  }
 
   return `${baseError}${error.message}`;
 }

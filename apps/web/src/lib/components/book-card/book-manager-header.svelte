@@ -34,6 +34,7 @@
   import {
     faArrowDownShortWide,
     faArrowDownWideShort,
+    faChartLine,
     faCircleXmark,
     faCloudArrowUp,
     faSortDown,
@@ -63,6 +64,7 @@
     backToBookClick: void;
     filesChange: FileList;
     importBackup: File;
+    selectionToStatistics: void;
     replicateData: void;
     cancelReplication: void;
   }>();
@@ -221,8 +223,8 @@
           out:scale={outAnimationParams}
         >
           <svg
-            role="button"
             tabindex="0"
+            role="button"
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
             class:opacity-100={selectMode}
@@ -242,8 +244,8 @@
           class="flex h-full transform-gpu items-center {nTranslateXHeaderFa} text-xl font-medium"
         >
           <div
-            role="button"
             tabindex="0"
+            role="button"
             class="flex h-full items-center text-2xl xl:text-xl {pHeaderFa} cursor-pointer"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
@@ -264,8 +266,8 @@
         {#if !selectMode}
           {#if hasBookOpened}
             <svg
-              role="button"
               tabindex="0"
+              role="button"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               class={baseIconClasses}
@@ -282,8 +284,8 @@
           {/if}
         {:else}
           <svg
-            role="button"
             tabindex="0"
+            role="button"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             class={baseIconClasses}
@@ -338,8 +340,8 @@
               <div class="w-28 bg-gray-700" slot="content">
                 {#each storageSourceMenuItems as sourceMenuItem (sourceMenuItem.key)}
                   <div
-                    role="button"
                     tabindex="0"
+                    role="button"
                     class="cursor-pointer px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
                     class:hover:bg-white={!sourceMenuItem.requiresConnectivity || $isOnline$}
                     class:hover:text-gray-700={!sourceMenuItem.requiresConnectivity || $isOnline$}
@@ -400,8 +402,8 @@
                     class:hover:opacity-70={isCurrentSort}
                   >
                     <div
-                      role="button"
                       tabindex="0"
+                      role="button"
                       class="self-center justify-self-start"
                       class:text-red-500={isCurrentSortAsc}
                       class:hover:text-gray-700={isCurrentSortAsc}
@@ -417,8 +419,8 @@
                       {sortMenuItem.label}
                     </div>
                     <div
-                      role="button"
                       tabindex="0"
+                      role="button"
                       class="justify-self-end hover:text-red-500"
                       class:text-red-500={isCurrentSort && !isCurrentSortAsc}
                       class:hover:text-gray-700={isCurrentSort && !isCurrentSortAsc}
@@ -448,7 +450,12 @@
                     mergeEntries.BUG_REPORT,
                     mergeEntries.SETTINGS
                   ]
-                : [mergeEntries.MANAGE, mergeEntries.BUG_REPORT, mergeEntries.SETTINGS]}
+                : [
+                    mergeEntries.MANAGE,
+                    mergeEntries.STATISTICS,
+                    mergeEntries.SETTINGS,
+                    mergeEntries.BUG_REPORT
+                  ]}
               on:action={({ detail }) => {
                 if (detail === mergeEntries.BUG_REPORT.label) {
                   dispatch('bugReportClick');
@@ -463,8 +470,19 @@
 
         {#if selectedCount > 0}
           <div
-            role="button"
             tabindex="0"
+            role="button"
+            class="transform-gpu {baseIconClasses}"
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
+            on:click={() => dispatch('selectionToStatistics')}
+            on:keyup={dummyFn}
+          >
+            <Fa icon={faChartLine} />
+          </div>
+          <div
+            tabindex="0"
+            role="button"
             class="transform-gpu {baseIconClasses}"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
@@ -474,8 +492,8 @@
             <Fa icon={faCloudArrowUp} />
           </div>
           <div
-            role="button"
             tabindex="0"
+            role="button"
             class="transform-gpu {baseIconClasses}"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
@@ -495,8 +513,8 @@
     >
       <Popover contentText={cancelTooltip} contentStyles={'padding: 0.75rem'} eventType="pointer">
         <div
-          role="button"
           tabindex="0"
+          role="button"
           on:click={() => dispatch('cancelReplication')}
           on:keyup={dummyFn}
         >

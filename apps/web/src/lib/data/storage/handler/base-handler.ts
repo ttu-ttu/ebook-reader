@@ -8,11 +8,14 @@ import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 import {
   currentDbVersion,
   type BooksDbBookData,
-  type BooksDbBookmarkData
+  type BooksDbBookmarkData,
+  type BooksDbStatistic,
+  type BooksDbReadingGoal
 } from '$lib/data/database/books-db/versions/books-db';
 import type { Section } from '$lib/data/database/books-db/versions/v4/books-db-v4';
 import { storageRootName } from '$lib/data/env';
-import { internalStorageSourceName, type StorageKey } from '$lib/data/storage/storage-types';
+import { MergeMode } from '$lib/data/merge-mode';
+import { InternalStorageSources, type StorageKey } from '$lib/data/storage/storage-types';
 import { exporterVersion } from '$lib/functions/replication/replicator';
 import { throwIfAborted } from '$lib/functions/replication/replication-error';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
@@ -42,6 +45,8 @@ export abstract class BaseStorageHandler {
     window: Window,
     isForBrowser: boolean,
     saveBehavior: string,
+    statisticsMergeMode: MergeMode,
+    readingGoalsMergeMode: MergeMode,
     cacheStorageData: boolean,
     askForStorageUnlock: boolean,
     storageSourceName: string
@@ -61,11 +66,27 @@ export abstract class BaseStorageHandler {
 
   abstract isProgressPresentAndUpToDate(referenceFilename: string | undefined): Promise<boolean>;
 
+  abstract areStatisticsPresentAndUpToDate(referenceFilename: string | undefined): Promise<boolean>;
+
+  abstract areReadingGoalsPresentAndUpToDate(
+    referenceFilename: string | undefined
+  ): Promise<boolean>;
+
   abstract getBook(): Promise<Omit<BooksDbBookData, 'id'> | File | undefined>;
 
   abstract getProgress(): Promise<BooksDbBookmarkData | File | undefined>;
 
+  abstract getStatistics(): Promise<{
+    statistics: BooksDbStatistic[] | undefined;
+    lastStatisticModified: number;
+  }>;
+
   abstract getCover(): Promise<Blob | undefined>;
+
+  abstract getReadingGoals(): Promise<{
+    readingGoals: BooksDbReadingGoal[] | undefined;
+    lastGoalModified: number;
+  }>;
 
   abstract saveBook(
     data: Omit<BooksDbBookData, 'id'> | File,
@@ -75,26 +96,37 @@ export abstract class BaseStorageHandler {
 
   abstract saveProgress(data: BooksDbBookmarkData | File): Promise<void>;
 
+  abstract saveStatistics(data: BooksDbStatistic[], lastStatisticModified: number): Promise<void>;
+
   abstract saveCover(data: Blob | undefined): Promise<void>;
+
+  abstract saveReadingGoals(data: BooksDbReadingGoal[], lastGoalModified: number): Promise<void>;
 
   abstract deleteBookData(
     booksToDelete: string[],
-    cancelSignal: AbortSignal
+    cancelSignal: AbortSignal,
+    keepLocalStatistics: boolean
   ): Promise<ReplicationDeleteResult>;
 
   static rootName = storageRootName;
+
+  static readingGoalsFilePrefix = 'ttu-user-goals_';
 
   storageType: StorageKey;
 
   protected window: Window;
 
-  protected storageSourceName = internalStorageSourceName;
+  protected storageSourceName: string = InternalStorageSources.INTERNAL_DEFAULT;
 
   protected isForBrowser = false;
 
   protected cacheStorageData = false;
 
   protected saveBehavior = ReplicationSaveBehavior.NewOnly;
+
+  protected statisticsMergeMode = MergeMode.MERGE;
+
+  protected readingGoalsMergeMode = MergeMode.MERGE;
 
   protected askForStorageUnlock = true;
 
@@ -110,7 +142,13 @@ export abstract class BaseStorageHandler {
 
   protected dataListFetched = false;
 
+  protected rootFileListFetched = false;
+
   protected titleToBookCard = new Map<string, BookCardProps>();
+
+  protected rootFiles = new Map<string, ExternalFile>();
+
+  protected validRootFiles = [BaseStorageHandler.readingGoalsFilePrefix];
 
   constructor(window: Window, storageType: StorageKey) {
     this.window = window;
@@ -157,6 +195,114 @@ export abstract class BaseStorageHandler {
     this.currentLastProgressValue = 0;
     this.currentProgressBase = 0;
     this.sanitizedTitle = BaseStorageHandler.sanitizeForFilename(this.currentContext.title);
+  }
+
+  static getStatisticsMetadata(filename: string) {
+    const parts = filename.split('_').map((part) => part.replace(/\.json$/, ''));
+
+    return {
+      exporterVersion: +parts[1],
+      dbVersion: +parts[2],
+      lastStatisticModified: +parts[3],
+      charactersRead: +parts[4],
+      readingTime: +parts[5],
+      minReadingSpeed: +parts[6],
+      altMinReadingSpeed: +parts[7],
+      lastReadingSpeed: +parts[8],
+      maxReadingSpeed: +parts[9],
+      averageReadingTime: +parts[10],
+      averageWeightedRedingTime: +parts[11],
+      averageCharactersRead: +parts[12],
+      averageWeightedCharatersRead: +parts[13],
+      averageReadingSpeed: +parts[14],
+      averageWeightedReadingSpeed: +parts[15],
+      finishDate: parts[16] || 'na'
+    };
+  }
+
+  static getStatisticsFileName(statistics: BooksDbStatistic[], lastStatisticModified: number) {
+    let readingTime = 0;
+    let charactersRead = 0;
+    let minReadingSpeed = 0;
+    let altMinReadingSpeed = 0;
+    let maxReadingSpeed = 0;
+    let weightedSum = 0;
+    let validReadingDays = 0;
+    let finishDate = 'na';
+
+    for (let index = 0, { length } = statistics; index < length; index += 1) {
+      const statistic = statistics[index];
+
+      readingTime += statistic.readingTime;
+      charactersRead += statistic.charactersRead;
+      minReadingSpeed = minReadingSpeed
+        ? Math.min(minReadingSpeed, statistic.minReadingSpeed)
+        : statistic.minReadingSpeed;
+      altMinReadingSpeed = altMinReadingSpeed
+        ? Math.min(altMinReadingSpeed, statistic.altMinReadingSpeed)
+        : statistic.altMinReadingSpeed;
+      maxReadingSpeed = Math.max(maxReadingSpeed, statistic.lastReadingSpeed);
+      weightedSum += statistic.readingTime * statistic.charactersRead;
+
+      if (statistic.readingTime) {
+        validReadingDays += 1;
+      }
+
+      if (statistic.completedData) {
+        if (finishDate === 'na') {
+          finishDate = statistic.dateKey;
+        } else {
+          finishDate =
+            statistic.completedData.dateKey > finishDate
+              ? statistic.completedData.dateKey
+              : finishDate;
+        }
+      }
+    }
+
+    const averageReadingTime = validReadingDays ? Math.ceil(readingTime / validReadingDays) : 0;
+    const averageWeightedReadingTime = charactersRead ? Math.ceil(weightedSum / charactersRead) : 0;
+    const averageCharactersRead = validReadingDays
+      ? Math.ceil(charactersRead / validReadingDays)
+      : 0;
+    const averageWeightedCharactersRead = readingTime ? Math.ceil(weightedSum / readingTime) : 0;
+    const lastReadingSpeed = readingTime ? Math.ceil((3600 * charactersRead) / readingTime) : 0;
+    const averageReadingSpeed = averageReadingTime
+      ? Math.ceil((3600 * averageCharactersRead) / averageReadingTime)
+      : 0;
+    const averageWeightedReadingSpeed = averageWeightedReadingTime
+      ? Math.ceil((3600 * averageWeightedCharactersRead) / averageWeightedReadingTime)
+      : 0;
+
+    return `statistics_${exporterVersion}_${currentDbVersion}_${lastStatisticModified}_${charactersRead}_${readingTime}_${minReadingSpeed}_${altMinReadingSpeed}_${lastReadingSpeed}_${maxReadingSpeed}_${averageReadingTime}_${averageWeightedReadingTime}_${averageCharactersRead}_${averageWeightedCharactersRead}_${averageReadingSpeed}_${averageWeightedReadingSpeed}_${finishDate}.json`;
+  }
+
+  static getReadingGoalsFileName(lastGoalModified: number) {
+    return `${BaseStorageHandler.readingGoalsFilePrefix}${exporterVersion}_${currentDbVersion}_${lastGoalModified}.json`;
+  }
+
+  protected static checkIsPresentAndUpToDate(
+    functionToCall: (_: string) => any,
+    keyToCheck: string,
+    referenceFilename: string,
+    name?: string
+  ) {
+    let isPresentAndUpToDate = false;
+
+    if (name) {
+      const lastModifiedValue = functionToCall(referenceFilename)[keyToCheck];
+      const existingLastModifiedValue = functionToCall(name)[keyToCheck];
+
+      isPresentAndUpToDate = !!(
+        existingLastModifiedValue &&
+        lastModifiedValue &&
+        existingLastModifiedValue >= lastModifiedValue
+      );
+    }
+
+    BaseStorageHandler.completeStep();
+
+    return isPresentAndUpToDate;
   }
 
   protected addBookCard(title: string, dataToAdd: Record<string, any>) {
@@ -426,16 +572,26 @@ export abstract class BaseStorageHandler {
     return bookObject;
   }
 
-  protected async extractProgress(entry: Entry, progressBase = 0.9) {
+  protected async extractAsJSON(entry: Entry, errorMessage: string, progressBase = 0.9) {
     if (!entry) {
       return undefined;
     }
 
-    const progressData = JSON.parse(
-      await this.readFromZip(new TextWriter(), 'Unable to read progress data', entry, progressBase)
+    const jsonData = JSON.parse(
+      await this.readFromZip(new TextWriter(), errorMessage, entry, progressBase)
     );
 
-    return progressData;
+    return jsonData;
+  }
+
+  protected setRootFile(filename: string, file: ExternalFile) {
+    for (let index = 0, { length } = this.validRootFiles; index < length; index += 1) {
+      const validRootFile = this.validRootFiles[index];
+
+      if (filename.startsWith(validRootFile)) {
+        this.rootFiles.set(validRootFile, file);
+      }
+    }
   }
 
   protected static getDummyId() {
@@ -517,6 +673,16 @@ export abstract class BaseStorageHandler {
       dbVersion: +parts[2],
       lastBookmarkModified: +parts[3],
       progress: +parts[4]
+    };
+  }
+
+  protected static getReadingGoalsMetadata(filename: string) {
+    const parts = filename.split('_').map((part) => part.replace(/\.json$/, ''));
+
+    return {
+      exporterVersion: +parts[1],
+      dbVersion: +parts[2],
+      lastGoalModified: +parts[3]
     };
   }
 

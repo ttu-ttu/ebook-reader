@@ -280,7 +280,9 @@
             </div>
             <div class="mt-4 flex">
               <div
-                class="mr-4 cursor-pointer"
+                tabindex="0"
+                role="button"
+                class="mr-4"
                 class:hidden={isDefault}
                 on:click={() => modifyStorageSource(storageSource)}
                 on:keyup={dummyFn}
@@ -288,8 +290,10 @@
                 <Fa icon={faPenToSquare} />
               </div>
               <div
+                tabindex="0"
+                role="button"
                 title="Toggle source as sync target"
-                class="mr-4 cursor-pointer"
+                class="mr-4"
                 class:opacity-50={!storageSourceIsSyncTarget}
                 on:click={() =>
                   syncTarget$.next($syncTarget$ === storageSource.name ? '' : storageSource.name)}
@@ -297,10 +301,11 @@
               >
                 <Fa icon={faCloudArrowUp} />
               </div>
-
               <div
+                tabindex="0"
+                role="button"
                 title="Toggle source as data source for this type"
-                class="mr-4 cursor-pointer"
+                class="mr-4"
                 class:opacity-50={!storageSourceIsSourceDefault}
                 on:click={() =>
                   setStorageSourceDefault(
@@ -311,9 +316,9 @@
               >
                 <Fa icon={faTableList} />
               </div>
-
               <div
-                class="cursor-pointer"
+                tabindex="0"
+                role="button"
                 class:hidden={isDefault}
                 on:click={() =>
                   deleteStorageSource(

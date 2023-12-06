@@ -6,6 +6,8 @@
   import SettingsHeader from '$lib/components/settings/settings-header.svelte';
   import { pxScreen } from '$lib/css-classes';
   import {
+    addCharactersOnCompletion$,
+    adjustStatisticsAfterIdleTime$,
     autoBookmark$,
     autoPositionOnResize$,
     autoReplication$,
@@ -23,15 +25,29 @@
     hideSpoilerImage$,
     lineHeight$,
     manualBookmark$,
+    keepLocalStatisticsOnDeletion$,
+    openTrackerOnCompletion$,
+    overwriteBookCompletion$,
     pageColumns$,
+    pauseTrackerOnCustomPointChange$,
     replicationSaveBehavior$,
     secondDimensionMaxValue$,
     selectionToBookmarkEnabled$,
     showExternalPlaceholder$,
+    startDayHoursForTracker$,
+    statisticsEnabled$,
+    statisticsMergeMode$,
     swipeThreshold$,
     theme$,
+    trackerAutoPause$,
+    trackerBackwardSkipThreshold$,
+    trackerForwardSkipThreshold$,
+    trackerIdleTime$,
+    trackerPopupDetection$,
+    trackerSkipThresholdAction$,
     viewMode$,
-    writingMode$
+    writingMode$,
+    readingGoalsMergeMode$
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { pagePath } from '$lib/data/env';
@@ -105,6 +121,7 @@
       bind:disableWheelNavigation={$disableWheelNavigation$}
       bind:autoPositionOnResize={$autoPositionOnResize$}
       bind:avoidPageBreak={$avoidPageBreak$}
+      bind:pauseTrackerOnCustomPointChange={$pauseTrackerOnCustomPointChange$}
       bind:customReadingPointEnabled={$customReadingPointEnabled$}
       bind:selectionToBookmarkEnabled={$selectionToBookmarkEnabled$}
       bind:pageColumns={$pageColumns$}
@@ -116,6 +133,21 @@
       bind:replicationSaveBehavior={$replicationSaveBehavior$}
       bind:autoReplication={$autoReplication$}
       bind:showExternalPlaceholder={$showExternalPlaceholder$}
+      bind:keepLocalStatisticsOnDeletion={$keepLocalStatisticsOnDeletion$}
+      bind:overwriteBookCompletion={$overwriteBookCompletion$}
+      bind:startDayHoursForTracker={$startDayHoursForTracker$}
+      bind:statisticsMergeMode={$statisticsMergeMode$}
+      bind:readingGoalsMergeMode={$readingGoalsMergeMode$}
+      bind:statisticsEnabled={$statisticsEnabled$}
+      bind:trackerAutoPause={$trackerAutoPause$}
+      bind:openTrackerOnCompletion={$openTrackerOnCompletion$}
+      bind:addCharactersOnCompletion={$addCharactersOnCompletion$}
+      bind:trackerIdleTime={$trackerIdleTime$}
+      bind:trackerForwardSkipThreshold={$trackerForwardSkipThreshold$}
+      bind:trackerBackwardSkipThreshold={$trackerBackwardSkipThreshold$}
+      bind:trackerSkipThresholdAction={$trackerSkipThresholdAction$}
+      bind:trackerPopupDetection={$trackerPopupDetection$}
+      bind:adjustStatisticsAfterIdleTime={$adjustStatisticsAfterIdleTime$}
     />
   </div>
 </div>

@@ -10,6 +10,8 @@ An online e-book reader that supports dictionary extensions like Yomichan, which
 - [x] Customizable environment (e. g. themes, font size, image blur, furigana settings etc.)
 - [x] Continuous / Pagination reader mode
 - [x] Vertical / Horizontal reading mode
+- [x] Basic Time/Character and Reading Goals Tracker
+- [x] Reading Data Statistics
 - [x] Character count and progress display
 - [x] Table of content support for EPUB files
 - [x] (Auto) bookmark functionality
@@ -34,6 +36,7 @@ You can find most of the reader controls in the reader header which you can open
 | ![Icon](assets/readme/control-bookmark.svg)        | Allows you to create a bookmark at your current location (keybind <kbd>b</kbd>) |
 | ![Icon](assets/readme/control-bookmark-scroll.svg) | Returns to bookmark location (keybind <kbd>r</kbd>)                             |
 | ![Image](assets/readme/book-scroll-speed.png)      | Displays current auto scroll speed (keybind <kbd>a</kbd>/<kbd>d</kbd>)          |
+| ![Icon](assets/readme/control-finish.svg)          | Allows you to complete the current book                                         |
 | ![Icon](assets/readme/control-reading-point.svg)   | Allows you to execute a custom reader point action                              |
 | ![Icon](assets/readme/control-fullscreen.svg)      | Allows you to enter fullscreen mode (keybind <kbd>F11</kbd>)                    |
 | ![Icon](assets/readme/control-settings.svg)        | Navigates you to the settings                                                   |
@@ -42,11 +45,15 @@ You can find most of the reader controls in the reader header which you can open
 
 You may find the following controls in the reader footer:
 
-| Control                                        | Description                                                                                                                                                                                                                                           |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ![Icon](assets/readme/control-reader-sync.svg) | Indicates that there is data which will be exported if a sync target and auto export is configured. Click/Tap to execute a manual export                                                                                                              |
-| ![Icon](assets/readme/control-sync-error.svg)  | Indicates that multiple auto export attempts failed. Click/Tap to execute a manual export                                                                                                                                                             |
-| ![Image](assets/readme/book-progress.png)      | Displays your reading progress. Click/Tap on it to hide<br/>The book progress is calculated by dividing the current character location by total book characters. Characters counted are Japanese Glyphs without latin letters, punctuation or similar |
+| Control                                                | Description                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![Icon](assets/readme/control-reader-timer-paused.svg) | Indicates that the Reading Tracker is paused. Double Click/Tap to start tracking or single Click/Tap to show the Tracker menu                                                                                                                                                                |
+| ![Icon](assets/readme/control-reader-timer.svg)        | Indicates that the Reading Tracker is running. Double Click/Tap to stop tracking or single Click/Tap to show the Tracker menu.<br/>Pulses in case you have an active Freeze Position                                                                                                         |
+| ![Icon](assets/readme/control-reader-sync.svg)         | Indicates that there is data which will be exported if a sync target and auto export is configured. Click/Tap to execute a manual export                                                                                                                                                     |
+| ![Icon](assets/readme/control-sync-error.svg)          | Indicates that multiple auto export attempts failed. Click/Tap to execute a manual export                                                                                                                                                                                                    |
+| ![Image](assets/readme/book-progress.png)              | Displays your reading progress. Click/Tap on it to copy the current progress to the clipboard.<br/>The book progress is calculated by dividing the current character location by total book characters. Characters counted are Japanese Glyphs without latin letters, punctuation or similar |
+
+Click/Tap on some free space in the footer to hide the reading progress.
 
 **Note**: The setting "Close Confirmation" will handle reloading and closing tabs but not other ways of navigation like e. g. clicking/tapping the back button / closing pages via mobile browser menu etc. There are known limitations on mobile iOS and therefore this functionality may not work as expected on this platform
 
@@ -69,18 +76,20 @@ Explanation from [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Keyboard
 > For example, the code returned is "KeyQ" for the Q key on a QWERTY layout keyboard, but the same code value also
 > represents the ' key on Dvorak keyboards and the A key on AZERTY keyboards.
 
-| Key Code            | Description                              |
-| ------------------- | ---------------------------------------- |
-| <kbd>Space</kbd>    | Toggle auto-scroll (continuous mode)     |
-| <kbd>a</kbd>        | Increase auto-scroll speed               |
-| <kbd>d</kbd>        | Decrease auto-scroll speed               |
-| <kbd>b</kbd>        | Create bookmark at your current location |
-| <kbd>r</kbd>        | Return to bookmark location              |
-| <kbd>t</kbd>        | Select a new custom reading point        |
-| <kbd>PageDown</kbd> | Move to next page                        |
-| <kbd>PageUp</kbd>   | Move to previous page                    |
-| <kbd>n</kbd>        | Move to next/previous chapter            |
-| <kbd>m</kbd>        | Move to next/previous chapter            |
+| Key Code            | Description                               |
+| ------------------- | ----------------------------------------- |
+| <kbd>Space</kbd>    | Toggle auto-scroll (continuous mode)      |
+| <kbd>a</kbd>        | Increase auto-scroll speed                |
+| <kbd>d</kbd>        | Decrease auto-scroll speed                |
+| <kbd>b</kbd>        | Create bookmark at your current location  |
+| <kbd>r</kbd>        | Return to bookmark location               |
+| <kbd>t</kbd>        | Select a new custom reading point         |
+| <kbd>p</kbd>        | Toggles Reading Tracker                   |
+| <kbd>f</kbd>        | Toggles a Reading Tracker Freeze Position |
+| <kbd>PageDown</kbd> | Move to next page                         |
+| <kbd>PageUp</kbd>   | Move to previous page                     |
+| <kbd>n</kbd>        | Move to next/previous chapter             |
+| <kbd>m</kbd>        | Move to next/previous chapter             |
 
 # Book Manager
 
@@ -118,9 +127,157 @@ You may find the following controls in the manager:
 | ![Icon](assets/readme/control-export.svg)         | Opens the export menu for the selected books                                   |
 | ![Icon](assets/readme/control-cancel.svg)         | Cancels the current book import/deletion                                       |
 
+# Reading Tracker
+
+ッツ Ebook Reader provides a basic time/character and reading goal tracker. You can open your data while reading a book and single click/tap on the tracker icon in the left bottom page corner. It gives an Overview about occured update errors, your reading goal progress, some timer controls and respective Data for your current Reading Session (across days), data of the current Day (across Sessions) and all Time (across sessions and days). If you are using the Continuous Mode with Autoscroll you will find an additional Autoscroller Section with a separate Set of Reading Data which is not persisted and reset between Autoscroll Pauses. Tracking Data will be persisted around every 10 seconds or when tracking gets paused.
+
+Clicking on a tracker item label will toggle a blur effect in case you don't want to see the respective value.
+
+**Note**: The Tracker is paused by default when opening a Book, giving you the ability to relocate your current position,enter fullscreen etc. before starting to track your session.
+
+You may find following Controls in the Current Session Section:
+
+| Control                                    | Description                                                         |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| ![Icon](assets/readme/control-play.svg)    | Restarts the Reading Tracker when closing the Menu                  |
+| ![Icon](assets/readme/control-pause.svg)   | Stops the Reading Tracker when closing the Menu                     |
+| ![Icon](assets/readme/control-refresh.svg) | Updates the Tracker Character Position to the current Book Location |
+| ![Icon](assets/readme/control-freeze.svg)  | Toggles a Reading Tracker Freeze Position                           |
+| ![Icon](assets/readme/control-save.svg)    | Saves tracking Data manually to the Database                        |
+
+**Freeze Position Note**: A Freezing Position lets you remember the current Location and ignoring any time and character change until you hit the same (or any later) character position again while keeping the tracker on. This allows you to go back to previous pages without impacting your current session data. After reaching the same Location again or toggling the position off the tracker will start to capture time and characters again. Note: If you pause the tracker manually or it gets autopaused (e.g. by idleing) the tracker will not automatically restart on its own when reaching the previous Location - you still need to unpause it yourself in oder to start tracking again.
+
+You will also find a Recent History List in the Current Session Section which gives you an Overview about the last captured tracking Data. It will display time of tracking, amount of passed seconds and amount of characters read. Data will be displayed in green if the data was added and red if it was subtracted from your statistics. You can navigate between pages by clicking on respective Arrow Icons.
+
+You may find following Controls in the Recent History :
+
+| Control                                      | Description                                                                           |
+| -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| ![Icon](assets/readme/control-delete.svg)    | Reverts the item. Positive (green) Data will be subtracted, negative (red) Data added |
+| ![Icon](assets/readme/control-save.svg)      | Indicates an Item which was not yet stored in the database                            |
+| ![Icon](assets/readme/control-save-done.svg) | Indicates an Item which was already stored in the database                            |
+
+The Data will be tracked based on the Time of your Device and configured Starting Hours. Crossing a Day is accordingly be reflected in the respective "Today" Tracking Section and on idle rollbacks while the current Session will show all Data since you have opened the current Book without leaving or reloading the reader page.
+
+The Tracker is currently capturing (but not necessarily displaying) following Data (per Book and Day):
+
+- Reading Time
+- Characters Read (based on the character counter in the bottom right corner)
+- Minimum Reading Speed per Hour (lowest Value seen across all Time, including ticks without any character read changes)
+- Alt. Minimum Reading Speed per Hour (lowest Value seen across all Times, including only ticks with character read changes)
+- Maximum Reading Speed per Hour (highest Value seen across all Time)
+- Book Start Date (first day of opening)
+- Book Completion Date (and previous mentioned data as per time of completion)
+
+The Tracker will auto pause and unpause on certain Reader Events like:
+
+- Opening the Table Of Contents Menu
+- Opening the Tracker Menu
+- Changing the current Chapter
+- Setting a Custom Reading Point (if respective option is disabled)
+- Return to Bookmark
+- Entering/Leaving Fullscreen
+- Resizing the Browser Window
+
+The Idle Time is resetted by:
+
+- Changes to the current Book Location (current character count)
+- Moving your Mouse Cursor on the Page
+- Selecting/Highlighting Text on the Page
+
+**Note**: It is recommended to either keep the Auto Pause Option to "Moderate" or higher or to manually pause the timer when putting the Tab into Background for longer durations. Otherwise you may run into the risk of Timer Drifting as Browser will throttle Timers of Tabs not being in the foreground after a short Time. Some Browser may also have memory optimization functionality which -if not disabled- may unload a Page completely when unused. Therefore you may want to pause the timer when planning to go idling for a longer time period
+
+**Idle Rollback / Revert Note**: The Tracker does not capture Data on a level to properly rollback values for Min/Max values like "Min Reading Speed". Keep in mind that those values represent all time and are not changed/adjusted by rollbacks of idle times or reverts from the recent history
+
+**Deletion Note**: Deleting books from your local Browser Storage will not delete related statistics except you disabled respective Option. This is only applicable for local Data - Data on external Storage Sources like GDrive will always be deleted if you remove the respective Book etc. Deleting Statistics of a Book will also lead to a loss of Book Start / Completion Data
+
+**Clear Zombie Statistics**: If you run this operation all local entries of statistics for which currently no local book copy exists in your browser will be deleted
+
+### Statistics Merge Mode
+
+| Import/Export Behavior + Merge Merge | Description                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New Only + Merge                     | Will attempt a merge in case the last modified Statistic on the target is older than the source or data is not existing<br/>A Statistic will be added to the final Result in Case no other Data for this day exists or it has a newer last Modified Date<br/>Deleted data on one side may be readded back again on the other |
+| New Only + Replace                   | Will overwrite all Data on the target in case the last modified Statistic on it is older than the source or data is not existing<br/>Can be used to propagate deleted Data from one side to the other                                                                                                                        |
+| Overwrite + Merge                    | Will always attempt a merge between source and target<br/>A Statistic will be added to the final Result in Case no other Data for this day exists or in case it comes from the source<br/>Deleted data on one side may be readded back again on the other                                                                    |
+| Overwrite + Replace                  | Will always replace all Data on target from source<br/>Can be used to propagate deleted Data from one side to the other                                                                                                                                                                                                      |
+
+### Reading Goals
+
+You are able to configure a Time or Character Goal and Frequency in the "Statistics" Tab of the Settings. Entering 0 as Goal Value will effectively disable this type while you are still able to give a tracking value to the other Goal Type. Saving 0 as Value for Time and Character on an existing reading goal will delete it.
+
+**Note**: After setting a Goal it will automatically be tracked based on the given Start Date and choosen Frequency Interval until you stop it. You are free to delete, modify or reschedule the Goal as you prefer and archive the Time Window. Should the Date be in the Future and no further Data exists afterwards you can simply save the change. In Case you are trying to modify an ongoing goal or in case there is conflicting data after respective start data you need to first decide about if you want to archive the current Goal and start a new one afterwards or if you want to replace existing Data. You will also see what data would be replaced in case you continue.
+
+The configured Start / End Dates for a Reading Goal are inclusive. Example: A Reading Goal from 01.01.2024 - 07.01.2024 with starting Hours 0 will count Data seen from 01.01.2024 00:00:00 until 07.01.2024 23:59:59 while a Reading Goal from 10.02.2024 - 10.02.20024 with starting Hours 6 will count Data seen from 10.02.2024 06:00:00 - 11.02.2024 05:59:59.
+
+### Reading Goals Merge Mode
+
+| Import/Export Behavior + Merge Mede | Description                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New Only + Merge                    | Will attempt a merge in case the last modified Reading Goal on the target is older than the source or data is not existing<br/>A Reading Goal will be added to the final Result in Case no overlapping Time Window exists or it is the last modified Goal for this window<br/>Deleted data on one side may be readded back again on the other |
+| New Only + Replace                  | Will overwrite all Data on the target in case the last modified Reading Goal on it is older than the source or data is not existing<br/>Can be used to propagate deleted Data from one side to the other                                                                                                                                      |
+| Overwrite + Merge                   | Will always attempt a merge between source and target<br/>A Reading Goal will be added to the Result in Case no overlapping Time Window exists or in case it comes from the source<br/>Deleted data on one side may be readded back again on the other                                                                                        |
+| Overwrite + Replace                 | Will always replace all Data on target from source<br/>Can be used to propagate deleted Data from one side to the other                                                                                                                                                                                                                       |
+
+# Statistics
+
+In the Statistics Tab of ッツ Ebook Reader you can find various visualizations of your tracked Reading Data. You can reach it via the Book Reader (prefilters Data to the current opened Book), Book Manager (displays all Reading Data) and Book Manager Card Selection (prefilters Data to the selected Books).
+
+You may find the following controls in the statistics page header:
+
+| Control                                                | Description                                 |
+| ------------------------------------------------------ | ------------------------------------------- |
+| ![Icon](assets/readme/control-manager.svg)             | Opens Book Manager or Action Menu on Mobile |
+| ![Icon](assets/readme/control-settings.svg)            | Opens Book Reader Settings                  |
+| ![Icon](assets/readme/control-statistics-settings.svg) | Opens Statistics Settings                   |
+| ![Icon](assets/readme/control-filter.svg)              | Opens the Title Filter Menu                 |
+| ![Icon](assets/readme/control-statistics-overview.svg) | Opens the Heatmap Overview Tab              |
+| ![Icon](assets/readme/control-statistics-summary.svg)  | Opens the Summary Tab                       |
+| ![Icon](assets/readme/control-copy.svg)                | Opens the Copy Action Menu                  |
+
+## Desktop Keybinds
+
+See also the Note for the general Desktop Keybinds
+
+| Key Code     | Description                                     |
+| ------------ | ----------------------------------------------- |
+| <kbd>t</kbd> | Toggles through the Time Templates              |
+| <kbd>a</kbd> | Toggles through the Primary Aggregation Options |
+
+## Title Filter
+
+The Title Filter Menu lets you filter part of the Data based on the book title.
+
+You may find the following controls in the filter menu:
+
+| Control                                                          | Description                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------- |
+| ![Icon](assets/readme/control-statistics-filter-apply.svg)       | Apply selected Title Filters                   |
+| ![Icon](assets/readme/control-statistics-filter-check-all.svg)   | Selects all Titles                             |
+| ![Icon](assets/readme/control-statistics-filter-uncheck-all.svg) | Deselects all Titles                           |
+| ![Icon](assets/readme/control-statistics-filter-range-on.svg)    | Displays Titles across all Time                |
+| ![Icon](assets/readme/control-statistics-filter-range-off.svg)   | Displays only Titles in current Date Selection |
+| ![Icon](assets/readme/control-statistics-filter-checked-on.svg)  | Displays all Titles (selected and unselected)  |
+| ![Icon](assets/readme/control-statistics-filter-checked-off.svg) | Displays only selected Titles                  |
+
+## Heatmap / Overview
+
+The Overview Tab features two Heatmaps. The Reading Data Heatmap is colorized based on the amount of Reading Time on the day and displays the amount/percentage of days read. The Reading Goal Data Heatmap is colorized based on the completion of the respective current Reading Goal and displays the amount/percentage of completed (100%) Reading Goals. Both Heatmaps shows in addition the respective longest and current Streaks. Clicking/Tapping on a Day will open a popover with Detail Data. Clicking/Tapping on a Streak will toggle the scroll and highlighting of all days belonging to the respective Streak.
+
+You may find the following controls in the heatmap:
+
+| Control                                           | Description                                   |
+| ------------------------------------------------- | --------------------------------------------- |
+| ![Icon](assets/readme/control-heatmap-return.svg) | Returns the heatmap to the current Year       |
+| ![Icon](assets/readme/control-heatmap-switch.svg) | Switches between All Time / Current Year Data |
+
+## Statistics Summary
+
+The Statistics Summary Tab displays detail Deta for the configured Date Range and Aggregration/Data Sources. Clicking on the attribute name lets you quick switch between them, clicking on the Sort Icon will toggle the Direction. The sort Icon will be grayed out in case the column isn't the active sorting attribute.
+
 # Data Import/Export
 
-You can transfer books and their progress between devices/browsers by importing and exporting data via different storage sources
+You can transfer books and their related data between devices/browsers by importing and exporting data via different storage sources
 
 **Note**: Imports/Exports are intended to move small volumes of data and not as frequent backup of the whole library or similar
 
@@ -136,18 +293,25 @@ Following export targets are available:
 To export data select books in the manager and click/tap on the respective icon in the header.
 Besides the export target you can also choose what kind of data you want to export:
 
-| Option    | Content                                             |
-| --------- | --------------------------------------------------- |
-| Book Data | Book data like text content, images, chapters etc.  |
-| Bookmark  | Progress data like scroll position, percentage etc. |
+| Option     | Content                                             |
+| ---------- | --------------------------------------------------- |
+| Book Data  | Book data like text content, images, chapters etc.  |
+| Bookmark   | Progress data like scroll position, percentage etc. |
+| Statistics | Tracked Time and Characters for a day etc.          |
 
-**Note**: Imports/Exports are additive and will only store/overwrite data but never delete it. Data like bookmarks for items in the browser db will only be written in case a local book copy exists while external sources allow to store them without the need of exporting the book before.
+**Note**: Imports/Exports are additive and will only store/overwrite data but never delete it by default - exceptions are types configured with a merge mode of "overwrite" like statistics or reading goals. Data like bookmarks for items in the browser db will only be written in case a local book copy exists while external sources allow to store them without the need of exporting the book before.
 
 After confirmation the export will start and the progress with average remaining time will be displayed. During this time you will not be able to excute other operations like opening,deleting or importing books. To reimport an exported zip file click on the import icon when no books are selected. Both - export and import - can be canceled by clicking/tapping on the respective button besides the progress bar. Already processed data will stay as is.
 
 You can read books from external sources without having a local book copy (this will redownload the data every time). This may create empty placeholder data in case there is no local copy present in your browser. Placeholder data is filtered out by default from the browser db manager but can be enabled via settings in case you want to delete it.
 
 **Note**: When opening a book from an external source it will override your configured sync target temporarily. The import/export of data itself will still follow your configured auto import/export setting.
+
+Other Data which can be imported/exported include:
+
+| Data          | Location                                                |
+| ------------- | ------------------------------------------------------- |
+| Reading Goals | Sync Button in "Statistics" Tab / Reading Goals Section |
 
 # Storage Sources
 

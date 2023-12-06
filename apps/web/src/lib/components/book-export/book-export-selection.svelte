@@ -3,20 +3,17 @@
   import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
   import type { StorageIconElement } from '$lib/data/storage/storage-view';
   import { isOnline$ } from '$lib/data/store';
+  import { isOnlineSourceAvailable } from '$lib/functions/utils';
   import { onMount } from 'svelte';
 
   export let icons: StorageIconElement[];
   export let target: StorageKey;
   export let dataToReplicate: StorageDataType[];
 
-  $: if (!$isOnline$ && requiresConnection(target)) {
+  $: if (!isOnlineSourceAvailable($isOnline$, target)) {
     target = icons.find((icon) => icon.source === StorageKey.BACKUP)
       ? StorageKey.BACKUP
       : StorageKey.BROWSER;
-  }
-
-  function requiresConnection(storageKey: StorageKey) {
-    return storageKey === StorageKey.GDRIVE || storageKey === StorageKey.ONEDRIVE;
   }
 
   onMount(() => {
@@ -29,7 +26,7 @@
 <h2 class="mb-4 text-xl font-medium">Export Target</h2>
 <div class="mb-4 grid grid-cols-2 gap-8">
   {#each icons as icon (icon.source)}
-    {@const disabled = requiresConnection(icon.source) && !$isOnline$}
+    {@const disabled = !isOnlineSourceAvailable($isOnline$, icon.source)}
     <BookExportIcon
       {...icon}
       {disabled}
@@ -57,5 +54,15 @@
       bind:group={dataToReplicate}
     />
     <label for="bookprogress">Bookmark</label>
+  </div>
+  <div>
+    <input
+      type="checkbox"
+      id="bookstatistic"
+      name="statistic"
+      value="statistic"
+      bind:group={dataToReplicate}
+    />
+    <label for="bookstatistic">Statistics</label>
   </div>
 </div>

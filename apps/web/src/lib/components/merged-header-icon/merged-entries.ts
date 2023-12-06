@@ -6,6 +6,7 @@
 
 import {
   faBug,
+  faChartLine,
   faCog,
   faFileArrowUp,
   faFileZipper,
@@ -17,6 +18,7 @@ import {
 export const mergeEntries = {
   MANAGE: { routeId: '/manage', label: 'Manager', icon: faSignOutAlt },
   SETTINGS: { routeId: '/settings', label: 'Settings', icon: faCog },
+  STATISTICS: { routeId: '/statistics', label: 'Statistics', icon: faChartLine },
   DOMAIN_HINT: { routeId: '', label: 'Domain Hint', icon: faTriangleExclamation },
   BUG_REPORT: { routeId: '', label: 'Bug Report', icon: faBug },
   FOLDER_IMPORT: { routeId: '', label: 'Import Folder(s)', icon: faFolderPlus },
