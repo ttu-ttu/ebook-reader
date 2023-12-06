@@ -18,7 +18,7 @@
     "@types/balanced-match": "3.0.2",
     "@types/path-browserify": "1.0.2",
     "@types/ua-parser-js": "0.7.39",
-    "@types/webappsec-credential-management": "^0.6.8",
+    "@types/webappsec-credential-management": "0.6.8",
     "@types/wicg-file-system-access": "2023.10.4",
     "autoprefixer": "10.4.16",
     "postcss": "8.4.32",
