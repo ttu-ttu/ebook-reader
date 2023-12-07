@@ -226,7 +226,7 @@
   onMount(init);
 
   function onKeyUp(ev: KeyboardEvent) {
-    if ($skipKeyDownListener$) {
+    if ($skipKeyDownListener$ || ev.altKey || ev.ctrlKey || ev.shiftKey || ev.repeat) {
       return;
     }
 
