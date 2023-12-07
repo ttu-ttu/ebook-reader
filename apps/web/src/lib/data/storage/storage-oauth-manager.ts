@@ -211,6 +211,11 @@ export class StorageOAuthManager {
     let errorMessage = '';
 
     try {
+      const existingStorageSourceData = storageSource || {
+        storedInManager: false,
+        encryptionDisabled: false
+      };
+
       token = await this.waitForAuth(window);
 
       storageOAuthTokens.set(storageSourceName, token);
@@ -221,16 +226,12 @@ export class StorageOAuthManager {
         (this.storageType !== StorageKey.GDRIVE || this.remoteData.clientSecret) &&
         token.refreshToken &&
         token.refreshToken !== this.remoteData.refreshToken &&
-        secret
+        (secret || existingStorageSourceData.encryptionDisabled)
       ) {
         this.remoteData.refreshToken = token.refreshToken;
 
         try {
           const db = await database.db;
-          const existingStorageSourceData = storageSource || {
-            storedInManager: false,
-            encryptionDisabled: false
-          };
           const newData = existingStorageSourceData.encryptionDisabled
             ? {
                 clientId: this.remoteData.clientId,
@@ -244,7 +245,7 @@ export class StorageOAuthManager {
                   clientSecret: this.remoteData.clientSecret,
                   refreshToken: token.refreshToken
                 }),
-                secret
+                secret!
               );
 
           await db.put('storageSource', {
