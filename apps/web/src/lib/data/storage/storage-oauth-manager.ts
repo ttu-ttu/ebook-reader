@@ -5,6 +5,7 @@
  */
 
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
+import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
 import { dialogManager } from '$lib/data/dialog-manager';
 import {
   gDriveAuthEndpoint,
@@ -21,6 +22,7 @@ import { logger } from '$lib/data/logger';
 import {
   encrypt,
   isAppDefault,
+  unlockStorageData,
   type RemoteContext,
   type StorageUnlockAction
 } from '$lib/data/storage/storage-source-manager';
@@ -77,7 +79,8 @@ export class StorageOAuthManager {
     storageSourceName: string,
     askForStorageUnlock: boolean,
     authWindow?: Window | null,
-    oldUnlockResult?: StorageUnlockAction
+    oldUnlockResult?: StorageUnlockAction,
+    oldStorageSource?: BooksDbStorageSource | undefined
   ): Promise<string | undefined> {
     const oldToken = storageOAuthTokens.get(storageSourceName);
     const shallUnlock = !oldToken || askForStorageUnlock;
@@ -97,6 +100,7 @@ export class StorageOAuthManager {
 
     let secret: string | undefined;
     let unlockResult = oldUnlockResult;
+    let storageSource = oldStorageSource;
 
     if (storageSourceName === StorageSourceDefault.GDRIVE_DEFAULT) {
       this.remoteData = {
@@ -111,29 +115,24 @@ export class StorageOAuthManager {
     } else {
       if (!unlockResult) {
         const db = await database.db;
-        const storageSource = await db.get('storageSource', storageSourceName);
+
+        storageSource = await db.get('storageSource', storageSourceName);
 
         if (!storageSource) {
           throw new Error(`No storage source with name ${storageSourceName} found`);
         }
 
-        unlockResult = shallUnlock
-          ? await new Promise<StorageUnlockAction | undefined>((resolver) => {
-              dialogManager.dialogs$.next([
-                {
-                  component: StorageUnlock,
-                  props: {
-                    description: 'You are trying to access protected data',
-                    action: `Enter the correct password for ${storageSourceName} and login to your account if required to proceed`,
-                    encryptedData: storageSource.data,
-                    forwardSecret: true,
-                    resolver
-                  },
-                  disableCloseOnClick: true
-                }
-              ]);
-            })
-          : undefined;
+        unlockResult = await unlockStorageData(
+          storageSource,
+          'You are trying to access protected data',
+          shallUnlock
+            ? {
+                action: `Enter the correct password for ${storageSourceName} and login to your account if required to proceed`,
+                encryptedData: storageSource.data,
+                forwardSecret: true
+              }
+            : undefined
+        );
 
         if (!unlockResult) {
           throw new Error(`Unable to unlock required data`);
@@ -201,7 +200,8 @@ export class StorageOAuthManager {
             Math.min(Math.max(this.parentWindow.innerHeight, 300), 560),
             window
           ),
-          unlockResult
+          unlockResult,
+          storageSource
         );
       }
 
@@ -227,19 +227,31 @@ export class StorageOAuthManager {
 
         try {
           const db = await database.db;
-
-          await db.put('storageSource', {
-            name: storageSourceName,
-            type: this.storageType,
-            data: await encrypt(
-              this.parentWindow,
-              JSON.stringify({
+          const existingStorageSourceData = storageSource || {
+            storedInManager: false,
+            encryptionDisabled: false
+          };
+          const newData = existingStorageSourceData.encryptionDisabled
+            ? {
                 clientId: this.remoteData.clientId,
                 clientSecret: this.remoteData.clientSecret,
                 refreshToken: token.refreshToken
-              }),
-              secret
-            ),
+              }
+            : await encrypt(
+                this.parentWindow,
+                JSON.stringify({
+                  clientId: this.remoteData.clientId,
+                  clientSecret: this.remoteData.clientSecret,
+                  refreshToken: token.refreshToken
+                }),
+                secret
+              );
+
+          await db.put('storageSource', {
+            ...existingStorageSourceData,
+            name: storageSourceName,
+            type: this.storageType,
+            data: newData,
             lastSourceModified: Date.now()
           });
         } catch (err: any) {

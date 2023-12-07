@@ -278,6 +278,8 @@
         .map((defaultStorageSource) => ({
           name: defaultStorageSource.name,
           type: defaultStorageSource.type,
+          storedInManager: false,
+          encryptionDisabled: false,
           data: new ArrayBuffer(0),
           lastSourceModified: 0
         })),

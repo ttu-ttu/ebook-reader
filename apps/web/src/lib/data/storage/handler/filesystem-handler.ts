@@ -20,7 +20,10 @@ import { MergeMode } from '$lib/data/merge-mode';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import { StorageKey } from '$lib/data/storage/storage-types';
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
-import type { StorageUnlockAction } from '$lib/data/storage/storage-source-manager';
+import {
+  isRemoteContext,
+  type StorageUnlockAction
+} from '$lib/data/storage/storage-source-manager';
 import { dialogManager } from '$lib/data/dialog-manager';
 import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
 import { handleErrorDuringReplication } from '$lib/functions/replication/error-handler';
@@ -566,7 +569,7 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
 
       const handleData = storageSource.data;
 
-      if (handleData instanceof ArrayBuffer) {
+      if (handleData instanceof ArrayBuffer || isRemoteContext(handleData)) {
         throw new Error('Wrong filesystem handle type');
       }
 

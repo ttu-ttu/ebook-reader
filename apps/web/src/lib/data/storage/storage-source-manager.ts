@@ -12,6 +12,9 @@ import {
 import { fsStorageSource$, gDriveStorageSource$, oneDriveStorageSource$ } from '$lib/data/store';
 
 import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
+import StorageUnlock from '$lib/components/storage-unlock.svelte';
+import { dialogManager } from '$lib/data/dialog-manager';
+import { logger } from '$lib/data/logger';
 import { storageSource$ } from '$lib/data/storage/storage-view';
 
 const saltByteLength = 16;
@@ -114,4 +117,73 @@ export async function decrypt(window: Window, encryptedData: ArrayBuffer, secret
   const key = await generateKey(window, new Uint8Array(salt), secret);
 
   return window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+}
+
+export async function unlockStorageData(
+  storageSource: BooksDbStorageSource | undefined,
+  unlockDescription: string,
+  unlockProps?: Record<string, any>
+) {
+  let unlockResult: StorageUnlockAction | undefined;
+  let description = unlockDescription;
+
+  if (storageSource && storageSource.type !== StorageKey.FS) {
+    if (storageSource.storedInManager && storageSource.data instanceof ArrayBuffer) {
+      const passwordCredential: PasswordCredential | undefined = await navigator.credentials
+        .get({ password: true })
+        .then((credentials) =>
+          credentials instanceof PasswordCredential ? credentials : undefined
+        )
+        .catch(({ message }: any) => {
+          logger.error(`Error getting Password from Manager: ${message}`);
+
+          return undefined;
+        });
+
+      if (passwordCredential?.password) {
+        try {
+          unlockResult = JSON.parse(
+            new TextDecoder().decode(
+              await decrypt(window, storageSource.data, passwordCredential.password)
+            )
+          );
+
+          if (unlockResult) {
+            unlockResult.secret = passwordCredential.password;
+          }
+        } catch ({ message }: any) {
+          description += ' but the provided Credentials were invalid';
+          logger.error(
+            `Error decrypting Data with Credential ${passwordCredential.id}: ${message}`
+          );
+        }
+      }
+    } else if (isRemoteContext(storageSource.data)) {
+      unlockResult = storageSource.data;
+    }
+  }
+
+  if (!unlockResult && unlockProps) {
+    unlockResult = await new Promise<StorageUnlockAction | undefined>((resolver) => {
+      dialogManager.dialogs$.next([
+        {
+          component: StorageUnlock,
+          props: {
+            ...unlockProps,
+            description,
+            resolver
+          },
+          disableCloseOnClick: true
+        }
+      ]);
+    });
+  }
+
+  return unlockResult;
+}
+
+export function isRemoteContext(
+  data: FsHandle | ArrayBuffer | RemoteContext
+): data is RemoteContext {
+  return !!(data && 'clientId' in data && data.clientId);
 }
