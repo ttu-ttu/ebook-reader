@@ -12,45 +12,60 @@
     encrypt,
     isAppDefault,
     type FsHandle,
-    type RemoteContext,
-    type StorageSourceSaveResult
+    type StorageSourceSaveResult,
+    type StorageUnlockAction
   } from '$lib/data/storage/storage-source-manager';
   import { StorageKey } from '$lib/data/storage/storage-types';
   import { database, isOnline$ } from '$lib/data/store';
+  import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
   import { createEventDispatcher } from 'svelte';
+  import Fa from 'svelte-fa';
 
   export let configuredName: string;
   export let configuredIsSyncTarget: boolean;
   export let configuredIsStorageSourceDefault: boolean;
   export let configuredType: StorageKey;
-  export let configuredRemoteData: RemoteContext;
+  export let configuredRemoteData: StorageUnlockAction;
   export let configuredFSData: FsHandle;
+  export let configuredStoredInManager: boolean;
+  export let configuredEncryptionDisabled: boolean;
   export let resolver: (arg0: StorageSourceSaveResult | undefined) => void;
+
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
+
+  const storageSourceRefreshToken = configuredRemoteData?.refreshToken || '';
 
   let containerElm: HTMLElement;
   let nameElm: HTMLInputElement;
   let pwElm: HTMLInputElement;
   let pwConfirmElm: HTMLInputElement;
   let error = '';
-
+  const passwordManagerAvailable = 'PasswordCredential' in window;
   let storageSourceName = configuredName || '';
   let storageSourceIsSyncTarget = configuredIsSyncTarget || false;
   let storageSourceIsSourceDefault = configuredIsStorageSourceDefault || false;
   let storageSourceType = configuredType || StorageKey.GDRIVE;
   let storageSourceClientId = configuredRemoteData?.clientId || '';
   let storageSourceClientSecret = configuredRemoteData?.clientSecret || '';
-  const storageSourceRefreshToken = configuredRemoteData?.refreshToken || '';
   let directoryHandle: FileSystemDirectoryHandle | undefined = configuredFSData?.directoryHandle;
   let handleFsPath = configuredFSData?.fsPath || '';
-
-  const dispatch = createEventDispatcher<{
-    close: void;
-  }>();
-
+  let storageSourceStoredInManager =
+    (passwordManagerAvailable && configuredStoredInManager) || false;
+  let storageSourceEncryptionDisabled = configuredEncryptionDisabled || false;
   let storageSourceTypes = [
     { key: StorageKey.GDRIVE, label: 'GDrive' },
     { key: StorageKey.ONEDRIVE, label: 'OneDrive' }
   ];
+
+  $: if (browser && 'showDirectoryPicker' in window) {
+    storageSourceTypes = [...storageSourceTypes, { key: StorageKey.FS, label: 'Filesystem' }];
+  }
+
+  $: setInitialPassword(pwElm);
+
+  $: setInitialPassword(pwConfirmElm);
 
   async function selectDirectory() {
     resetCustomValidity();
@@ -115,6 +130,21 @@
       let credentialsChanged = false;
       let invalidateToken = false;
 
+      if (storageSourceStoredInManager) {
+        await navigator.credentials
+          .store(
+            // eslint-disable-next-line no-undef
+            new PasswordCredential({
+              id: storageSourceName,
+              name: `${storageSourceName} (${storageSourceType})`,
+              password: pwConfirmElm.value
+            })
+          )
+          .catch(({ message }: any) => {
+            throw new Error(`Failed to store Password: ${message}`);
+          });
+      }
+
       if (storageSourceType === StorageKey.FS) {
         if (!directoryHandle) {
           throw new Error('Directory handle not defined');
@@ -136,20 +166,30 @@
           throw new Error('You need to be online in order to make this change to the credentials');
         }
 
-        storageSourceData = await encrypt(
-          window,
-          JSON.stringify({
+        if (storageSourceEncryptionDisabled) {
+          storageSourceData = {
             clientId: storageSourceClientId,
             clientSecret: storageSourceClientSecret,
             refreshToken: invalidateToken ? '' : storageSourceRefreshToken
-          }),
-          pwConfirmElm.value
-        );
+          };
+        } else {
+          storageSourceData = await encrypt(
+            window,
+            JSON.stringify({
+              clientId: storageSourceClientId,
+              clientSecret: storageSourceClientSecret,
+              refreshToken: invalidateToken ? '' : storageSourceRefreshToken
+            }),
+            pwConfirmElm.value
+          );
+        }
       }
 
       const toSave: BooksDbStorageSource = {
         name: storageSourceName,
         type: storageSourceType,
+        storedInManager: storageSourceStoredInManager,
+        encryptionDisabled: storageSourceEncryptionDisabled,
         data: storageSourceData,
         lastSourceModified: Date.now()
       };
@@ -202,13 +242,21 @@
     dispatch('close');
   }
 
-  $: if (browser && 'showDirectoryPicker' in window) {
-    storageSourceTypes = [...storageSourceTypes, { key: StorageKey.FS, label: 'Filesystem' }];
+  function setInitialPassword(element: HTMLInputElement) {
+    if (element && configuredStoredInManager && configuredRemoteData.secret) {
+      const elm = element;
+
+      elm.value = configuredRemoteData.secret;
+    }
   }
 </script>
 
 <DialogTemplate>
-  <div class="flex max-h-[50vh] flex-col overflow-auto" slot="content" bind:this={containerElm}>
+  <div
+    class="flex flex-col p-2 max-h-[50vh] overflow-auto sm:max-h-[75vh]"
+    slot="content"
+    bind:this={containerElm}
+  >
     <input
       required
       type="text"
@@ -229,6 +277,8 @@
         if (storageSourceType === StorageKey.FS) {
           storageSourceClientId = '';
           storageSourceClientSecret = '';
+          storageSourceStoredInManager = false;
+          storageSourceEncryptionDisabled = false;
         } else {
           directoryHandle = undefined;
           handleFsPath = '';
@@ -255,14 +305,68 @@
         placeholder="Client Secret"
         bind:value={storageSourceClientSecret}
       />
-      <input required class="mt-4" type="password" placeholder="Password" bind:this={pwElm} />
       <input
-        required
+        class="mt-4"
+        type="password"
+        placeholder="Password"
+        required={!storageSourceEncryptionDisabled}
+        disabled={storageSourceEncryptionDisabled}
+        bind:this={pwElm}
+      />
+      <input
         class="mt-4"
         type="password"
         placeholder="Confirm Password"
+        required={!storageSourceEncryptionDisabled}
+        disabled={storageSourceEncryptionDisabled}
         bind:this={pwConfirmElm}
       />
+      {#if passwordManagerAvailable}
+        <div class="mt-4">
+          <input
+            id="cbx-store-in-manager"
+            type="checkbox"
+            bind:checked={storageSourceStoredInManager}
+            on:change={() => {
+              if (storageSourceStoredInManager && storageSourceEncryptionDisabled) {
+                storageSourceEncryptionDisabled = false;
+              }
+            }}
+          />
+          <label for="cbx-store-in-manager" class="ml-2 mr-6">Store in Password Manager</label>
+        </div>
+      {/if}
+      <div class="mt-4">
+        <input
+          id="cbx-disable-encryption"
+          type="checkbox"
+          bind:checked={storageSourceEncryptionDisabled}
+          on:change={() => {
+            if (storageSourceEncryptionDisabled) {
+              storageSourceStoredInManager = false;
+              pwElm.value = '';
+              pwConfirmElm.value = '';
+            }
+          }}
+        />
+        <label for="cbx-disable-encryption" class="ml-2 mr-6">Disable Password Encryption</label>
+      </div>
+    {/if}
+    {#if storageSourceStoredInManager || storageSourceEncryptionDisabled}
+      <div class="flex items-center my-4 max-w-xs">
+        <Fa icon={faTriangleExclamation} />
+        <span class="ml-2">
+          Make sure to understand the
+          <a
+            class="text-red-500"
+            href="https://github.com/ttu-ttu/ebook-reader?tab=readme-ov-file#security-considerations"
+            target="_blank"
+          >
+            Implications
+          </a>
+          of your choosen Settings
+        </span>
+      </div>
     {/if}
     {#if error}
       <div class="text-red-500">Error: {error}</div>
@@ -279,3 +383,9 @@
     </button>
   </div>
 </DialogTemplate>
+
+<style>
+  input:disabled {
+    cursor: not-allowed;
+  }
+</style>
