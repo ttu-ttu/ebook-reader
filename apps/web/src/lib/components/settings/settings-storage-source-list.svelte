@@ -14,7 +14,6 @@
   import Popover from '$lib/components/popover/popover.svelte';
   import Ripple from '$lib/components/ripple.svelte';
   import SettingsStorageSource from '$lib/components/settings/settings-storage-source.svelte';
-  import StorageUnlock from '$lib/components/storage-unlock.svelte';
   import { buttonClasses } from '$lib/css-classes';
   import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
@@ -25,7 +24,9 @@
     setStorageSourceDefault,
     type FsHandle,
     type StorageSourceSaveResult,
-    type StorageUnlockAction
+    type StorageUnlockAction,
+    type RemoteContext,
+    unlockStorageData
   } from '$lib/data/storage/storage-source-manager';
   import { StorageKey } from '$lib/data/storage/storage-types';
   import { getStorageIconData } from '$lib/data/storage/storage-view';
@@ -87,26 +88,20 @@
     let configuredFSData: FsHandle | undefined;
 
     if (storageSource && storageSource.type !== StorageKey.FS) {
-      const result = await new Promise<StorageUnlockAction | undefined>((resolver) => {
-        dialogManager.dialogs$.next([
-          {
-            component: StorageUnlock,
-            props: {
-              description: 'You are trying to access protected data',
-              action: `Enter the correct password for ${storageSource.name} to proceed`,
-              encryptedData: storageSource.data,
-              resolver
-            },
-            disableCloseOnClick: true
-          }
-        ]);
-      });
+      const unlockResult = await unlockStorageData(
+        storageSource,
+        'You are trying to access protected data',
+        {
+          action: `Enter the correct password for ${storageSource.name} to proceed`,
+          encryptedData: storageSource.data
+        }
+      );
 
-      if (!result) {
+      if (!unlockResult) {
         return;
       }
 
-      configuredRemoteData = result;
+      configuredRemoteData = unlockResult;
     } else if (storageSource && isFSHandle(storageSource.type, storageSource.data)) {
       configuredFSData = {
         directoryHandle: storageSource.data.directoryHandle,
@@ -127,6 +122,8 @@
               : false,
             configuredFSData,
             configuredRemoteData,
+            configuredStoredInManager: storageSource?.storedInManager,
+            configuredEncryptionDisabled: storageSource?.encryptionDisabled,
             resolver
           },
           disableCloseOnClick: true
@@ -155,7 +152,10 @@
     }
   }
 
-  function isFSHandle(type: StorageKey, data: FsHandle | ArrayBuffer): data is FsHandle {
+  function isFSHandle(
+    type: StorageKey,
+    data: FsHandle | ArrayBuffer | RemoteContext
+  ): data is FsHandle {
     return data && type === StorageKey.FS;
   }
 
@@ -164,34 +164,27 @@
     wasSyncTarget: boolean,
     wasSourceDefault: boolean
   ) {
-    const result = await new Promise<StorageUnlockAction | undefined>((resolver) => {
-      dialogManager.dialogs$.next([
-        {
-          component: StorageUnlock,
-          props: {
-            description:
-              storageSource.type === StorageKey.FS
-                ? 'You are trying to delete data'
-                : 'You are trying to delete protected data',
-            action:
-              storageSource.type === StorageKey.FS
-                ? `Please confirm to proceed with deleting ${storageSource.name}`
-                : `Enter the correct password for ${storageSource.name} to proceed`,
-            requiresSecret: storageSource.type !== StorageKey.FS,
-            showCancel: true,
-            encryptedData: storageSource.type !== StorageKey.FS ? storageSource.data : undefined,
-            resolver
-          },
-          disableCloseOnClick: true
-        }
-      ]);
-    });
+    const unlockResult = await unlockStorageData(
+      storageSource,
+      storageSource.type === StorageKey.FS
+        ? 'You are trying to delete data'
+        : 'You are trying to delete protected data',
+      {
+        action:
+          storageSource.type === StorageKey.FS
+            ? `Please confirm to proceed with deleting ${storageSource.name}`
+            : `Enter the correct password for ${storageSource.name} to proceed`,
+        requiresSecret: storageSource.type !== StorageKey.FS,
+        showCancel: true,
+        encryptedData: storageSource.type !== StorageKey.FS ? storageSource.data : undefined
+      }
+    );
 
-    if (!result) {
+    if (!unlockResult) {
       return;
     }
 
-    const invalidateToken = storageSource.type === StorageKey.GDRIVE && result.refreshToken;
+    const invalidateToken = storageSource.type === StorageKey.GDRIVE && unlockResult.refreshToken;
 
     if (invalidateToken && !$isOnline$) {
       dialogManager.dialogs$.next([
@@ -211,8 +204,8 @@
 
     storageOAuthTokens.delete(storageSource.name);
 
-    if (invalidateToken && result.refreshToken) {
-      StorageOAuthManager.revokeToken(gDriveRevokeEndpoint, result.refreshToken);
+    if (invalidateToken && unlockResult.refreshToken) {
+      StorageOAuthManager.revokeToken(gDriveRevokeEndpoint, unlockResult.refreshToken);
     }
 
     database.storageSourcesChanged$.next(

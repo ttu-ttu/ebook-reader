@@ -440,9 +440,35 @@ VITE_ONEDRIVE_CLIENT_SECRET1="gfedcba"
 
 ## Security Considerations
 
-If you add a storage source for an external hoster your data will be encrypted and stored locally. Therefore you have to set a password for it
-which you will have to (re)enter whenever you want to delete/edit the storage source or ッツ Ebook Reader needs to access it. The password
-should follow common best practices in terms of complexity and length but there are no rules enforced on it on the site. This password will not be saved and therefore can't be restored - if you forget it you will not be able to interact with this storage source anymore.
+ッツ Ebook Reader has no backend component to store/retrieve your storage source data like refresh tokens in a secure way at runtime. Access to data like the refresh tokens allows to access external hosted Data on your behalf without you potentially even noticing it. You are therefore asked to provide a password for storage sources of external hoster which is used to secure and encrypt the data locally. As this password is only known to you and will not be stored you will have to (re)enter it whenever you want to delete/edit the storage source or ッツ Ebook Reader needs to access data from the storage source. For the same reason the password can't be restored - if you forget it you will not be able to interact with this storage source anymore. The password should follow common best practices in terms of complexity and length though there are currently no rules enforced on the site for it.
+
+### Password Manager
+
+Available if your browser supports the [PasswordCredentials Api](https://caniuse.com/mdn-api_passwordcredential) (or by using it manually). In order to use the "Store in Manager" setting you need to have password save settings in your browser enabled (at the time of creation/update of a storage source - it can be disabled afterwards). New passwords will trigger a native save dialog, in case there is already a password under the same name stored it will be updated automatically. Depending on your "Autofill" browser settings you will be presented with a browser dialog to select a pair of credentials or a notification about the usage of credentials is displayed whenever ッツ Ebook Reader needs to access the storage source data. You can always check the stored passwords in the browser password manager site.
+
+**Note**: The API does not expose methods to delete credentials. In case you update the name of a storage source or delete it you need to manually remove the stored credentials in your password manager.
+
+Using the "Store in Manager" setting may lead to following risks:
+
+- Password Storage is only as safe as the browser implementation
+- Third Party Code / Applications may trigger a password request at any time and can get access to the password in order to decrypt the storage source data if you confirm it
+
+### Disable Password/Encryption
+
+Enabling this option will store the storage source data in plain text to the local browser database. This may lead to following risks:
+
+- Data can be simply read and copied via browser console
+- Data is extractable by Third Party Code / Application without you noticing
+
+### Recommendations
+
+The most secure configuration is to not use the password manager and to keep the data encryption enabled. In case you use one of the mentioned settings you may want to consider following options to increase the level of security of your data:
+
+- Do not use "Autofill" in combination with a password manager
+- Only allow access to the password vault when doing storage related actions (export,import etc.) and/or when the indicator for data sync is shown. Unexpected requests should be canceled
+- Keep external applications in testing and don't put them public/in production
+- Restrict the group of users allowed to use the application to you and trusted persons via respective application settings
+- Consider a separate Account which has not stored any private Data
 
 # Storage Limits
 

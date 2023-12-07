@@ -4,8 +4,9 @@
  * All rights reserved.
  */
 
+import type { FsHandle, RemoteContext } from '$lib/data/storage/storage-source-manager';
+
 import type { DBSchema } from 'idb';
-import type { FsHandle } from '$lib/data/storage/storage-source-manager';
 import type { ReadingGoal } from '$lib/data/reading-goal';
 import type { StorageKey } from '$lib/data/storage/storage-types';
 
@@ -36,7 +37,9 @@ interface BooksDbV5BookmarkData {
 interface BooksDbV5StorageSource {
   name: string;
   type: StorageKey;
-  data: FsHandle | ArrayBuffer;
+  data: FsHandle | ArrayBuffer | RemoteContext;
+  storedInManager: boolean;
+  encryptionDisabled: boolean;
   lastSourceModified: number;
 }
 
