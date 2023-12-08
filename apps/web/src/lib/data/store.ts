@@ -6,6 +6,10 @@
 
 import { browser } from '$app/environment';
 import {
+  ReaderImageGalleryAvailableKeybind,
+  type ReaderImageGalleryKeybindMap
+} from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
+import {
   ReadingGoalFrequency,
   TrackerAutoPause,
   TrackerSkipThresholdAction
@@ -17,6 +21,7 @@ import {
   type BookStatistic,
   StatisticsReadingDataAggregationMode
 } from '$lib/components/statistics/statistics-types';
+import { BlurMode } from '$lib/data/blur-mode';
 import type { UserFont } from '$lib/data/fonts';
 import { MergeMode } from '$lib/data/merge-mode';
 import type { ReadingGoal } from '$lib/data/reading-goal';
@@ -64,6 +69,10 @@ export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()('fontFami
 export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
 export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 1.65);
 export const hideSpoilerImage$ = writableBooleanLocalStorageSubject()('hideSpoilerImage', true);
+export const hideSpoilerImageMode$ = writableStringLocalStorageSubject<BlurMode>()(
+  'hideSpoilerImageMode',
+  BlurMode.AFTER_TOC
+);
 export const hideFurigana$ = writableBooleanLocalStorageSubject()('hideFurigana', false);
 export const furiganaStyle$ = writableStringLocalStorageSubject<FuriganaStyle>()(
   'furiganaStyle',
@@ -375,6 +384,23 @@ export const statisticsTabKeybindMap$ = writableSubject<StatisticsTabKeybindMap>
   t: StatisticsTabAvailableKeybind.RANGE_TEMPLATE_TOGGLE,
   KeyA: StatisticsTabAvailableKeybind.AGGREGRATION_TOGGLE,
   a: StatisticsTabAvailableKeybind.AGGREGRATION_TOGGLE
+});
+
+export const readerImageGalleryKeybindMap$ = writableSubject<ReaderImageGalleryKeybindMap>({
+  PageDown: ReaderImageGalleryAvailableKeybind.NEXT_IMAGE,
+  pagedown: ReaderImageGalleryAvailableKeybind.NEXT_IMAGE,
+  ArrowDown: ReaderImageGalleryAvailableKeybind.NEXT_IMAGE,
+  arrowdown: ReaderImageGalleryAvailableKeybind.NEXT_IMAGE,
+  ArrowRight: ReaderImageGalleryAvailableKeybind.NEXT_IMAGE,
+  arrowright: ReaderImageGalleryAvailableKeybind.NEXT_IMAGE,
+  ArrowUp: ReaderImageGalleryAvailableKeybind.PREVIOUS_IMAGE,
+  arrowup: ReaderImageGalleryAvailableKeybind.PREVIOUS_IMAGE,
+  ArrowLeft: ReaderImageGalleryAvailableKeybind.PREVIOUS_IMAGE,
+  arrowleft: ReaderImageGalleryAvailableKeybind.PREVIOUS_IMAGE,
+  PageUp: ReaderImageGalleryAvailableKeybind.PREVIOUS_IMAGE,
+  pageup: ReaderImageGalleryAvailableKeybind.PREVIOUS_IMAGE,
+  Escape: ReaderImageGalleryAvailableKeybind.CLOSE,
+  escape: ReaderImageGalleryAvailableKeybind.CLOSE
 });
 
 const db = browser ? createBooksDb() : import('fake-indexeddb/auto').then(() => createBooksDb());

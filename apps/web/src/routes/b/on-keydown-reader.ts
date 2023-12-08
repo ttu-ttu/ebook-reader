@@ -4,6 +4,10 @@
  * All rights reserved.
  */
 
+import {
+  ReaderImageGalleryAvailableKeybind,
+  type ReaderImageGalleryKeybindMap
+} from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
 import type { AutoScroller, PageManager } from '$lib/components/book-reader/types';
 import {
   BookReaderAvailableKeybind,
@@ -87,6 +91,30 @@ export function onKeyUpStatisticsTab(
       return true;
     case StatisticsTabAvailableKeybind.AGGREGRATION_TOGGLE:
       toggleAggregationMode();
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function onKeyDownReaderImageGallery(
+  ev: KeyboardEvent,
+  readerImageGalleryKeybindMap: ReaderImageGalleryKeybindMap,
+  previousImage: () => void,
+  nextImage: () => void,
+  close: () => void
+) {
+  const action = readerImageGalleryKeybindMap[ev.code || ev.key?.toLowerCase()];
+
+  switch (action) {
+    case ReaderImageGalleryAvailableKeybind.PREVIOUS_IMAGE:
+      previousImage();
+      return true;
+    case ReaderImageGalleryAvailableKeybind.NEXT_IMAGE:
+      nextImage();
+      return true;
+    case ReaderImageGalleryAvailableKeybind.CLOSE:
+      close();
       return true;
     default:
       return false;

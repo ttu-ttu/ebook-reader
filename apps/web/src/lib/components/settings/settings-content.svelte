@@ -17,6 +17,7 @@
   import SettingsStorageSourceList from '$lib/components/settings/settings-storage-source-list.svelte';
   import SettingsUserFontDialog from '$lib/components/settings/settings-user-font-dialog.svelte';
   import { inputClasses } from '$lib/css-classes';
+  import { BlurMode } from '$lib/data/blur-mode';
   import { dialogManager } from '$lib/data/dialog-manager';
   import { LocalFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
@@ -59,6 +60,8 @@
   export let lineHeight: number;
 
   export let blurImage: boolean;
+
+  export let blurImageMode: string;
 
   export let hideFurigana: boolean;
 
@@ -199,6 +202,17 @@
     {
       id: ViewMode.Paginated,
       text: 'Paginated'
+    }
+  ];
+
+  const optionsForBlurMode: ToggleOption<BlurMode>[] = [
+    {
+      id: BlurMode.ALL,
+      text: 'All'
+    },
+    {
+      id: BlurMode.AFTER_TOC,
+      text: 'After ToC'
     }
   ];
 
@@ -573,12 +587,25 @@
     <SettingsItemGroup title="Blur image">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
     </SettingsItemGroup>
+    {#if blurImage}
+      <SettingsItemGroup
+        title="Blur Mode"
+        tooltip="Determines if all or only images after the table of contents will be blurred"
+      >
+        <ButtonToggleGroup options={optionsForBlurMode} bind:selectedOptionId={blurImageMode} />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup title="Hide furigana">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
     </SettingsItemGroup>
-    <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
-      <ButtonToggleGroup options={optionsForFuriganaStyle} bind:selectedOptionId={furiganaStyle} />
-    </SettingsItemGroup>
+    {#if hideFurigana}
+      <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
+        <ButtonToggleGroup
+          options={optionsForFuriganaStyle}
+          bind:selectedOptionId={furiganaStyle}
+        />
+      </SettingsItemGroup>
+    {/if}
     {#if statisticsEnabled}
       <SettingsItemGroup
         title="Custom Point pauses Tracker"

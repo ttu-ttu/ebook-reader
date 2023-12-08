@@ -9,6 +9,7 @@
     faList,
     faRotateLeft
   } from '@fortawesome/free-solid-svg-icons';
+  import { readerImageGalleryPictures$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import Popover from '$lib/components/popover/popover.svelte';
@@ -41,6 +42,7 @@
     setCustomReadingPoint: void;
     resetCustomReadingPoint: void;
     statisticsClick: void;
+    readerImageGalleryClick: void;
     settingsClick: void;
     domainHintClick: void;
     bookManagerClick: void;
@@ -57,7 +59,22 @@
 
   let customReadingPointMenuElm: Popover;
 
+  let menuItems = [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE];
+
   $: isOldUrl = browser && isOnOldUrl(window);
+
+  $: if (isOldUrl) {
+    menuItems = [mergeEntries.SETTINGS, mergeEntries.DOMAIN_HINT, mergeEntries.MANAGE];
+  } else if ($readerImageGalleryPictures$.length) {
+    menuItems = [
+      mergeEntries.STATISTICS,
+      mergeEntries.READER_IMAGE_GALLERY,
+      mergeEntries.SETTINGS,
+      mergeEntries.MANAGE
+    ];
+  } else {
+    menuItems = [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE];
+  }
 
   function dispatchCustomReadingPointAction(action: any) {
     dispatch(action);
@@ -153,12 +170,12 @@
     {/if}
     <MergedHeaderIcon
       disableRouteNavigation
-      items={isOldUrl
-        ? [mergeEntries.SETTINGS, mergeEntries.DOMAIN_HINT, mergeEntries.MANAGE]
-        : [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE]}
+      items={menuItems}
       on:action={({ detail }) => {
         if (detail === mergeEntries.STATISTICS.label) {
           dispatch('statisticsClick');
+        } else if (detail === mergeEntries.READER_IMAGE_GALLERY.label) {
+          dispatch('readerImageGalleryClick');
         } else if (detail === mergeEntries.SETTINGS.label) {
           dispatch('settingsClick');
         } else if (detail === mergeEntries.DOMAIN_HINT.label) {

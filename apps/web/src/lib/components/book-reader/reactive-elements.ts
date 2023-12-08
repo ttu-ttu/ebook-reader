@@ -8,6 +8,7 @@ import { fromEvent, merge, take, tap } from 'rxjs';
 
 import { FuriganaStyle } from '../../data/furigana-style';
 import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
+import { toggleImageGalleryPictureSpoiler$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
 
 export function reactiveElements(document: Document, furiganaStyle: FuriganaStyle) {
   const anchorTagDocumentListener = anchorTagListener(document);
@@ -65,16 +66,34 @@ function spoilerImageListener(document: Document) {
       spoilerLabelEl.setAttribute('aria-hidden', 'true');
       spoilerLabelEl.innerText = 'ネタバレ';
       el.appendChild(spoilerLabelEl);
+
+      const imageElement = el.querySelector('img,image');
+
+      toggleImageGalleryPictureSpoiler(imageElement, false);
+
       return fromClickEvent(el).pipe(
         take(1),
         tap(() => {
           el.removeChild(spoilerLabelEl);
           el.removeAttribute('data-ttu-spoiler-img');
+
+          toggleImageGalleryPictureSpoiler(imageElement, true);
         })
       );
     });
     return merge(...obs$);
   };
+}
+
+function toggleImageGalleryPictureSpoiler(imageElement: Element | null, unspoilered: boolean) {
+  if (imageElement instanceof HTMLImageElement) {
+    toggleImageGalleryPictureSpoiler$.next({ url: imageElement.src, unspoilered });
+  } else if (imageElement && 'href' in imageElement) {
+    toggleImageGalleryPictureSpoiler$.next({
+      url: (imageElement.href as SVGAnimatedString).baseVal,
+      unspoilered
+    });
+  }
 }
 
 function fromClickEvent(el: Element) {

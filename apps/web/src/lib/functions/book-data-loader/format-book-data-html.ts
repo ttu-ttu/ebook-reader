@@ -4,14 +4,24 @@
  * All rights reserved.
  */
 
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BlurMode } from '$lib/data/blur-mode';
 import type { BooksDbBookData } from '$lib/data/database/books-db/versions/books-db';
-import buildDummyBookImage from '../file-loaders/utils/build-dummy-book-image';
-import { isElementGaiji } from '../is-element-gaiji';
+import { Observable } from 'rxjs';
+import buildDummyBookImage from '$lib/functions/file-loaders/utils/build-dummy-book-image';
+import { isElementGaiji } from '$lib/functions/is-element-gaiji';
+import { map } from 'rxjs/operators';
+import {
+  readerImageGalleryPictures$,
+  type ReaderImageGalleryPicture
+} from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
 
-export default function formatBookDataHtml(bookData: BooksDbBookData, document: Document) {
-  return getHtmlWithImageSource(bookData).pipe(
+export default function formatBookDataHtml(
+  bookData: BooksDbBookData,
+  document: Document,
+  isPaginated: boolean,
+  blurMode: BlurMode
+) {
+  return getHtmlWithImageSource(bookData, isPaginated).pipe(
     map((elementHtml) => {
       const element = document.createElement('div');
       element.innerHTML = elementHtml;
@@ -19,7 +29,7 @@ export default function formatBookDataHtml(bookData: BooksDbBookData, document: 
       addImageContainerClass(element);
       // combineImagePairs(element);
       removeSvgDimensions(element);
-      addSpoilerTags(element, document);
+      addSpoilerTags(element, document, blurMode);
       removeOldBrTagSolution(element);
 
       return element.innerHTML;
@@ -27,20 +37,38 @@ export default function formatBookDataHtml(bookData: BooksDbBookData, document: 
   );
 }
 
-function getHtmlWithImageSource(bookData: BooksDbBookData) {
+function getHtmlWithImageSource(bookData: BooksDbBookData, isPaginated: boolean) {
   return new Observable<string>((subscriber) => {
     const { blobs } = bookData;
+    const objectUrls: string[] = [];
+    const urlIndexes = new Map<string, number>();
 
     let { elementHtml } = bookData;
-    const objectUrls: string[] = [];
+
     Object.entries(blobs).forEach(([key, value]) => {
       const url = URL.createObjectURL(value);
+      const dummyUrl = buildDummyBookImage(key);
+
       objectUrls.push(url);
-      elementHtml = elementHtml
-        .replaceAll(buildDummyBookImage(key), url)
-        .replaceAll(`ttu:${key}`, url);
+      urlIndexes.set(url, elementHtml.indexOf(dummyUrl));
+
+      elementHtml = elementHtml.replaceAll(dummyUrl, url).replaceAll(`ttu:${key}`, url);
     });
     subscriber.next(elementHtml);
+
+    const readerImageGalleryPictures: ReaderImageGalleryPicture[] = objectUrls.map((url) => ({
+      url,
+      unspoilered: !isPaginated
+    }));
+
+    readerImageGalleryPictures.sort((picture1, picture2) => {
+      const index1 = urlIndexes.get(picture1.url) || 0;
+      const index2 = urlIndexes.get(picture2.url) || 0;
+
+      return index1 - index2;
+    });
+
+    readerImageGalleryPictures$.next(readerImageGalleryPictures);
 
     return () => {
       objectUrls.forEach((url) => URL.revokeObjectURL(url));
@@ -67,7 +95,7 @@ function removeSvgDimensions(el: HTMLElement) {
   });
 }
 
-function addSpoilerTags(el: HTMLElement, document: Document) {
+function addSpoilerTags(el: HTMLElement, document: Document, blurMode: BlurMode) {
   const getChildNodesAfterTableOfContents = () => {
     let childNodes = [...el.children];
     const afterContentsDivIndex =
@@ -86,7 +114,10 @@ function addSpoilerTags(el: HTMLElement, document: Document) {
     imgWrapper.appendChild(tag);
   };
 
-  getChildNodesAfterTableOfContents().forEach((childNode) => {
+  (blurMode === BlurMode.AFTER_TOC
+    ? getChildNodesAfterTableOfContents()
+    : [...el.children]
+  ).forEach((childNode) => {
     Array.from(childNode.getElementsByTagName('img'))
       .filter((tag) => !isElementGaiji(tag))
       .forEach((tag) => createWrapper(tag, childNode));
