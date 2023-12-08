@@ -47,7 +47,8 @@
     trackerSkipThresholdAction$,
     viewMode$,
     writingMode$,
-    readingGoalsMergeMode$
+    readingGoalsMergeMode$,
+    hideSpoilerImageMode$
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { pagePath } from '$lib/data/env';
@@ -111,6 +112,7 @@
       bind:fontSize={$fontSize$}
       bind:lineHeight={$lineHeight$}
       bind:blurImage={$hideSpoilerImage$}
+      bind:blurImageMode={$hideSpoilerImageMode$}
       bind:hideFurigana={$hideFurigana$}
       bind:furiganaStyle={$furiganaStyle$}
       bind:writingMode={$writingMode$}

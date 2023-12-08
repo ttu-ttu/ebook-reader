@@ -75,10 +75,17 @@
     overwriteBookCompletion$,
     startDayHoursForTracker$,
     readingGoalsMergeMode$,
-    pauseTrackerOnCustomPointChange$
+    pauseTrackerOnCustomPointChange$,
+    hideSpoilerImageMode$
   } from '$lib/data/store';
   import BookCompletionConfetti from '$lib/components/book-reader/book-completion-confetti/book-completion-confetti.svelte';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import {
+    readerImageGalleryPictures$,
+    toggleImageGalleryPictureSpoiler$,
+    updateImageGalleryPictureSpoilers$
+  } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
+  import BookReaderImageGallery from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery.svelte';
   import {
     getDefaultStatistic,
     isTrackerMenuOpen$,
@@ -139,7 +146,7 @@
   import { clickOutside } from '$lib/functions/use-click-outside';
   import { dummyFn, isMobile$ } from '$lib/functions/utils';
   import { onKeydownReader } from './on-keydown-reader';
-  import { tick } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import Fa from 'svelte-fa';
   import {
     clearRange,
@@ -150,7 +157,7 @@
   } from '$lib/functions/range-util';
 
   let showSpinner = true;
-  let showHeader = true;
+  let showHeader = false;
   let isBookmarkScreen = false;
   let showFooter = true;
   let exploredCharCount = 0;
@@ -187,11 +194,8 @@
   let bookCompleted = false;
   let confettiWidthModifier = 36;
   let confettiMaxRuns = 0;
-
-  const autoHideHeader$ = timer(2500).pipe(
-    tap(() => (showHeader = false)),
-    reduceToEmptyString()
-  );
+  let showReaderImageGallery = false;
+  const queuedReaderImageGalleryPictures = new Map<string, boolean>();
 
   const bookId$ = iffBrowser(() => readableToObservable(page)).pipe(
     map((pageObj) => Number(pageObj.url.searchParams.get('id'))),
@@ -311,7 +315,13 @@
 
       sectionList$.next(rawBookData.sections || []);
 
-      return loadBookData(rawBookData, '.book-content', document);
+      return loadBookData(
+        rawBookData,
+        '.book-content',
+        document,
+        $viewMode$ === ViewMode.Paginated,
+        $hideSpoilerImageMode$
+      );
     }),
     shareReplay({ refCount: true, bufferSize: 1 })
   );
@@ -342,6 +352,36 @@
   );
 
   const backgroundColor$ = themeOption$.pipe(map((o) => o.backgroundColor));
+
+  const collectReaderImageGallerySpoilerToggles$ = toggleImageGalleryPictureSpoiler$.pipe(
+    tap((readerImageGalleryPicture) => {
+      queuedReaderImageGalleryPictures.set(
+        readerImageGalleryPicture.url,
+        readerImageGalleryPicture.unspoilered
+      );
+
+      updateImageGalleryPictureSpoilers$.next();
+    }),
+    reduceToEmptyString()
+  );
+
+  const handleUpdateImageGalleryPictureSpoilers$ = updateImageGalleryPictureSpoilers$.pipe(
+    debounceTime(250),
+    tap(() => {
+      $readerImageGalleryPictures$ = $readerImageGalleryPictures$.map((galleryPicture) => {
+        const picture = galleryPicture;
+
+        if (queuedReaderImageGalleryPictures.has(picture.url)) {
+          picture.unspoilered = queuedReaderImageGalleryPictures.get(picture.url)!;
+        }
+
+        return picture;
+      });
+
+      queuedReaderImageGalleryPictures.clear();
+    }),
+    reduceToEmptyString()
+  );
 
   const backgroundStyleName = 'background-color';
   const setBackgroundColor$ = backgroundColor$.pipe(
@@ -437,6 +477,8 @@
     hasBookmarkData = !!data;
     storedExploredCharacter = data?.exploredCharCount || 0;
   });
+
+  onDestroy(() => readerImageGalleryPictures$.next([]));
 
   function handleUnload(event: BeforeUnloadEvent) {
     if (
@@ -1308,7 +1350,8 @@
   <title>{formatPageTitle($rawBookData$?.title ?? '')}</title>
 </svelte:head>
 
-{$autoHideHeader$ ?? ''}
+{$collectReaderImageGallerySpoilerToggles$ ?? ''}
+{$handleUpdateImageGalleryPictureSpoilers$ ?? ''}
 <button class="fixed inset-x-0 top-0 z-10 h-8 w-full" on:click={() => (showHeader = true)} />
 {#if showHeader}
   <div
@@ -1372,6 +1415,10 @@
         }
 
         leaveReader(mergeEntries.STATISTICS.routeId, false);
+      }}
+      on:readerImageGalleryClick={() => {
+        showHeader = false;
+        showReaderImageGallery = true;
       }}
       on:settingsClick={() => leaveReader(mergeEntries.SETTINGS.routeId, false)}
       on:domainHintClick={onDomainHintClick}
@@ -1480,6 +1527,14 @@
       {wasTrackerPaused}
     />
   </div>
+{/if}
+
+{#if showReaderImageGallery}
+  <BookReaderImageGallery
+    fontColor={$themeOption$.fontColor}
+    backgroundColor={$backgroundColor$}
+    on:close={() => (showReaderImageGallery = false)}
+  />
 {/if}
 
 {#if (isSelectingCustomReadingPoint && !$isMobile$) || (!isPaginated && showCustomReadingPoint)}
