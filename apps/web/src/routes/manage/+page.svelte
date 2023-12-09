@@ -268,14 +268,14 @@
 
     initializeReplicationProgressData();
 
-    const supportedExtRegex = /\.(?:htmlz|epub)$/;
+    const supportedExtRegex = /\.(?:htmlz|epub|txt)$/;
     const files = Array.from(fileList).filter((f) => supportedExtRegex.test(f.name));
     const errorTitle = 'Bookimport failed';
 
     if (!files.length) {
       resetProgress();
 
-      showError(errorTitle, 'File(s) must be HTMLZ or EPUB', '');
+      showError(errorTitle, 'File(s) must be HTMLZ, TXT or EPUB', '');
       return;
     }
 
@@ -629,7 +629,7 @@
     <label class="fixed inset-0 z-0">
       <input
         type="file"
-        accept=".htmlz,.epub,application/epub+zip"
+        accept="application/epub+zip,.epub,.htmlz,plain/text,.txt"
         multiple
         hidden
         use:inputFile={onFilesChange}
