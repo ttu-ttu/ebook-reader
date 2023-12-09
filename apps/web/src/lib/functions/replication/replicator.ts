@@ -11,6 +11,8 @@ import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
 import { database, requestPersistentStorage$ } from '$lib/data/store';
 import loadEpub from '$lib/functions/file-loaders/epub/load-epub';
 import loadHtmlz from '$lib/functions/file-loaders/htmlz/load-htmlz';
+import loadTxt from '$lib/functions/file-loaders/txt/load-txt';
+import type { LoadData } from '$lib/functions/file-loaders/types';
 import { handleErrorDuringReplication } from '$lib/functions/replication/error-handler';
 import { throwIfAborted } from '$lib/functions/replication/replication-error';
 import {
@@ -52,9 +54,15 @@ export async function importData(
         try {
           throwIfAborted(cancelSignal);
 
-          const bookContent = await (file.name.endsWith('.epub')
-            ? loadEpub(file, document, lastBookModified)
-            : loadHtmlz(file, document, lastBookModified));
+          let bookContent: LoadData;
+
+          if (file.name.endsWith('.epub')) {
+            bookContent = await loadEpub(file, document, lastBookModified);
+          } else if (file.name.endsWith('.txt')) {
+            bookContent = await loadTxt(file, lastBookModified);
+          } else {
+            bookContent = await loadHtmlz(file, document, lastBookModified);
+          }
 
           checkCancelAndProgress(cancelSignal, true, true);
 

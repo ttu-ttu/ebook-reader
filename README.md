@@ -6,7 +6,7 @@ An online e-book reader that supports dictionary extensions like Yomichan, which
 
 # Features
 
-- [x] Supports HTMLZ and EPUB files
+- [x] Supports HTMLZ, Plain Text and EPUB files
 - [x] Customizable environment (e. g. themes, font size, image blur, furigana settings etc.)
 - [x] Continuous / Pagination reader mode
 - [x] Vertical / Horizontal reading mode
@@ -25,6 +25,8 @@ An online e-book reader that supports dictionary extensions like Yomichan, which
 The first time you enter the page (or have no files loaded yet) you will need to select the books you want to read from your device.
 You can load files by clicking/tapping on the dropzone or respective Icons.
 Alternatively, you can also drag & drop files or folders on the manager if your device supports it.
+
+**Note for Text Files**: The book title (which is also used to check for duplicates) will be the name of the file. The text will be splitted into paragraphs by punctuation (。？！) and closing brackets/parenthesis (」）). Sections will be splitted around 10000 characters each. The file content will be parsed as plain text - any html tags (e. g. links) will therefore be printed out as text and not elements
 
 **Note**: The character count is mainly based on paragraph nodes in the book. Configuring e. g. a very high line height or similar may update the counter more slowly
 
