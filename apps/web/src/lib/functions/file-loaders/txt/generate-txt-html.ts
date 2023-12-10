@@ -4,6 +4,8 @@
  * All rights reserved.
  */
 
+import { getCharacterCount } from '$lib/functions/get-character-count';
+
 export function getFormattedElementTxt(data: string) {
   const result = document.createElement('div');
   const punctuationRegex = /[。.）」？！!?]+/;
@@ -90,7 +92,7 @@ export function getFormattedElementTxt(data: string) {
     result.appendChild(currentChildDiv);
   }
 
-  return result;
+  return { element: result, characters: getCharacterCount(result) };
 }
 
 function updateContent(

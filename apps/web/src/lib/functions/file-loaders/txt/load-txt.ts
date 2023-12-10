@@ -10,7 +10,7 @@ import { getFormattedElementTxt } from '$lib/functions/file-loaders/txt/generate
 
 export default async function loadTxt(file: File, lastBookModified: number): Promise<LoadData> {
   const data = await extractTxt(file);
-  const element = getFormattedElementTxt(data);
+  const { element, characters } = getFormattedElementTxt(data);
 
   return {
     title: file.name.replace(/\.txt$/, ''),
@@ -19,7 +19,7 @@ export default async function loadTxt(file: File, lastBookModified: number): Pro
     blobs: {},
     coverImage: undefined,
     hasThumb: false,
-    characters: 0,
+    characters,
     lastBookModified,
     lastBookOpen: 0
   };
