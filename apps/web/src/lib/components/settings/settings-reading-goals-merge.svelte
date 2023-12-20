@@ -14,6 +14,7 @@
   import { database, readingGoal$, startDayHoursForTracker$ } from '$lib/data/store';
   import {
     advanceDateDays,
+    getDate,
     getDateKey,
     getPreviousDayKey,
     secondsToMinutes
@@ -156,7 +157,9 @@
     if (!archiveReadingGoal || newReadingGoal.goalStartDate > archivalEndDate) {
       newStartDate = newReadingGoal.goalStartDate;
     } else {
-      ({ dateString: newStartDate } = advanceDateDays(new Date(archivalEndDate)));
+      ({ dateString: newStartDate } = advanceDateDays(
+        getDate(archivalEndDate, $startDayHoursForTracker$)
+      ));
     }
   }
 
@@ -173,7 +176,7 @@
         );
         const previousReadingGoalEnd = getPreviousDayKey(
           $startDayHoursForTracker$,
-          new Date(readingGoalStart)
+          getDate(readingGoalStart, $startDayHoursForTracker$)
         );
 
         archivalMaxDate = readingGoalEnd;

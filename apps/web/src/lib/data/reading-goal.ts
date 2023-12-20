@@ -6,6 +6,7 @@
 
 import {
   advanceDateDays,
+  getDate,
   getDateString,
   getStartHoursDate,
   toTimeString
@@ -68,7 +69,7 @@ export function getReadingGoalWindow(
     readingGoalEnd = todayKey;
   } else if (readingGoal.goalFrequency === ReadingGoalFrequency.WEEKLY) {
     const todayDate = getStartHoursDate(startDayHoursForTracker);
-    const readingGoalStartDate = new Date(readingGoal.goalStartDate);
+    const readingGoalStartDate = getDate(readingGoal.goalStartDate, startDayHoursForTracker);
     const todayDay = todayDate.getDay() || 7;
     const readingGoalStartDateDay = readingGoalStartDate.getDay() || 7;
 
@@ -83,7 +84,7 @@ export function getReadingGoalWindow(
   } else {
     // eslint-disable-next-line prefer-const
     let { referenceDate: readingGoalStartDate, dateString: readingGoalStartReference } =
-      advanceDateDays(new Date(readingGoal.goalStartDate), 0);
+      advanceDateDays(getDate(readingGoal.goalStartDate), 0);
 
     while (readingGoalStartReference <= todayKey) {
       readingGoalStart = readingGoalStartReference;
@@ -91,15 +92,10 @@ export function getReadingGoalWindow(
       ({ dateString: readingGoalStartReference } = advanceDateDays(readingGoalStartDate, 30));
     }
 
-    ({ dateString: readingGoalEnd } = advanceDateDays(new Date(readingGoalStart), 29));
+    ({ dateString: readingGoalEnd } = advanceDateDays(getDate(readingGoalStart), 29));
   }
 
-  const readingGoalEndDate = new Date(readingGoalEnd);
-
-  readingGoalEndDate.setHours(startDayHoursForTracker);
-  readingGoalEndDate.setMinutes(0);
-  readingGoalEndDate.setSeconds(0);
-  readingGoalEndDate.setMilliseconds(0);
+  const readingGoalEndDate = getDate(readingGoalEnd, startDayHoursForTracker);
 
   return [
     readingGoalStart,
