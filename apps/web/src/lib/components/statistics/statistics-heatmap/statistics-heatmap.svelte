@@ -41,6 +41,7 @@
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import {
     advanceDateDays,
+    getDate,
     getDateString,
     getDaysBetween,
     getPreviousDayKey,
@@ -157,8 +158,8 @@
     let heatmapYearModifier = 0;
 
     if (heatmapAggregration === HeatmapDataAggregration.ALL_TIME) {
-      const firstDayOfYearDateString = getDateString(new Date(heatmapYear, 0, 1));
-      const lastDayOfYearDateString = getDateString(new Date(heatmapYear, 11, 31));
+      const firstDayOfYearDateString = getDateString(new Date(heatmapYear, 0, 1, 0, 0, 0, 0));
+      const lastDayOfYearDateString = getDateString(new Date(heatmapYear, 11, 31, 0, 0, 0, 0));
 
       heatmapStreak =
         streaks.find(
@@ -171,7 +172,7 @@
     }
 
     if (heatmapStreak) {
-      const streakYear = new Date(heatmapStreak.startDate).getFullYear();
+      const streakYear = getDate(heatmapStreak.startDate).getFullYear();
 
       heatmapYearModifier = streakYear - heatmapYear;
     }
@@ -194,7 +195,7 @@
     if (selectedStreak !== HeatmapStreakType.NONE) {
       for (let index = 0, { length } = streaks; index < length; index += 1) {
         const streak = streaks[index];
-        const streakDate = new Date(streak.startDate);
+        const streakDate = getDate(streak.startDate);
 
         let streakDateString = streak.startDate;
 
@@ -287,7 +288,7 @@
           entryData.charactersRead += entry.charactersRead;
 
           if (entry.readingTime) {
-            const entryDate = new Date(dateKey);
+            const entryDate = getDate(dateKey);
 
             if (!firstReadingDay) {
               firstReadingDay = entryDate;
@@ -314,7 +315,7 @@
               ({
                 referenceDate: currentReadingStreakDate,
                 dateString: currentReadingStreakDateString
-              } = advanceDateDays(new Date(dateKey)));
+              } = advanceDateDays(getDate(dateKey)));
             }
 
             entryData.titles.add(entry.title);
@@ -333,7 +334,7 @@
 
       if (currentReadingStreak.startDate) {
         const { dateString: streakEnd } = advanceDateDays(
-          new Date(currentReadingStreak.startDate),
+          getDate(currentReadingStreak.startDate),
           currentReadingStreak.duration
         );
 
@@ -359,8 +360,8 @@
     } else if (heatmapDataByYear.has(heatmapYear)) {
       currentHeatmapData = heatmapDataByYear.get(heatmapYear)!;
     } else {
-      const firstDayOfYearDateString = getDateString(new Date(heatmapYear, 0, 1));
-      const lastDayOfYearDateString = getDateString(new Date(heatmapYear, 11, 31));
+      const firstDayOfYearDateString = getDateString(new Date(heatmapYear, 0, 1, 0, 0, 0, 0));
+      const lastDayOfYearDateString = getDateString(new Date(heatmapYear, 11, 31, 0, 0, 0, 0));
       const dayKeys = [...globalHeatmapDayData.keys()];
       const streaksInYear: HeatmapStreak[] = JSON.parse(
         JSON.stringify(
@@ -384,8 +385,8 @@
 
         if (adjustStartDate || adjustEndDate) {
           streakObject.duration = getDaysBetween(
-            new Date(streakObject.startDate),
-            new Date(streakObject.endDate)
+            getDate(streakObject.startDate),
+            getDate(streakObject.endDate)
           );
         }
 
@@ -411,7 +412,7 @@
           const dayData = globalHeatmapDayData.get(dayKey)!;
 
           if (dayData.readingTime) {
-            const entryDate = new Date(dayKey);
+            const entryDate = getDate(dayKey);
 
             if (!firstReadingDay) {
               firstReadingDay = entryDate;
@@ -487,7 +488,8 @@
       for (let index = 0, { length } = readingGoals; index < length; index += 1) {
         const readingGoal = readingGoals[index];
 
-        const readingGoalDate = new Date(readingGoal.goalStartDate);
+        const readingGoalDate = getDate(readingGoal.goalStartDate);
+
         let readingGoalDateString = readingGoal.goalStartDate;
 
         while (
@@ -512,7 +514,7 @@
           };
 
           let currentReadingGoalDay = currentReadingGoalWindow.readingGoalStartDate;
-          const currentReadingGoalDayDate = new Date(currentReadingGoalDay);
+          const currentReadingGoalDayDate = getDate(currentReadingGoalDay);
 
           switch (readingGoal.goalFrequency) {
             case ReadingGoalFrequency.WEEKLY:
@@ -637,8 +639,8 @@
       };
     }
 
-    const firstDayOfYearDateString = getDateString(new Date(heatmapYear, 0, 1));
-    const lastDayOfYearDateString = getDateString(new Date(heatmapYear, 11, 31));
+    const firstDayOfYearDateString = getDateString(new Date(heatmapYear, 0, 1, 0, 0, 0, 0));
+    const lastDayOfYearDateString = getDateString(new Date(heatmapYear, 11, 31, 0, 0, 0, 0));
     const entries = [...globalDataObject.entries()];
     const relevantReadingGoals: ReadingGoalHeatmapGlobalDayData[] = [];
 
@@ -841,7 +843,7 @@
     const mapDays: StatisticsHeatmapDayData[] = [];
 
     let year = heatmapYear;
-    const dateObject = new Date(year, 0, 1);
+    const dateObject = new Date(year, 0, 1, 0, 0, 0, 0);
     const dayIndex = dateObject.getDay();
     let dateString = '';
     let daysToFill = 0;
