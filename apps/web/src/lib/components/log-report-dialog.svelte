@@ -67,6 +67,9 @@
     JSON.stringify(
       {
         userAgent: navigator.userAgent,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        languages: navigator.languages,
         viewport: {
           visualViewport: !!window.visualViewport,
           width: window.visualViewport?.width ?? window.innerWidth,

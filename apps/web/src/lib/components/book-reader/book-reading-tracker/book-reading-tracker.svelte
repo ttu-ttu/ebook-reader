@@ -33,6 +33,7 @@
   import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import {
+    getDate,
     getDateKey,
     getDateTimeString,
     getPreviousDayKey,
@@ -533,12 +534,7 @@
       ) {
         currentReadingGoalEnd = currentClosedReadingGoal.goalEndDate;
 
-        const adjustedEndDate = new Date(currentReadingGoalEnd);
-
-        adjustedEndDate.setHours($startDayHoursForTracker$);
-        adjustedEndDate.setMinutes($startDayHoursForTracker$);
-        adjustedEndDate.setSeconds($startDayHoursForTracker$);
-        adjustedEndDate.setMilliseconds($startDayHoursForTracker$);
+        const adjustedEndDate = getDate(currentReadingGoalEnd, $startDayHoursForTracker$);
 
         remainingTimeInReadingGoalWindow = toTimeString(
           (adjustedEndDate.getTime() + 8.64e7 - Date.now()) / 1000
