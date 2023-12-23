@@ -13,6 +13,7 @@
   let path = '';
   let dialogs: Dialog[] = [];
   let clickOnCloseDisabled = false;
+  let zIndex = '';
 
   $: if (browser) {
     isMobile$.next(isMobile(window));
@@ -71,10 +72,12 @@
   function closeAllDialogs() {
     dialogManager.dialogs$.next([]);
     clickOnCloseDisabled = false;
+    zIndex = '';
   }
 
   dialogManager.dialogs$.subscribe((d) => {
     clickOnCloseDisabled = d[0]?.disableCloseOnClick ?? false;
+    zIndex = d[0]?.zIndex ?? '';
     dialogs = d;
   });
 
@@ -102,7 +105,7 @@
 <slot />
 
 {#if dialogs.length > 0}
-  <div class="writing-horizontal-tb fixed inset-0 z-50 h-full w-full">
+  <div class="writing-horizontal-tb fixed inset-0 z-50 h-full w-full" style:z-index={zIndex}>
     <div
       tabindex="0"
       role="button"

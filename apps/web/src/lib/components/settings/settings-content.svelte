@@ -6,7 +6,10 @@
     TrackerSkipThresholdAction
   } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
-  import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
+  import {
+    optionsForToggle,
+    type ToggleOption
+  } from '$lib/components/button-toggle-group/toggle-option';
   import MessageDialog from '$lib/components/message-dialog.svelte';
   import Ripple from '$lib/components/ripple.svelte';
   import SettingsCustomTheme from '$lib/components/settings/settings-custom-theme.svelte';
@@ -156,17 +159,6 @@
     thickBorders: true,
     showIcons: true
   }));
-
-  const optionsForToggle: ToggleOption<boolean>[] = [
-    {
-      id: false,
-      text: 'Off'
-    },
-    {
-      id: true,
-      text: 'On'
-    }
-  ];
 
   const optionsForFuriganaStyle: ToggleOption<FuriganaStyle>[] = [
     {

@@ -3,10 +3,12 @@
     faCircleQuestion,
     faLeftLong,
     faRightLong,
-    faSpinner,
     faXmark
   } from '@fortawesome/free-solid-svg-icons';
+  import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
+  import { optionsForToggle } from '$lib/components/button-toggle-group/toggle-option';
   import Popover from '$lib/components/popover/popover.svelte';
+  import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import {
     type StatisticsDateChange,
     statisticsRangeTemplates,
@@ -15,11 +17,14 @@
     readingSpeedDataSources,
     statisticsDataAggregrationModes,
     exportStatisticsData$,
-    statisticsSettingsActionInProgress$
+    statisticsActionInProgress$,
+    deleteStatisticsData$,
+    setStatisticsDatesToAllTime$
   } from '$lib/components/statistics/statistics-types';
   import { daysOfWeek } from '$lib/components/statistics/statistics-heatmap/statistics-heatmap';
   import { dialogManager } from '$lib/data/dialog-manager';
   import {
+    confirmStatisticsDeletion$,
     lastCharactersDataSource$,
     lastPrimaryReadingDataAggregationMode$,
     lastReadingSpeedDataSource$,
@@ -55,27 +60,33 @@
   });
 
   async function exportStatisticsData(exportAllStatisticsData = true) {
-    $statisticsSettingsActionInProgress$ = true;
+    $statisticsActionInProgress$ = true;
 
     exportStatisticsData$.next(exportAllStatisticsData);
   }
+
+  async function deleteStatisticsData(deleteAllStatisticsData = true) {
+    $statisticsActionInProgress$ = true;
+
+    deleteStatisticsData$.next(deleteAllStatisticsData);
+  }
 </script>
 
-{#if $statisticsSettingsActionInProgress$}
-  <div class="tap-highlight-transparent absolute inset-0 bg-black/[.2]" />
-  <div class="flex items-center justify-center absolute h-full w-full text-7xl inset-0">
-    <Fa icon={faSpinner} spin />
-  </div>
-{/if}
 <div class="flex items-center p-4">
   <button class="flex items-end md:items-center" on:click={() => dispatch('close')}>
     <Fa icon={faXmark} />
   </button>
   <div class="flex flex-1 justify-end">
-    <button class="mr-4 hover:text-red-500" on:click={() => exportStatisticsData(false)}>
+    <button class="mr-2 sm:mr-4 hover:text-red-500" on:click={() => exportStatisticsData(false)}>
       Export Selection
     </button>
-    <button class="hover:text-red-500" on:click={() => exportStatisticsData()}>Export All</button>
+    <button class="mr-2 sm:mr-4 hover:text-red-500" on:click={() => deleteStatisticsData(false)}>
+      Delete Selection
+    </button>
+    <button class="mr-2 sm:mr-4 hover:text-red-500" on:click={() => exportStatisticsData()}>
+      Export All
+    </button>
+    <button class="hover:text-red-500" on:click={() => deleteStatisticsData()}>Delete All</button>
   </div>
 </div>
 <div class="flex-1 p-4 overflow-auto">
@@ -159,6 +170,12 @@
       </select>
     </div>
   </div>
+  <button
+    class="text-left mt-3 hover:text-red-500"
+    on:click={() => setStatisticsDatesToAllTime$.next()}
+  >
+    Set to All Time for selected Book Titles
+  </button>
   <div class="flex flex-wrap justify-between mt-4">
     <div class="flex flex-col my-2 w-full sm:w-[initial]">
       <Popover
@@ -228,5 +245,14 @@
         </option>
       {/each}
     </select>
+  </div>
+  <div class="mt-4">
+    <SettingsItemGroup title="Confirm Statistics Deletion" applyHeaderClasses={false}>
+      <ButtonToggleGroup
+        invertColors
+        options={optionsForToggle}
+        bind:selectedOptionId={$confirmStatisticsDeletion$}
+      />
+    </SettingsItemGroup>
   </div>
 </div>

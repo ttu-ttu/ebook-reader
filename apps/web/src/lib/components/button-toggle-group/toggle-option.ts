@@ -11,3 +11,14 @@ export interface ToggleOption<T> {
   thickBorders?: boolean;
   showIcons?: boolean;
 }
+
+export const optionsForToggle: ToggleOption<boolean>[] = [
+  {
+    id: false,
+    text: 'Off'
+  },
+  {
+    id: true,
+    text: 'On'
+  }
+];

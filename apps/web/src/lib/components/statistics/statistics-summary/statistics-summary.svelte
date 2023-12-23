@@ -1,9 +1,19 @@
 <script lang="ts">
-  import { faChevronLeft, faChevronRight, faClose } from '@fortawesome/free-solid-svg-icons';
+  import {
+    faChevronLeft,
+    faChevronRight,
+    faClose,
+    faFloppyDisk,
+    faPen,
+    faTrash,
+    faXmark
+  } from '@fortawesome/free-solid-svg-icons';
   import Popover from '$lib/components/popover/popover.svelte';
   import {
     StatisticsSummaryKey,
-    type StatisticsDataSourceChange
+    type StatisticsDataSourceChange,
+    type StatisticsDeleteRequest,
+    type StatisticsEditRequest
   } from '$lib/components/statistics/statistics-summary/statistics-summary';
   import StatisticsSummaryHeader from '$lib/components/statistics/statistics-summary/statistics-summary-header.svelte';
   import {
@@ -23,6 +33,8 @@
     lastPrimaryReadingDataAggregationMode$,
     lastReadingSpeedDataSource$,
     lastReadingTimeDataSource$,
+    lastStatisticsEndDate$,
+    lastStatisticsStartDate$,
     lastStatisticsSummarySortDirection$,
     lastStatisticsSummarySortProperty$
   } from '$lib/data/store';
@@ -30,11 +42,16 @@
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { convertRemToPixels, dummyFn, getFullHeight, limitToRange } from '$lib/functions/utils';
   import { debounceTime, fromEvent, tap } from 'rxjs';
-  import { tick } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
   import Fa from 'svelte-fa';
 
   export let aggregratedStatistics: BookStatistic[];
   export let statisticsDateRangeLabel: string;
+
+  const dispatch = createEventDispatcher<{
+    delete: StatisticsDeleteRequest;
+    edit: StatisticsEditRequest;
+  }>();
 
   const statisticsSummaryBaseRowRem = 3;
   const statisticsSummaryBaseRowGap = 1.5;
@@ -52,6 +69,10 @@
   const statisticsSummaryPageRefs: HTMLButtonElement[] = [];
   let statisticsSummaryPagesContainer: HTMLElement;
   let statisticsSummaryPopoverDetails: string[] = [];
+  let rowInEdit: BookStatistic | undefined;
+  let rowInEditTime = 0;
+  let rowInEditCharacters = 0;
+  let rowInEditResetMinMaxValues = false;
 
   const resizeHandler$ = fromEvent(window, 'resize').pipe(
     debounceTime(250),
@@ -74,6 +95,7 @@
   $: updateFilterAndSort($lastPrimaryReadingDataAggregationMode$);
 
   $: if (aggregratedStatistics) {
+    setRowInEditMode();
     statisticsData = [...aggregratedStatistics];
     updateRowsPerPage();
   }
@@ -119,6 +141,31 @@
     }
 
     updateTableData();
+  }
+
+  function dispatchDeleteRequest(row: BookStatistic) {
+    const request: StatisticsDeleteRequest = {
+      startDate: '',
+      endDate: '',
+      titlesToCheck: new Set<string>()
+    };
+
+    if ($lastPrimaryReadingDataAggregationMode$ === StatisticsReadingDataAggregationMode.NONE) {
+      request.startDate = row.dateKey;
+      request.endDate = row.dateKey;
+      request.titlesToCheck.add(row.title);
+    } else if (
+      $lastPrimaryReadingDataAggregationMode$ === StatisticsReadingDataAggregationMode.DATE
+    ) {
+      request.startDate = row.dateKey;
+      request.endDate = row.dateKey;
+    } else {
+      request.startDate = $lastStatisticsStartDate$;
+      request.endDate = $lastStatisticsEndDate$;
+      request.titlesToCheck.add(row.title);
+    }
+
+    dispatch('delete', request);
   }
 
   function handlePropertyChange({
@@ -246,6 +293,8 @@
   }
 
   function updateFilterAndSort(aggregrationMode: StatisticsReadingDataAggregationMode) {
+    setRowInEditMode();
+
     switch (aggregrationMode) {
       case StatisticsReadingDataAggregationMode.DATE:
         if ($lastStatisticsSummarySortProperty$ === 'title') {
@@ -266,6 +315,20 @@
 
     statisticsSummaryGridRowMod =
       aggregrationMode === StatisticsReadingDataAggregationMode.NONE ? 0 : 1;
+  }
+
+  function setRowInEditMode(row?: BookStatistic) {
+    if (row) {
+      rowInEditTime = row.readingTime;
+      rowInEditCharacters = row.charactersRead;
+      rowInEditResetMinMaxValues = false;
+      rowInEdit = row;
+    } else {
+      rowInEdit = undefined;
+      rowInEditTime = 0;
+      rowInEditCharacters = 0;
+      rowInEditResetMinMaxValues = false;
+    }
   }
 </script>
 
@@ -290,52 +353,102 @@
       $lastPrimaryReadingDataAggregationMode$ === StatisticsReadingDataAggregationMode.TITLE}
     <div
       class="grid grid-cols-[0.75fr_1fr] gap-x-8 items-center"
-      class:md:grid-cols-[0.6fr_1fr_repeat(2,_0.65fr)_0.5fr]={isNoneAggregation}
-      class:lg:grid-cols-[0.25fr_1fr_repeat(2,_0.55fr)_0.4fr]={isNoneAggregation}
-      class:md:grid-cols-4={isDateAggregation}
-      class:md:grid-cols-[1fr_repeat(2,_0.45fr)_0.3fr]={isTitleAggregation}
-      class:lg:grid-cols-[1fr_0.35fr_0.4fr_0.3fr]={isTitleAggregation}
+      class:md:grid-cols-[0.31fr_0.6fr_0.77fr_0.74fr_0.6fr_0.57fr]={isNoneAggregation}
+      class:lg:grid-cols-[0.14fr_0.26fr_0.85fr_repeat(2,_0.59fr)_0.45fr]={isNoneAggregation}
+      class:md:grid-cols-[0.1fr_0.6fr_1fr_1.1fr_0.85fr]={isDateAggregation}
+      class:lg:grid-cols-[0.1fr_repeat(4,1fr)]={isDateAggregation}
+      class:md:grid-cols-[0.1fr_1fr_repeat(3,_0.45fr)]={isTitleAggregation}
+      class:lg:grid-cols-[0.1fr_0.93fr_0.35fr_0.42fr_0.3fr]={isTitleAggregation}
       style:grid-auto-rows={`${statisticsSummaryBaseRowRem}rem`}
       style:row-gap={`${statisticsSummaryBaseRowGap}rem`}
     >
+      {#if renderFullStatisticsSummaryTable}
+        <div></div>
+      {/if}
       <StatisticsSummaryHeader
         statisticsSummaryKey={StatisticsSummaryKey.DATE}
         options={dateDataSources}
         selectionKey={StatisticsSummaryKey.DATE}
+        hasRowInEdit={rowInEdit !== undefined}
         isHidden={isTitleAggregation}
-        gridRow={renderFullStatisticsSummaryTable ? undefined : 1 - statisticsSummaryGridRowMod}
+        gridRow={renderFullStatisticsSummaryTable ? undefined : 2}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
         statisticsSummaryKey={StatisticsSummaryKey.TITLE}
         options={titleDataSources}
         selectionKey={StatisticsSummaryKey.TITLE}
+        hasRowInEdit={rowInEdit !== undefined}
         isHidden={isDateAggregation}
-        gridRow={renderFullStatisticsSummaryTable ? undefined : 2 - statisticsSummaryGridRowMod}
+        gridRow={renderFullStatisticsSummaryTable ? undefined : 3 - statisticsSummaryGridRowMod}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
         statisticsSummaryKey={StatisticsSummaryKey.READING_TIME}
         options={readingTimeDataSources}
         selectionKey={$lastReadingTimeDataSource$}
-        gridRow={renderFullStatisticsSummaryTable ? undefined : 3 - statisticsSummaryGridRowMod}
+        hasRowInEdit={rowInEdit !== undefined}
+        gridRow={renderFullStatisticsSummaryTable ? undefined : 4 - statisticsSummaryGridRowMod}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
         statisticsSummaryKey={StatisticsSummaryKey.CHARACTERS}
         options={charactersDataSources}
         selectionKey={$lastCharactersDataSource$}
-        gridRow={renderFullStatisticsSummaryTable ? undefined : 4 - statisticsSummaryGridRowMod}
+        hasRowInEdit={rowInEdit !== undefined}
+        gridRow={renderFullStatisticsSummaryTable ? undefined : 5 - statisticsSummaryGridRowMod}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
         statisticsSummaryKey={StatisticsSummaryKey.READING_SPEED}
         options={readingSpeedDataSources}
         selectionKey={$lastReadingSpeedDataSource$}
-        gridRow={renderFullStatisticsSummaryTable ? undefined : 5 - statisticsSummaryGridRowMod}
+        hasRowInEdit={rowInEdit !== undefined}
+        gridRow={renderFullStatisticsSummaryTable ? undefined : 6 - statisticsSummaryGridRowMod}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       {#each currentStatisticsSummaryRows as currentStatisticsSummaryRow (currentStatisticsSummaryRow.id)}
+        {@const currentRowInEdit = rowInEdit && rowInEdit.id === currentStatisticsSummaryRow.id}
+        {@const otherRowInEdit = rowInEdit && !currentRowInEdit}
+        <div class="col-span-2 md:col-span-1">
+          <button
+            class="hover:text-red-500"
+            class:cursor-not-allowed={otherRowInEdit}
+            disabled={otherRowInEdit}
+            on:click={() => {
+              if (rowInEdit) {
+                setRowInEditMode();
+              } else {
+                dispatchDeleteRequest(currentStatisticsSummaryRow);
+              }
+            }}
+          >
+            <Fa icon={currentRowInEdit ? faXmark : faTrash} />
+          </button>
+          {#if isNoneAggregation}
+            <button
+              class="ml-2 hover:text-red-500"
+              class:cursor-not-allowed={otherRowInEdit}
+              disabled={otherRowInEdit}
+              on:click={() => {
+                if (rowInEdit) {
+                  dispatch('edit', {
+                    dateKey: rowInEdit.dateKey,
+                    title: rowInEdit.title,
+                    newReadingTime: rowInEditTime,
+                    newCharactersRead: rowInEditCharacters,
+                    resetMinMaxValues: rowInEditResetMinMaxValues
+                  });
+                  setRowInEditMode();
+                } else {
+                  setRowInEditMode(currentStatisticsSummaryRow);
+                }
+              }}
+            >
+              <Fa icon={currentRowInEdit ? faFloppyDisk : faPen} />
+            </button>
+          {/if}
+        </div>
         <div class:hidden={isTitleAggregation}>
           {currentStatisticsSummaryRow.dateKey}
         </div>
@@ -358,70 +471,103 @@
         >
           {currentStatisticsSummaryRow.title}
         </div>
-        <button
-          class="text-left"
-          class:blur={$lastBlurredTrackerItems$.has('readingTime')}
-          on:click={(event) => {
-            statisticsSummaryPopoverDetails = [
-              `Time: ${secondsToMinutes(currentStatisticsSummaryRow.readingTime)} min`,
-              `Average Time: ${secondsToMinutes(
-                currentStatisticsSummaryRow.averageReadingTime
-              )} min`,
-              `Weighted Time: ${secondsToMinutes(
-                currentStatisticsSummaryRow.averageWeightedReadingTime
-              )} min`
-            ];
-
-            tick().then(() => {
-              if (event.target instanceof HTMLElement) {
-                statisticsSummaryPopover.toggleOpen(event.target);
+        {#if currentRowInEdit}
+          <input
+            class="w-full"
+            type="number"
+            bind:value={rowInEditTime}
+            on:change={() => {
+              if (rowInEdit && (!Number.isFinite(rowInEditTime) || rowInEditTime < 0)) {
+                rowInEditTime = rowInEdit.readingTime;
               }
-            });
-          }}
-        >
-          {secondsToMinutes(
-            getNumberFromObject(currentStatisticsSummaryRow, $lastReadingTimeDataSource$)
-          )} min
-        </button>
-        <button
-          class="text-left"
-          class:blur={$lastBlurredTrackerItems$.has('charactersRead')}
-          on:click={(event) => {
-            statisticsSummaryPopoverDetails = [
-              `Characters: ${currentStatisticsSummaryRow.charactersRead}`,
-              `Average Characters: ${currentStatisticsSummaryRow.averageCharactersRead}`,
-              `Weighted Characters: ${currentStatisticsSummaryRow.averageWeightedCharactersRead}`
-            ];
+            }}
+          />
+        {:else}
+          <button
+            class="text-left"
+            class:blur={$lastBlurredTrackerItems$.has('readingTime')}
+            on:click={(event) => {
+              statisticsSummaryPopoverDetails = [
+                `Time: ${secondsToMinutes(currentStatisticsSummaryRow.readingTime)} min`,
+                `Average Time: ${secondsToMinutes(
+                  currentStatisticsSummaryRow.averageReadingTime
+                )} min`,
+                `Weighted Time: ${secondsToMinutes(
+                  currentStatisticsSummaryRow.averageWeightedReadingTime
+                )} min`
+              ];
 
-            tick().then(() => {
-              if (event.target instanceof HTMLElement) {
-                statisticsSummaryPopover.toggleOpen(event.target);
+              tick().then(() => {
+                if (event.target instanceof HTMLElement) {
+                  statisticsSummaryPopover.toggleOpen(event.target);
+                }
+              });
+            }}
+          >
+            {secondsToMinutes(
+              getNumberFromObject(currentStatisticsSummaryRow, $lastReadingTimeDataSource$)
+            )} min
+          </button>
+        {/if}
+        {#if currentRowInEdit}
+          <input
+            class="w-full"
+            type="number"
+            bind:value={rowInEditCharacters}
+            on:change={() => {
+              if (rowInEdit && (!Number.isFinite(rowInEditCharacters) || rowInEditCharacters < 0)) {
+                rowInEditCharacters = rowInEdit.charactersRead;
               }
-            });
-          }}
-        >
-          {getNumberFromObject(currentStatisticsSummaryRow, $lastCharactersDataSource$)}
-        </button>
-        <button
-          class="text-left"
-          class:blur={$lastBlurredTrackerItems$.has('lastReadingSpeed')}
-          on:click={(event) => {
-            statisticsSummaryPopoverDetails = [
-              `Speed: ${currentStatisticsSummaryRow.lastReadingSpeed}`,
-              `Min Speed: ${currentStatisticsSummaryRow.minReadingSpeed}`,
-              `Alt Min Speed: ${currentStatisticsSummaryRow.altMinReadingSpeed}`,
-              `Max Speed: ${currentStatisticsSummaryRow.maxReadingSpeed}`
-            ];
+            }}
+          />
+        {:else}
+          <button
+            class="text-left"
+            class:blur={$lastBlurredTrackerItems$.has('charactersRead')}
+            on:click={(event) => {
+              statisticsSummaryPopoverDetails = [
+                `Characters: ${currentStatisticsSummaryRow.charactersRead}`,
+                `Average Characters: ${currentStatisticsSummaryRow.averageCharactersRead}`,
+                `Weighted Characters: ${currentStatisticsSummaryRow.averageWeightedCharactersRead}`
+              ];
 
-            tick().then(() => {
-              if (event.target instanceof HTMLElement) {
-                statisticsSummaryPopover.toggleOpen(event.target);
-              }
-            });
-          }}
-        >
-          {getNumberFromObject(currentStatisticsSummaryRow, $lastReadingSpeedDataSource$)} / h
-        </button>
+              tick().then(() => {
+                if (event.target instanceof HTMLElement) {
+                  statisticsSummaryPopover.toggleOpen(event.target);
+                }
+              });
+            }}
+          >
+            {getNumberFromObject(currentStatisticsSummaryRow, $lastCharactersDataSource$)}
+          </button>
+        {/if}
+        {#if currentRowInEdit}
+          <div class="flex items-center">
+            <input id="reset-min-max" type="checkbox" bind:checked={rowInEditResetMinMaxValues} />
+            <label for="reset-min-max" class="ml-1">Reset Min/Max</label>
+          </div>
+        {:else}
+          <button
+            class="text-left"
+            class:blur={$lastBlurredTrackerItems$.has('lastReadingSpeed')}
+            on:click={(event) => {
+              statisticsSummaryPopoverDetails = [
+                `Speed: ${currentStatisticsSummaryRow.lastReadingSpeed}`,
+                `Min Speed: ${currentStatisticsSummaryRow.minReadingSpeed}`,
+                `Alt Min Speed: ${currentStatisticsSummaryRow.altMinReadingSpeed}`,
+                `Max Speed: ${currentStatisticsSummaryRow.maxReadingSpeed}`
+              ];
+
+              tick().then(() => {
+                if (event.target instanceof HTMLElement) {
+                  statisticsSummaryPopover.toggleOpen(event.target);
+                }
+              });
+            }}
+          >
+            {getNumberFromObject(currentStatisticsSummaryRow, $lastReadingSpeedDataSource$)} / h
+          </button>
+        {/if}
       {/each}
     </div>
     {#if statisticsSummaryPopoverDetails.length}
@@ -457,7 +603,10 @@
     disabled={currentStatisticsSummaryPage === 1}
     class:opacity-25={currentStatisticsSummaryPage === 1}
     class:cursor-not-allowed={currentStatisticsSummaryPage === 1}
-    on:click={() => (currentStatisticsSummaryPage -= 1)}
+    on:click={() => {
+      setRowInEditMode();
+      currentStatisticsSummaryPage -= 1;
+    }}
   >
     <Fa icon={faChevronLeft} />
   </button>
@@ -489,6 +638,8 @@
           class:text-black={statisticsSummaryPage === currentStatisticsSummaryPage}
           bind:this={statisticsSummaryPageRefs[pageIndex + 1]}
           on:click={({ target }) => {
+            setRowInEditMode();
+
             currentStatisticsSummaryPage = statisticsSummaryPage;
             target?.dispatchEvent(new CustomEvent(CLOSE_POPOVER, { bubbles: true }));
           }}
@@ -502,7 +653,10 @@
     disabled={currentStatisticsSummaryPage === statisticsSummaryMaxPages}
     class:opacity-25={currentStatisticsSummaryPage === statisticsSummaryMaxPages}
     class:cursor-not-allowed={currentStatisticsSummaryPage === statisticsSummaryMaxPages}
-    on:click={() => (currentStatisticsSummaryPage += 1)}
+    on:click={() => {
+      setRowInEditMode();
+      currentStatisticsSummaryPage += 1;
+    }}
   >
     <Fa icon={faChevronRight} />
   </button>

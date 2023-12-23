@@ -34,6 +34,7 @@
   import {
     faArrowDownShortWide,
     faArrowDownWideShort,
+    faCalendarXmark,
     faChartLine,
     faCircleXmark,
     faCloudArrowUp,
@@ -65,6 +66,7 @@
     filesChange: FileList;
     importBackup: File;
     selectionToStatistics: void;
+    deleteStatistics: void;
     replicateData: void;
     cancelReplication: void;
   }>();
@@ -475,22 +477,35 @@
             class="transform-gpu {baseIconClasses}"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
-            on:click={() => dispatch('selectionToStatistics')}
-            on:keyup={dummyFn}
-          >
-            <Fa icon={faChartLine} />
-          </div>
-          <div
-            tabindex="0"
-            role="button"
-            class="transform-gpu {baseIconClasses}"
-            in:scale={inAnimationParams}
-            out:scale={outAnimationParams}
             on:click={() => dispatch('replicateData')}
             on:keyup={dummyFn}
           >
             <Fa icon={faCloudArrowUp} />
           </div>
+          {#if $storageSource$ === StorageKey.BROWSER}
+            <div
+              tabindex="0"
+              role="button"
+              class="transform-gpu {baseIconClasses}"
+              in:scale={inAnimationParams}
+              out:scale={outAnimationParams}
+              on:click={() => dispatch('selectionToStatistics')}
+              on:keyup={dummyFn}
+            >
+              <Fa icon={faChartLine} />
+            </div>
+            <div
+              tabindex="0"
+              role="button"
+              class="transform-gpu {baseIconClasses}"
+              in:scale={inAnimationParams}
+              out:scale={outAnimationParams}
+              on:click={() => dispatch('deleteStatistics')}
+              on:keyup={dummyFn}
+            >
+              <Fa icon={faCalendarXmark} />
+            </div>
+          {/if}
           <div
             tabindex="0"
             role="button"

@@ -21,6 +21,7 @@
   export let options: StatisticsDataSource[];
   export let selectionKey: keyof BookStatistic;
   export let gridRow: number | undefined;
+  export let hasRowInEdit: boolean;
   export let isHidden = false;
 
   const dispatch = createEventDispatcher<{
@@ -44,7 +45,7 @@
   class:hidden={isHidden}
   style:grid-row={gridRow ? `${gridRow}/${gridRow}` : null}
 >
-  {#if options.length > 1}
+  {#if options.length > 1 && !hasRowInEdit}
     <Popover
       placement={'bottom-start'}
       fallbackPlacements={['top']}
@@ -70,7 +71,9 @@
     </Popover>
   {:else}
     <button
-      class="flex flex-1"
+      class="flex flex-1 text-left"
+      class:cursor-not-allowed={hasRowInEdit}
+      disabled={hasRowInEdit}
       on:click={() => {
         dispatch('propertyChange', { property: selectedOption.key, statisticsSummaryKey });
       }}
@@ -81,6 +84,8 @@
   <button
     class="ml-4"
     class:opacity-20={!optionKeys.has($lastStatisticsSummarySortProperty$)}
+    class:cursor-not-allowed={hasRowInEdit}
+    disabled={hasRowInEdit}
     on:click={() =>
       dispatch('propertyChange', { property: selectedOption.key, statisticsSummaryKey })}
   >

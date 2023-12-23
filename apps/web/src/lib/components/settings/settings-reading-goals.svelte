@@ -5,9 +5,11 @@
     faChevronRight,
     faEdit,
     faRotate,
-    faSave
+    faSave,
+    faTrash
   } from '@fortawesome/free-solid-svg-icons';
   import { ReadingGoalFrequency } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
+  import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
   import MessageDialog from '$lib/components/message-dialog.svelte';
   import SettingsReadingGoalsMerge from '$lib/components/settings/settings-reading-goals-merge.svelte';
   import SettingsSyncDialog from '$lib/components/settings/settings-sync-dialog.svelte';
@@ -20,6 +22,7 @@
   import {
     getCurrentReadingGoal,
     getDateRangeLabel,
+    type ReadingGoal,
     type ReadingGoalSaveResult
   } from '$lib/data/reading-goal';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
@@ -269,6 +272,72 @@
     }
   }
 
+  async function deleteReadingGoals(readingGoalToDelete?: ReadingGoal, dateRangeLabel?: string) {
+    let dialogMessage = '';
+
+    if (readingGoalToDelete) {
+      const isCurrentReadingGoal =
+        $readingGoal$.goalStartDate &&
+        $readingGoal$.goalStartDate === readingGoalToDelete.goalStartDate;
+      const term =
+        getDateKey($startDayHoursForTracker$) >= readingGoalToDelete.goalStartDate
+          ? 'started'
+          : 'starting';
+      dialogMessage = `The${
+        isCurrentReadingGoal ? ` current Reading Goal ${term} on` : ' archived Reading Goal for '
+      } ${dateRangeLabel} will be deleted${isCurrentReadingGoal ? ' without archiving' : ''}`;
+    } else if (readingGoals.length > 1) {
+      dialogMessage = `All archived Reading Goals will be deleted${
+        $readingGoal$.goalStartDate ? ' (including the current One)' : ''
+      }`;
+    } else {
+      dialogMessage = $readingGoal$.goalStartDate
+        ? 'Your current Reading Goal will be deleted without archiving'
+        : 'Your archived Reading Goal will be deleted';
+    }
+
+    dialogMessage +=
+      '\n\nExecute an one time Sync with an export behavior of "overwrite" and/or reading goals merge mode of "replace" to apply deletions to other devices';
+
+    const wasCanceled = await new Promise((resolver) => {
+      dialogManager.dialogs$.next([
+        {
+          component: ConfirmDialog,
+          props: {
+            dialogHeader: 'Data Deletion',
+            dialogMessage,
+            contentStyles: 'white-space: pre-line;',
+            resolver
+          },
+          disableCloseOnClick: true
+        }
+      ]);
+    });
+
+    if (wasCanceled) {
+      return;
+    }
+
+    dispatch('spinner', true);
+
+    try {
+      await database.deleteReadingGoal(readingGoalToDelete?.goalStartDate);
+      await updateReadingGoalsData();
+    } catch ({ message }: any) {
+      dialogManager.dialogs$.next([
+        {
+          component: MessageDialog,
+          props: {
+            title: 'Error',
+            message: `An Error occurred: ${message}`
+          }
+        }
+      ]);
+    } finally {
+      dispatch('spinner', false);
+    }
+  }
+
   async function init() {
     try {
       dispatch('spinner', true);
@@ -343,8 +412,21 @@
         <div class="flex items-center justify-center hover:opacity-50">
           <span class="mr-2">Edit</span>
           <Fa icon={faEdit} />
-        </div></button
+        </div>
+      </button>
+      <button
+        class={buttonClasses}
+        disabled={!readingGoals.length}
+        on:click={() => deleteReadingGoals()}
       >
+        <div
+          class="flex items-center justify-center hover:opacity-50"
+          class:cursor-not-allowed={!readingGoals.length}
+        >
+          <span class="mr-2">Reset</span>
+          <Fa icon={faTrash} />
+        </div>
+      </button>
     {/if}
   </div>
   <hr class="border border-black" />
@@ -398,20 +480,33 @@
   <details class="mt-6 cursor-pointer">
     <summary>Reading Goal History ({pluralize(readingGoals.length, 'Item')})</summary>
     {#if readingGoals.length}
-      <div class="grid-cols-4 hidden sm:grid">
+      <div class="grid-cols-[repeat(4,1fr)_0.1fr] hidden sm:grid">
         {#each historyReadingGoals as historyGoal (historyGoal.goalStartDate)}
-          <div>{getDateRangeLabel(historyGoal.goalStartDate, historyGoal.goalEndDate)}</div>
+          {@const dateRangeLabel = getDateRangeLabel(
+            historyGoal.goalStartDate,
+            historyGoal.goalEndDate
+          )}
+          <div>{dateRangeLabel}</div>
           <div>{secondsToMinutes(historyGoal.timeGoal)} min</div>
           <div>{historyGoal.characterGoal} characters</div>
           <div>{historyGoal.goalFrequency}</div>
+          <button on:click={() => deleteReadingGoals(historyGoal, dateRangeLabel)}>
+            <Fa icon={faTrash} />
+          </button>
         {/each}
       </div>
       <div class="sm:hidden">
         {#each historyReadingGoals as historyGoal (historyGoal.goalStartDate)}
+          {@const dateRangeLabel = getDateRangeLabel(
+            historyGoal.goalStartDate,
+            historyGoal.goalEndDate
+          )}
           <div class="my-2">
-            {getDateRangeLabel(historyGoal.goalStartDate, historyGoal.goalEndDate)} / {secondsToMinutes(
-              historyGoal.timeGoal
-            )} min / {historyGoal.characterGoal} characters / {historyGoal.goalFrequency}
+            {dateRangeLabel} / {secondsToMinutes(historyGoal.timeGoal)} min / {historyGoal.characterGoal}
+            characters / {historyGoal.goalFrequency}
+            <button on:click={() => deleteReadingGoals(historyGoal, dateRangeLabel)}>
+              <Fa icon={faTrash} />
+            </button>
           </div>
         {/each}
       </div>

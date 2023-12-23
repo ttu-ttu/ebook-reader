@@ -6,7 +6,7 @@
     StatisticsRangeTemplate,
     type StatisticsDateChange,
     preFilteredTitlesForStatistics$,
-    statisticsSettingsActionInProgress$
+    statisticsActionInProgress$
   } from '$lib/components/statistics/statistics-types';
   import { pxScreen } from '$lib/css-classes';
   import {
@@ -136,7 +136,7 @@
     class="writing-horizontal-tb fixed top-0 right-0 z-[60] flex h-full w-full max-w-xl flex-col justify-between bg-gray-700 text-white"
     in:fly|local={{ x: 100, duration: 100, easing: quintInOut }}
     use:clickOutside={() => {
-      if (!$statisticsSettingsActionInProgress$) {
+      if (!$statisticsActionInProgress$) {
         showStatisticsSettings = false;
       }
     }}

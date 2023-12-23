@@ -100,7 +100,7 @@
     });
   }
 
-  $: if (statisticsTitleFilters) {
+  $: if (statisticsTitleFilters && statisticsData) {
     selectedStreak = HeatmapStreakType.NONE;
     selectedStreakDates = new Set();
 

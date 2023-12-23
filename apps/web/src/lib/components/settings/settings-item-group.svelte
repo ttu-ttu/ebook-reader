@@ -5,11 +5,12 @@
 
   export let title: string;
   export let tooltip = '';
+  export let applyHeaderClasses = true;
 </script>
 
 <section class="pb-8 md:pb-3">
   <div class="flex">
-    <h2 class="mb-2 text-xl font-medium">
+    <h2 class="mb-2" class:text-xl={applyHeaderClasses} class:font-medium={applyHeaderClasses}>
       {#if tooltip}
         <Popover contentText={tooltip} contentStyles="padding: 0.5rem;">
           <Fa icon={faCircleQuestion} slot="icon" class="mx-2" />
