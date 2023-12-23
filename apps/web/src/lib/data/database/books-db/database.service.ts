@@ -13,16 +13,23 @@ import type {
 } from '$lib/data/database/books-db/versions/books-db';
 import { Observable, Subject, from } from 'rxjs';
 import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
+import {
+  advanceDateDays,
+  getDate,
+  getDateKey,
+  mergeStatistics,
+  updateStatisticToStore
+} from '$lib/functions/statistic-util';
 import { catchError, map, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
 import {
   getCurrentReadingGoal,
   mergeReadingGoals,
   readingGoalSortFunction
 } from '$lib/data/reading-goal';
-import { getDateKey, mergeStatistics, updateStatisticToStore } from '$lib/functions/statistic-util';
 import { lastReadingGoalsModified$, readingGoal$, syncTarget$ } from '$lib/data/store';
 
 import type { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
+import type { BookStatistic } from '$lib/components/statistics/statistics-types';
 import type BooksDb from '$lib/data/database/books-db/versions/books-db';
 import type { IDBPDatabase } from 'idb';
 import LogReportDialog from '$lib/components/log-report-dialog.svelte';
@@ -595,6 +602,29 @@ export class DatabaseService {
     }
   }
 
+  async updateStatistic(newStatistic: BookStatistic) {
+    const db = await this.db;
+
+    let existingStatistic = await db.get('statistic', [newStatistic.title, newStatistic.dateKey]);
+
+    if (!existingStatistic) {
+      throw new Error('Unable to find record in the database');
+    }
+
+    existingStatistic = {
+      ...existingStatistic,
+      charactersRead: newStatistic.charactersRead,
+      readingTime: newStatistic.readingTime,
+      minReadingSpeed: newStatistic.minReadingSpeed,
+      altMinReadingSpeed: newStatistic.altMinReadingSpeed,
+      lastReadingSpeed: newStatistic.lastReadingSpeed,
+      maxReadingSpeed: newStatistic.maxReadingSpeed,
+      lastStatisticModified: newStatistic.lastStatisticModified
+    };
+
+    await db.put('statistic', existingStatistic);
+  }
+
   async clearZombieStatistics() {
     try {
       const db = await this.db;
@@ -682,6 +712,108 @@ export class DatabaseService {
           })
         )
       );
+
+      await Promise.all(tasks);
+      await tx.done;
+    } catch (error: any) {
+      try {
+        tx.abort();
+        await tx.done;
+      } catch (_) {
+        // no-op
+      }
+
+      throw error;
+    }
+  }
+
+  async deleteStatisticEntries(
+    bookTitles: string[],
+    checkExistingData: boolean,
+    startDateString = '',
+    endDateString = ''
+  ) {
+    if (!bookTitles.length || (startDateString && !endDateString)) {
+      throw new Error('Received invalid Arguments for deleteStatisticEntries');
+    }
+
+    const db = await this.db;
+    const tx = db.transaction(['statistic', 'lastModified'], 'readwrite');
+
+    try {
+      const statisticsStore = tx.objectStore('statistic');
+      const lastModifiedStore = tx.objectStore('lastModified');
+      const limiter = pLimit(1);
+      const tasks: Promise<void>[] = [];
+      const dates: string[] = [];
+      const lastModifiedValue = Date.now();
+      const hadDataMap = new Map<string, boolean>();
+
+      if (startDateString) {
+        // eslint-disable-next-line prefer-const
+        let { referenceDate, dateString } = advanceDateDays(getDate(startDateString), 0);
+
+        while (dateString <= endDateString) {
+          dates.push(dateString);
+          ({ dateString } = advanceDateDays(referenceDate));
+        }
+      }
+
+      bookTitles.forEach((bookTitle) => {
+        if (dates.length) {
+          dates.forEach((dateKey) => {
+            tasks.push(
+              limiter(async () => {
+                try {
+                  await statisticsStore.delete([bookTitle, dateKey]);
+                } catch (error: any) {
+                  limiter.clearQueue();
+
+                  throw error;
+                }
+              })
+            );
+          });
+        } else {
+          tasks.push(
+            limiter(async () => {
+              try {
+                const keyRange = IDBKeyRange.bound([bookTitle], [bookTitle, []]);
+
+                if (checkExistingData && !hadDataMap.has(bookTitle)) {
+                  const hadData = !!(await statisticsStore.getKey(keyRange));
+
+                  hadDataMap.set(bookTitle, hadData);
+                }
+
+                await statisticsStore.delete(keyRange);
+              } catch (error: any) {
+                limiter.clearQueue();
+
+                throw error;
+              }
+            })
+          );
+        }
+
+        tasks.push(
+          limiter(async () => {
+            try {
+              if (!checkExistingData || hadDataMap.get(bookTitle)) {
+                await lastModifiedStore.put({
+                  title: bookTitle,
+                  dataType: StorageDataType.STATISTICS,
+                  lastModifiedValue
+                });
+              }
+            } catch (error: any) {
+              limiter.clearQueue();
+
+              throw error;
+            }
+          })
+        );
+      });
 
       await Promise.all(tasks);
       await tx.done;
@@ -875,5 +1007,17 @@ export class DatabaseService {
 
       throw error;
     }
+  }
+
+  async deleteReadingGoal(dateKey?: string) {
+    const db = await this.db;
+
+    if (dateKey) {
+      await db.delete('readingGoal', dateKey);
+    } else {
+      await db.clear('readingGoal');
+    }
+
+    lastReadingGoalsModified$.next(Date.now());
   }
 }

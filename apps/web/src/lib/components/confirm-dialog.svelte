@@ -6,6 +6,8 @@
 
   export let dialogHeader: string;
   export let dialogMessage: string;
+  export let contentStyles: string = '';
+  export let showCancel = true;
   export let resolver: (arg0: boolean) => void;
 
   const dispatch = createEventDispatcher<{
@@ -21,10 +23,10 @@
 <DialogTemplate>
   <svelte:fragment slot="header">{dialogHeader}</svelte:fragment>
   <svelte:fragment slot="content">
-    <p>{dialogMessage}</p>
+    <p style={contentStyles}>{dialogMessage}</p>
   </svelte:fragment>
   <div class="flex grow justify-between" slot="footer">
-    <button class={buttonClasses} on:click={() => closeDialog(true)}>
+    <button class={buttonClasses} class:invisible={!showCancel} on:click={() => closeDialog(true)}>
       Cancel
       <Ripple />
     </button>

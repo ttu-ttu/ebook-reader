@@ -7,8 +7,8 @@
   import Fa from 'svelte-fa';
 
   export let options: ToggleOption<any>[];
-
   export let selectedOptionId: any;
+  export let invertColors = false;
 
   const dispatch = createEventDispatcher<{
     edit: string;
@@ -29,12 +29,14 @@
     <div class="flex">
       <button
         title={option.id}
-        class="m-1 rounded-md border-2 border-gray-400 p-2 text-lg"
+        class="m-1 rounded-md border-2 border-gray-400 p-2 text-black text-lg"
         class:border-4={option.thickBorders && option.id === selectedOptionId}
         class:border-blue-300={option.id === selectedOptionId}
         class:bg-gray-700={option.id === selectedOptionId}
-        class:text-white={option.id === selectedOptionId}
-        class:bg-white={option.id !== selectedOptionId}
+        class:text-white={(option.id === selectedOptionId && !invertColors) ||
+          (option.id !== selectedOptionId && invertColors)}
+        class:bg-white={(option.id === selectedOptionId && invertColors) ||
+          (option.id !== selectedOptionId && !invertColors)}
         style={mapToStyleString(option.style)}
         on:click={() => (selectedOptionId = option.id)}
       >

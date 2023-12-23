@@ -5,6 +5,7 @@
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import BookManagerHeader from '$lib/components/book-card/book-manager-header.svelte';
   import BookExportDialog from '$lib/components/book-export/book-export-dialog.svelte';
+  import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
   import LogReportDialog from '$lib/components/log-report-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MessageDialog from '$lib/components/message-dialog.svelte';
@@ -21,6 +22,7 @@
   import {
     booklistSortOptions$,
     cacheStorageData$,
+    confirmStatisticsDeletion$,
     database,
     isOnline$,
     keepLocalStatisticsOnDeletion$,
@@ -36,13 +38,17 @@
   import { inputFile } from '$lib/functions/file-dom/input-file';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { keyBy } from '$lib/functions/key-by';
+  import { handleErrorDuringReplication } from '$lib/functions/replication/error-handler';
   import { importBackup, importData, replicateData } from '$lib/functions/replication/replicator';
+  import { throwIfAborted } from '$lib/functions/replication/replication-error';
   import {
     replicationProgress$,
     executeReplicate$,
     type ReplicationProgress
   } from '$lib/functions/replication/replication-progress';
+  import { pluralize } from '$lib/functions/utils';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
+  import pLimit from 'p-limit';
   import { combineLatest, map, Observable, share, Subject, switchMap, takeUntil } from 'rxjs';
   import { tick } from 'svelte';
   import Fa from 'svelte-fa';
@@ -472,6 +478,78 @@
     dialogManager.dialogs$.next([{ component: BookExportDialog, disableCloseOnClick: true }]);
   }
 
+  async function onDeleteStatistics() {
+    const titles = $bookCards$
+      .filter((card) => selectedBookIds.has(card.id))
+      .map((book) => book.title);
+
+    let wasCanceled = false;
+
+    if ($confirmStatisticsDeletion$) {
+      wasCanceled = await new Promise((resolver) => {
+        dialogManager.dialogs$.next([
+          {
+            component: ConfirmDialog,
+            props: {
+              dialogHeader: 'Delete Data',
+              dialogMessage: `This will delete all Statistics for the selected ${pluralize(
+                titles.length,
+                'Title',
+                false
+              )} (which may include start and/or completion Data)\n\nExecute a one time Sync with an export behavior of "replace" and/or statistics merge mode of "replace" to apply deletions to other devices`,
+              contentStyles: 'white-space: pre-line;',
+              resolver
+            }
+          }
+        ]);
+      });
+    }
+
+    if (wasCanceled) {
+      return;
+    }
+
+    cancelTooltip = `Cancels the current Process`;
+
+    initializeReplicationProgressData();
+
+    const limiter = pLimit(1);
+    const tasks: Promise<void>[] = [];
+
+    let failed = 0;
+
+    replicationProgress$.next({ progressBase: 1, maxProgress: titles.length });
+
+    titles.forEach((title) => {
+      tasks.push(
+        limiter(async () => {
+          try {
+            throwIfAborted(cancelSignal);
+            await database.deleteStatisticEntries([title], true);
+
+            replicationProgress$.next({ progressToAdd: 1 });
+          } catch (error) {
+            handleErrorDuringReplication(error, `Error on deleting statistics for ${title}: `, [
+              limiter
+            ]);
+
+            failed += 1;
+          }
+        })
+      );
+    });
+
+    await Promise.all(tasks).catch(() => {});
+
+    resetProgress();
+
+    if (failed) {
+      const errorMessage = `Unable to delete statistics of ${pluralize(failed, 'Title')}`;
+
+      showError('Deletion Failed', errorMessage, errorMessage);
+    }
+  }
+
   function updateProgress(replicationProgressData: ReplicationProgress) {
     if (cancelSignal.aborted) {
       return;
@@ -595,6 +673,7 @@
 
       goto(`${pagePath}${mergeEntries.STATISTICS.routeId}`);
     }}
+    on:deleteStatistics={onDeleteStatistics}
     on:replicateData={onReplicateData}
     on:importBackup={(ev) => onImportBackup(ev.detail)}
   />
