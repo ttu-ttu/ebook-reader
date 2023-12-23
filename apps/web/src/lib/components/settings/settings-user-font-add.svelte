@@ -114,11 +114,12 @@
         bind:this={fileElement}
         on:change={handleFileChange}
       />
-      Choose File
+      Choose File (and click Save)
     </label>
     <div
       tabindex="0"
       role="button"
+      title={canSave ? 'Save' : 'Select a File and Font name to save'}
       class:text-gray-500={!canSave}
       class:cursor-not-allowed={!canSave}
       on:click={() => {
