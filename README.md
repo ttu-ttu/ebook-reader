@@ -43,7 +43,7 @@ You can find most of the reader controls in the reader header which you can open
 | ![Icon](assets/readme/control-finish.svg)            | Allows you to complete the current book                                         |
 | ![Icon](assets/readme/control-reading-point.svg)     | Allows you to execute a custom reader point action                              |
 | ![Icon](assets/readme/control-fullscreen.svg)        | Allows you to enter fullscreen mode (keybind <kbd>F11</kbd>)                    |
-| ![Icon](assets/readme/control-reader-statistics.svg) | Navigates you to the statistics tab                                             |
+| ![Icon](assets/readme/control-reader-statistics.svg) | Navigates you to the statistics with the current Book as Filter                 |
 | ![Icon](assets/readme/control-image-gallery.svg)     | Opens the Book Image Gallery                                                    |
 | ![Icon](assets/readme/control-settings.svg)          | Navigates you to the settings                                                   |
 | ![Icon](assets/readme/control-manager.svg)           | Navigates you to the book manager or opens the action menu                      |
@@ -118,22 +118,24 @@ You may:
 
 You may find the following controls in the manager:
 
-| Control                                           | Description                                                                    |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| ![Icon](assets/readme/control-bookselect.svg)     | Toggles book selection                                                         |
-| ![Icon](assets/readme/control-bookselection.svg)  | Selects all books                                                              |
-| ![Icon](assets/readme/control-file-upload.svg)    | Allows you to import new books to the library                                  |
-| ![Icon](assets/readme/control-folder-upload.svg)  | Allows you to import new books from a folder to the library (desktop only)     |
-| ![Icon](assets/readme/control-import.svg)         | Allows you to import a previous exported zip file                              |
-| ![Icon](assets/readme/control-browser-source.svg) | Indicates that data from the browser db is displayed                           |
-| ![Icon](assets/readme/control-gdrive-source.svg)  | Indicates that data from the configured default GDrive source is displayed     |
-| ![Icon](assets/readme/control-odrive-source.svg)  | Indicates that data from the configured default OneDrive source is displayed   |
-| ![Icon](assets/readme/control-fs-source.svg)      | Indicates that data from the configured default filesystem source is displayed |
-| ![Icon](assets/readme/control-log.svg)            | Allows you to download data for a bug report                                   |
-| ![Icon](assets/readme/control-settings.svg)       | Navigates you to the settings                                                  |
-| ![Icon](assets/readme/control-manager.svg)        | Opens the action menu                                                          |
-| ![Icon](assets/readme/control-export.svg)         | Opens the export menu for the selected books                                   |
-| ![Icon](assets/readme/control-cancel.svg)         | Cancels the current book import/deletion                                       |
+| Control                                                        | Description                                                                    |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| ![Icon](assets/readme/control-bookselect.svg)                  | Toggles book selection                                                         |
+| ![Icon](assets/readme/control-bookselection.svg)               | Selects all books                                                              |
+| ![Icon](assets/readme/control-file-upload.svg)                 | Allows you to import new books to the library                                  |
+| ![Icon](assets/readme/control-folder-upload.svg)               | Allows you to import new books from a folder to the library (desktop only)     |
+| ![Icon](assets/readme/control-import.svg)                      | Allows you to import a previous exported zip file                              |
+| ![Icon](assets/readme/control-browser-source.svg)              | Indicates that data from the browser db is displayed                           |
+| ![Icon](assets/readme/control-gdrive-source.svg)               | Indicates that data from the configured default GDrive source is displayed     |
+| ![Icon](assets/readme/control-odrive-source.svg)               | Indicates that data from the configured default OneDrive source is displayed   |
+| ![Icon](assets/readme/control-fs-source.svg)                   | Indicates that data from the configured default filesystem source is displayed |
+| ![Icon](assets/readme/control-log.svg)                         | Allows you to download data for a bug report                                   |
+| ![Icon](assets/readme/control-settings.svg)                    | Navigates you to the settings                                                  |
+| ![Icon](assets/readme/control-manager.svg)                     | Opens the action menu                                                          |
+| ![Icon](assets/readme/control-export.svg)                      | Opens the export menu for the selected books                                   |
+| ![Icon](assets/readme/control-reader-statistics.svg)           | Opens the statistics tab (filtered by selected books if any)                   |
+| ![Icon](assets/readme/control-statistics-filter-range-off.svg) | Deletes statistics of selected books                                           |
+| ![Icon](assets/readme/control-cancel.svg)                      | Cancels the current book operation                                             |
 
 # Reading Tracker
 
@@ -258,15 +260,16 @@ The Title Filter Menu lets you filter part of the Data based on the book title.
 
 You may find the following controls in the filter menu:
 
-| Control                                                          | Description                                    |
-| ---------------------------------------------------------------- | ---------------------------------------------- |
-| ![Icon](assets/readme/control-statistics-filter-apply.svg)       | Apply selected Title Filters                   |
-| ![Icon](assets/readme/control-statistics-filter-check-all.svg)   | Selects all Titles                             |
-| ![Icon](assets/readme/control-statistics-filter-uncheck-all.svg) | Deselects all Titles                           |
-| ![Icon](assets/readme/control-statistics-filter-range-on.svg)    | Displays Titles across all Time                |
-| ![Icon](assets/readme/control-statistics-filter-range-off.svg)   | Displays only Titles in current Date Selection |
-| ![Icon](assets/readme/control-statistics-filter-checked-on.svg)  | Displays all Titles (selected and unselected)  |
-| ![Icon](assets/readme/control-statistics-filter-checked-off.svg) | Displays only selected Titles                  |
+| Control                                                          | Description                                            |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| ![Icon](assets/readme/control-statistics-filter-apply.svg)       | Apply selected Title Filters                           |
+| ![Icon](assets/readme/control-statistics-filter-check-all.svg)   | Selects all Titles                                     |
+| ![Icon](assets/readme/control-statistics-filter-uncheck-all.svg) | Deselects all Titles                                   |
+| ![Icon](assets/readme/control-statistics-filter-range-on.svg)    | Displays Titles across all Time                        |
+| ![Icon](assets/readme/control-statistics-filter-range-off.svg)   | Displays only Titles in current Date Selection         |
+| ![Icon](assets/readme/control-statistics-filter-checked-on.svg)  | Displays all Titles (selected and unselected)          |
+| ![Icon](assets/readme/control-statistics-filter-checked-off.svg) | Displays only selected Titles                          |
+| ![Icon](assets/readme/control-delete.svg)                        | Removes any prefilters and shows the all title filters |
 
 ## Heatmap / Overview
 
@@ -282,6 +285,15 @@ You may find the following controls in the heatmap:
 ## Statistics Summary
 
 The Statistics Summary Tab displays detail Deta for the configured Date Range and Aggregration/Data Sources. Clicking on the attribute name lets you quick switch between them, clicking on the Sort Icon will toggle the Direction. The sort Icon will be grayed out in case the column isn't the active sorting attribute.
+
+You may find the following controls in the summary section:
+
+| Control                                   | Description                                                 |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| ![Icon](assets/readme/control-delete.svg) | Deletes the selected row from the database                  |
+| ![Icon](assets/readme/control-pen.svg)    | Allows you to edit a row in "None" primary aggregation mode |
+| ![Icon](assets/readme/control-close.svg)  | Cancels the row editing mode                                |
+| ![Icon](assets/readme/control-save.svg)   | Saves the edited row back to the database                   |
 
 # Data Import/Export
 
