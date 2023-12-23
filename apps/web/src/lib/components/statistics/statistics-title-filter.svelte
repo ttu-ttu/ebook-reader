@@ -169,7 +169,11 @@
 
 {$resizeHandler$ ?? ''}
 <div class="flex items-center p-4">
-  <button class="flex items-end md:items-center" on:click={() => dispatch('close')}>
+  <button
+    title="Close Title Filter"
+    class="flex items-end md:items-center"
+    on:click={() => dispatch('close')}
+  >
     <Fa icon={faXmark} />
   </button>
 </div>
@@ -200,8 +204,8 @@
     </button>
     <button
       title={$lastStatisticsFilterDateRangeOnly$
-        ? 'Display all Titles'
-        : 'Display selected Titles only'}
+        ? 'Display Titles across all Time'
+        : 'Display Titles in selected Date Range only'}
       class="hover:text-red-500"
       on:click={() => ($lastStatisticsFilterDateRangeOnly$ = !$lastStatisticsFilterDateRangeOnly$)}
     >

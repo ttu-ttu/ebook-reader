@@ -129,6 +129,7 @@
   <div
     tabindex="0"
     role="button"
+    title="Close Table of Contents"
     class="flex items-end md:items-center"
     on:click={closeTocMenu}
     on:keyup={dummyFn}
@@ -142,6 +143,7 @@
       <div
         tabindex="0"
         role="button"
+        title={`Go to ${chapter.label}`}
         id={`for${chapter.reference}`}
         class="mr-4"
         class:opacity-30={chapter.progress === 100 && chapter !== currentChapter}
@@ -162,6 +164,7 @@
   <div
     tabindex="0"
     role="button"
+    title={prevChapterAvailable ? `${verticalMode ? 'Next' : 'Previous'} Chapter` : ''}
     class:opacity-30={!prevChapterAvailable}
     on:click={() => changeChapter(prevChapterAvailable, verticalMode ? 1 : -1)}
     on:keyup={dummyFn}
@@ -171,6 +174,7 @@
   <div
     tabindex="0"
     role="button"
+    title={nextChapterAvailable ? `${verticalMode ? 'Previous' : 'Next'} Chapter` : ''}
     class:opacity-30={!nextChapterAvailable}
     on:click={() => changeChapter(nextChapterAvailable, verticalMode ? -1 : 1)}
     on:keyup={dummyFn}

@@ -434,6 +434,7 @@
           <div
             tabindex="0"
             role="button"
+            title="Open Custom Font Dialog"
             on:click={() =>
               dialogManager.dialogs$.next([
                 {

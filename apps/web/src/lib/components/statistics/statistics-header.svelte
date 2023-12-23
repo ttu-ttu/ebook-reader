@@ -44,7 +44,7 @@
           yOffset={0}
           bind:this={copyStatisticsDataPopover}
         >
-          <div slot="icon" class={baseIconClasses}>
+          <div title="Copy Data in TMW Log Format" slot="icon" class={baseIconClasses}>
             <Fa icon={faCopy} />
           </div>
           <div class="flex flex-col justify-center w-36 bg-gray-700" slot="content">
@@ -65,7 +65,11 @@
       <div
         tabindex="0"
         role="button"
+        title={$lastStatisticsTab$ === StatisticsTab.SUMMARY
+          ? 'You are already on the Summary Tab'
+          : 'Switch to Summary Tab'}
         class={baseIconClasses}
+        class:bg-gray-900={$lastStatisticsTab$ === StatisticsTab.SUMMARY}
         on:click={() => ($lastStatisticsTab$ = StatisticsTab.SUMMARY)}
         on:keyup={dummyFn}
       >
@@ -74,7 +78,11 @@
       <div
         tabindex="0"
         role="button"
+        title={$lastStatisticsTab$ === StatisticsTab.OVERVIEW
+          ? 'You are already on the Heatmap Tab'
+          : 'Switch to Heatmap Tab'}
         class={baseIconClasses}
+        class:bg-gray-900={$lastStatisticsTab$ === StatisticsTab.OVERVIEW}
         on:click={() => ($lastStatisticsTab$ = StatisticsTab.OVERVIEW)}
         on:keyup={dummyFn}
       >
@@ -83,6 +91,7 @@
       <div
         tabindex="0"
         role="button"
+        title="Open Title Filter Menu"
         class={baseIconClasses}
         style:cursor={$statisticsTitleFilterEnabled$ ? 'pointer' : 'not-allowed'}
         on:click={() => {
@@ -99,6 +108,7 @@
       <div
         tabindex="0"
         role="button"
+        title="Open Statistics Settings"
         class={baseIconClasses}
         on:click={() => (showStatisticsSettings = true)}
         on:keyup={dummyFn}

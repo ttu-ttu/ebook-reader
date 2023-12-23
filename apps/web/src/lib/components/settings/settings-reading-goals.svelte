@@ -420,6 +420,7 @@
         on:click={() => deleteReadingGoals()}
       >
         <div
+          title="Delete all Reading Goals"
           class="flex items-center justify-center hover:opacity-50"
           class:cursor-not-allowed={!readingGoals.length}
         >
@@ -490,7 +491,10 @@
           <div>{secondsToMinutes(historyGoal.timeGoal)} min</div>
           <div>{historyGoal.characterGoal} characters</div>
           <div>{historyGoal.goalFrequency}</div>
-          <button on:click={() => deleteReadingGoals(historyGoal, dateRangeLabel)}>
+          <button
+            on:click={() => deleteReadingGoals(historyGoal, dateRangeLabel)}
+            title="Delete Reading Goal"
+          >
             <Fa icon={faTrash} />
           </button>
         {/each}
@@ -504,7 +508,10 @@
           <div class="my-2">
             {dateRangeLabel} / {secondsToMinutes(historyGoal.timeGoal)} min / {historyGoal.characterGoal}
             characters / {historyGoal.goalFrequency}
-            <button on:click={() => deleteReadingGoals(historyGoal, dateRangeLabel)}>
+            <button
+              on:click={() => deleteReadingGoals(historyGoal, dateRangeLabel)}
+              title="Delete Reading Goal"
+            >
               <Fa icon={faTrash} />
             </button>
           </div>
@@ -512,6 +519,7 @@
       </div>
       <div class="mt-3 flex justify-between">
         <button
+          title={currentHistoryIndex === 0 ? '' : 'Previous Page'}
           disabled={currentHistoryIndex === 0}
           class:opacity-50={currentHistoryIndex === 0}
           class:cursor-not-allowed={currentHistoryIndex === 0}
@@ -520,6 +528,7 @@
           <Fa icon={faChevronLeft} />
         </button>
         <button
+          title={hasNextHistoryPage ? 'Next Page' : ''}
           disabled={!hasNextHistoryPage}
           class:opacity-50={!hasNextHistoryPage}
           class:cursor-not-allowed={!hasNextHistoryPage}

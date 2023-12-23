@@ -23,6 +23,7 @@
   export let gridRow: number | undefined;
   export let hasRowInEdit: boolean;
   export let isHidden = false;
+  export let title = '';
 
   const dispatch = createEventDispatcher<{
     propertyChange: StatisticsDataSourceChange;
@@ -53,7 +54,7 @@
       containerStyles={'flex: 1;'}
       bind:this={summaryHeaderPopover}
     >
-      {selectedOption.label}
+      <div {title}>{selectedOption.label}</div>
       <div slot="content" class="flex flex-col overflow-auto w-46 p-2">
         {#each options as option (option.key)}
           <button
@@ -74,6 +75,7 @@
       class="flex flex-1 text-left"
       class:cursor-not-allowed={hasRowInEdit}
       disabled={hasRowInEdit}
+      {title}
       on:click={() => {
         dispatch('propertyChange', { property: selectedOption.key, statisticsSummaryKey });
       }}
@@ -82,6 +84,7 @@
     </button>
   {/if}
   <button
+    title="Click to select/sort by this Attribute"
     class="ml-4"
     class:opacity-20={!optionKeys.has($lastStatisticsSummarySortProperty$)}
     class:cursor-not-allowed={hasRowInEdit}

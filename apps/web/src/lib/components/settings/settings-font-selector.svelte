@@ -12,7 +12,9 @@
 </script>
 
 <Popover bind:this={element} placement="bottom">
-  <Fa icon={faFont} slot="icon" class="mx-2" />
+  <div slot="icon" class="mx-2" title="Show available default Fonts">
+    <Fa icon={faFont} />
+  </div>
   <div slot="content">
     {#each availableFonts as font (font)}
       <div

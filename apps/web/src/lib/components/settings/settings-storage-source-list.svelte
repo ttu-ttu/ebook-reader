@@ -275,6 +275,7 @@
               <div
                 tabindex="0"
                 role="button"
+                title="Edit source"
                 class="mr-4"
                 class:hidden={isDefault}
                 on:click={() => modifyStorageSource(storageSource)}
@@ -312,6 +313,7 @@
               <div
                 tabindex="0"
                 role="button"
+                title="Delete source"
                 class:hidden={isDefault}
                 on:click={() =>
                   deleteStorageSource(
