@@ -372,6 +372,7 @@
         hasRowInEdit={rowInEdit !== undefined}
         isHidden={isTitleAggregation}
         gridRow={renderFullStatisticsSummaryTable ? undefined : 2}
+        title="Click to select/sort by this Attribute"
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
@@ -381,6 +382,7 @@
         hasRowInEdit={rowInEdit !== undefined}
         isHidden={isDateAggregation}
         gridRow={renderFullStatisticsSummaryTable ? undefined : 3 - statisticsSummaryGridRowMod}
+        title="Click to select/sort by this Attribute"
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
@@ -389,6 +391,7 @@
         selectionKey={$lastReadingTimeDataSource$}
         hasRowInEdit={rowInEdit !== undefined}
         gridRow={renderFullStatisticsSummaryTable ? undefined : 4 - statisticsSummaryGridRowMod}
+        title={'Switch between Reading Time Attributes'}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
@@ -397,6 +400,7 @@
         selectionKey={$lastCharactersDataSource$}
         hasRowInEdit={rowInEdit !== undefined}
         gridRow={renderFullStatisticsSummaryTable ? undefined : 5 - statisticsSummaryGridRowMod}
+        title={'Switch between Character Attributes'}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       <StatisticsSummaryHeader
@@ -405,6 +409,7 @@
         selectionKey={$lastReadingSpeedDataSource$}
         hasRowInEdit={rowInEdit !== undefined}
         gridRow={renderFullStatisticsSummaryTable ? undefined : 6 - statisticsSummaryGridRowMod}
+        title={'Switch between Reading Speed Attributes'}
         on:propertyChange={(detail) => handlePropertyChange(detail)}
       />
       {#each currentStatisticsSummaryRows as currentStatisticsSummaryRow (currentStatisticsSummaryRow.id)}
@@ -414,6 +419,7 @@
           <button
             class="hover:text-red-500"
             class:cursor-not-allowed={otherRowInEdit}
+            title={otherRowInEdit ? '' : `${rowInEdit ? 'Cancel Edit' : 'Delete Row'}`}
             disabled={otherRowInEdit}
             on:click={() => {
               if (rowInEdit) {
@@ -429,6 +435,7 @@
             <button
               class="ml-2 hover:text-red-500"
               class:cursor-not-allowed={otherRowInEdit}
+              title={otherRowInEdit ? '' : `${rowInEdit ? 'Save Changes' : 'Edit Row'}`}
               disabled={otherRowInEdit}
               on:click={() => {
                 if (rowInEdit) {

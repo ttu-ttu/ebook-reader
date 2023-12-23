@@ -88,6 +88,7 @@
       <div
         tabindex="0"
         role="button"
+        title="Open Table of Contents"
         class={baseIconClasses}
         on:click={() => dispatch('tocClick')}
         on:keyup={dummyFn}
@@ -98,6 +99,7 @@
     <div
       tabindex="0"
       role="button"
+      title="Create Bookmark"
       class={baseIconClasses}
       on:click={() => dispatch('bookmarkClick')}
       on:keyup={dummyFn}
@@ -108,6 +110,7 @@
       <div
         tabindex="0"
         role="button"
+        title="Return to Bookmark"
         class={baseIconClasses}
         on:click={() => dispatch('scrollToBookmarkClick')}
         on:keyup={dummyFn}
@@ -116,7 +119,12 @@
       </div>
     {/if}
     {#if $viewMode$ === ViewMode.Continuous && !$isMobile$}
-      <div class="flex items-center px-4 text-xl xl:px-3 xl:text-lg">{autoScrollMultiplier}x</div>
+      <div
+        class="flex items-center px-4 text-xl xl:px-3 xl:text-lg"
+        title="Current Autoscroll Speed"
+      >
+        {autoScrollMultiplier}x
+      </div>
     {/if}
   </div>
 
@@ -124,6 +132,7 @@
     <div
       tabindex="0"
       role="button"
+      title="Complete Book"
       class={baseIconClasses}
       on:click={() => dispatch('completeBook')}
       on:keyup={dummyFn}
@@ -138,7 +147,7 @@
           yOffset={0}
           bind:this={customReadingPointMenuElm}
         >
-          <div slot="icon" class={baseIconClasses}>
+          <div slot="icon" title="Open Custom Point Actions" class={baseIconClasses}>
             <Fa icon={faCrosshairs} />
           </div>
           <div class="w-40 bg-gray-700 md:w-32" slot="content">
@@ -161,6 +170,7 @@
       <div
         tabindex="0"
         role="button"
+        title="Toggle Fullscreen"
         class={baseIconClasses}
         on:click={() => dispatch('fullscreenClick')}
         on:keyup={dummyFn}

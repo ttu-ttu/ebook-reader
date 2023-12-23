@@ -59,7 +59,7 @@
   const actions = [
     { icon: faPlay, event: 'toggleTracker', title: 'Toggle Tracker' },
     { icon: faRepeat, event: 'updateCurrentLocation', title: 'Update Position' },
-    { icon: faClockRotateLeft, event: 'freezeCurrentLocation', title: 'Freeze Position' },
+    { icon: faClockRotateLeft, event: 'freezeCurrentLocation', title: 'Toggle Freeze Position' },
     { icon: faFloppyDisk, event: 'saveStatistics', title: 'Save' }
   ];
 
@@ -157,6 +157,7 @@
   <div
     tabindex="0"
     role="button"
+    title="Close Tracker Menu"
     class="flex items-center hover:text-red-500 md:items-center"
     on:click={() => dispatch('trackerMenuClosed')}
     on:keyup={dummyFn}
@@ -308,12 +309,14 @@
               </div>
               <div class="flex">
                 <button
+                  title="Revert Item"
                   class="hover:text-red-500"
                   on:click={() => dispatch('revertStatistic', trackingHistoryItem)}
                 >
                   <Fa icon={faTrash} />
                 </button>
                 <div
+                  title="Item saved to Database"
                   class="ml-4 cursor-not-allowed"
                   class:text-green-500={trackingHistoryItem.saved}
                 >
@@ -324,6 +327,7 @@
           </div>
           <div class="flex justify-between mt-3">
             <button
+              title={currentTrackingHistoryIndex === 0 ? '' : 'Previous Page'}
               disabled={currentTrackingHistoryIndex === 0}
               class:opacity-50={currentTrackingHistoryIndex === 0}
               class:cursor-not-allowed={currentTrackingHistoryIndex === 0}
@@ -332,6 +336,7 @@
               <Fa icon={faChevronLeft} />
             </button>
             <button
+              title={hasNextPage ? 'Next Page' : ''}
               disabled={!hasNextPage}
               class:opacity-50={!hasNextPage}
               class:cursor-not-allowed={!hasNextPage}

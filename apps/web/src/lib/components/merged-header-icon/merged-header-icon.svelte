@@ -55,6 +55,7 @@
       <div
         tabindex="0"
         role="button"
+        title={actionItem.title}
         class={baseIconClasses}
         on:click={() => handleActionMenuItem(actionItem.label)}
         on:keyup={dummyFn}
@@ -79,6 +80,7 @@
             tabindex="0"
             role="button"
             class="px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
+            title={actionItem.title}
             on:click={() => handleActionMenuItem(actionItem.label)}
             on:keyup={dummyFn}
           >

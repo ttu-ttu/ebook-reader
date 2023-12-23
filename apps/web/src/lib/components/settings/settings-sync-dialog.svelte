@@ -72,6 +72,9 @@
       <div
         tabindex="0"
         role="button"
+        title={selectedTarget === InternalStorageSources.INTERNAL_ZIP
+          ? 'Choose a different Target for swap'
+          : 'Click to swap Source and Target'}
         class="transform-gpu {baseIconClasses} flex justify-center"
         style="width: 100%;"
         style:cursor={selectedTarget === InternalStorageSources.INTERNAL_ZIP

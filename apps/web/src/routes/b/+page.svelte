@@ -1566,6 +1566,7 @@
     {#if showTrackerIcon}
       <div
         role="button"
+        title="Click to open Tracker Menu or Double Click to toggle Tracker"
         class="flex h-full w-8 items-center justify-center text-sm sm:text-lg"
         class:text-red-500={$isTrackerPaused$}
         class:animate-pulse={$isTrackerPaused$ || frozenPosition > -1}
@@ -1607,6 +1608,7 @@
     <div
       tabindex="0"
       role="button"
+      title="Click to copy Progress"
       class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none"
       style:color={$themeOption$?.tooltipTextFontColor}
       on:click|stopPropagation={({ target }) => {

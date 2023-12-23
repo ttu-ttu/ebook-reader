@@ -51,6 +51,7 @@
           <div
             tabindex="0"
             role="button"
+            title="Book selected"
             class="absolute inset-0 bg-gray-700 bg-opacity-20"
             on:click={() => onBookCardClick(bookCard.id)}
             on:keyup={dummyFn}
@@ -60,7 +61,7 @@
         {/if}
       </div>
       {#if selectedBookIds.has(bookCard.id)}
-        <div class="absolute top-10 left-2">
+        <div class="absolute top-10 left-2" title="Click to open details">
           <Popover placement="right" fallbackPlacements={['bottom']} yOffset={5}>
             <Fa
               slot="icon"
