@@ -858,6 +858,10 @@
     storageHandler: BaseStorageHandler | undefined,
     context: ReplicationContext
   ) {
+    if (localStorageHandler && storageHandler) {
+      storageHandler.startContext(context);
+    }
+
     if (
       localStorageHandler &&
       storageHandler &&
