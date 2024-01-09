@@ -37,38 +37,52 @@ export function getFormattedElementTxt(data: string) {
 
       addBreakNode(currentChildDiv);
     } else {
-      const characters = [...lines[index]];
+      const characters = [...trimmed];
 
-      for (let index2 = 0, { length: length2 } = characters; index2 < length2; index2 += 1) {
-        let character = characters[index2];
-        let isPunctuation = punctuationRegex.test(character);
+      if (characters.length < 350) {
+        currentParagraphContent += trimmed;
 
-        const wasPunctuation = isPunctuation;
+        ({ currentParagraphContent, currentSectionLength, currentChildDiv, currentSectionId } =
+          updateContent(
+            currentParagraphContent,
+            currentSectionLength,
+            currentChildDiv,
+            result,
+            addedSections,
+            currentSectionId
+          ));
+      } else {
+        for (let index2 = 0, { length: length2 } = characters; index2 < length2; index2 += 1) {
+          let character = characters[index2];
+          let isPunctuation = punctuationRegex.test(character);
 
-        while (isPunctuation) {
-          currentParagraphContent += character;
-          index2 += 1;
-          character = characters[index2] || '';
-          isPunctuation = punctuationRegex.test(character);
+          const wasPunctuation = isPunctuation;
 
-          if (!isPunctuation) {
-            character = '';
-            index2 -= 1;
+          while (isPunctuation) {
+            currentParagraphContent += character;
+            index2 += 1;
+            character = characters[index2] || '';
+            isPunctuation = punctuationRegex.test(character);
+
+            if (!isPunctuation) {
+              character = '';
+              index2 -= 1;
+            }
           }
-        }
 
-        currentParagraphContent += character;
+          currentParagraphContent += character;
 
-        if (wasPunctuation || index2 > length2 - 1) {
-          ({ currentParagraphContent, currentSectionLength, currentChildDiv, currentSectionId } =
-            updateContent(
-              currentParagraphContent,
-              currentSectionLength,
-              currentChildDiv,
-              result,
-              addedSections,
-              currentSectionId
-            ));
+          if (wasPunctuation || index2 > length2 - 1) {
+            ({ currentParagraphContent, currentSectionLength, currentChildDiv, currentSectionId } =
+              updateContent(
+                currentParagraphContent,
+                currentSectionLength,
+                currentChildDiv,
+                result,
+                addedSections,
+                currentSectionId
+              ));
+          }
         }
       }
     }
