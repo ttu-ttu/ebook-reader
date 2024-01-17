@@ -21,7 +21,7 @@
     "@types/ua-parser-js": "0.7.39",
     "@types/webappsec-credential-management": "0.6.8",
     "@types/wicg-file-system-access": "2023.10.4",
-    "autoprefixer": "10.4.16",
+    "autoprefixer": "10.4.17",
     "postcss": "8.4.33",
     "sass": "1.69.7",
     "svelte": "4.2.9",
