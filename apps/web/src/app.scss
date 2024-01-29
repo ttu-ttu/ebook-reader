@@ -71,13 +71,14 @@
 }
 
 @font-face {
-  font-family: 'Genei Koburi Mincho v5';
+  font-family: 'Genei Koburi Mincho';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/genEiKoburiMin5.woff') format('woff');
+    url('$lib/assets/fonts/genei-koburi-mincho-v5-regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/genei-koburi-mincho-v5-regular.woff') format('woff');
 }
 
 @font-face {
@@ -186,8 +187,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/shippori-mincho-v14-regular.woff2') format('woff2'),
-    url('$lib/assets/fonts/shippori-mincho-v14-regular.woff') format('woff');
+    url('$lib/assets/fonts/shippori-mincho-v15-regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/shippori-mincho-v15-regular.woff') format('woff');
 }
 
 @font-face {
@@ -197,8 +198,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/shippori-mincho-v14-500.woff2') format('woff2'),
-    url('$lib/assets/fonts/shippori-mincho-v14-500.woff') format('woff');
+    url('$lib/assets/fonts/shippori-mincho-v15-500.woff2') format('woff2'),
+    url('$lib/assets/fonts/shippori-mincho-v15-500.woff') format('woff');
 }
 
 @font-face {
@@ -208,6 +209,6 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/shippori-mincho-v14-700.woff2') format('woff2'),
-    url('$lib/assets/fonts/shippori-mincho-v14-700.woff') format('woff');
+    url('$lib/assets/fonts/shippori-mincho-v15-700.woff2') format('woff2'),
+    url('$lib/assets/fonts/shippori-mincho-v15-700.woff') format('woff');
 }
