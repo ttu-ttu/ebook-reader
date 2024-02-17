@@ -883,7 +883,14 @@
   }
 
   function onKeydown(ev: KeyboardEvent) {
-    if ($skipKeyDownListener$ || ev.altKey || ev.ctrlKey || ev.shiftKey || ev.repeat) {
+    if (
+      $skipKeyDownListener$ ||
+      ev.altKey ||
+      ev.ctrlKey ||
+      ev.shiftKey ||
+      ev.metaKey ||
+      ev.repeat
+    ) {
       return;
     }
 
