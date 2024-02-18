@@ -15,6 +15,7 @@
   export let resolver: (arg0: StorageUnlockAction | undefined) => void;
 
   let containerElm: HTMLElement;
+  let passwordElm: HTMLInputElement;
   let secret = '';
   let error = '';
 
@@ -51,6 +52,8 @@
   onMount(() => {
     skipKeyDownListener$.next(true);
 
+    if (passwordElm) { passwordElm.focus() }
+
     return () => skipKeyDownListener$.next(false);
   });
 </script>
@@ -60,7 +63,7 @@
     <div>{description}</div>
     <div class="my-2">{action}</div>
     {#if requiresSecret}
-      <input type="password" placeholder="Password" bind:value={secret} />
+      <input type="password" placeholder="Password" bind:value={secret} bind:this={passwordElm} on:keyup={(evt) => {if (evt.key === 'Enter') {unlock()}}}/>
     {/if}
     <div class="text-red-500">{error}</div>
   </div>
