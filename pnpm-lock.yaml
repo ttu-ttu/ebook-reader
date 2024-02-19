@@ -114,8 +114,8 @@ importers:
         specifier: 4.0.2
         version: 4.0.2(svelte@4.2.11)
       svelte-gestures:
-        specifier: 1.5.2
-        version: 1.5.2
+        specifier: 4.0.0
+        version: 4.0.0
       svelte-meta-tags:
         specifier: 3.1.0
         version: 3.1.0(svelte@4.2.11)(typescript@5.3.3)
@@ -4409,8 +4409,8 @@ packages:
       svelte: 4.2.11
     dev: false
 
-  /svelte-gestures@1.5.2:
-    resolution: {integrity: sha512-bXGFqpNAAYCM4XsxjaHMAoPQC3IRjrgGS+Sm/pE1ZftYu9gGRWvDF8g6cwl2b751R2kN1SwNEd6XV7zVh9mcew==}
+  /svelte-gestures@4.0.0:
+    resolution: {integrity: sha512-YrryRlKGY2CJm3AtEjFt9+RdQ7/pqNio4O7Apb9ed6oMBEkd6BFoOuv9mBApAEBIx08+iBDXQujbYCvakGePPw==}
     dev: false
 
   /svelte-hmr@0.15.3(svelte@4.2.11):

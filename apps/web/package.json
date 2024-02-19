@@ -46,7 +46,7 @@
     "path-browserify": "1.0.1",
     "rxjs": "7.8.1",
     "svelte-fa": "4.0.2",
-    "svelte-gestures": "1.5.2",
+    "svelte-gestures": "4.0.0",
     "svelte-meta-tags": "3.1.0",
     "ua-parser-js": "1.0.37"
   }
