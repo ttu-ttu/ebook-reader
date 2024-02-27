@@ -12,7 +12,7 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "@commitlint/cli": "19.0.0",
+    "@commitlint/cli": "19.0.1",
     "@commitlint/config-conventional": "19.0.0",
     "@types/node": "20.11.20",
     "@typescript-eslint/eslint-plugin": "7.1.0",
