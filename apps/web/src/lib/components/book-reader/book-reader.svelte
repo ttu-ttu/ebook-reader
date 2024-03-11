@@ -17,6 +17,7 @@
   import { pxReader } from '$lib/components/book-reader/css-classes';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
   import type { FuriganaStyle } from '$lib/data/furigana-style';
+  import { skipKeyDownListener$ } from '$lib/data/store';
   import { ViewMode } from '$lib/data/view-mode';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
@@ -25,6 +26,7 @@
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
+  import { onMount } from 'svelte';
 
   export let htmlContent: string;
 
@@ -108,6 +110,24 @@
     firstDimensionMargin && ViewMode.Paginated === viewMode && !verticalMode
       ? firstDimensionMargin * 2
       : 0;
+
+  /** Experimental Code - May be removed any time without warning */
+  onMount(() => {
+    document.addEventListener('ttu-action', handleAction, false);
+
+    return () => document.removeEventListener('ttu-action', handleAction, false);
+  });
+
+  function handleAction({ detail }: any) {
+    if (!detail.type) {
+      return;
+    }
+
+    if (detail.type === 'skipKeyDownListener') {
+      skipKeyDownListener$.next(detail.params.value);
+    }
+  }
+  /** Experimental Code - May be removed any time without warning */
 
   const computedStyle$ = combineLatest([
     containerEl$.pipe(filter((el): el is HTMLElement => !!el)),
