@@ -10,7 +10,7 @@ export function getCharacterCount(node: Node) {
   return isNodeGaiji(node) ? 1 : getRawCharacterCount(node);
 }
 
-const isNotKoreanRegex = /[^ㄱ-힝]+/gimu;
+const isNotKoreanRegex = /[^0-9A-Zㄱ-힝]+/gimu;
 
 function getRawCharacterCount(node: Node) {
   if (!node.textContent) return 0;
