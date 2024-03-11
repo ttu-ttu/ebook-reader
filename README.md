@@ -4,7 +4,7 @@
 
 An online e-book reader that supports dictionary extensions like Yomichan, which is hosted on [https://reader.ttsu.app](https://reader.ttsu.app)
 
-**Note**: The reader was created for japanese (language learners) - while books in other languages may work to a specific degree other functionalites (e. g. character counter etc.) may have unsupported / unexpected results
+**Note**: The reader was originally created for Japanese (language learners) and has been modified to work with Korean - while books in other languages may work to a specific degree other functionalites (e. g. character counter etc.) may have unsupported / unexpected results
 
 # Features
 
@@ -53,13 +53,13 @@ You can find most of the reader controls in the reader header which you can open
 
 You may find the following controls in the reader footer:
 
-| Control                                                | Description                                                                                                                                                                                                                                                                                  |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ![Icon](assets/readme/control-reader-timer-paused.svg) | Indicates that the Reading Tracker is paused. Double Click/Tap to start tracking or single Click/Tap to show the Tracker menu                                                                                                                                                                |
-| ![Icon](assets/readme/control-reader-timer.svg)        | Indicates that the Reading Tracker is running. Double Click/Tap to stop tracking or single Click/Tap to show the Tracker menu.<br/>Pulses in case you have an active Freeze Position                                                                                                         |
-| ![Icon](assets/readme/control-reader-sync.svg)         | Indicates that there is data which will be exported if a sync target and auto export is configured. Click/Tap to execute a manual export                                                                                                                                                     |
-| ![Icon](assets/readme/control-sync-error.svg)          | Indicates that multiple auto export attempts failed. Click/Tap to execute a manual export                                                                                                                                                                                                    |
-| ![Image](assets/readme/book-progress.png)              | Displays your reading progress. Click/Tap on it to copy the current progress to the clipboard.<br/>The book progress is calculated by dividing the current character location by total book characters. Characters counted are Japanese Glyphs without latin letters, punctuation or similar |
+| Control                                                | Description                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![Icon](assets/readme/control-reader-timer-paused.svg) | Indicates that the Reading Tracker is paused. Double Click/Tap to start tracking or single Click/Tap to show the Tracker menu                                                                                                                                                                     |
+| ![Icon](assets/readme/control-reader-timer.svg)        | Indicates that the Reading Tracker is running. Double Click/Tap to stop tracking or single Click/Tap to show the Tracker menu.<br/>Pulses in case you have an active Freeze Position                                                                                                              |
+| ![Icon](assets/readme/control-reader-sync.svg)         | Indicates that there is data which will be exported if a sync target and auto export is configured. Click/Tap to execute a manual export                                                                                                                                                          |
+| ![Icon](assets/readme/control-sync-error.svg)          | Indicates that multiple auto export attempts failed. Click/Tap to execute a manual export                                                                                                                                                                                                         |
+| ![Image](assets/readme/book-progress.png)              | Displays your reading progress. Click/Tap on it to copy the current progress to the clipboard.<br/>The book progress is calculated by dividing the current character location by total book characters. Characters counted are Korean Glyphs without hanja, latin letters, punctuation or similar |
 
 Click/Tap on some free space in the footer to hide the reading progress.
 
