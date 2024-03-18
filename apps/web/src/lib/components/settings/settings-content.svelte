@@ -72,6 +72,8 @@
 
   export let writingMode: WritingMode;
 
+  export let showCharacterCounter: boolean;
+
   export let secondDimensionMaxValue: number;
 
   export let firstDimensionMargin: number;
@@ -552,6 +554,9 @@
     </SettingsItemGroup>
     <SettingsItemGroup title="Writing mode">
       <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Show Character Counter">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showCharacterCounter} />
     </SettingsItemGroup>
     <SettingsItemGroup title="Disable Wheel Navigation">
       <ButtonToggleGroup

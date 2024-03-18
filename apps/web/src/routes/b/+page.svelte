@@ -76,7 +76,8 @@
     startDayHoursForTracker$,
     readingGoalsMergeMode$,
     pauseTrackerOnCustomPointChange$,
-    hideSpoilerImageMode$
+    hideSpoilerImageMode$,
+    showCharacterCounter$
   } from '$lib/data/store';
   import BookCompletionConfetti from '$lib/components/book-reader/book-completion-confetti/book-completion-confetti.svelte';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
@@ -1621,8 +1622,13 @@
       role="button"
       title="Click to copy Progress"
       class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none"
+      class:invisible={!$showCharacterCounter$}
       style:color={$themeOption$?.tooltipTextFontColor}
       on:click|stopPropagation={({ target }) => {
+        if (!$showCharacterCounter$) {
+          return;
+        }
+
         copyCurrentProgress(currentProgress);
 
         if (target instanceof HTMLElement) {
