@@ -56,7 +56,8 @@
     lastSyncedSettingsTarget$,
     lastReadingGoalsModified$,
     isOnline$,
-    multiplier$
+    multiplier$,
+    showCharacterCounter$
   } from '$lib/data/store';
 
   export let title = 'Error';
@@ -87,6 +88,7 @@
           swipeThreshold: swipeThreshold$.getValue(),
           disableWheelNavigation: disableWheelNavigation$.getValue(),
           writingMode: writingMode$.getValue(),
+          showCharacterCounter$: showCharacterCounter$.getValue(),
           confirmClose: confirmClose$.getValue(),
           autoBookmark: autoBookmark$.getValue(),
           hideSpoilerImage: hideSpoilerImage$.getValue(),

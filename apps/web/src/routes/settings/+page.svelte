@@ -33,6 +33,7 @@
     replicationSaveBehavior$,
     secondDimensionMaxValue$,
     selectionToBookmarkEnabled$,
+    showCharacterCounter$,
     showExternalPlaceholder$,
     startDayHoursForTracker$,
     statisticsEnabled$,
@@ -116,6 +117,7 @@
       bind:hideFurigana={$hideFurigana$}
       bind:furiganaStyle={$furiganaStyle$}
       bind:writingMode={$writingMode$}
+      bind:showCharacterCounter={$showCharacterCounter$}
       bind:viewMode={$viewMode$}
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
       bind:firstDimensionMargin={$firstDimensionMargin$}
