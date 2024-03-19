@@ -1,6 +1,6 @@
 # Run from pnpm workspace root (e.g. docker build -t ebook-reader -f apps/web/Dockerfile .)
 
-FROM node:18.16-alpine as builder
+FROM node:20.11-alpine as builder
 
 RUN npm install -g pnpm
 
