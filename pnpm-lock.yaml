@@ -117,8 +117,8 @@ importers:
         specifier: 4.0.0
         version: 4.0.0
       svelte-meta-tags:
-        specifier: 3.1.1
-        version: 3.1.1(svelte@4.2.12)(typescript@5.4.4)
+        specifier: 3.1.2
+        version: 3.1.2(svelte@4.2.12)(typescript@5.4.4)
       ua-parser-js:
         specifier: 1.0.37
         version: 1.0.37
@@ -4197,8 +4197,8 @@ packages:
       svelte: 4.2.12
     dev: true
 
-  /svelte-meta-tags@3.1.1(svelte@4.2.12)(typescript@5.4.4):
-    resolution: {integrity: sha512-tSWU1xbRGV5rkDN4wWXZfY24BRuhPa3Z8W2Zpt3GCv01QQdWRhhgmlpYVdfoSPNQX060bDB/JM1cu4H+lXxe8w==}
+  /svelte-meta-tags@3.1.2(svelte@4.2.12)(typescript@5.4.4):
+    resolution: {integrity: sha512-zw8xSA10ce7atFO1o0N1x41+qU+HBnpGx8KcVRAWPy5iiRdO6fvUFMg6VwJVgMhLSBEUTZXKAvMALLUssbCoCw==}
     peerDependencies:
       svelte: ^3.55.0 || ^4.0.0
     dependencies:
