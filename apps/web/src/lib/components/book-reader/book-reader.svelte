@@ -11,7 +11,8 @@
     share,
     shareReplay,
     startWith,
-    Subject
+    Subject,
+    tap
   } from 'rxjs';
   import BookReaderContinuous from '$lib/components/book-reader/book-reader-continuous/book-reader-continuous.svelte';
   import { pxReader } from '$lib/components/book-reader/css-classes';
@@ -100,6 +101,10 @@
 
   export let showCustomReadingPoint: boolean;
 
+  let showBlurMessage = false;
+
+  const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
+
   const width$ = new Subject<number>();
 
   const height$ = new Subject<number>();
@@ -115,7 +120,10 @@
   onMount(() => {
     document.addEventListener('ttu-action', handleAction, false);
 
-    return () => document.removeEventListener('ttu-action', handleAction, false);
+    return () => {
+      document.removeEventListener('ttu-action', handleAction, false);
+      mutationObserver.disconnect();
+    };
   });
 
   function handleAction({ detail }: any) {
@@ -167,6 +175,13 @@
     share()
   );
 
+  const blurListener$ = contentEl$.pipe(
+    tap((contentEl) => {
+      mutationObserver.disconnect();
+      mutationObserver.observe(contentEl, { attributes: true });
+    })
+  );
+
   $: width$.next(width);
 
   $: height$.next(height);
@@ -188,8 +203,28 @@
   function parsePx(px: string) {
     return Number(px.replace(/px$/, ''));
   }
+
+  function handleMutation([mutation]: MutationRecord[]) {
+    if (!(mutation.target instanceof HTMLElement)) {
+      showBlurMessage = false;
+      return;
+    }
+
+    showBlurMessage = mutation.target.style.filter.includes('blur');
+  }
 </script>
 
+{#if showBlurMessage}
+  <div
+    class="absolute top-12 right-4 p-2 border max-w-[90vw] z-[1]"
+    style:writing-mode="horizontal-tb"
+    style:color={fontColor}
+    style:background-color={backgroundColor}
+    style:border-color={fontColor}
+  >
+    The reader is currently blurred due to an external application (e. g. exstatic)
+  </div>
+{/if}
 <div bind:this={$containerEl$} class="{pxReader} py-8">
   {#if viewMode === ViewMode.Continuous}
     <BookReaderContinuous
@@ -262,4 +297,5 @@
     />
   {/if}
 </div>
+{$blurListener$ ?? ''}
 {$reactiveElements$ ?? ''}
