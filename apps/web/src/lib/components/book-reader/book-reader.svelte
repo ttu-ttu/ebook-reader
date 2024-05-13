@@ -216,7 +216,7 @@
 
 {#if showBlurMessage}
   <div
-    class="absolute top-12 right-4 p-2 border max-w-[90vw] z-[1]"
+    class="fixed top-12 right-4 p-2 border max-w-[90vw] z-[1]"
     style:writing-mode="horizontal-tb"
     style:color={fontColor}
     style:background-color={backgroundColor}
