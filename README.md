@@ -2,7 +2,7 @@
 
 ## ッツ Ebook Reader
 
-An online e-book reader that supports dictionary extensions like Yomichan, which is hosted on [https://reader.ttsu.app](https://reader.ttsu.app)
+An online e-book reader that supports dictionary extensions like Yomitan, which is hosted on [https://reader.ttsu.app](https://reader.ttsu.app)
 
 **Note**: The reader was created for japanese (language learners) - while books in other languages may work to a specific degree other functionalites (e. g. character counter etc.) may have unsupported / unexpected results
 
@@ -71,7 +71,7 @@ Custom reading points and the respective change in the character count in pagina
 
 **Note for custom user fonts**: After storing/using a custom font the first time or on hard refreshing the reader tab you may encounter longer load times / not loading font. A normal tab refresh should solve this in order to make the service worker serving the respective file
 
-**Note for "Disabled Wheel Navigation"**: If enabled mouse wheel clicks are intercepted and may not work as expected. E. g. for Yomichan you need to keep the wheel pressed while moving the cursor to trigger a popup etc.
+**Note for "Disabled Wheel Navigation"**: If enabled mouse wheel clicks are intercepted and may not work as expected. E. g. for Yomitan you need to keep the wheel pressed while moving the cursor to trigger a popup etc.
 
 **Note for "New Only" Import/Export Behavior:**: The time used for comparison is based on the device time setting. In case you have different settings across used devices you may encounter unexpected results for sync (e. g. data not uploaded, data not downloaded etc.)
 

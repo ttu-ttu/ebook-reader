@@ -5,16 +5,18 @@
  */
 
 import type {
+  BooksDbAudioBook,
   BooksDbBookData,
   BooksDbBookmarkData,
   BooksDbReadingGoal,
-  BooksDbStatistic
+  BooksDbStatistic,
+  BooksDbSubtitleData
 } from '$lib/data/database/books-db/versions/books-db';
 import { database, fsStorageSource$ } from '$lib/data/store';
 import { mergeReadingGoals, readingGoalSortFunction } from '$lib/data/reading-goal';
 import { mergeStatistics, updateStatisticToStore } from '$lib/functions/statistic-util';
 
-import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
+import { BaseStorageHandler, FilePrefix } from '$lib/data/storage/handler/base-handler';
 import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 import { MergeMode } from '$lib/data/merge-mode';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
@@ -252,6 +254,38 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     );
   }
 
+  async isAudioBookPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const { file } = await this.getExternalFile(FilePrefix.AUDIO_BOOK, 1);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate<BooksDbAudioBook>(
+      BaseStorageHandler.getAudioBookMetadata,
+      'lastAudioBookModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
+  async isSubtitleDataPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const { file } = await this.getExternalFile(FilePrefix.SUBTITLE, 1);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate<BooksDbSubtitleData>(
+      BaseStorageHandler.getSubtitleDataMetadata,
+      'lastSubtitleDataModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
   async getBook() {
     const { file } = await this.getExternalFile('bookdata_', this.isForBrowser ? 0.4 : 0.8);
 
@@ -338,6 +372,49 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
       readingGoals,
       lastGoalModified: BaseStorageHandler.getReadingGoalsMetadata(file.name).lastGoalModified
     };
+  }
+
+  async getAudioBook() {
+    const { file } = await this.getExternalFile(
+      FilePrefix.AUDIO_BOOK,
+      this.isForBrowser ? 0.6 : 0.8
+    );
+
+    if (!file) {
+      return undefined;
+    }
+
+    const audioBookFile = await file.getFile();
+
+    if (this.isForBrowser) {
+      const audioBook = JSON.parse(await FilesystemStorageHandler.readFileObject(audioBookFile));
+
+      BaseStorageHandler.reportProgress(0.4);
+      return audioBook;
+    }
+
+    return audioBookFile;
+  }
+
+  async getSubtitleData() {
+    const { file } = await this.getExternalFile(FilePrefix.SUBTITLE, this.isForBrowser ? 0.6 : 0.8);
+
+    if (!file) {
+      return undefined;
+    }
+
+    const subtitleDataFile = await file.getFile();
+
+    if (this.isForBrowser) {
+      const subtitleData = JSON.parse(
+        await FilesystemStorageHandler.readFileObject(subtitleDataFile)
+      );
+
+      BaseStorageHandler.reportProgress(0.4);
+      return subtitleData;
+    }
+
+    return subtitleDataFile;
   }
 
   async saveBook(data: Omit<BooksDbBookData, 'id'> | File, skipTimestampFallback = true) {
@@ -500,6 +577,34 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
       file,
       0.6,
       BaseStorageHandler.readingGoalsFilePrefix
+    );
+  }
+
+  async saveAudioBook(data: BooksDbAudioBook | File) {
+    const filename = BaseStorageHandler.getAudioBookFileName(data);
+    const { file, files, rootDirectory } = await this.getExternalFile(FilePrefix.AUDIO_BOOK);
+
+    await this.writeFile(
+      rootDirectory,
+      filename,
+      data instanceof File ? data : JSON.stringify(data),
+      files,
+      file,
+      0.6
+    );
+  }
+
+  async saveSubtitleData(data: BooksDbSubtitleData | File) {
+    const filename = BaseStorageHandler.getSubtitleDataFileName(data);
+    const { file, files, rootDirectory } = await this.getExternalFile(FilePrefix.SUBTITLE);
+
+    await this.writeFile(
+      rootDirectory,
+      filename,
+      data instanceof File ? data : JSON.stringify(data),
+      files,
+      file,
+      0.6
     );
   }
 

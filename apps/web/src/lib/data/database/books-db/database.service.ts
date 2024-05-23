@@ -5,11 +5,13 @@
  */
 
 import type {
+  BooksDbAudioBook,
   BooksDbBookData,
   BooksDbBookmarkData,
   BooksDbReadingGoal,
   BooksDbStatistic,
-  BooksDbStorageSource
+  BooksDbStorageSource,
+  BooksDbSubtitleData
 } from '$lib/data/database/books-db/versions/books-db';
 import { Observable, Subject, from } from 'rxjs';
 import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
@@ -323,6 +325,18 @@ export class DatabaseService {
     return db.put('bookmark', bookmarkData);
   }
 
+  async putAudioBook(audioBook: BooksDbAudioBook) {
+    const db = await this.db;
+
+    return db.put('audioBook', audioBook);
+  }
+
+  async putSubtitleData(subtitleData: BooksDbSubtitleData) {
+    const db = await this.db;
+
+    return db.put('subtitle', subtitleData);
+  }
+
   async putLastItem(dataId: number) {
     const db = await this.db;
     const result = await db.put('lastItem', { dataId }, LAST_ITEM_KEY);
@@ -343,11 +357,20 @@ export class DatabaseService {
     cachedData: { bookmarkIds: Set<number>; lastItem: number | undefined },
     shouldDeleteStatistics: boolean
   ) {
-    const storeNames: ('data' | 'bookmark' | 'statistic' | 'lastItem' | 'lastModified')[] = [
-      'data'
-    ];
+    const storeNames: (
+      | 'data'
+      | 'bookmark'
+      | 'statistic'
+      | 'lastItem'
+      | 'lastModified'
+      | 'audioBook'
+      | 'subtitle'
+      | 'handle'
+    )[] = ['data', 'audioBook', 'subtitle', 'handle'];
     const shouldDeleteLastItem = cachedData.lastItem === dataId;
     const shouldDeleteBookmark = cachedData.bookmarkIds.has(dataId);
+
+    let bookTitle = title;
 
     if (shouldDeleteLastItem) {
       storeNames.push('lastItem');
@@ -365,6 +388,10 @@ export class DatabaseService {
     const tx = db.transaction(storeNames, 'readwrite');
 
     try {
+      if (!bookTitle) {
+        bookTitle = (await tx.objectStore('data').get(dataId))?.title;
+      }
+
       if (shouldDeleteLastItem) {
         await tx.objectStore('lastItem').delete(LAST_ITEM_KEY);
       }
@@ -373,17 +400,15 @@ export class DatabaseService {
         await tx.objectStore('bookmark').delete(dataId);
       }
 
-      if (shouldDeleteStatistics) {
-        let bookTitle = title;
+      if (shouldDeleteStatistics && bookTitle) {
+        await tx.objectStore('statistic').delete(IDBKeyRange.bound([bookTitle], [bookTitle, []]));
+        await tx.objectStore('lastModified').delete([bookTitle, StorageDataType.STATISTICS]);
+      }
 
-        if (!bookTitle) {
-          bookTitle = (await tx.objectStore('data').get(dataId))?.title;
-        }
-
-        if (bookTitle) {
-          await tx.objectStore('statistic').delete(IDBKeyRange.bound([bookTitle], [bookTitle, []]));
-          await tx.objectStore('lastModified').delete([bookTitle, StorageDataType.STATISTICS]);
-        }
+      if (bookTitle) {
+        await tx.objectStore('audioBook').delete(bookTitle);
+        await tx.objectStore('subtitle').delete(bookTitle);
+        await tx.objectStore('handle').delete(IDBKeyRange.bound([bookTitle], [bookTitle, []]));
       }
 
       await tx.objectStore('data').delete(dataId);
@@ -1019,5 +1044,17 @@ export class DatabaseService {
     }
 
     lastReadingGoalsModified$.next(Date.now());
+  }
+
+  async getAudioBook(title: string) {
+    const db = await this.db;
+
+    return db.get('audioBook', title);
+  }
+
+  async getSubtitleData(title: string) {
+    const db = await this.db;
+
+    return db.get('subtitle', title);
   }
 }

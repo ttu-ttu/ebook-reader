@@ -9,7 +9,7 @@ import { openDB } from 'idb';
 import upgradeBooksDbFromV2 from './versions/v2/upgrade';
 
 export function createBooksDb(name = 'books') {
-  return openDB<BooksDb>(name, 5, {
+  return openDB<BooksDb>(name, 6, {
     async upgrade(oldDb, oldVersion, newVersion, transaction) {
       // eslint-disable-next-line default-case
       switch (oldVersion) {
@@ -47,6 +47,12 @@ export function createBooksDb(name = 'books') {
             keyPath: ['title', 'dataType']
           });
 
+          oldDb.createObjectStore('audioBook', { keyPath: 'title' });
+
+          oldDb.createObjectStore('subtitle', { keyPath: 'title' });
+
+          oldDb.createObjectStore('handle', { keyPath: ['title', 'dataType'] });
+
           break;
         }
         case 2: {
@@ -76,6 +82,15 @@ export function createBooksDb(name = 'books') {
           oldDb.createObjectStore('lastModified', {
             keyPath: ['title', 'dataType']
           });
+
+          break;
+        }
+        case 5: {
+          oldDb.createObjectStore('audioBook', { keyPath: 'title' });
+
+          oldDb.createObjectStore('subtitle', { keyPath: 'title' });
+
+          oldDb.createObjectStore('handle', { keyPath: ['title', 'dataType'] });
 
           break;
         }

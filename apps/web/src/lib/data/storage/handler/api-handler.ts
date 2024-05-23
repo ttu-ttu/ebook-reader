@@ -5,15 +5,21 @@
  */
 
 import type {
+  BooksDbAudioBook,
   BooksDbBookData,
   BooksDbBookmarkData,
   BooksDbReadingGoal,
-  BooksDbStatistic
+  BooksDbStatistic,
+  BooksDbSubtitleData
 } from '$lib/data/database/books-db/versions/books-db';
 import { logger } from '$lib/data/logger';
 import { MergeMode } from '$lib/data/merge-mode';
 import { mergeReadingGoals, readingGoalSortFunction } from '$lib/data/reading-goal';
-import { BaseStorageHandler, type ExternalFile } from '$lib/data/storage/handler/base-handler';
+import {
+  BaseStorageHandler,
+  FilePrefix,
+  type ExternalFile
+} from '$lib/data/storage/handler/base-handler';
 import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
 import { StorageOAuthManager } from '$lib/data/storage/storage-oauth-manager';
 import { StorageKey } from '$lib/data/storage/storage-types';
@@ -34,6 +40,7 @@ interface RequestOptions {
   body?: XMLHttpRequestBodyInit | null | undefined;
   trackDownload?: boolean;
   trackUpload?: boolean;
+  skipAuth?: boolean;
 }
 
 export abstract class ApiStorageHandler extends BaseStorageHandler {
@@ -269,6 +276,40 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     );
   }
 
+  async isAudioBookPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+
+      return false;
+    }
+
+    const { file } = await this.getExternalFile(FilePrefix.AUDIO_BOOK);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate<BooksDbAudioBook>(
+      BaseStorageHandler.getAudioBookMetadata,
+      'lastAudioBookModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
+  async isSubtitleDataPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+
+      return false;
+    }
+
+    const { file } = await this.getExternalFile(FilePrefix.SUBTITLE);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate<BooksDbSubtitleData>(
+      BaseStorageHandler.getSubtitleDataMetadata,
+      'lastSubtitleDataModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
   async getBook() {
     const { file, data } = await this.getExternalFile(
       'bookdata_',
@@ -337,6 +378,30 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
       readingGoals: data,
       lastGoalModified: BaseStorageHandler.getReadingGoalsMetadata(file.name).lastGoalModified
     };
+  }
+
+  async getAudioBook() {
+    const { file, data } = await this.getExternalFile(FilePrefix.AUDIO_BOOK, 'json');
+
+    if (!file) {
+      return undefined;
+    }
+
+    return this.isForBrowser
+      ? data
+      : new File([new Blob([JSON.stringify(data)])], file.name, { type: 'application/json' });
+  }
+
+  async getSubtitleData() {
+    const { file, data } = await this.getExternalFile(FilePrefix.SUBTITLE, 'json');
+
+    if (!file) {
+      return undefined;
+    }
+
+    return this.isForBrowser
+      ? data
+      : new File([new Blob([JSON.stringify(data)])], file.name, { type: 'application/json' });
   }
 
   async saveBook(data: Omit<BooksDbBookData, 'id'> | File, skipTimestampFallback = true) {
@@ -472,6 +537,32 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     );
   }
 
+  async saveAudioBook(data: BooksDbAudioBook | File) {
+    const filename = BaseStorageHandler.getAudioBookFileName(data);
+    const audioBookData = data instanceof File ? data : JSON.stringify(data);
+    const { titleId, files, file } = await this.getExternalFile(
+      FilePrefix.AUDIO_BOOK,
+      '',
+      0.2,
+      false
+    );
+
+    await this.upload(titleId, filename, files, file, audioBookData);
+  }
+
+  async saveSubtitleData(data: BooksDbSubtitleData | File) {
+    const filename = BaseStorageHandler.getSubtitleDataFileName(data);
+    const subtitleData = data instanceof File ? data : JSON.stringify(data);
+    const { titleId, files, file } = await this.getExternalFile(
+      FilePrefix.SUBTITLE,
+      '',
+      0.2,
+      false
+    );
+
+    await this.upload(titleId, filename, files, file, subtitleData);
+  }
+
   async deleteBookData(booksToDelete: string[], cancelSignal: AbortSignal) {
     await this.ensureTitle();
 
@@ -529,11 +620,9 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     type: XMLHttpRequestResponseType = 'json',
     progressBase = 1
   ): Promise<any> {
-    const token = await this.authManager.getToken(
-      this.window,
-      this.storageSourceName,
-      this.askForStorageUnlock
-    );
+    const token = await (options.skipAuth
+      ? Promise.resolve('')
+      : this.authManager.getToken(this.window, this.storageSourceName, this.askForStorageUnlock));
     const self = this;
 
     return new Promise((resolve, reject) => {

@@ -867,8 +867,8 @@
       {/if}
       {#if trackerAutoPause === TrackerAutoPause.STRICT}
         <SettingsItemGroup
-          title="Yomichan Detection"
-          tooltip={`Skips auto pause if yomichan was detected. Requires disabled "Secure Container" settings`}
+          title="Yomitan Detection"
+          tooltip={`Skips auto pause if Yomitan was detected. Requires disabled "Secure Container" settings`}
         >
           <ButtonToggleGroup
             options={optionsForToggle}

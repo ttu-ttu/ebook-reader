@@ -38,7 +38,7 @@
     takeUntil,
     timer
   } from 'rxjs';
-  import { createEventDispatcher, onDestroy } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import Fa from 'svelte-fa';
   import type { AutoScroller, BookmarkManager, PageManager } from '../types';
   import { AutoScrollerContinuous } from './auto-scroller-continuous';
@@ -112,6 +112,7 @@
   const dispatch = createEventDispatcher<{
     bookmark: void;
     contentChange: HTMLElement;
+    trackerPause: void;
   }>();
 
   let allowDisplay = false;
@@ -235,7 +236,60 @@
     updateSectionProgress();
   }
 
+  /** Experimental Code - May be removed any time without warning */
+  onMount(() => document.addEventListener('ttu-action', handleAction, false));
+
+  function handleAction({ detail }: any) {
+    if (!detail.type) {
+      return;
+    }
+
+    if (detail.type === 'cue') {
+      const targetElement = document.querySelector<HTMLSpanElement>(detail.selector);
+
+      if (!targetElement) {
+        return;
+      }
+
+      const rect = targetElement.getBoundingClientRect();
+
+      willNavigate = true;
+
+      if (verticalMode) {
+        window.scrollBy(
+          -(
+            window.innerWidth -
+            rect.right -
+            (firstDimensionMargin || 0) -
+            customReadingPointScrollOffset -
+            (!customReadingPointScrollOffset ||
+            (customReadingPointScrollOffset && scrollAdjustment > customReadingPointScrollOffset)
+              ? scrollAdjustment
+              : 0)
+          ),
+          0
+        );
+      } else {
+        window.scrollBy(
+          0,
+          rect.top -
+            (firstDimensionMargin || 0) -
+            customReadingPointScrollOffset -
+            (!customReadingPointScrollOffset ||
+            (customReadingPointScrollOffset && scrollAdjustment > customReadingPointScrollOffset)
+              ? scrollAdjustment
+              : 0)
+        );
+      }
+    } else if (detail.type === 'pauseTracker') {
+      dispatch('trackerPause');
+    }
+  }
+  /** Experimental Code - May be removed any time without warning */
+
   onDestroy(() => {
+    document.removeEventListener('ttu-action', handleAction, false);
+
     destroy$.next();
     destroy$.complete();
   });
