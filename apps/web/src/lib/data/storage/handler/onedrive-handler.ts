@@ -311,7 +311,6 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             item: {
-              '@odata.type': 'microsoft.graph.driveItemUploadableProperties',
               name: remoteFile?.name || name
             }
           })
@@ -330,7 +329,8 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
             method: 'PUT',
             headers: { 'Content-Range': `bytes 0-${byteSize - 1}/${byteSize}` },
             body,
-            trackUpload: true
+            trackUpload: true,
+            skipAuth: true
           },
           'json',
           progressBase

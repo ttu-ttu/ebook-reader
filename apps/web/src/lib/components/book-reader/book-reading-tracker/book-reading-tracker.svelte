@@ -364,7 +364,9 @@
     }
 
     if ($trackerPopupDetection$) {
-      const elm = document.querySelector('.yomichan-popup,.yomichan-float') as HTMLElement | null;
+      const elm = document.querySelector(
+        '.yomichan-popup,.yomichan-float,.yomitan-popup,.yomitan-float'
+      ) as HTMLElement | null;
 
       if (elm && elm.style.visibility !== 'hidden') {
         return;

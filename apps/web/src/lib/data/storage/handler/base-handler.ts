@@ -10,7 +10,9 @@ import {
   type BooksDbBookData,
   type BooksDbBookmarkData,
   type BooksDbStatistic,
-  type BooksDbReadingGoal
+  type BooksDbReadingGoal,
+  type BooksDbAudioBook,
+  type BooksDbSubtitleData
 } from '$lib/data/database/books-db/versions/books-db';
 import type { Section } from '$lib/data/database/books-db/versions/v4/books-db-v4';
 import { storageRootName } from '$lib/data/env';
@@ -34,6 +36,11 @@ import {
   ZipWriter,
   type Entry
 } from '@zip.js/zip.js';
+
+export enum FilePrefix {
+  AUDIO_BOOK = 'audioBook_',
+  SUBTITLE = 'subtitles_'
+}
 
 export interface ExternalFile {
   id: string;
@@ -72,6 +79,12 @@ export abstract class BaseStorageHandler {
     referenceFilename: string | undefined
   ): Promise<boolean>;
 
+  abstract isAudioBookPresentAndUpToDate(referenceFilename: string | undefined): Promise<boolean>;
+
+  abstract isSubtitleDataPresentAndUpToDate(
+    referenceFilename: string | undefined
+  ): Promise<boolean>;
+
   abstract getBook(): Promise<Omit<BooksDbBookData, 'id'> | File | undefined>;
 
   abstract getProgress(): Promise<BooksDbBookmarkData | File | undefined>;
@@ -88,6 +101,10 @@ export abstract class BaseStorageHandler {
     lastGoalModified: number;
   }>;
 
+  abstract getAudioBook(): Promise<BooksDbAudioBook | File | undefined>;
+
+  abstract getSubtitleData(): Promise<BooksDbSubtitleData | File | undefined>;
+
   abstract saveBook(
     data: Omit<BooksDbBookData, 'id'> | File,
     skipTimestampFallback?: boolean,
@@ -101,6 +118,10 @@ export abstract class BaseStorageHandler {
   abstract saveCover(data: Blob | undefined): Promise<void>;
 
   abstract saveReadingGoals(data: BooksDbReadingGoal[], lastGoalModified: number): Promise<void>;
+
+  abstract saveAudioBook(data: BooksDbAudioBook | File): Promise<void>;
+
+  abstract saveSubtitleData(data: BooksDbSubtitleData | File): Promise<void>;
 
   abstract deleteBookData(
     booksToDelete: string[],
@@ -281,9 +302,9 @@ export abstract class BaseStorageHandler {
     return `${BaseStorageHandler.readingGoalsFilePrefix}${exporterVersion}_${currentDbVersion}_${lastGoalModified}.json`;
   }
 
-  protected static checkIsPresentAndUpToDate(
+  protected static checkIsPresentAndUpToDate<T>(
     functionToCall: (_: string) => any,
-    keyToCheck: string,
+    keyToCheck: keyof T,
     referenceFilename: string,
     name?: string
   ) {
@@ -339,7 +360,7 @@ export abstract class BaseStorageHandler {
         | 'lastBookOpen'
         | 'storageSource'
       >
-    > = ['title', 'styleSheet', 'elementHtml', 'sections'];
+    > = ['title', 'styleSheet', 'elementHtml', 'htmlBackup', 'sections'];
     const staticData: Record<string, string | Section[] | undefined> = {};
     const limiter = pLimit(1);
     const cover = bookdata.coverImage;
@@ -540,6 +561,10 @@ export abstract class BaseStorageHandler {
               );
               bookObject.lastBookModified = lastBookModified;
               bookObject.lastBookOpen = lastBookOpen;
+
+              if (staticData.htmlBackup) {
+                bookObject.htmlBackup = staticData.htmlBackup;
+              }
             } else if (entry.filename.startsWith('blobs/')) {
               const imagePath = entry.filename.replace('blobs/', '');
               const existingBlobEntries = bookObject.blobs || {};
@@ -647,6 +672,18 @@ export abstract class BaseStorageHandler {
         }.json`;
   }
 
+  protected static getAudioBookFileName(audioBook: BooksDbAudioBook | File) {
+    return audioBook instanceof File
+      ? audioBook.name
+      : `${FilePrefix.AUDIO_BOOK}${exporterVersion}_${currentDbVersion}_${audioBook.lastAudioBookModified}_${audioBook.playbackPosition}.json`;
+  }
+
+  protected static getSubtitleDataFileName(data: BooksDbSubtitleData | File) {
+    return data instanceof File
+      ? data.name
+      : `${FilePrefix.SUBTITLE}${exporterVersion}_${currentDbVersion}_${data.lastSubtitleDataModified}_${data.subtitleData.subtitles.length}.json`;
+  }
+
   protected static async getCoverFileName(cover: Blob) {
     const type = (await BaseStorageHandler.determineImageExtension(cover)) || 'jpeg';
 
@@ -683,6 +720,28 @@ export abstract class BaseStorageHandler {
       exporterVersion: +parts[1],
       dbVersion: +parts[2],
       lastGoalModified: +parts[3]
+    };
+  }
+
+  protected static getAudioBookMetadata(filename: string) {
+    const parts = filename.split('_').map((part) => part.replace(/\.json$/, ''));
+
+    return {
+      exporterVersion: +parts[1],
+      dbVersion: +parts[2],
+      lastAudioBookModified: +parts[3],
+      playbackPosition: +parts[4]
+    };
+  }
+
+  protected static getSubtitleDataMetadata(filename: string) {
+    const parts = filename.split('_').map((part) => part.replace(/\.json$/, ''));
+
+    return {
+      exporterVersion: +parts[1],
+      dbVersion: +parts[2],
+      lastSubtitleDataModified: +parts[3],
+      subtitleCount: +parts[4]
     };
   }
 

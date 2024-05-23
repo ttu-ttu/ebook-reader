@@ -5,14 +5,16 @@
  */
 
 import type {
+  BooksDbAudioBook,
   BooksDbBookData,
   BooksDbBookmarkData,
   BooksDbReadingGoal,
-  BooksDbStatistic
+  BooksDbStatistic,
+  BooksDbSubtitleData
 } from '$lib/data/database/books-db/versions/books-db';
 import type { MergeMode } from '$lib/data/merge-mode';
 import { readingGoalSortFunction } from '$lib/data/reading-goal';
-import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
+import { BaseStorageHandler, FilePrefix } from '$lib/data/storage/handler/base-handler';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import type { ReplicationContext } from '$lib/functions/replication/replication-progress';
 import { BlobReader, BlobWriter, ZipReader, type Entry, type ZipWriter } from '@zip.js/zip.js';
@@ -53,6 +55,16 @@ export class BackupStorageHandler extends BaseStorageHandler {
   }
 
   areReadingGoalsPresentAndUpToDate() {
+    BaseStorageHandler.reportProgress();
+    return Promise.resolve(false);
+  }
+
+  isAudioBookPresentAndUpToDate() {
+    BaseStorageHandler.reportProgress();
+    return Promise.resolve(false);
+  }
+
+  isSubtitleDataPresentAndUpToDate() {
     BaseStorageHandler.reportProgress();
     return Promise.resolve(false);
   }
@@ -221,6 +233,48 @@ export class BackupStorageHandler extends BaseStorageHandler {
     };
   }
 
+  async getAudioBook() {
+    const { zipEntry, filename } = this.findEntry(FilePrefix.AUDIO_BOOK);
+
+    if (!zipEntry) {
+      return undefined;
+    }
+
+    if (this.isForBrowser) {
+      return this.extractAsJSON(zipEntry, 'Unable to read audioBook data');
+    }
+
+    const audioBookBlob = await this.readFromZip(
+      new BlobWriter(),
+      'Unable to read audioBook data',
+      zipEntry,
+      0.9
+    );
+
+    return new File([audioBookBlob], filename, { type: 'application/json' });
+  }
+
+  async getSubtitleData() {
+    const { zipEntry, filename } = this.findEntry(FilePrefix.SUBTITLE);
+
+    if (!zipEntry) {
+      return undefined;
+    }
+
+    if (this.isForBrowser) {
+      return this.extractAsJSON(zipEntry, 'Unable to read subtitles data');
+    }
+
+    const subtitleDataBlob = await this.readFromZip(
+      new BlobWriter(),
+      'Unable to read subtitles data',
+      zipEntry,
+      0.9
+    );
+
+    return new File([subtitleDataBlob], filename, { type: 'application/json' });
+  }
+
   async saveBook(data: Omit<BooksDbBookData, 'id'> | File) {
     const filename = `${this.sanitizedTitle}/${BaseStorageHandler.getBookFileName(data)}`;
 
@@ -291,6 +345,34 @@ export class BackupStorageHandler extends BaseStorageHandler {
       JSON.stringify(data),
       this.exportZipWriter
     );
+  }
+
+  async saveAudioBook(data: BooksDbAudioBook | File) {
+    const filename = `${this.sanitizedTitle}/${BaseStorageHandler.getAudioBookFileName(data)}`;
+
+    if (data instanceof File) {
+      this.exportZipWriter = await this.addDataToZip(filename, data, this.exportZipWriter);
+    } else {
+      this.exportZipWriter = await this.addDataToZip(
+        filename,
+        JSON.stringify(data),
+        this.exportZipWriter
+      );
+    }
+  }
+
+  async saveSubtitleData(data: BooksDbSubtitleData | File) {
+    const filename = `${this.sanitizedTitle}/${BaseStorageHandler.getSubtitleDataFileName(data)}`;
+
+    if (data instanceof File) {
+      this.exportZipWriter = await this.addDataToZip(filename, data, this.exportZipWriter);
+    } else {
+      this.exportZipWriter = await this.addDataToZip(
+        filename,
+        JSON.stringify(data),
+        this.exportZipWriter
+      );
+    }
   }
 
   async createExportZip(document: Document, resetOnly: boolean) {
