@@ -120,8 +120,8 @@ importers:
         specifier: 3.1.2
         version: 3.1.2(svelte@4.2.17)(typescript@5.4.5)
       ua-parser-js:
-        specifier: 1.0.37
-        version: 1.0.37
+        specifier: 1.0.38
+        version: 1.0.38
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: 3.0.1
@@ -2563,8 +2563,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  ua-parser-js@1.0.37:
-    resolution: {integrity: sha512-bhTyI94tZofjo+Dn8SN6Zv8nBDvyXTymAdM3LDI/0IboIUwTu1rEhW7v2TfiVsoYWgkQ4kOVqnI8APUFbIQIFQ==}
+  ua-parser-js@1.0.38:
+    resolution: {integrity: sha512-Aq5ppTOfvrCMgAPneW1HfWj66Xi7XL+/mIy996R1/CLS/rcyJQm6QZdsKrUeivDFQ+Oc9Wyuwor8Ze8peEoUoQ==}
 
   unbox-primitive@1.0.2:
     resolution: {integrity: sha512-61pPlCD9h51VoreyJ0BReideM3MDKMKnh6+V9L08331ipq6Q8OFXZYiqP6n/tbHx4s5I9uRhcye6BrbkizkBDw==}
@@ -5163,7 +5163,7 @@ snapshots:
 
   typescript@5.4.5: {}
 
-  ua-parser-js@1.0.37: {}
+  ua-parser-js@1.0.38: {}
 
   unbox-primitive@1.0.2:
     dependencies:
