@@ -245,19 +245,17 @@
     }
 
     if (detail.type === 'cue') {
-      const targetElement = document.querySelector<HTMLSpanElement>(detail.selector);
+      const { scroll, rect } = needScroll(detail.selector, detail.scrollMode);
 
-      if (!targetElement) {
+      if (!scroll) {
         return;
       }
-
-      const rect = targetElement.getBoundingClientRect();
 
       willNavigate = true;
 
       if (verticalMode) {
-        window.scrollBy(
-          -(
+        window.scrollBy({
+          left: -(
             window.innerWidth -
             rect.right -
             (firstDimensionMargin || 0) -
@@ -267,23 +265,62 @@
               ? scrollAdjustment
               : 0)
           ),
-          0
-        );
+          top: 0,
+          behavior: detail.scrollBehavior || 'instant'
+        });
       } else {
-        window.scrollBy(
-          0,
-          rect.top -
+        window.scrollBy({
+          left: 0,
+          top:
+            rect.top -
             (firstDimensionMargin || 0) -
             customReadingPointScrollOffset -
             (!customReadingPointScrollOffset ||
             (customReadingPointScrollOffset && scrollAdjustment > customReadingPointScrollOffset)
               ? scrollAdjustment
-              : 0)
-        );
+              : 0),
+          behavior: detail.scrollBehavior || 'instant'
+        });
       }
-    } else if (detail.type === 'pauseTracker') {
+    } else if (
+      detail.type === 'pauseTracker' &&
+      needScroll(detail.selector, detail.scrollMode).scroll
+    ) {
       dispatch('trackerPause');
     }
+  }
+
+  function needScroll(selector: string, scrollMode: string) {
+    const targetElement = document.querySelector<HTMLSpanElement>(selector);
+
+    if (!targetElement || !contentEl) {
+      return { scroll: false, rect: { top: 0, right: 0, bottom: 0, left: 0 } };
+    }
+
+    const rect = targetElement.getBoundingClientRect();
+
+    if (!scrollMode || scrollMode === 'Always') {
+      return { scroll: true, rect };
+    }
+
+    const {
+      elTopReferencePoint,
+      elLeftReferencePoint,
+      elBottomReferencePoint,
+      elRightReferencePoint
+    } = getReferencePoints(window, contentEl, verticalMode, firstDimensionMargin);
+
+    if (verticalMode) {
+      return {
+        scroll: rect.left <= elLeftReferencePoint || rect.right >= elRightReferencePoint,
+        rect
+      };
+    }
+
+    return {
+      scroll: rect.top <= elTopReferencePoint || rect.bottom >= elBottomReferencePoint,
+      rect
+    };
   }
   /** Experimental Code - May be removed any time without warning */
 
