@@ -19,6 +19,7 @@
   } from '$lib/data/store';
   import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
   import { getReferencePoints } from '$lib/functions/range-util';
+  import { getExternalTargetElement } from '$lib/functions/utils';
   import { faBookmark, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import {
     animationFrameScheduler,
@@ -291,7 +292,7 @@
   }
 
   function needScroll(selector: string, scrollMode: string) {
-    const targetElement = document.querySelector<HTMLSpanElement>(selector);
+    const targetElement = getExternalTargetElement(document, selector);
 
     if (!targetElement || !contentEl) {
       return { scroll: false, rect: { top: 0, right: 0, bottom: 0, left: 0 } };

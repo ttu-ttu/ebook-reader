@@ -17,7 +17,7 @@
   } from '$lib/data/store';
   import { clearRange, createRange, pulseElement } from '$lib/functions/range-util';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
-  import { isMobile$ } from '$lib/functions/utils';
+  import { getExternalTargetElement, isMobile$ } from '$lib/functions/utils';
   import { faBookmark, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import {
     BehaviorSubject,
@@ -249,7 +249,7 @@
     }
 
     if (detail.type === 'cue') {
-      const targetSection = getTargetSection<HTMLSpanElement>(detail.selector);
+      const targetSection = getTargetSection(detail.selector);
 
       if (targetSection === -1) {
         return;
@@ -280,11 +280,12 @@
         document.dispatchEvent(new CustomEvent(SECTION_CHANGE));
       }
     } else if (detail.type === 'pauseTracker') {
-      const targetSection = getTargetSection<HTMLSpanElement>(detail.selector);
+      const targetSection = getTargetSection(detail.selector);
 
       if (targetSection === -1) {
         return;
       }
+
       if (targetSection !== sectionIndex$.getValue()) {
         dispatch('trackerPause');
         return;
@@ -306,11 +307,11 @@
     }
   }
 
-  function getTargetSection<T extends Element>(selector: string) {
+  function getTargetSection(selector: string) {
     let targetSection = -1;
 
     for (let index = 0, { length } = sections; index < length; index += 1) {
-      const element = sections[index].querySelector<T>(selector);
+      const element = getExternalTargetElement(sections[index], selector);
 
       if (element) {
         targetSection = index;
@@ -321,11 +322,11 @@
     return targetSection;
   }
 
-  function getTargetScrollPos<T extends Element>(
+  function getTargetScrollPos(
     calculatorInstance: SectionCharacterStatsCalculator,
     selector: string
   ) {
-    const targetElement = document.querySelector<T>(selector);
+    const targetElement = getExternalTargetElement(document, selector);
     const nodeRange = document.createRange();
 
     if (!targetElement) {
