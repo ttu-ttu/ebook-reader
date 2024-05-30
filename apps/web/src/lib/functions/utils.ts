@@ -5,7 +5,12 @@
  */
 
 import { StorageKey } from '$lib/data/storage/storage-types';
+import { getCharacterCount } from './get-character-count';
 import { writableSubject } from '$lib/functions/svelte/store';
+
+function externalTargetFilterFunction(element: HTMLElement) {
+  return getCharacterCount(element) > 0;
+}
 
 export function isMobile(window: Window) {
   const UA = window.navigator.userAgent;
@@ -103,4 +108,12 @@ function convertComputedStyleToNumber(value: string) {
 
 export function convertRemToPixels(window: Window, rem: number) {
   return rem * parseFloat(window.getComputedStyle(document.documentElement).fontSize);
+}
+
+export function getExternalTargetElement(source: Document | Element, selector: string) {
+  const elements = [...source.querySelectorAll<HTMLSpanElement>(selector)].filter(
+    externalTargetFilterFunction
+  );
+
+  return elements[elements.length - 1];
 }
