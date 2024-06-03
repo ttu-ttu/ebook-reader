@@ -138,6 +138,8 @@
 
   let fontLoadingAdded = false;
 
+  let currentSectionId = '';
+
   const width$ = new Subject<number>();
 
   const height$ = new Subject<number>();
@@ -216,7 +218,12 @@
 
   $: {
     if (calculator && !loadingState) {
-      sectionRenderComplete$.next(sectionIndex$.getValue());
+      const sectionIndex = sectionIndex$.getValue();
+      const section = sections[sectionIndex];
+
+      currentSectionId = section?.id.startsWith('ttu-') ? section.id : '';
+
+      sectionRenderComplete$.next(sectionIndex);
     }
   }
 
@@ -692,7 +699,7 @@
   use:swipe={{ timeframe: 500, minSwipeDistance: $swipeThreshold$, touchAction: 'pan-y' }}
   on:swipe={onSwipe}
 >
-  <div class="book-content-container" bind:this={contentEl}>
+  <div class="book-content-container" id={currentSectionId || null} bind:this={contentEl}>
     <HtmlRenderer html={displayedHtml} on:load={onHtmlLoad} />
   </div>
 </div>
