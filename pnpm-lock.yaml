@@ -175,8 +175,8 @@ importers:
         specifier: 3.4.3
         version: 3.4.3
       tslib:
-        specifier: 2.6.2
-        version: 2.6.2
+        specifier: 2.6.3
+        version: 2.6.3
       typescript:
         specifier: 5.4.5
         version: 5.4.5
@@ -2518,8 +2518,8 @@ packages:
   tslib@1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
 
-  tslib@2.6.2:
-    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
+  tslib@2.6.3:
+    resolution: {integrity: sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==}
 
   tsutils-etc@1.4.1:
     resolution: {integrity: sha512-6UPYgc7OXcIW5tFxlsZF3OVSBvDInl/BkS3Xsu64YITXk7WrnWTVByKWPCThFDBp5gl5IGHOzGMdQuDCE7OL4g==}
@@ -3895,7 +3895,7 @@ snapshots:
       eslint-etc: 5.1.0(eslint@8.57.0)(typescript@5.4.5)
       requireindex: 1.2.0
       rxjs-report-usage: 1.0.6
-      tslib: 2.6.2
+      tslib: 2.6.3
       tsutils: 3.21.0(typescript@5.4.5)
       tsutils-etc: 1.4.1(tsutils@3.21.0(typescript@5.4.5))(typescript@5.4.5)
       typescript: 5.4.5
@@ -4813,7 +4813,7 @@ snapshots:
 
   rxjs@7.8.1:
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   sade@1.8.1:
     dependencies:
@@ -5119,7 +5119,7 @@ snapshots:
 
   tslib@1.14.1: {}
 
-  tslib@2.6.2: {}
+  tslib@2.6.3: {}
 
   tsutils-etc@1.4.1(tsutils@3.21.0(typescript@5.4.5))(typescript@5.4.5):
     dependencies:
