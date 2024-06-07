@@ -24,7 +24,7 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { faClock, faCloudBolt, faSpinner } from '@fortawesome/free-solid-svg-icons';
+  import { faCloudBolt, faPause, faPlay, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import BookReader from '$lib/components/book-reader/book-reader.svelte';
   import type {
     AutoScroller,
@@ -1635,10 +1635,10 @@
         title="Click to open Tracker Menu or Double Click to toggle Tracker"
         class="flex h-full w-8 items-center justify-center text-sm sm:text-lg"
         class:text-red-500={$isTrackerPaused$}
-        class:animate-pulse={$isTrackerPaused$ || frozenPosition > -1}
+        class:animate-pulse={frozenPosition > -1}
         use:multiClickHandler={[trackerSingleClickHandler, trackerDblClickHandler]}
       >
-        <Fa icon={faClock} />
+        <Fa icon={$isTrackerPaused$ ? faPlay : faPause} />
       </div>
     {/if}
     {#if dataToReplicate.length}

@@ -769,7 +769,10 @@
         bind:selectedOptionId={readingGoalsMergeMode}
       />
     </SettingsItemGroup>
-    <SettingsItemGroup title="Enable Statistics">
+    <SettingsItemGroup
+      title="Enable Statistics"
+      tooltip="Enables the tracker icon in the bottom left corner of the reader which you need to use to start tracking your reading session"
+    >
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={statisticsEnabled} />
     </SettingsItemGroup>
     {#if statisticsEnabled}
