@@ -34,6 +34,12 @@
   }
 }
 
+.book-content--hide-furigana.book-content--furigana-style-hide {
+  :global(rt) {
+    display: none;
+  }
+}
+
 .book-content--hide-furigana.book-content--furigana-style-partial {
   :global(ruby) {
     :global(rt) {

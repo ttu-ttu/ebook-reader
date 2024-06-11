@@ -164,16 +164,20 @@
 
   const optionsForFuriganaStyle: ToggleOption<FuriganaStyle>[] = [
     {
+      id: FuriganaStyle.Hide,
+      text: 'Hide'
+    },
+    {
       id: FuriganaStyle.Partial,
       text: 'Partial'
     },
     {
-      id: FuriganaStyle.Full,
-      text: 'Full'
-    },
-    {
       id: FuriganaStyle.Toggle,
       text: 'Toggle'
+    },
+    {
+      id: FuriganaStyle.Full,
+      text: 'Full'
     }
   ];
 
@@ -303,11 +307,14 @@
   $: verticalMode = writingMode === 'vertical-rl';
   $: fontCacheSupported = browser && 'caches' in window;
   $: switch (furiganaStyle) {
-    case FuriganaStyle.Full:
-      furiganaStyleTooltip = 'Hidden by default, show on hover or click';
+    case FuriganaStyle.Hide:
+      furiganaStyleTooltip = 'Always hidden';
       break;
     case FuriganaStyle.Toggle:
       furiganaStyleTooltip = 'Hidden by default, can be toggled on click';
+      break;
+    case FuriganaStyle.Full:
+      furiganaStyleTooltip = 'Hidden by default, show on hover or click';
       break;
     default:
       furiganaStyleTooltip = 'Display furigana as grayed out text';

@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-import { fromEvent, merge, take, tap } from 'rxjs';
+import { NEVER, fromEvent, merge, take, tap } from 'rxjs';
 
 import { FuriganaStyle } from '../../data/furigana-style';
 import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
@@ -38,6 +38,10 @@ function anchorTagListener(document: Document) {
 }
 
 function rubyTagListener(contentEl: HTMLElement, furiganaStyle: FuriganaStyle) {
+  if (furiganaStyle === FuriganaStyle.Hide) {
+    return NEVER;
+  }
+
   const isToggle = furiganaStyle === FuriganaStyle.Toggle;
   const rubyTags = Array.from(contentEl.getElementsByTagName('ruby'));
   const obs$ = rubyTags.map((el) =>
