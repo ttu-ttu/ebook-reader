@@ -5,7 +5,8 @@
  */
 
 export enum FuriganaStyle {
+  Hide = 'Hide',
   Partial = 'partial',
-  Full = 'full',
-  Toggle = 'toggle'
+  Toggle = 'toggle',
+  Full = 'full'
 }
