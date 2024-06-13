@@ -506,7 +506,7 @@
       fontLoaded = true;
     }
 
-    if (fontLoaded) {
+    if (fontLoaded || fontLoadingAdded) {
       triggerContentChange();
     } else if (!fontLoadingAdded) {
       fontLoadingAdded = true;
