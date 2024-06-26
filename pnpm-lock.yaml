@@ -166,8 +166,8 @@ importers:
         specifier: 4.2.18
         version: 4.2.18
       svelte-check:
-        specifier: 3.8.3
-        version: 3.8.3(postcss-load-config@4.0.1(postcss@8.4.38))(postcss@8.4.38)(sass@1.77.6)(svelte@4.2.18)
+        specifier: 3.8.4
+        version: 3.8.4(postcss-load-config@4.0.1(postcss@8.4.38))(postcss@8.4.38)(sass@1.77.6)(svelte@4.2.18)
       svelte-preprocess:
         specifier: 6.0.1
         version: 6.0.1(postcss-load-config@4.0.1(postcss@8.4.38))(postcss@8.4.38)(sass@1.77.6)(svelte@4.2.18)(typescript@5.4.5)
@@ -2379,8 +2379,8 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
-  svelte-check@3.8.3:
-    resolution: {integrity: sha512-X1+fTyB3MjVXz0IogrUbdkKvIFMhRVQn1nUW0uF4FRwq69i+7WGtwXrMBhtceV+Rc55iL+8HVEJoEp0CSeosbg==}
+  svelte-check@3.8.4:
+    resolution: {integrity: sha512-61aHMkdinWyH8BkkTX9jPLYxYzaAAz/FK/VQqdr2FiCQQ/q04WCwDlpGbHff1GdrMYTmW8chlTFvRWL9k0A8vg==}
     hasBin: true
     peerDependencies:
       svelte: ^3.55.0 || ^4.0.0-next.0 || ^4.0.0 || ^5.0.0-next.0
@@ -4975,7 +4975,7 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  svelte-check@3.8.3(postcss-load-config@4.0.1(postcss@8.4.38))(postcss@8.4.38)(sass@1.77.6)(svelte@4.2.18):
+  svelte-check@3.8.4(postcss-load-config@4.0.1(postcss@8.4.38))(postcss@8.4.38)(sass@1.77.6)(svelte@4.2.18):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.18
       chokidar: 3.5.3
