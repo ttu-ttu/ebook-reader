@@ -2,9 +2,9 @@ root: true
 parser: '@typescript-eslint/parser'
 parserOptions:
   project: ./apps/*/tsconfig.eslint.json
+  extraFileExtensions: '.svelte'
 plugins:
   - header
-  - svelte3
   - '@typescript-eslint'
 extends:
   - airbnb-base
@@ -12,9 +12,8 @@ extends:
   - plugin:import/recommended
   - plugin:import/typescript
   - plugin:rxjs/recommended
+  - plugin:svelte/recommended
   - prettier
-settings:
-  svelte3/typescript: true
 rules:
   no-return-assign:
     - error
@@ -46,7 +45,9 @@ overrides:
         - 1
         - lineEndings: unix
   - files: '*.svelte'
-    processor: svelte3/svelte3
+    parser: svelte-eslint-parser
+    parserOptions:
+      parser: '@typescript-eslint/parser'
     rules:
       except-parens: off
       quotes:
@@ -59,3 +60,4 @@ overrides:
       import/no-mutable-exports: off
       import/no-unresolved: off
       import/prefer-default-export: off
+      svelte/no-at-html-tags: off
