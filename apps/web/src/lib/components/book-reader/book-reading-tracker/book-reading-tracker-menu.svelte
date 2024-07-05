@@ -176,6 +176,7 @@
         <div>
           {secondsToMinutes(currentTimeGoal)} / {secondsToMinutes(currentReadingGoal.timeGoal)} Min ({timeGoalPercentage}%)
         </div>
+        <!-- eslint-disable-next-line svelte/no-unknown-style-directive-property -->
         <div class="w-full rounded-full h-2.5" style:background-Color={fontColor}>
           <div
             class="h-2.5 rounded-full opacity-70"
@@ -192,12 +193,15 @@
         <div class="mt-4">
           {currentCharacterGoal} / {currentReadingGoal.characterGoal} Characters ({characterGoalPercentage}%)
         </div>
+        <!-- eslint-disable-next-line svelte/no-unknown-style-directive-property -->
         <div class="w-full rounded-full h-2.5" style:background-Color={fontColor}>
+          <!-- eslint-disable svelte/no-unknown-style-directive-property -->
           <div
             class="h-2.5 rounded-full opacity-70"
             style:width={`${Math.min(100, characterGoalPercentage)}%`}
             style:background-Color={backgroundColor}
           ></div>
+          <!-- eslint-enable svelte/no-unknown-style-directive-property -->
         </div>
       {/if}
       <div class="grid grid-cols-[max-content,auto] gap-x-4 gap-y-2 mt-4">
