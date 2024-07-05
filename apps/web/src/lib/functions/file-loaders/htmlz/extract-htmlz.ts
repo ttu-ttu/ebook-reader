@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -49,7 +49,6 @@ function getMimeTypeFromName(filename: string): string | undefined {
   // image/gif, image/png, image/jpeg, image/bmp, image/webp
   const regexResult = /.*\.([^.]+)$/.exec(filename);
   if (regexResult) {
-    // eslint-disable-next-line default-case
     switch (regexResult[1].toLowerCase()) {
       case 'gif':
         return 'image/gif';

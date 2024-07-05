@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -22,7 +22,6 @@ export default function formatStyleSheet(bookData: BooksDbBookData, parentSelect
   newRules.forEach((rule) => {
     const newDeclarations: Record<string, string> = {};
 
-    // eslint-disable-next-line no-param-reassign
     rule.declarations = rule.declarations.filter(
       (d) => !/line-height$/.test(d.property) && !/text-indent$/.test(d.property)
     );
@@ -44,14 +43,12 @@ export default function formatStyleSheet(bookData: BooksDbBookData, parentSelect
       });
     });
 
-    // eslint-disable-next-line no-param-reassign
     rule.declarations = rule.declarations.filter((d) => !/writing-mode\s*$/.test(d.property));
   });
 
   newRules.push(getGeckoBrSolutionRule());
 
   newRules.forEach((rule) => {
-    // eslint-disable-next-line no-param-reassign
     rule.selectors = encapsulatedSelectors(rule.selectors, parentSelector);
   });
 
@@ -77,7 +74,6 @@ function assignKeyValToObj(
     | undefined
 ) {
   if (keyValObj) {
-    // eslint-disable-next-line no-param-reassign
     obj[keyValObj.key] = keyValObj.value;
   }
   return obj;
