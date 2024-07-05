@@ -25,14 +25,14 @@
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.29.1",
     "eslint-plugin-rxjs": "5.0.3",
-    "eslint-plugin-svelte": "^2.41.0",
+    "eslint-plugin-svelte": "2.41.0",
     "husky": "9.0.11",
     "lint-staged": "15.2.7",
     "prettier": "3.3.2",
     "prettier-plugin-svelte": "3.2.5",
     "prettier-plugin-tailwindcss": "0.6.5",
     "svelte": "4.2.18",
-    "svelte-eslint-parser": "^0.39.2",
+    "svelte-eslint-parser": "0.39.2",
     "typescript": "5.5.3"
   },
   "lint-staged": {
