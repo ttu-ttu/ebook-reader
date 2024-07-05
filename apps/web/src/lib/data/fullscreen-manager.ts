@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -19,7 +19,6 @@ class FullscreenManager {
     this.fallbackSpec = fallbackSpec(document);
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async requestFullscreen(el: Element, fullscreenOptions?: FullscreenOptions) {
     const fn = fallbackSpec(el)('requestFullscreen', 'webkitRequestFullscreen');
     if (!fn) return;

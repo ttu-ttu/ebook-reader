@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -21,7 +21,6 @@ export class PageManagerContinuous implements PageManager {
     this.scrollByPercent(-0.95);
   }
 
-  // eslint-disable-next-line class-methods-use-this
   updateSectionDataByOffset() {
     // no-op
   }
