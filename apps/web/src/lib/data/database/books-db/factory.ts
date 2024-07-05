@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -11,7 +11,6 @@ import upgradeBooksDbFromV2 from './versions/v2/upgrade';
 export function createBooksDb(name = 'books') {
   return openDB<BooksDb>(name, 6, {
     async upgrade(oldDb, oldVersion, newVersion, transaction) {
-      // eslint-disable-next-line default-case
       switch (oldVersion) {
         case 0: {
           const dataStore = oldDb.createObjectStore('data', {

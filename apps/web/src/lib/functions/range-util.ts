@@ -1,8 +1,9 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
+
 import { getParagraphNodes } from '$lib/components/book-reader/get-paragraph-nodes';
 
 export function getParagraphToPoint(x: number, y: number) {

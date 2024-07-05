@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -44,7 +44,6 @@ export default async function upgradeBooksDbFromV2(
     while (cursor) {
       const regexResult = /([^-]+)-(.+)/.exec(cursor.key);
       if (regexResult) {
-        // eslint-disable-next-line default-case
         switch (regexResult[1]) {
           case 'data':
           case 'scrollX':
@@ -54,7 +53,7 @@ export default async function upgradeBooksDbFromV2(
       } else if (cursor.key === 'lastItem') {
         oldValues[cursor.key] = cursor.value;
       }
-      // eslint-disable-next-line no-await-in-loop
+
       cursor = await cursor.continue();
     }
   }
@@ -108,7 +107,6 @@ interface DbV2Data {
   styleSheet: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFormattedDbV2Data(x: any): x is DbV2Data {
   if (typeof x === 'object' && x) {
     return ['title', 'elementHtml', 'styleSheet'].every(

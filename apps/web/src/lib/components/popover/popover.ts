@@ -1,12 +1,11 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
 import { writable } from 'svelte/store';
 
-/* eslint-disable no-param-reassign */
 function popoverStore() {
   const popovers: symbol[] = [];
   const { subscribe, set, update } = writable(popovers);
@@ -35,6 +34,5 @@ function popoverStore() {
     }
   };
 }
-/* eslint-enable no-param-reassign */
 
 export const popovers = popoverStore();

@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -937,7 +937,6 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
         entries.push(entry.value);
       }
 
-      // eslint-disable-next-line no-await-in-loop
       entry = await listIterator.next();
     }
 

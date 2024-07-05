@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -28,7 +28,6 @@ export default async function extractEpub(blob: Blob) {
       return acc;
     }, {});
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const containerXml = await fileMap['META-INF/container.xml'].getData!(new TextWriter());
     const parser = new XMLParser({
       ignoreAttributes: false
@@ -38,7 +37,7 @@ export default async function extractEpub(blob: Blob) {
     const rootFile = Array.isArray(rootFiles) ? rootFiles[0] : rootFiles;
 
     const contentOpfFilename = rootFile['@_full-path'];
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     const contentsXml = await fileMap[contentOpfFilename].getData!(new TextWriter());
     result[contentOpfFilename] = contentsXml;
 

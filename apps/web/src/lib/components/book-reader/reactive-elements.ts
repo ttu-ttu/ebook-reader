@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -26,7 +26,6 @@ function anchorTagListener(document: Document) {
   return (contentEl: HTMLElement) => {
     const anchorTags = Array.from(contentEl.getElementsByTagName('a'));
     anchorTags.forEach((el) => {
-      // eslint-disable-next-line no-param-reassign
       el.href = document.location.pathname + el.hash;
     });
 

@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -416,7 +416,6 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     return Promise.resolve();
   }
 
-  /* eslint-disable class-methods-use-this */
   areReadingGoalsPresentAndUpToDate(referenceFilename: string | undefined) {
     if (!referenceFilename) {
       BaseStorageHandler.reportProgress();
@@ -472,7 +471,6 @@ export class BrowserStorageHandler extends BaseStorageHandler {
 
     await database.putSubtitleData(data);
   }
-  /* eslint-enable class-methods-use-this */
 
   async deleteBookData(
     booksToDelete: string[],

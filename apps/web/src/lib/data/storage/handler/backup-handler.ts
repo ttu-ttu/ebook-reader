@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -26,7 +26,6 @@ export class BackupStorageHandler extends BaseStorageHandler {
 
   private importEntries: Entry[] = [];
 
-  /* eslint-disable class-methods-use-this */
   getBookList() {
     return Promise.resolve([]);
   }
@@ -72,7 +71,6 @@ export class BackupStorageHandler extends BaseStorageHandler {
   deleteBookData() {
     return Promise.resolve({ error: '', deleted: [] });
   }
-  /* eslint-enable class-methods-use-this */
 
   updateSettings(
     window: Window,
