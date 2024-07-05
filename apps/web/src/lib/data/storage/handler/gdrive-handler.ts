@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -305,7 +305,6 @@ export class GDriveStorageHandler extends ApiStorageHandler {
     return files;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   private groupExternalFiles(remoteFiles: GDriveFile[], titleIdToName: Map<string, string>) {
     const groupedExternalFiles = new Map<string, GDriveFile[]>();
 

@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -623,6 +623,7 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     const token = await (options.skipAuth
       ? Promise.resolve('')
       : this.authManager.getToken(this.window, this.storageSourceName, this.askForStorageUnlock));
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
 
     return new Promise((resolve, reject) => {

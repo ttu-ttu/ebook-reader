@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2023, ッツ Reader Authors
+ * Copyright (c) 2024, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -11,14 +11,12 @@ const enum LoggingLevel {
   DEBUG = 7
 }
 
-/* eslint-disable no-console */
 const nativeConsole: Record<LoggingLevel, Console['log']> = {
   [LoggingLevel.ERROR]: console.error,
   [LoggingLevel.WARN]: console.warn,
   [LoggingLevel.INFO]: console.info,
   [LoggingLevel.DEBUG]: console.debug
 };
-/* eslint-enable no-console */
 
 interface LoggingEntry {
   level: LoggingLevel;
