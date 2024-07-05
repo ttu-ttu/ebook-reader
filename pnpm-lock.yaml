@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@commitlint/cli':
         specifier: 19.3.0
-        version: 19.3.0(@types/node@20.14.9)(typescript@5.5.3)
+        version: 19.3.0(@types/node@20.14.10)(typescript@5.5.3)
       '@commitlint/config-conventional':
         specifier: 19.2.2
         version: 19.2.2
@@ -24,8 +24,8 @@ importers:
         specifier: 8.42.3
         version: 8.42.3
       '@types/node':
-        specifier: 20.14.9
-        version: 20.14.9
+        specifier: 20.14.10
+        version: 20.14.10
       eslint:
         specifier: 9.6.0
         version: 9.6.0
@@ -128,13 +128,13 @@ importers:
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: 3.0.2
-        version: 3.0.2(@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))
+        version: 3.0.2(@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))
       '@sveltejs/kit':
         specifier: 2.5.18
-        version: 2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))
+        version: 2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))
       '@sveltejs/vite-plugin-svelte':
         specifier: 3.1.1
-        version: 3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))
+        version: 3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))
       '@tailwindcss/aspect-ratio':
         specifier: 0.4.2
         version: 0.4.2(tailwindcss@3.4.4)
@@ -185,7 +185,7 @@ importers:
         version: 5.5.3
       vite:
         specifier: 5.3.3
-        version: 5.3.3(@types/node@20.14.9)(sass@1.77.6)
+        version: 5.3.3(@types/node@20.14.10)(sass@1.77.6)
 
 packages:
 
@@ -686,8 +686,8 @@ packages:
   '@types/json5@0.0.29':
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
 
-  '@types/node@20.14.9':
-    resolution: {integrity: sha512-06OCtnTXtWOZBJlRApleWndH4JsRVs1pDCc8dLSQp+7PpUpX3ePdHyeNSFTeSe7FtKyQkrlPvHwJOW3SLd8Oyg==}
+  '@types/node@20.14.10':
+    resolution: {integrity: sha512-MdiXf+nDuMvY0gJKxyfZ7/6UFsETO7mGKF54MVD/ekJS6HdFtpZFBgrh6Pseu64XTb2MLyFPlbW6hj8HYRQNOQ==}
 
   '@types/path-browserify@1.0.2':
     resolution: {integrity: sha512-ZkC5IUqqIFPXx3ASTTybTzmQdwHwe2C0u3eL75ldQ6T9E9IWFJodn6hIfbZGab73DfyiHN4Xw15gNxUq2FbvBA==}
@@ -2835,11 +2835,11 @@ snapshots:
       '@babel/helper-validator-identifier': 7.16.7
       to-fast-properties: 2.0.0
 
-  '@commitlint/cli@19.3.0(@types/node@20.14.9)(typescript@5.5.3)':
+  '@commitlint/cli@19.3.0(@types/node@20.14.10)(typescript@5.5.3)':
     dependencies:
       '@commitlint/format': 19.3.0
       '@commitlint/lint': 19.2.2
-      '@commitlint/load': 19.2.0(@types/node@20.14.9)(typescript@5.5.3)
+      '@commitlint/load': 19.2.0(@types/node@20.14.10)(typescript@5.5.3)
       '@commitlint/read': 19.2.1
       '@commitlint/types': 19.0.3
       execa: 8.0.1
@@ -2886,7 +2886,7 @@ snapshots:
       '@commitlint/rules': 19.0.3
       '@commitlint/types': 19.0.3
 
-  '@commitlint/load@19.2.0(@types/node@20.14.9)(typescript@5.5.3)':
+  '@commitlint/load@19.2.0(@types/node@20.14.10)(typescript@5.5.3)':
     dependencies:
       '@commitlint/config-validator': 19.0.3
       '@commitlint/execute-rule': 19.0.0
@@ -2894,7 +2894,7 @@ snapshots:
       '@commitlint/types': 19.0.3
       chalk: 5.3.0
       cosmiconfig: 9.0.0(typescript@5.5.3)
-      cosmiconfig-typescript-loader: 5.0.0(@types/node@20.14.9)(cosmiconfig@9.0.0(typescript@5.5.3))(typescript@5.5.3)
+      cosmiconfig-typescript-loader: 5.0.0(@types/node@20.14.10)(cosmiconfig@9.0.0(typescript@5.5.3))(typescript@5.5.3)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
@@ -3149,13 +3149,13 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.13.0':
     optional: true
 
-  '@sveltejs/adapter-static@3.0.2(@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))':
+  '@sveltejs/adapter-static@3.0.2(@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))':
     dependencies:
-      '@sveltejs/kit': 2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))
+      '@sveltejs/kit': 2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))
 
-  '@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))':
+  '@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))
+      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))
       '@types/cookie': 0.6.0
       cookie: 0.6.0
       devalue: 5.0.0
@@ -3169,28 +3169,28 @@ snapshots:
       sirv: 2.0.4
       svelte: 4.2.18
       tiny-glob: 0.2.9
-      vite: 5.3.3(@types/node@20.14.9)(sass@1.77.6)
+      vite: 5.3.3(@types/node@20.14.10)(sass@1.77.6)
 
-  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))':
+  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))
+      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))
       debug: 4.3.4
       svelte: 4.2.18
-      vite: 5.3.3(@types/node@20.14.9)(sass@1.77.6)
+      vite: 5.3.3(@types/node@20.14.10)(sass@1.77.6)
     transitivePeerDependencies:
       - supports-color
 
-  '@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))':
+  '@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))
+      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)))(svelte@4.2.18)(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))
       debug: 4.3.4
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.10
       svelte: 4.2.18
       svelte-hmr: 0.16.0(svelte@4.2.18)
-      vite: 5.3.3(@types/node@20.14.9)(sass@1.77.6)
-      vitefu: 0.2.5(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6))
+      vite: 5.3.3(@types/node@20.14.10)(sass@1.77.6)
+      vitefu: 0.2.5(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6))
     transitivePeerDependencies:
       - supports-color
 
@@ -3207,7 +3207,7 @@ snapshots:
 
   '@types/conventional-commits-parser@5.0.0':
     dependencies:
-      '@types/node': 20.14.9
+      '@types/node': 20.14.10
 
   '@types/cookie@0.6.0': {}
 
@@ -3226,7 +3226,7 @@ snapshots:
 
   '@types/json5@0.0.29': {}
 
-  '@types/node@20.14.9':
+  '@types/node@20.14.10':
     dependencies:
       undici-types: 5.26.5
 
@@ -3641,9 +3641,9 @@ snapshots:
 
   cookie@0.6.0: {}
 
-  cosmiconfig-typescript-loader@5.0.0(@types/node@20.14.9)(cosmiconfig@9.0.0(typescript@5.5.3))(typescript@5.5.3):
+  cosmiconfig-typescript-loader@5.0.0(@types/node@20.14.10)(cosmiconfig@9.0.0(typescript@5.5.3))(typescript@5.5.3):
     dependencies:
-      '@types/node': 20.14.9
+      '@types/node': 20.14.10
       cosmiconfig: 9.0.0(typescript@5.5.3)
       jiti: 1.21.0
       typescript: 5.5.3
@@ -5257,19 +5257,19 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite@5.3.3(@types/node@20.14.9)(sass@1.77.6):
+  vite@5.3.3(@types/node@20.14.10)(sass@1.77.6):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.4.39
       rollup: 4.13.0
     optionalDependencies:
-      '@types/node': 20.14.9
+      '@types/node': 20.14.10
       fsevents: 2.3.3
       sass: 1.77.6
 
-  vitefu@0.2.5(vite@5.3.3(@types/node@20.14.9)(sass@1.77.6)):
+  vitefu@0.2.5(vite@5.3.3(@types/node@20.14.10)(sass@1.77.6)):
     optionalDependencies:
-      vite: 5.3.3(@types/node@20.14.9)(sass@1.77.6)
+      vite: 5.3.3(@types/node@20.14.10)(sass@1.77.6)
 
   which-boxed-primitive@1.0.2:
     dependencies:
