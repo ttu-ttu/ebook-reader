@@ -414,7 +414,7 @@
                   }
                 ])}
             >
-              <Fa icon={faPlus} slot="icon" class="mx-2" />
+              <Fa icon={faPlus} class="mx-2" />
               <Ripple />
             </button>
           {/if}
@@ -875,10 +875,10 @@
           />
         </SettingsItemGroup>
       {/if}
-      {#if trackerAutoPause === TrackerAutoPause.STRICT}
+      {#if trackerAutoPause !== TrackerAutoPause.OFF}
         <SettingsItemGroup
-          title="Yomitan Detection"
-          tooltip={`Skips auto pause if Yomitan was detected. Requires disabled "Secure Container" settings`}
+          title="Dictionary Detection"
+          tooltip={`If enabled auto pause is skipped if open yomitan/jpdb-browser-reader was detected - yomitan requires disabled 'Secure Container' settings`}
         >
           <ButtonToggleGroup
             options={optionsForToggle}
