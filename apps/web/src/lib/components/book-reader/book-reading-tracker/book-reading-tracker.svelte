@@ -53,7 +53,7 @@
     tap,
     throttleTime
   } from 'rxjs';
-  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { quintInOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
 
@@ -242,6 +242,8 @@
     }
   }
 
+  let yomiPopover: HTMLElement | null;
+  let jpdbPopover: HTMLElement | null;
   let actionInProgress = false;
   let hadError = false;
   let pausedByAutoPause = false;
@@ -279,6 +281,8 @@
     statisticsSaved: void;
     trackerMenuClosed: void;
   }>();
+  const yomiObserver = new MutationObserver(handleYomiMutation);
+  const dictionaryObserver = new MutationObserver(handleMutation);
 
   const readingTracker$ = isTrackerPaused$.pipe(
     switchMap((isPaused) => {
@@ -356,21 +360,77 @@
     );
   }
 
+  $: if ($trackerAutoPause$ !== TrackerAutoPause.OFF && !yomiPopover) {
+    yomiPopover = document.querySelector(
+      '.yomichan-popup,.yomichan-float,.yomitan-popup,.yomitan-float'
+    );
+
+    if (!yomiPopover) {
+      yomiObserver.observe(document.body, { childList: true, subtree: false });
+    }
+  } else {
+    yomiObserver.disconnect();
+  }
+
+  $: if ($trackerAutoPause$ !== TrackerAutoPause.OFF && !$trackerPopupDetection$) {
+    if (yomiPopover) {
+      dictionaryObserver.observe(yomiPopover, { attributes: true });
+    }
+
+    if (jpdbPopover) {
+      dictionaryObserver.observe(jpdbPopover, { attributes: true });
+    }
+  } else {
+    dictionaryObserver.disconnect();
+  }
+
   onMount(init);
 
-  function handleBlur() {
-    if ($trackerAutoPause$ !== TrackerAutoPause.STRICT || $isTrackerPaused$) {
+  onDestroy(() => {
+    yomiObserver.disconnect();
+    dictionaryObserver.disconnect();
+  });
+
+  function handleYomiMutation() {
+    yomiPopover = document.querySelector(
+      '.yomichan-popup,.yomichan-float,.yomitan-popup,.yomitan-float'
+    );
+
+    if (yomiPopover) {
+      yomiObserver.disconnect();
+    }
+  }
+
+  function handleMutation() {
+    if (!jpdbPopover && !yomiPopover) {
       return;
     }
 
-    if ($trackerPopupDetection$) {
-      const elm = document.querySelector(
-        '.yomichan-popup,.yomichan-float,.yomitan-popup,.yomitan-float'
-      ) as HTMLElement | null;
+    const isDisplayed = isDictionaryDisplayed();
 
-      if (elm && elm.style.visibility !== 'hidden') {
-        return;
-      }
+    if (isDisplayed && !$isTrackerPaused$) {
+      pausedByAutoPause = true;
+      isTrackerPaused$.next(true);
+    } else if (!isDisplayed && $isTrackerPaused$ && !wasTrackerPaused && pausedByAutoPause) {
+      pausedByAutoPause = false;
+      isTrackerPaused$.next(false);
+    }
+  }
+
+  function isDictionaryDisplayed() {
+    return (
+      (yomiPopover && yomiPopover.style.visibility !== 'hidden') ||
+      (jpdbPopover && jpdbPopover.style.opacity !== '0')
+    );
+  }
+
+  function handleBlur() {
+    if (
+      $isTrackerPaused$ ||
+      $trackerAutoPause$ !== TrackerAutoPause.STRICT ||
+      ($trackerPopupDetection$ && isDictionaryDisplayed())
+    ) {
+      return;
     }
 
     pausedByAutoPause = true;
@@ -378,14 +438,18 @@
   }
 
   function handleFocus() {
-    if ($trackerAutoPause$ !== TrackerAutoPause.STRICT) {
+    if (
+      !$isTrackerPaused$ ||
+      !pausedByAutoPause ||
+      wasTrackerPaused ||
+      $trackerAutoPause$ !== TrackerAutoPause.STRICT ||
+      (!$trackerPopupDetection$ && isDictionaryDisplayed())
+    ) {
       return;
     }
 
-    if ($isTrackerPaused$ && !wasTrackerPaused && pausedByAutoPause) {
-      pausedByAutoPause = false;
-      isTrackerPaused$.next(false);
-    }
+    pausedByAutoPause = false;
+    isTrackerPaused$.next(false);
   }
 
   function updateLastExploredCharCount() {
@@ -455,10 +519,20 @@
       return;
     }
 
-    if (state === 'hidden' && !$isTrackerPaused$) {
+    if (
+      state === 'hidden' &&
+      !$isTrackerPaused$ &&
+      (!$trackerPopupDetection$ || !isDictionaryDisplayed())
+    ) {
       pausedByAutoPause = true;
       isTrackerPaused$.next(true);
-    } else if ($isTrackerPaused$ && !wasTrackerPaused && pausedByAutoPause) {
+    } else if (
+      state === 'visible' &&
+      $isTrackerPaused$ &&
+      pausedByAutoPause &&
+      !wasTrackerPaused &&
+      ($trackerPopupDetection$ || !isDictionaryDisplayed())
+    ) {
       pausedByAutoPause = false;
       isTrackerPaused$.next(false);
     }
@@ -473,6 +547,7 @@
   async function init() {
     try {
       todayKey = getDateKey($startDayHoursForTracker$);
+      jpdbPopover = document.getElementById('jpdb-popup');
 
       const statisticsForTitle = await database.getStatisticsForBook(bookTitle);
       const setFirstBookReadResult = await database.setFirstBookRead(
