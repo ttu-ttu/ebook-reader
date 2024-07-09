@@ -364,7 +364,7 @@ export class GDriveStorageHandler extends ApiStorageHandler {
           bookCard.progress = progress;
           bookCard.lastBookmarkModified = lastBookmarkModified;
         } else if (file.name.startsWith('cover_') && file.thumbnailLink) {
-          bookCard.imagePath = file.thumbnailLink;
+          bookCard.imagePath = file.thumbnailLink.replace(/=s\d+$/, '=s720');
         }
       }
 
