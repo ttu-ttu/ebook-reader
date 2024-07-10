@@ -126,7 +126,7 @@
       return;
     }
 
-    window.opener.postMessage(
+    /*     window.opener.postMessage(
       {
         type: 'failure',
         payload: {
@@ -135,7 +135,7 @@
         }
       },
       origin
-    );
+    ); */
   }
 
   function checkAuthResponse(
