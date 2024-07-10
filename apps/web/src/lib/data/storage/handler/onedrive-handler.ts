@@ -14,6 +14,8 @@ import pLimit from 'p-limit';
 
 interface OneDriveFile extends ExternalFile {
   thumbnails?: ExternalThumbnail[];
+  file: Record<string, string>;
+  folder: Record<string, string>;
 }
 
 interface BatchRequest {
@@ -302,7 +304,7 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
     params.append('select', `id,name`);
 
     if (body) {
-      const { uploadUrl } = await this.request(
+      const { uploadUrl: uploadUrlResponse } = await this.request(
         `${this.baseEndpoint}/${
           remoteFile ? `${remoteFile.id}` : `${folderId}:/${encodeURIComponent(name)}:`
         }/createUploadSession`,
@@ -316,6 +318,20 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
           })
         }
       );
+
+      const url = new URL(uploadUrlResponse);
+      const searchParams = [...url.searchParams];
+      const uploadUrl = `${url.origin}${url.pathname}`;
+
+      params.delete('select');
+
+      for (let index = 0, { length } = searchParams; index < length; index += 1) {
+        const [paramName, paramValue] = searchParams[index];
+
+        params.append(paramName, paramValue);
+      }
+
+      params.append('select', `id,name`);
 
       if (!uploadUrl) {
         throw new Error('Upload url was not returned');
@@ -389,8 +405,11 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
     } else {
       const params = new URLSearchParams();
 
-      params.append('filter', listFiles ? 'file ne null' : 'folder ne null');
-      params.append('select', `id,name`);
+      params.append('select', `id,name,file,folder`);
+
+      if (!listFiles) {
+        params.append('filter', 'folder ne null');
+      }
 
       if (withThumbnail) {
         params.append('expand', `thumbnails`);
@@ -400,7 +419,11 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
     }
 
     if (response) {
-      files.push(...(response.value || []));
+      files.push(
+        ...(response.value || []).filter(
+          (item: OneDriveFile) => (listFiles && !!item.file) || (!listFiles && !!item.folder)
+        )
+      );
 
       if (response['@odata.nextLink']) {
         await this.list(parent, withThumbnail, listFiles, files, response?.['@odata.nextLink']);
