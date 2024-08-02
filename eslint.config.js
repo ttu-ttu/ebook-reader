@@ -55,6 +55,10 @@ module.exports = tseslint.config(
   {
     files: ['**/!(*.d).ts'],
     rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
+      ],
       'headers/header-format': [
         'error',
         {
