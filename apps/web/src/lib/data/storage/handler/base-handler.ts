@@ -779,7 +779,7 @@ export abstract class BaseStorageHandler {
         default:
           return 'jpeg';
       }
-    } catch (error) {
+    } catch (_error) {
       return 'jpeg';
     }
   }
