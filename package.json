@@ -34,7 +34,7 @@
     "svelte": "4.2.18",
     "svelte-eslint-parser": "0.41.0",
     "typescript": "5.5.4",
-    "typescript-eslint": "8.0.0"
+    "typescript-eslint": "8.0.1"
   },
   "lint-staged": {
     "*.{js,cjs,mjs,ts,svelte}": [
