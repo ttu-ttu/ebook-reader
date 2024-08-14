@@ -110,10 +110,14 @@ export function convertRemToPixels(window: Window, rem: number) {
   return rem * parseFloat(window.getComputedStyle(document.documentElement).fontSize);
 }
 
-export function getExternalTargetElement(source: Document | Element, selector: string) {
+export function getExternalTargetElement(
+  source: Document | Element,
+  selector: string,
+  uselast = true
+) {
   const elements = [...source.querySelectorAll<HTMLSpanElement>(selector)].filter(
     externalTargetFilterFunction
   );
 
-  return elements[elements.length - 1];
+  return uselast ? elements[elements.length - 1] : elements[0];
 }
