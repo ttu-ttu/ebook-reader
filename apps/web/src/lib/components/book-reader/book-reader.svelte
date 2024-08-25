@@ -159,7 +159,8 @@
     tap((contentEl) => {
       mutationObserver.disconnect();
       mutationObserver.observe(contentEl, { attributes: true });
-    })
+    }),
+    reduceToEmptyString()
   );
 
   $: width$.next(width);
