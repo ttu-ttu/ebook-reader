@@ -304,12 +304,21 @@
       return { scroll: true, rect };
     }
 
+    const footerElement = verticalMode ? null : document.getElementById('ttu-page-footer');
     const {
       elTopReferencePoint,
       elLeftReferencePoint,
       elBottomReferencePoint,
       elRightReferencePoint
-    } = getReferencePoints(window, contentEl, verticalMode, firstDimensionMargin);
+    } = getReferencePoints(
+      window,
+      contentEl,
+      verticalMode,
+      firstDimensionMargin,
+      !verticalMode && footerElement
+        ? Number.parseFloat(getComputedStyle(footerElement).height.replace('px', ''))
+        : 0
+    );
 
     if (verticalMode) {
       return {
