@@ -1621,6 +1621,7 @@
 {/if}
 
 <div
+  id="ttu-page-footer"
   tabindex="0"
   role="button"
   class="writing-horizontal-tb fixed bottom-0 left-0 z-10 flex h-8 w-full items-center justify-between text-xs leading-none"
