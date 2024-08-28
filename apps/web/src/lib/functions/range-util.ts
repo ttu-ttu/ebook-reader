@@ -80,7 +80,8 @@ export function getReferencePoints(
   window: Window,
   element: Element,
   verticalMode: boolean,
-  firstDimensionMarginValue: number
+  firstDimensionMarginValue: number,
+  bottomGap = 0
 ) {
   const firstDimensionMargin = Math.min(
     Math.max(firstDimensionMarginValue, 0),
@@ -94,7 +95,7 @@ export function getReferencePoints(
   const elTopReferencePoint = verticalMode ? rect.top : firstDimensionMargin;
   const elBottomReferencePoint = verticalMode
     ? rect.bottom
-    : window.innerHeight - firstDimensionMargin;
+    : window.innerHeight - firstDimensionMargin - bottomGap;
   const pointGap = Number(getComputedStyle(element).lineHeight.replace(/px$/, ''));
 
   return {
