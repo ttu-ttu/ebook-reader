@@ -292,7 +292,7 @@
   }
 
   function needScroll(selector: string, scrollMode: string) {
-    const targetElement = getExternalTargetElement(document, selector, false);
+    const targetElement = getExternalTargetElement(document, selector, !verticalMode);
 
     if (!targetElement || !contentEl) {
       return { scroll: false, rect: { top: 0, right: 0, bottom: 0, left: 0 } };
