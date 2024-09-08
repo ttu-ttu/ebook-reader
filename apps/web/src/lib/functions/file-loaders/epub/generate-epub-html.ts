@@ -139,12 +139,15 @@ export default function generateEpubHtml(
       htmlHref = itemIdToHtmlRef[itemIdRef];
     }
 
-    const regexResult = /.*<body(?:[^>]*id="(?<id>.+?)")*[^>]*>(?<body>(.|\s)+)<\/body>.*/.exec(
-      data[htmlHref] as string
-    )!;
+    const contentParser = new DOMParser();
+    const parsedContent = contentParser.parseFromString(data[htmlHref] as string, 'text/html');
 
-    const bodyId = regexResult?.groups?.id || '';
-    let innerHtml = regexResult?.groups?.body || '';
+    const htmlClass = parsedContent.querySelector('html')?.className || '';
+
+    const body = parsedContent.querySelector('body');
+    const bodyId = body?.id || '';
+    const bodyClass = body?.className || '';
+    let innerHtml = body?.innerHTML || '';
 
     blobLocations.forEach((blobLocation) => {
       innerHtml = innerHtml.replaceAll(
@@ -152,19 +155,25 @@ export default function generateEpubHtml(
         buildDummyBookImage(blobLocation)
       );
     });
-    const childDiv = document.createElement('div');
-    childDiv.innerHTML = innerHtml;
-    childDiv.id = `${prependValue}${itemIdRef}`;
 
+    const childBodyDiv = document.createElement('div');
+    childBodyDiv.className = bodyClass;
     if (bodyId) {
-      const anchorHelper = document.createElement('span');
-      anchorHelper.id = bodyId;
-      childDiv.prepend(anchorHelper);
+      childBodyDiv.id = bodyId;
     }
+    childBodyDiv.innerHTML = innerHtml;
 
-    result.appendChild(childDiv);
+    const childHtmlDiv = document.createElement('div');
+    childHtmlDiv.className = htmlClass;
+    childHtmlDiv.appendChild(childBodyDiv);
 
-    currentCharCount += countForElement(childDiv);
+    const childWrapperDiv = document.createElement('div');
+    childWrapperDiv.id = `${prependValue}${itemIdRef}`;
+    childWrapperDiv.appendChild(childHtmlDiv);
+
+    result.appendChild(childWrapperDiv);
+
+    currentCharCount += countForElement(childWrapperDiv);
 
     const mainChapterIndex = mainChapters.findIndex((chapter) =>
       chapter.reference.includes(htmlHref.split('/').pop() || '')
