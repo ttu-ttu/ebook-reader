@@ -142,11 +142,11 @@ export default function generateEpubHtml(
     let parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/html');
     let body = parsedContent.body;
 
-    if (!body?.childElementCount) {
+    if (!body?.childNodes?.length) {
       parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/xml');
       body = parsedContent.querySelector('body'); // XMLDocument doesn't seem to have the body property
 
-      if (!body?.childElementCount) {
+      if (!body?.childNodes?.length) {
         throw new Error('Unable to find body tag while parsing EPUB content');
       }
     }
