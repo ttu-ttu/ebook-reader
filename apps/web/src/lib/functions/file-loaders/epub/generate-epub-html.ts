@@ -139,12 +139,11 @@ export default function generateEpubHtml(
       htmlHref = itemIdToHtmlRef[itemIdRef];
     }
 
-    const contentParser = new DOMParser();
-    const parsedContent = contentParser.parseFromString(data[htmlHref] as string, 'text/html');
+    const parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/html');
 
     const htmlClass = parsedContent.querySelector('html')?.className || '';
 
-    const body = parsedContent.querySelector('body');
+    const body = parsedContent.body;
     const bodyId = body?.id || '';
     const bodyClass = body?.className || '';
     let innerHtml = body?.innerHTML || '';
