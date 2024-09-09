@@ -156,14 +156,14 @@ export default function generateEpubHtml(
     });
 
     const childBodyDiv = document.createElement('div');
-    childBodyDiv.className = bodyClass;
+    childBodyDiv.className = `ttu-book-body-wrapper ${bodyClass}`;
     if (bodyId) {
       childBodyDiv.id = bodyId;
     }
     childBodyDiv.innerHTML = innerHtml;
 
     const childHtmlDiv = document.createElement('div');
-    childHtmlDiv.className = htmlClass;
+    childHtmlDiv.className = `ttu-book-html-wrapper ${htmlClass}`;
     childHtmlDiv.appendChild(childBodyDiv);
 
     const childWrapperDiv = document.createElement('div');
