@@ -147,7 +147,7 @@ export default function generateEpubHtml(
       body = parsedContent.querySelector('body'); // XMLDocument doesn't seem to have the body property
 
       if (!body?.childNodes?.length) {
-        throw new Error('Unable to find body tag while parsing EPUB content');
+        throw new Error('Unable to find valid body content while parsing EPUB');
       }
     }
 
