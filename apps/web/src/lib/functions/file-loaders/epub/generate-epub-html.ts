@@ -139,14 +139,22 @@ export default function generateEpubHtml(
       htmlHref = itemIdToHtmlRef[itemIdRef];
     }
 
-    const parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/html');
+    let parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/html');
+    let body = parsedContent.body;
+
+    if (!body?.childElementCount) {
+      parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/xml');
+      body = parsedContent.querySelector('body'); // XMLDocument doesn't seem to have the body property
+
+      if (!body?.childElementCount) {
+        throw new Error('Unable to find body tag while parsing EPUB content');
+      }
+    }
 
     const htmlClass = parsedContent.querySelector('html')?.className || '';
-
-    const body = parsedContent.body;
-    const bodyId = body?.id || '';
-    const bodyClass = body?.className || '';
-    let innerHtml = body?.innerHTML || '';
+    const bodyId = body.id || '';
+    const bodyClass = body.className || '';
+    let innerHtml = body.innerHTML || '';
 
     blobLocations.forEach((blobLocation) => {
       innerHtml = innerHtml.replaceAll(
