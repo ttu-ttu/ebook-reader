@@ -139,12 +139,22 @@ export default function generateEpubHtml(
       htmlHref = itemIdToHtmlRef[itemIdRef];
     }
 
-    const regexResult = /.*<body(?:[^>]*id="(?<id>.+?)")*[^>]*>(?<body>(.|\s)+)<\/body>.*/.exec(
-      data[htmlHref] as string
-    )!;
+    let parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/html');
+    let body = parsedContent.body;
 
-    const bodyId = regexResult?.groups?.id || '';
-    let innerHtml = regexResult?.groups?.body || '';
+    if (!body?.childNodes?.length) {
+      parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/xml');
+      body = parsedContent.querySelector('body'); // XMLDocument doesn't seem to have the body property
+
+      if (!body?.childNodes?.length) {
+        throw new Error('Unable to find valid body content while parsing EPUB');
+      }
+    }
+
+    const htmlClass = parsedContent.querySelector('html')?.className || '';
+    const bodyId = body.id || '';
+    const bodyClass = body.className || '';
+    let innerHtml = body.innerHTML || '';
 
     blobLocations.forEach((blobLocation) => {
       innerHtml = innerHtml.replaceAll(
@@ -152,19 +162,25 @@ export default function generateEpubHtml(
         buildDummyBookImage(blobLocation)
       );
     });
-    const childDiv = document.createElement('div');
-    childDiv.innerHTML = innerHtml;
-    childDiv.id = `${prependValue}${itemIdRef}`;
 
+    const childBodyDiv = document.createElement('div');
+    childBodyDiv.className = `ttu-book-body-wrapper ${bodyClass}`;
     if (bodyId) {
-      const anchorHelper = document.createElement('span');
-      anchorHelper.id = bodyId;
-      childDiv.prepend(anchorHelper);
+      childBodyDiv.id = bodyId;
     }
+    childBodyDiv.innerHTML = innerHtml;
 
-    result.appendChild(childDiv);
+    const childHtmlDiv = document.createElement('div');
+    childHtmlDiv.className = `ttu-book-html-wrapper ${htmlClass}`;
+    childHtmlDiv.appendChild(childBodyDiv);
 
-    currentCharCount += countForElement(childDiv);
+    const childWrapperDiv = document.createElement('div');
+    childWrapperDiv.id = `${prependValue}${itemIdRef}`;
+    childWrapperDiv.appendChild(childHtmlDiv);
+
+    result.appendChild(childWrapperDiv);
+
+    currentCharCount += countForElement(childWrapperDiv);
 
     const mainChapterIndex = mainChapters.findIndex((chapter) =>
       chapter.reference.includes(htmlHref.split('/').pop() || '')
