@@ -746,6 +746,13 @@
     column-gap: 40px;
     column-fill: auto;
     height: var(--book-content-child-height, 95vh);
+
+    :global(.ttu-illustration-container) {
+      display: flex !important;
+      justify-content: center !important;
+      max-width: var(--book-content-image-max-width, 95vh) !important;
+      max-height: var(--book-content-child-height, 95vh) !important;
+    }
   }
 
   .book-content {
@@ -772,6 +779,30 @@
       column-width: var(--book-content-child-height, 100vh);
       width: 100%;
       height: auto;
+    }
+
+    :global(.book-content-container > *:not(.ttu-book-html-wrapper) > *:has(ruby):has(rt)),
+    :global(
+        .book-content-container
+          > div.ttu-book-html-wrapper
+          > div.ttu-book-body-wrapper
+          > *
+          > *:has(ruby):has(rt)
+      ) {
+      padding-right: 10px !important;
+    }
+  }
+
+  .book-content--writing-horizontal-rl {
+    :global(.book-content-container > *:not(.ttu-book-html-wrapper) > *:has(ruby):has(rt)),
+    :global(
+        .book-content-container
+          > div.ttu-book-html-wrapper
+          > div.ttu-book-body-wrapper
+          > *
+          > *:has(ruby):has(rt)
+      ) {
+      padding-top: 10px !important;
     }
   }
 </style>
