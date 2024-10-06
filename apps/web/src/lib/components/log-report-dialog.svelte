@@ -57,7 +57,8 @@
     lastReadingGoalsModified$,
     isOnline$,
     multiplier$,
-    showCharacterCounter$
+    showCharacterCounter$,
+    enableReaderWakeLock$
   } from '$lib/data/store';
 
   export let title = 'Error';
@@ -88,6 +89,7 @@
           swipeThreshold: swipeThreshold$.getValue(),
           disableWheelNavigation: disableWheelNavigation$.getValue(),
           writingMode: writingMode$.getValue(),
+          enableReaderWakeLock: enableReaderWakeLock$.getValue(),
           showCharacterCounter$: showCharacterCounter$.getValue(),
           confirmClose: confirmClose$.getValue(),
           autoBookmark: autoBookmark$.getValue(),
