@@ -302,6 +302,22 @@ export abstract class BaseStorageHandler {
     return `${BaseStorageHandler.readingGoalsFilePrefix}${exporterVersion}_${currentDbVersion}_${lastGoalModified}.json`;
   }
 
+  static getImageMimeTypeFromExtension(value: string) {
+    const extension = value.split('.').pop()?.toLowerCase() || '';
+
+    switch (extension) {
+      case 'svg':
+        return `image/svg+xml`;
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+        return `image/${extension}`;
+      default:
+        return 'image/jpeg';
+    }
+  }
+
   protected static checkIsPresentAndUpToDate<T>(
     functionToCall: (_: string) => any,
     keyToCheck: keyof T,
@@ -570,7 +586,7 @@ export abstract class BaseStorageHandler {
               const existingBlobEntries = bookObject.blobs || {};
 
               existingBlobEntries[imagePath] = await this.readFromZip(
-                new BlobWriter(),
+                new BlobWriter(BaseStorageHandler.getImageMimeTypeFromExtension(imagePath)),
                 'Unable to read blob data',
                 entry,
                 progressPerStep
@@ -578,7 +594,7 @@ export abstract class BaseStorageHandler {
               bookObject.blobs = existingBlobEntries;
             } else if (entry.filename.startsWith('cover.')) {
               bookObject.coverImage = await this.readFromZip(
-                new BlobWriter(),
+                new BlobWriter(BaseStorageHandler.getImageMimeTypeFromExtension(entry.filename)),
                 'Unable to read cover data',
                 entry,
                 progressPerStep

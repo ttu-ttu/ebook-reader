@@ -21,7 +21,10 @@
       objectUrl = '';
     }
     if (typeof value !== 'string') {
-      objectUrl = URL.createObjectURL(value);
+      objectUrl = URL.createObjectURL(
+        value.type ? value : new Blob([value], { type: 'image/jpeg' })
+      );
+
       return objectUrl;
     }
 
