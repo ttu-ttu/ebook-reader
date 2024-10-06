@@ -4,13 +4,17 @@
  * All rights reserved.
  */
 
-import { NEVER, fromEvent, merge, take, tap } from 'rxjs';
+import { NEVER, filter, fromEvent, merge, switchMap, take, takeUntil, tap, timer } from 'rxjs';
 
 import { FuriganaStyle } from '../../data/furigana-style';
 import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
 import { toggleImageGalleryPictureSpoiler$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
 
-export function reactiveElements(document: Document, furiganaStyle: FuriganaStyle) {
+export function reactiveElements(
+  document: Document,
+  furiganaStyle: FuriganaStyle,
+  hideSpoilerImage: boolean
+) {
   const anchorTagDocumentListener = anchorTagListener(document);
   const spoilerImageDocumentListener = spoilerImageListener(document);
 
@@ -18,7 +22,8 @@ export function reactiveElements(document: Document, furiganaStyle: FuriganaStyl
     merge(
       anchorTagDocumentListener(contentEl),
       rubyTagListener(contentEl, furiganaStyle),
-      spoilerImageDocumentListener(contentEl)
+      spoilerImageDocumentListener(contentEl),
+      openImageInNewTab(contentEl, hideSpoilerImage)
     );
 }
 
@@ -81,12 +86,37 @@ function spoilerImageListener(document: Document) {
           el.removeChild(spoilerLabelEl);
           el.removeAttribute('data-ttu-spoiler-img');
 
+          imageElement?.classList.add('ttu-unspoilered');
+
           toggleImageGalleryPictureSpoiler(imageElement, true);
         })
       );
     });
     return merge(...obs$);
   };
+}
+
+function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
+  return merge(
+    ...[...contentEl.querySelectorAll('img,image')].map((elm) =>
+      fromEvent(elm, 'pointerdown').pipe(
+        switchMap(() => timer(1000).pipe(takeUntil(fromEvent(elm, 'pointerup')))),
+        filter(
+          () =>
+            !hideSpoilerImage ||
+            elm.classList.contains('ttu-unspoilered') ||
+            !elm.closest('span[data-ttu-spoiler-img]')
+        ),
+        tap(() => {
+          const src = elm.getAttribute('src') || elm.getAttribute('href');
+
+          if (src) {
+            window.open(src, '_blank');
+          }
+        })
+      )
+    )
+  );
 }
 
 function toggleImageGalleryPictureSpoiler(imageElement: Element | null, unspoilered: boolean) {

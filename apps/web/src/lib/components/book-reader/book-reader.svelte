@@ -158,7 +158,7 @@
 
   const reactiveElements$ = iffBrowser(() => of(document)).pipe(
     mergeMap((document) => {
-      const reactiveElementsFn = reactiveElements(document, furiganaStyle);
+      const reactiveElementsFn = reactiveElements(document, furiganaStyle, hideSpoilerImage);
       return contentEl$.pipe(mergeMap((contentEl) => reactiveElementsFn(contentEl)));
     }),
     reduceToEmptyString()
