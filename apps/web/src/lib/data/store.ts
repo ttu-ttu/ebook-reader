@@ -82,6 +82,10 @@ export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()(
   'writingMode',
   'vertical-rl'
 );
+export const enableReaderWakeLock$ = writableBooleanLocalStorageSubject()(
+  'enableReaderWakeLock',
+  false
+);
 export const verticalMode$ = writingMode$.pipe(map((writingMode) => writingMode === 'vertical-rl'));
 export const showCharacterCounter$ = writableBooleanLocalStorageSubject()(
   'showCharacterCounter',

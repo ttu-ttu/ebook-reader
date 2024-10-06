@@ -16,6 +16,7 @@
     confirmClose$,
     customReadingPointEnabled$,
     disableWheelNavigation$,
+    enableReaderWakeLock$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -117,6 +118,7 @@
       bind:hideFurigana={$hideFurigana$}
       bind:furiganaStyle={$furiganaStyle$}
       bind:writingMode={$writingMode$}
+      bind:enableReaderWakeLock={$enableReaderWakeLock$}
       bind:showCharacterCounter={$showCharacterCounter$}
       bind:viewMode={$viewMode$}
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
