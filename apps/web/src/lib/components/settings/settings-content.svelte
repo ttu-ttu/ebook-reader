@@ -72,6 +72,8 @@
 
   export let writingMode: WritingMode;
 
+  export let enableReaderWakeLock: boolean;
+
   export let showCharacterCounter: boolean;
 
   export let secondDimensionMaxValue: number;
@@ -304,6 +306,7 @@
   let autoReplicationTypeTooltip = '';
   let trackerAutoPauseTooltip = '';
 
+  $: wakeLockSupported = browser && 'wakeLock' in navigator;
   $: verticalMode = writingMode === 'vertical-rl';
   $: fontCacheSupported = browser && 'caches' in window;
   $: switch (furiganaStyle) {
@@ -562,6 +565,17 @@
     <SettingsItemGroup title="Writing mode">
       <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
     </SettingsItemGroup>
+    {#if wakeLockSupported}
+      <SettingsItemGroup
+        title="Enable Screen Lock"
+        tooltip={'When enabled the reader site attempts to request a WakeLock that prevents device screens from dimming or locking'}
+      >
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={enableReaderWakeLock}
+        />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup title="Show Character Counter">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showCharacterCounter} />
     </SettingsItemGroup>
