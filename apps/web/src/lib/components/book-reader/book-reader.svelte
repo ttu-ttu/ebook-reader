@@ -22,10 +22,12 @@
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { writableSubject } from '$lib/functions/svelte/store';
+  import { logger } from '$lib/data/logger';
   import { imageLoadingState } from './image-loading-state';
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
+  import { enableReaderWakeLock$ } from '$lib/data/store';
   import { onDestroy } from 'svelte';
 
   export let htmlContent: string;
@@ -102,6 +104,10 @@
 
   let showBlurMessage = false;
 
+  let wakeLock: WakeLockSentinel | undefined;
+
+  let visibilityState: DocumentVisibilityState;
+
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
   const width$ = new Subject<number>();
@@ -115,7 +121,15 @@
       ? firstDimensionMargin * 2
       : 0;
 
-  onDestroy(() => mutationObserver.disconnect());
+  $: if ($enableReaderWakeLock$ && visibilityState === 'visible') {
+    setTimeout(requestWakeLock, 500);
+  }
+
+  onDestroy(() => {
+    mutationObserver.disconnect();
+
+    releaseWakeLock();
+  });
 
   const computedStyle$ = combineLatest([
     containerEl$.pipe(filter((el): el is HTMLElement => !!el)),
@@ -192,6 +206,32 @@
     }
 
     showBlurMessage = mutation.target.style.filter.includes('blur');
+  }
+
+  async function requestWakeLock() {
+    if (wakeLock && !wakeLock.released) {
+      return;
+    }
+
+    wakeLock = await navigator.wakeLock.request().catch(({ message }) => {
+      logger.error(`failed to request wakelock: ${message}`);
+
+      return undefined;
+    });
+
+    if (wakeLock) {
+      wakeLock.addEventListener('release', releaseWakeLock, false);
+    }
+  }
+
+  async function releaseWakeLock() {
+    if (wakeLock && !wakeLock.released) {
+      await wakeLock.release().catch(() => {
+        // no-op
+      });
+    }
+
+    wakeLock = undefined;
   }
 </script>
 
@@ -282,3 +322,4 @@
 </div>
 {$blurListener$ ?? ''}
 {$reactiveElements$ ?? ''}
+<svelte:document bind:visibilityState />
