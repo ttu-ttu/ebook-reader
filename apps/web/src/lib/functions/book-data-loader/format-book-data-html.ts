@@ -7,6 +7,7 @@
 import { BlurMode } from '$lib/data/blur-mode';
 import type { BooksDbBookData } from '$lib/data/database/books-db/versions/books-db';
 import { Observable } from 'rxjs';
+import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
 import buildDummyBookImage from '$lib/functions/file-loaders/utils/build-dummy-book-image';
 import { isElementGaiji } from '$lib/functions/is-element-gaiji';
 import { map } from 'rxjs/operators';
@@ -46,7 +47,11 @@ function getHtmlWithImageSource(bookData: BooksDbBookData, isPaginated: boolean)
     let { elementHtml } = bookData;
 
     Object.entries(blobs).forEach(([key, value]) => {
-      const url = URL.createObjectURL(value);
+      const url = URL.createObjectURL(
+        value.type
+          ? value
+          : new Blob([value], { type: BaseStorageHandler.getImageMimeTypeFromExtension(key) })
+      );
       const dummyUrl = buildDummyBookImage(key);
 
       objectUrls.push(url);
