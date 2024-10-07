@@ -22,6 +22,7 @@
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { writableSubject } from '$lib/functions/svelte/store';
+  import { isMobile$ } from '$lib/functions/utils';
   import { logger } from '$lib/data/logger';
   import { imageLoadingState } from './image-loading-state';
   import { reactiveElements } from './reactive-elements';
@@ -158,7 +159,13 @@
 
   const reactiveElements$ = iffBrowser(() => of(document)).pipe(
     mergeMap((document) => {
-      const reactiveElementsFn = reactiveElements(document, furiganaStyle, hideSpoilerImage);
+      const reactiveElementsFn = reactiveElements(
+        document,
+        furiganaStyle,
+        hideSpoilerImage,
+        $isMobile$ &&
+          (navigator.standalone || window.matchMedia('(display-mode: standalone)').matches)
+      );
       return contentEl$.pipe(mergeMap((contentEl) => reactiveElementsFn(contentEl)));
     }),
     reduceToEmptyString()

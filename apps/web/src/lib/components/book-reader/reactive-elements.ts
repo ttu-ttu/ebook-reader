@@ -26,7 +26,8 @@ import { toggleImageGalleryPictureSpoiler$ } from '$lib/components/book-reader/b
 export function reactiveElements(
   document: Document,
   furiganaStyle: FuriganaStyle,
-  hideSpoilerImage: boolean
+  hideSpoilerImage: boolean,
+  includeImgTag: boolean
 ) {
   const anchorTagDocumentListener = anchorTagListener(document);
   const spoilerImageDocumentListener = spoilerImageListener(document);
@@ -36,7 +37,7 @@ export function reactiveElements(
       anchorTagDocumentListener(contentEl),
       rubyTagListener(contentEl, furiganaStyle),
       spoilerImageDocumentListener(contentEl),
-      openImageInNewTab(contentEl, hideSpoilerImage)
+      openImageInNewTab(contentEl, hideSpoilerImage, includeImgTag)
     );
 }
 
@@ -109,51 +110,61 @@ function spoilerImageListener(document: Document) {
   };
 }
 
-function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
+function openImageInNewTab(
+  contentEl: HTMLElement,
+  hideSpoilerImage: boolean,
+  includeImgTag: boolean
+) {
   return merge(
-    ...[...contentEl.querySelectorAll<HTMLElement>('image')].map((elm) =>
-      fromEvent(elm, 'pointerdown').pipe(
-        switchMap((event) => {
-          const { clientX, clientY } = event as PointerEvent;
+    ...[...contentEl.querySelectorAll<HTMLElement>(`${includeImgTag ? 'img,' : ''}image`)].map(
+      (elm) =>
+        fromEvent(elm, 'pointerdown').pipe(
+          switchMap((event) => {
+            const { clientX, clientY } = event as PointerEvent;
 
-          return timer(1000).pipe(
-            takeUntil(
-              race(
-                fromEvent(elm, 'pointermove').pipe(
-                  throttleTime(200, undefined, { trailing: true }),
-                  filter((event2) => {
-                    const { clientX: newX, clientY: newY } = event2 as PointerEvent;
+            return timer(1000).pipe(
+              takeUntil(
+                race(
+                  fromEvent(elm, 'pointermove').pipe(
+                    throttleTime(200, undefined, { trailing: true }),
+                    filter((event2) => {
+                      const { clientX: newX, clientY: newY } = event2 as PointerEvent;
 
-                    return Math.abs(clientX - newX) > 5 || Math.abs(clientY - newY) > 5;
-                  })
-                ),
-                fromEvent(elm, 'pointerup'),
-                fromEvent(elm, 'pointercancel')
+                      return Math.abs(clientX - newX) > 5 || Math.abs(clientY - newY) > 5;
+                    })
+                  ),
+                  fromEvent(elm, 'pointerup'),
+                  fromEvent(elm, 'pointercancel')
+                )
               )
-            )
-          );
-        }),
-        filter(
-          () =>
-            !hideSpoilerImage ||
-            elm.classList.contains('ttu-unspoilered') ||
-            !elm.closest('span[data-ttu-spoiler-img]')
-        ),
-        switchMap(() => {
-          pulseElement(elm.parentElement ? elm.parentElement : elm, 'add', 0.5, 500);
+            );
+          }),
+          filter(
+            () =>
+              !hideSpoilerImage ||
+              elm.classList.contains('ttu-unspoilered') ||
+              !elm.closest('span[data-ttu-spoiler-img]')
+          ),
+          switchMap(() => {
+            pulseElement(
+              elm.parentElement && elm.tagName.toLowerCase() === 'image' ? elm.parentElement : elm,
+              'add',
+              0.5,
+              500
+            );
 
-          return merge(fromEvent(elm, 'pointerup'), fromEvent(elm, 'pointercancel')).pipe(
-            take(1),
-            tap(() => {
-              const src = elm.getAttribute('src') || elm.getAttribute('href');
+            return merge(fromEvent(elm, 'pointerup'), fromEvent(elm, 'pointercancel')).pipe(
+              take(1),
+              tap(() => {
+                const src = elm.getAttribute('src') || elm.getAttribute('href');
 
-              if (src) {
-                window.open(src, '_blank');
-              }
-            })
-          );
-        })
-      )
+                if (src) {
+                  window.open(src, '_blank');
+                }
+              })
+            );
+          })
+        )
     )
   );
 }
