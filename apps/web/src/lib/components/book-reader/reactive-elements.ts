@@ -111,7 +111,7 @@ function spoilerImageListener(document: Document) {
 
 function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
   return merge(
-    ...[...contentEl.querySelectorAll<HTMLElement>('img,image')].map((elm) =>
+    ...[...contentEl.querySelectorAll<HTMLElement>('image')].map((elm) =>
       fromEvent(elm, 'pointerdown').pipe(
         switchMap((event) => {
           const { clientX, clientY } = event as PointerEvent;
@@ -127,7 +127,8 @@ function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
                     return Math.abs(clientX - newX) > 5 || Math.abs(clientY - newY) > 5;
                   })
                 ),
-                fromEvent(elm, 'pointerup')
+                fromEvent(elm, 'pointerup'),
+                fromEvent(elm, 'pointercancel')
               )
             )
           );
@@ -139,12 +140,7 @@ function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
             !elm.closest('span[data-ttu-spoiler-img]')
         ),
         switchMap(() => {
-          pulseElement(
-            elm.parentElement && elm.tagName.toLowerCase() === 'image' ? elm.parentElement : elm,
-            'add',
-            0.5,
-            500
-          );
+          pulseElement(elm.parentElement ? elm.parentElement : elm, 'add', 0.5, 500);
 
           return merge(fromEvent(elm, 'pointerup'), fromEvent(elm, 'pointercancel')).pipe(
             take(1),
