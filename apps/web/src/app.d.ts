@@ -15,6 +15,7 @@ declare global {
   }
   interface Navigator {
     msMaxTouchPoints: number;
+    standalone: boolean | undefined;
   }
 }
 
