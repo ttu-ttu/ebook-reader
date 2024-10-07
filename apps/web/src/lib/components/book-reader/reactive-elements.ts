@@ -27,7 +27,7 @@ export function reactiveElements(
   document: Document,
   furiganaStyle: FuriganaStyle,
   hideSpoilerImage: boolean,
-  includeImgTag: boolean
+  isExtendedMode: boolean
 ) {
   const anchorTagDocumentListener = anchorTagListener(document);
   const spoilerImageDocumentListener = spoilerImageListener(document);
@@ -37,7 +37,7 @@ export function reactiveElements(
       anchorTagDocumentListener(contentEl),
       rubyTagListener(contentEl, furiganaStyle),
       spoilerImageDocumentListener(contentEl),
-      openImageInNewTab(contentEl, hideSpoilerImage, includeImgTag)
+      openImageInNewTab(contentEl, hideSpoilerImage, isExtendedMode)
     );
 }
 
@@ -113,17 +113,19 @@ function spoilerImageListener(document: Document) {
 function openImageInNewTab(
   contentEl: HTMLElement,
   hideSpoilerImage: boolean,
-  includeImgTag: boolean
+  isExtendedMode: boolean
 ) {
   return merge(
-    ...[...contentEl.querySelectorAll<HTMLElement>(`${includeImgTag ? 'img,' : ''}image`)].map(
+    ...[...contentEl.querySelectorAll<HTMLElement>(`${isExtendedMode ? 'img,' : ''}image`)].map(
       (elm) => {
         elm.draggable = false;
 
         return merge(
           fromEvent(elm, 'contextmenu').pipe(
             tap((event) => {
-              event.preventDefault();
+              if (isExtendedMode) {
+                event.preventDefault();
+              }
             })
           ),
           fromEvent(elm, 'pointerdown').pipe(
