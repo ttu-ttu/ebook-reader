@@ -20,6 +20,7 @@ import {
 
 import { FuriganaStyle } from '../../data/furigana-style';
 import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
+import { pulseElement } from '$lib/functions/range-util';
 import { toggleImageGalleryPictureSpoiler$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
 
 export function reactiveElements(
@@ -110,7 +111,7 @@ function spoilerImageListener(document: Document) {
 
 function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
   return merge(
-    ...[...contentEl.querySelectorAll('img,image')].map((elm) =>
+    ...[...contentEl.querySelectorAll<HTMLElement>('img,image')].map((elm) =>
       fromEvent(elm, 'pointerdown').pipe(
         switchMap((event) => {
           const { clientX, clientY } = event as PointerEvent;
@@ -137,12 +138,24 @@ function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
             elm.classList.contains('ttu-unspoilered') ||
             !elm.closest('span[data-ttu-spoiler-img]')
         ),
-        tap(() => {
-          const src = elm.getAttribute('src') || elm.getAttribute('href');
+        switchMap(() => {
+          pulseElement(
+            elm.parentElement && elm.tagName.toLowerCase() === 'image' ? elm.parentElement : elm,
+            'add',
+            0.5,
+            500
+          );
 
-          if (src) {
-            window.open(src, '_blank');
-          }
+          return merge(fromEvent(elm, 'pointerup'), fromEvent(elm, 'pointercancel')).pipe(
+            take(1),
+            tap(() => {
+              const src = elm.getAttribute('src') || elm.getAttribute('href');
+
+              if (src) {
+                window.open(src, '_blank');
+              }
+            })
+          );
         })
       )
     )
