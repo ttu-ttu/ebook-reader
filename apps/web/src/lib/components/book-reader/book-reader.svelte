@@ -163,8 +163,7 @@
         document,
         furiganaStyle,
         hideSpoilerImage,
-        $isMobile$ &&
-          (navigator.standalone || window.matchMedia('(display-mode: fullscreen)').matches)
+        navigator.standalone || window.matchMedia('(display-mode: fullscreen)').matches
       );
       return contentEl$.pipe(mergeMap((contentEl) => reactiveElementsFn(contentEl)));
     }),
