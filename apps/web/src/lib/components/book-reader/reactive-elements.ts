@@ -4,7 +4,19 @@
  * All rights reserved.
  */
 
-import { NEVER, filter, fromEvent, merge, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import {
+  NEVER,
+  filter,
+  fromEvent,
+  merge,
+  race,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+  throttleTime,
+  timer
+} from 'rxjs';
 
 import { FuriganaStyle } from '../../data/furigana-style';
 import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
@@ -100,7 +112,25 @@ function openImageInNewTab(contentEl: HTMLElement, hideSpoilerImage: boolean) {
   return merge(
     ...[...contentEl.querySelectorAll('img,image')].map((elm) =>
       fromEvent(elm, 'pointerdown').pipe(
-        switchMap(() => timer(1000).pipe(takeUntil(fromEvent(elm, 'pointerup')))),
+        switchMap((event) => {
+          const { clientX, clientY } = event as PointerEvent;
+
+          return timer(1000).pipe(
+            takeUntil(
+              race(
+                fromEvent(elm, 'pointermove').pipe(
+                  throttleTime(200, undefined, { trailing: true }),
+                  filter((event2) => {
+                    const { clientX: newX, clientY: newY } = event2 as PointerEvent;
+
+                    return Math.abs(clientX - newX) > 5 || Math.abs(clientY - newY) > 5;
+                  })
+                ),
+                fromEvent(elm, 'pointerup')
+              )
+            )
+          );
+        }),
         filter(
           () =>
             !hideSpoilerImage ||
