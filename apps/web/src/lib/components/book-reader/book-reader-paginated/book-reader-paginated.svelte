@@ -748,8 +748,6 @@
     height: var(--book-content-child-height, 95vh);
 
     :global(.ttu-illustration-container) {
-      display: flex !important;
-      justify-content: center !important;
       max-width: var(--book-content-image-max-width, 95vh) !important;
       max-height: var(--book-content-child-height, 95vh) !important;
     }
