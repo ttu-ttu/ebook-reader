@@ -113,8 +113,11 @@ function addSpoilerTags(el: HTMLElement, document: Document, blurMode: BlurMode)
 
   const createWrapper = (tag: Element, childNode: Element) => {
     const imgWrapper = document.createElement('span');
-    imgWrapper.toggleAttribute('data-ttu-spoiler-img');
     const parentElement = tag.parentElement || childNode;
+
+    imgWrapper.classList.add('ttu-img-parent');
+    imgWrapper.toggleAttribute('data-ttu-spoiler-img');
+
     parentElement.insertBefore(imgWrapper, tag);
     imgWrapper.appendChild(tag);
   };
