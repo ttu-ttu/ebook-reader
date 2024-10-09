@@ -29,8 +29,9 @@
     }
   }
 
-  :global(.ttu-illustration-container) {
-    text-align: center;
+  :global(.ttu-img-parent) {
+    display: flex;
+    justify-content: center;
   }
 }
 
