@@ -31,7 +31,7 @@
     "prettier": "3.3.3",
     "prettier-plugin-svelte": "3.2.7",
     "prettier-plugin-tailwindcss": "0.6.8",
-    "svelte": "5.0.2",
+    "svelte": "5.0.3",
     "svelte-eslint-parser": "0.42.0",
     "typescript": "5.6.3",
     "typescript-eslint": "8.10.0"
