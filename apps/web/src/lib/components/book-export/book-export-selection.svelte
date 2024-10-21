@@ -65,4 +65,24 @@
     />
     <label for="bookstatistic">Statistics</label>
   </div>
+  <div>
+    <input
+      type="checkbox"
+      id="audioBook"
+      name="audioBook"
+      value="audioBook"
+      bind:group={dataToReplicate}
+    />
+    <label for="bookstatistic">Audiobook</label>
+  </div>
+  <div>
+    <input
+      type="checkbox"
+      id="subtitle"
+      name="subtitle"
+      value="subtitle"
+      bind:group={dataToReplicate}
+    />
+    <label for="bookstatistic">Subtitles</label>
+  </div>
 </div>
