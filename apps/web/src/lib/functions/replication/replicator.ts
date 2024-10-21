@@ -113,7 +113,9 @@ export async function importBackup(
       StorageDataType.DATA,
       StorageDataType.PROGRESS,
       StorageDataType.STATISTICS,
-      StorageDataType.READING_GOALS
+      StorageDataType.READING_GOALS,
+      StorageDataType.AUDIOBOOK,
+      StorageDataType.SUBTITLE
     ],
     cancelSignal
   );
