@@ -96,6 +96,8 @@
 
   export let pageColumns: number;
 
+  export let storageQuota: string;
+
   export let persistentStorage: boolean;
 
   export let confirmClose: boolean;
@@ -689,7 +691,12 @@
     {/if}
   {:else if activeSettings === 'Data'}
     <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
+      <div class="flex items-center">
+        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
+        {#if storageQuota}
+          <div class="ml-4">{storageQuota}</div>
+        {/if}
+      </div>
     </SettingsItemGroup>
     <SettingsItemGroup title="Cache Data" tooltip={cacheStorageDataTooltip}>
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={cacheStorageData} />

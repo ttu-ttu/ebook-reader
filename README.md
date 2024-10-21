@@ -500,7 +500,7 @@ Data like books or bookmarks will be (depending on the storage source and data t
 Therefore your data can be lost based on the amount you stored and how much storage is available. In order to overcome this limitation ッツ Ebook Reader
 will try to request for persistant storage during data insertion to the browser db. Based on your browser you will
 see different behavior. E. g. firefox will ask you for your confirmation while chrome will not display any dialog but automatically grant the permissions if you frequently interacted with / bookmarked the page and / or have granted notification permissions to the site.
-You can see the current status of persistant storage in the reader data settings.
+You can see the current status of persistant storage (and estimated storage usage) in the reader data settings.
 
 **Note**: Other browsers may have additional criteria for data eviction which are not affected by this setting. E. g. iOS > 13.3 may delete all your page data if you haven't interacted with the reader for 7 days etc.
 
