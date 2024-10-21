@@ -313,11 +313,13 @@ Following export targets are available:
 To export data select books in the manager and click/tap on the respective icon in the header.
 Besides the export target you can also choose what kind of data you want to export:
 
-| Option     | Content                                             |
-| ---------- | --------------------------------------------------- |
-| Book Data  | Book data like text content, images, chapters etc.  |
-| Bookmark   | Progress data like scroll position, percentage etc. |
-| Statistics | Tracked Time and Characters for a day etc.          |
+| Option     | Content                                                                                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Book Data  | Book data like text content, images, chapters etc.                                                                                                                                    |
+| Bookmark   | Progress data like scroll position, percentage etc.                                                                                                                                   |
+| Statistics | Tracked Time and Characters for a day etc.                                                                                                                                            |
+| Audiobook  | Playback position for [ttu-whispersync](https://github.com/Renji-XD/ttu-whispersync). Note: This does not include the audiobook itself as it is also not stored inside the browser db |
+| Subtitles  | The persisted subtitles if respective setting in [ttu-whispersync](https://github.com/Renji-XD/ttu-whispersync) was enabled                                                           |
 
 **Note**: Imports/Exports are additive and will only store/overwrite data but never delete it by default - exceptions are types configured with a merge mode of "overwrite" like statistics or reading goals. Data like bookmarks for items in the browser db will only be written in case a local book copy exists while external sources allow to store them without the need of exporting the book before.
 
