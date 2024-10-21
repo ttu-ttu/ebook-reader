@@ -64,11 +64,15 @@
 
   onMount(() => {
     storage.persisted().then(setPersistentStorage);
+
+    setStorageQuota();
   });
 
   let prevPage = `${pagePath}${mergeEntries.MANAGE.routeId}`;
 
   let activeSettings = 'Reader';
+
+  let storageQuota = '';
 
   afterNavigate((navigation) => {
     const { from } = navigation;
@@ -84,7 +88,7 @@
         return;
       }
 
-      storage.persist().then(setPersistentStorage);
+      storage.persist().then(setPersistentStorage).finally(setStorageQuota);
     }),
     reduceToEmptyString()
   );
@@ -93,6 +97,23 @@
     persistentStorageReactive = false;
     persistentStorage$.next(value);
     persistentStorageReactive = true;
+  }
+
+  function setStorageQuota() {
+    storage
+      .estimate()
+      .then((storageData) => {
+        const { usage, quota } = storageData;
+
+        if (usage === undefined || quota === undefined) {
+          return;
+        }
+
+        storageQuota = `${Math.round(((usage / quota) * 100 + Number.EPSILON) * 100) / 100} % used`;
+      })
+      .catch(() => {
+        // no-op
+      });
   }
 </script>
 
@@ -108,6 +129,7 @@
   <div class="max-w-5xl">
     <SettingsContent
       {activeSettings}
+      {storageQuota}
       bind:selectedTheme={$theme$}
       bind:fontFamilyGroupOne={$fontFamilyGroupOne$}
       bind:fontFamilyGroupTwo={$fontFamilyGroupTwo$}
