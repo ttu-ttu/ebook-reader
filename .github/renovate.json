@@ -10,6 +10,16 @@
       "matchDatasources": ["npm"],
       "matchPackageNames": ["@zip.js/zip.js"],
       "enabled": false
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["svelte"],
+      "allowedVersions": "<5.0.0"
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["@sveltejs/vite-plugin-svelte"],
+      "allowedVersions": "<4.0.0"
     }
   ]
 }
