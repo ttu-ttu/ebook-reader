@@ -120,8 +120,8 @@ importers:
         specifier: 5.0.6
         version: 5.0.6
       svelte-meta-tags:
-        specifier: 3.1.4
-        version: 3.1.4(svelte@4.2.19)(typescript@5.6.3)
+        specifier: 4.0.1
+        version: 4.0.1(svelte@4.2.19)(typescript@5.6.3)
       ua-parser-js:
         specifier: 1.0.39
         version: 1.0.39
@@ -2582,10 +2582,10 @@ packages:
     peerDependencies:
       svelte: ^3.19.0 || ^4.0.0
 
-  svelte-meta-tags@3.1.4:
-    resolution: {integrity: sha512-TUIfhut0iVeTm7f5v/ZuU/tZ9XsNig9bNN8yK0t2x2WL9qw6AxAVRe9i5XddYJE0SuVwkoDCzjoSg5hXv7oWbQ==}
+  svelte-meta-tags@4.0.1:
+    resolution: {integrity: sha512-ndjrLO3MX/MF1QLez6idRkqJNtpmLc0oUU0fDPupw5dC0ANRmy4T61SXYkU8r9els4X6Ra/gIcisX1A6HtvyfA==}
     peerDependencies:
-      svelte: ^3.55.0 || ^4.0.0
+      svelte: ^5.0.0
 
   svelte-preprocess@6.0.3:
     resolution: {integrity: sha512-PLG2k05qHdhmRG7zR/dyo5qKvakhm8IJ+hD2eFRQmMLHp7X3eJnjeupUtvuRpbNiF31RjVw45W+abDwHEmP5OA==}
@@ -5287,7 +5287,7 @@ snapshots:
     dependencies:
       svelte: 4.2.19
 
-  svelte-meta-tags@3.1.4(svelte@4.2.19)(typescript@5.6.3):
+  svelte-meta-tags@4.0.1(svelte@4.2.19)(typescript@5.6.3):
     dependencies:
       schema-dts: 1.1.2(typescript@5.6.3)
       svelte: 4.2.19
