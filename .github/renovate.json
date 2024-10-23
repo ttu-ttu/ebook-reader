@@ -20,6 +20,11 @@
       "matchDatasources": ["npm"],
       "matchPackageNames": ["@sveltejs/vite-plugin-svelte"],
       "allowedVersions": "<4.0.0"
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["svelte-meta-tags"],
+      "allowedVersions": "<4.0.0"
     }
   ]
 }
