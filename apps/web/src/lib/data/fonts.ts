@@ -13,8 +13,8 @@ export enum LocalFont {
   NOTOSANSJP = 'Noto Sans JP',
   NOTOSERIFJP = 'Noto Serif JP',
   SHIPPORIMINCHO = 'Shippori Mincho',
-  SERIF = "Serif",
-  SANSSERIF = "Sans-Serif"
+  SERIF = 'Serif',
+  SANSSERIF = 'Sans-Serif'
 }
 
 export interface UserFont {
