@@ -12,7 +12,9 @@ export enum LocalFont {
   KLEEONESEMIBOLD = 'Klee One SemiBold',
   NOTOSANSJP = 'Noto Sans JP',
   NOTOSERIFJP = 'Noto Serif JP',
-  SHIPPORIMINCHO = 'Shippori Mincho'
+  SHIPPORIMINCHO = 'Shippori Mincho',
+  SERIF = 'Serif',
+  SANSSERIF = 'Sans-Serif'
 }
 
 export interface UserFont {
@@ -31,7 +33,9 @@ export const reservedFontNames = new Set([
   'Klee One SemiBold',
   'Noto Sans JP',
   'Noto Serif JP',
-  'Shippori Mincho'
+  'Shippori Mincho',
+  'Serif',
+  'Sans-Serif'
 ]);
 
 export function isStoredFont(fontName: string, userFonts: UserFont[]) {
