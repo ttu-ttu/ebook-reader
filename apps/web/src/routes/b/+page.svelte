@@ -36,6 +36,7 @@
   import StyleSheetRenderer from '$lib/components/style-sheet-renderer.svelte';
   import {
     autoBookmark$,
+    autoBookmarkTime$,
     autoPositionOnResize$,
     avoidPageBreak$,
     bookReaderKeybindMap$,
@@ -1547,6 +1548,7 @@
     avoidPageBreak={$avoidPageBreak$}
     pageColumns={$pageColumns$}
     autoBookmark={$autoBookmark$}
+    autoBookmarkTime={$autoBookmarkTime$}
     multiplier={$multiplier$}
     bind:exploredCharCount
     bind:bookCharCount
