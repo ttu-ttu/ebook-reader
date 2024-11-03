@@ -73,6 +73,8 @@
 
   export let autoBookmark: boolean;
 
+  export let autoBookmarkTime: number;
+
   export let viewMode: ViewMode;
 
   export let exploredCharCount: number;
@@ -274,6 +276,7 @@
       {firstDimensionMargin}
       {autoPositionOnResize}
       {autoBookmark}
+      {autoBookmarkTime}
       {multiplier}
       loadingState={$imageLoadingState$ ?? true}
       bind:exploredCharCount
@@ -311,6 +314,7 @@
       {avoidPageBreak}
       {pageColumns}
       {autoBookmark}
+      {autoBookmarkTime}
       {firstDimensionMargin}
       bind:exploredCharCount
       bind:bookCharCount

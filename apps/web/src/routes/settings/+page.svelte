@@ -9,6 +9,7 @@
     addCharactersOnCompletion$,
     adjustStatisticsAfterIdleTime$,
     autoBookmark$,
+    autoBookmarkTime$,
     autoPositionOnResize$,
     autoReplication$,
     avoidPageBreak$,
@@ -157,6 +158,7 @@
       bind:confirmClose={$confirmClose$}
       bind:manualBookmark={$manualBookmark$}
       bind:autoBookmark={$autoBookmark$}
+      bind:autoBookmarkTime={$autoBookmarkTime$}
       bind:cacheStorageData={$cacheStorageData$}
       bind:replicationSaveBehavior={$replicationSaveBehavior$}
       bind:autoReplication={$autoReplication$}

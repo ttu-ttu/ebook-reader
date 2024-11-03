@@ -106,6 +106,8 @@
 
   export let autoBookmark: boolean;
 
+  export let autoBookmarkTime: number;
+
   export let activeSettings: string;
 
   export let cacheStorageData: boolean;
@@ -308,6 +310,7 @@
   let autoReplicationTypeTooltip = '';
   let trackerAutoPauseTooltip = '';
 
+  $: autoBookmarkTooltip = `If enabled sets a bookmark after ${autoBookmarkTime} seconds without scrolling/page change`;
   $: wakeLockSupported = browser && 'wakeLock' in navigator;
   $: verticalMode = writingMode === 'vertical-rl';
   $: fontCacheSupported = browser && 'caches' in window;
@@ -463,17 +466,12 @@
           </div>
         {/if}
       </div>
-      <input
-        type="text"
-        class={inputClasses}
-        placeholder="Serif"
-        bind:value={fontFamilyGroupOne}
-      />
+      <input type="text" class={inputClasses} placeholder="Serif" bind:value={fontFamilyGroupOne} />
     </SettingsItemGroup>
     <SettingsItemGroup title="Font family (Group 2)">
       <div slot="header" class="flex items-center">
         <SettingsFontSelector
-          availableFonts={[LocalFont.SANSSERIF,  LocalFont.NOTOSANSJP, LocalFont.BIZUDGOTHIC]}
+          availableFonts={[LocalFont.SANSSERIF, LocalFont.NOTOSANSJP, LocalFont.BIZUDGOTHIC]}
           bind:fontValue={fontFamilyGroupTwo}
         />
         {#if fontCacheSupported}
@@ -565,6 +563,22 @@
         }}
       />
     </SettingsItemGroup>
+    {#if autoBookmark}
+      <SettingsItemGroup title="Auto Bookmark Time" tooltip={'Time in s for Auto Bookmark'}>
+        <input
+          type="number"
+          step="1"
+          min="1"
+          class={inputClasses}
+          bind:value={autoBookmarkTime}
+          on:blur={() => {
+            if (autoBookmarkTime < 1 || typeof autoBookmarkTime !== 'number') {
+              autoBookmarkTime = 3;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup title="Writing mode">
       <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
     </SettingsItemGroup>
@@ -600,10 +614,7 @@
     >
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={manualBookmark} />
     </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Auto Bookmark"
-      tooltip={'If enabled sets a bookmark after 3 seconds without scrolling/page change'}
-    >
+    <SettingsItemGroup title="Auto Bookmark" tooltip={autoBookmarkTooltip}>
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
     </SettingsItemGroup>
     <SettingsItemGroup title="Blur image">

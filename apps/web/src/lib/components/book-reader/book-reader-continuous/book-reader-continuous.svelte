@@ -86,6 +86,8 @@
 
   export let autoBookmark: boolean;
 
+  export let autoBookmarkTime: number;
+
   export let loadingState: boolean;
 
   export let multiplier: number;
@@ -429,7 +431,7 @@
         .finally(() => {
           if (autoBookmark) {
             fromEvent(window, 'scroll')
-              .pipe(skip(1), debounceTime(3000), takeUntil(destroy$))
+              .pipe(skip(1), debounceTime(autoBookmarkTime * 1000), takeUntil(destroy$))
               .subscribe(() => {
                 dispatch('bookmark');
               });

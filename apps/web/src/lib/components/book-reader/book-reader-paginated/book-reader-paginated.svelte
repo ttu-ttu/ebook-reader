@@ -94,6 +94,8 @@
 
   export let autoBookmark = false;
 
+  export let autoBookmarkTime: number;
+
   export let customReadingPointRange: Range | undefined;
 
   export let showCustomReadingPoint: boolean;
@@ -414,11 +416,13 @@
   });
 
   if (autoBookmark) {
-    pageChange$.pipe(debounceTime(3000), takeUntil(destroy$)).subscribe((isUser) => {
-      if (isUser) {
-        dispatch('bookmark');
-      }
-    });
+    pageChange$
+      .pipe(debounceTime(autoBookmarkTime * 1000), takeUntil(destroy$))
+      .subscribe((isUser) => {
+        if (isUser) {
+          dispatch('bookmark');
+        }
+      });
   }
 
   currentSection$.pipe(distinctUntilChanged(), takeUntil(destroy$)).subscribe(() => {
