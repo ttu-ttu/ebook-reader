@@ -94,9 +94,9 @@ function convertFontFamily(declaration: Declaration) {
   if (declaration.property === 'font-family') {
     let newValue: string = declaration.value;
     if (newValue.includes('sans-serif')) {
-      newValue = `var(--font-family-sans-serif, Noto Sans JP, sans-serif)`;
+      newValue = `var(--font-family-sans-serif, sans-serif)`;
     } else if (newValue.includes('serif')) {
-      newValue = `var(--font-family-serif, Noto Serif JP, serif)`;
+      newValue = `var(--font-family-serif, serif)`;
     }
     return {
       key: declaration.property,
