@@ -10,6 +10,10 @@
   scrollbar-color: #c1c1c1 #c1c1c100;
 }
 
+.book-cover {
+  overflow-clip-margin: unset;
+}
+
 @layer base {
   body {
     color: var(--font-color);
