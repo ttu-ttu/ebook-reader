@@ -77,7 +77,7 @@
           decoding="async"
           loading="lazy"
           referrerpolicy="no-referrer"
-          class="relative h-full w-full object-cover transition delay-150 duration-700 ease-out"
+          class="book-cover relative h-full w-full object-cover transition delay-150 duration-700 ease-out"
           class:blur={!imageLoadComplete}
           src={mapImagePath(imagePath)}
           {alt}
