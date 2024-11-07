@@ -151,8 +151,8 @@ importers:
         specifier: 0.7.39
         version: 0.7.39
       '@types/webappsec-credential-management':
-        specifier: 0.6.8
-        version: 0.6.8
+        specifier: 0.6.9
+        version: 0.6.9
       '@types/wicg-file-system-access':
         specifier: 2023.10.5
         version: 2023.10.5
@@ -822,8 +822,8 @@ packages:
   '@types/ua-parser-js@0.7.39':
     resolution: {integrity: sha512-P/oDfpofrdtF5xw433SPALpdSchtJmY7nsJItf8h3KXqOslkbySh8zq4dSWXH2oTjRvJ5PczVEoCZPow6GicLg==}
 
-  '@types/webappsec-credential-management@0.6.8':
-    resolution: {integrity: sha512-DES/SkK54U7AG8hmMkGCJkOSlywM3R+TzaWT+rBnX3lQTJ3K57jWr+UccWY8ImkuKekC9BjB+AH4zLJB4JKpvQ==}
+  '@types/webappsec-credential-management@0.6.9':
+    resolution: {integrity: sha512-4uDknRaO9G1fonoEALN6SDYvyRb7luVYP7lm7y0OkdVdMcU7rIh+Nq/VepDe0arkh+gfUzwCr5cNfqmKm+x5wA==}
 
   '@types/wicg-file-system-access@2023.10.5':
     resolution: {integrity: sha512-e9kZO9kCdLqT2h9Tw38oGv9UNzBBWaR1MzuAavxPcsV/7FJ3tWbU6RI3uB+yKIDPGLkGVbplS52ub0AcRLvrhA==}
@@ -3438,7 +3438,7 @@ snapshots:
 
   '@types/ua-parser-js@0.7.39': {}
 
-  '@types/webappsec-credential-management@0.6.8': {}
+  '@types/webappsec-credential-management@0.6.9': {}
 
   '@types/wicg-file-system-access@2023.10.5': {}
 
