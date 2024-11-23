@@ -34,7 +34,7 @@ export default function generateEpubHtml(
       fallbackData.set(item['@_id'], item['@_fallback']);
     }
 
-    if (item['@_media-type'] === 'application/xhtml+xml') {
+    if (item['@_media-type'] === 'application/xhtml+xml' || item['@_media-type'] === 'text/html') {
       acc[item['@_id']] = item['@_href'];
 
       if (item['@_properties'] === 'nav') {
