@@ -4,8 +4,8 @@
  * All rights reserved.
  */
 
+import { UAParser } from 'ua-parser-js';
 import { configure as zipConfigure } from '@zip.js/zip.js';
-import UAParser from 'ua-parser-js';
 
 export default function initZipSettings() {
   zipConfigure({
