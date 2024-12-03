@@ -27,7 +27,7 @@
     "svelte": "4.2.19",
     "svelte-check": "4.1.1",
     "svelte-preprocess": "6.0.3",
-    "tailwindcss": "3.4.15",
+    "tailwindcss": "3.4.16",
     "tslib": "2.8.1",
     "typescript": "5.7.2",
     "vite": "5.4.11"
