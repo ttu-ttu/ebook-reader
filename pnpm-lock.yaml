@@ -36,8 +36,8 @@ importers:
         specifier: 3.7.0
         version: 3.7.0(eslint-plugin-import@2.29.1)(eslint@9.16.0(jiti@1.21.6))
       eslint-plugin-headers:
-        specifier: 1.2.0
-        version: 1.2.0(eslint@9.16.0(jiti@1.21.6))
+        specifier: 1.2.1
+        version: 1.2.1(eslint@9.16.0(jiti@1.21.6))
       eslint-plugin-prettier:
         specifier: 5.2.1
         version: 5.2.1(@types/eslint@8.56.10)(eslint-config-prettier@9.1.0(eslint@9.16.0(jiti@1.21.6)))(eslint@9.16.0(jiti@1.21.6))(prettier@3.4.2)
@@ -1407,8 +1407,8 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
 
-  eslint-plugin-headers@1.2.0:
-    resolution: {integrity: sha512-jtjh0+vMsUE66wzP3PhelPqQdbDXRGYLhEXxXRr4oHRnn9LgkeyHsaZPV2mMB9Z12SXJQarVKzGZIlrFIb2sqg==}
+  eslint-plugin-headers@1.2.1:
+    resolution: {integrity: sha512-1L41t3DPrXFP6YLK+sAj0xDMGVHpQwI+uGefDwc1bKP91q65AIZoXzQgI7MjZJxB6sK8/vYhXMD8x0V8xLNxJA==}
     engines: {node: ^16.0.0 || >= 18.0.0}
     peerDependencies:
       eslint: '>=7'
@@ -4178,7 +4178,7 @@ snapshots:
       - supports-color
     optional: true
 
-  eslint-plugin-headers@1.2.0(eslint@9.16.0(jiti@1.21.6)):
+  eslint-plugin-headers@1.2.1(eslint@9.16.0(jiti@1.21.6)):
     dependencies:
       eslint: 9.16.0(jiti@1.21.6)
 
