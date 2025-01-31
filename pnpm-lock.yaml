@@ -102,8 +102,8 @@ importers:
         specifier: 4.5.1
         version: 4.5.1
       idb:
-        specifier: 8.0.1
-        version: 8.0.1
+        specifier: 8.0.2
+        version: 8.0.2
       p-limit:
         specifier: 6.2.0
         version: 6.2.0
@@ -1730,8 +1730,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  idb@8.0.1:
-    resolution: {integrity: sha512-EkBCzUZSdhJV8PxMSbeEV//xguVKZu9hZZulM+2gHXI0t2hGVU3eYE6/XnH77DS6FM2FY8wl17aDcu9vXpvLWQ==}
+  idb@8.0.2:
+    resolution: {integrity: sha512-CX70rYhx7GDDQzwwQMDwF6kDRQi5vVs6khHUumDrMecBylKkwvZ8HWvKV08AGb7VbpoGCWUQ4aHzNDgoUiOIUg==}
 
   ignore@5.3.1:
     resolution: {integrity: sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==}
@@ -4560,7 +4560,7 @@ snapshots:
 
   husky@9.1.7: {}
 
-  idb@8.0.1: {}
+  idb@8.0.2: {}
 
   ignore@5.3.1: {}
 
