@@ -123,8 +123,8 @@ importers:
         specifier: 3.1.4
         version: 3.1.4(svelte@4.2.19)(typescript@5.7.3)
       ua-parser-js:
-        specifier: 2.0.0
-        version: 2.0.0
+        specifier: 2.0.1
+        version: 2.0.1
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: 3.0.8
@@ -2777,8 +2777,8 @@ packages:
   ua-is-frozen@0.1.2:
     resolution: {integrity: sha512-RwKDW2p3iyWn4UbaxpP2+VxwqXh0jpvdxsYpZ5j/MLLiQOfbsV5shpgQiw93+KMYQPcteeMQ289MaAFzs3G9pw==}
 
-  ua-parser-js@2.0.0:
-    resolution: {integrity: sha512-SASgD4RlB7+SCMmlVNqrhPw0f/2pGawWBzJ2+LwGTD0GgNnrKGzPJDiraGHJDwW9Zm5DH2lTmUpqDpbZjJY4+Q==}
+  ua-parser-js@2.0.1:
+    resolution: {integrity: sha512-PgWLeyhIgff0Jomd3U2cYCdfp5iHbaCMlylG9NoV19tAlvXWUzM3bG2DIasLTI1PrbLtVutGr1CaezttVV2PeA==}
     hasBin: true
 
   unbox-primitive@1.0.2:
@@ -5559,7 +5559,7 @@ snapshots:
 
   ua-is-frozen@0.1.2: {}
 
-  ua-parser-js@2.0.0:
+  ua-parser-js@2.0.1:
     dependencies:
       detect-europe-js: 0.1.2
       is-standalone-pwa: 0.1.1
