@@ -7,7 +7,8 @@
     faExpand,
     faFlag,
     faList,
-    faRotateLeft
+    faRotateLeft,
+    faHashtag
   } from '@fortawesome/free-solid-svg-icons';
   import { readerImageGalleryPictures$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
@@ -36,6 +37,7 @@
     tocClick: void;
     bookmarkClick: void;
     scrollToBookmarkClick: void;
+    jumpClick: void;
     completeBook: void;
     fullscreenClick: void;
     showCustomReadingPoint: void;
@@ -129,6 +131,16 @@
   </div>
 
   <div class="flex transform-gpu {translateXHeaderFa}">
+    <div
+      tabindex="0"
+      role="button"
+      title="Jump to Position"
+      class={baseIconClasses}
+      on:click={() => dispatch('jumpClick')}
+      on:keyup={dummyFn}
+    >
+      <Fa icon={faHashtag} />
+    </div>
     <div
       tabindex="0"
       role="button"

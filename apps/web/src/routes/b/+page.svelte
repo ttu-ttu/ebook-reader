@@ -103,6 +103,7 @@
   } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+  import NumberDialog from '$lib/components/number-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { preFilteredTitlesForStatistics$ } from '$lib/components/statistics/statistics-types';
   import {
@@ -559,6 +560,33 @@
     dialogManager.dialogs$.next([]);
     wasTrackerPaused = !$isTrackerPaused$;
     isTrackerPaused$.next(wasTrackerPaused);
+  }
+
+  async function handleJump() {
+    const target = await new Promise((resolver) => {
+      dialogManager.dialogs$.next([
+        {
+          component: NumberDialog,
+          props: {
+            dialogHeader: 'Jump to Position',
+            minValue: 0,
+            maxValue: bookCharCount || undefined,
+            resolver
+          }
+        }
+      ]);
+    });
+
+    if (target === undefined) {
+      return;
+    }
+
+    const data = {
+      dataId: getBookIdSync(),
+      exploredCharCount: target,
+      lastBookmarkModified: new Date().getTime()
+    };
+    bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
   }
 
   async function completeBook() {
@@ -1442,6 +1470,7 @@
         showHeader = false;
         tocIsOpen$.next(true);
       }}
+      on:jumpClick={handleJump}
       on:completeBook={completeBook}
       on:setCustomReadingPoint={handleSetCustomReadingPoint}
       on:showCustomReadingPoint={() => {
