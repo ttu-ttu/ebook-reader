@@ -22,7 +22,7 @@
     "@types/webappsec-credential-management": "0.6.9",
     "@types/wicg-file-system-access": "2023.10.5",
     "autoprefixer": "10.4.20",
-    "postcss": "8.5.1",
+    "postcss": "8.5.2",
     "sass": "1.84.0",
     "svelte": "4.2.19",
     "svelte-check": "4.1.4",
