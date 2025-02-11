@@ -117,7 +117,7 @@ export class SectionCharacterStatsCalculator {
     const scrollPos = this.getScrollPosByCharCount(charCount);
     const virtualPos = this.virtualScrollPos$.getValue();
 
-    if (scrollPos === virtualPos && this.calculator) {
+    if (scrollPos !== -1 && scrollPos === virtualPos && this.calculator) {
       return {
         isBookmarkScreen: true,
         ...this.calculator.getBookMarkPosForSection(this.getSectionStartCount(), charCount)
@@ -125,7 +125,7 @@ export class SectionCharacterStatsCalculator {
     }
 
     return {
-      isBookmarkScreen: scrollPos === virtualPos,
+      isBookmarkScreen: scrollPos !== -1 && scrollPos === virtualPos,
       bookmarkPos: undefined,
       node: undefined,
       isFirstNode: true
