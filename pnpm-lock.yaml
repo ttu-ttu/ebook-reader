@@ -117,8 +117,8 @@ importers:
         specifier: 4.0.3
         version: 4.0.3(svelte@4.2.19)
       svelte-gestures:
-        specifier: 5.1.3
-        version: 5.1.3
+        specifier: 5.0.7
+        version: 5.0.7
       svelte-meta-tags:
         specifier: 3.1.4
         version: 3.1.4(svelte@4.2.19)(typescript@5.7.3)
@@ -2650,8 +2650,8 @@ packages:
     peerDependencies:
       svelte: ^4.0.0 || ^5.0.0
 
-  svelte-gestures@5.1.3:
-    resolution: {integrity: sha512-ELOlzuH9E4+S1biCCTfusRlvzFpnqRPlljEqayoBTu5STH42u0kTT45D1m3Py3E9UmIyZTgrSLw6Fus/fh75Dw==}
+  svelte-gestures@5.0.7:
+    resolution: {integrity: sha512-TeCrcHQdnlTJKFTlEm6Vh1el0O1cLnbmVLeHqJqW8OayhsYNsEnuDL491+4HUkrHBpaaApKCGIFXKsPZqAoVKw==}
 
   svelte-hmr@0.16.0:
     resolution: {integrity: sha512-Gyc7cOS3VJzLlfj7wKS0ZnzDVdv3Pn2IuVeJPk9m2skfhcu5bq3wtIZyQGggr7/Iim5rH5cncyQft/kRLupcnA==}
@@ -5450,7 +5450,7 @@ snapshots:
     dependencies:
       svelte: 4.2.19
 
-  svelte-gestures@5.1.3: {}
+  svelte-gestures@5.0.7: {}
 
   svelte-hmr@0.16.0(svelte@4.2.19):
     dependencies:
