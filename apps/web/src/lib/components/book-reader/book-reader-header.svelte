@@ -7,8 +7,7 @@
     faExpand,
     faFlag,
     faList,
-    faRotateLeft,
-    faHashtag
+    faRotateLeft
   } from '@fortawesome/free-solid-svg-icons';
   import { readerImageGalleryPictures$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
@@ -61,21 +60,37 @@
 
   let customReadingPointMenuElm: Popover;
 
-  let menuItems = [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE];
+  let menuItems = [
+    mergeEntries.STATISTICS,
+    mergeEntries.JUMP_TO_POSITION,
+    mergeEntries.SETTINGS,
+    mergeEntries.MANAGE
+  ];
 
   $: isOldUrl = browser && isOnOldUrl(window);
 
   $: if (isOldUrl) {
-    menuItems = [mergeEntries.SETTINGS, mergeEntries.DOMAIN_HINT, mergeEntries.MANAGE];
+    menuItems = [
+      mergeEntries.JUMP_TO_POSITION,
+      mergeEntries.SETTINGS,
+      mergeEntries.DOMAIN_HINT,
+      mergeEntries.MANAGE
+    ];
   } else if ($readerImageGalleryPictures$.length) {
     menuItems = [
       mergeEntries.STATISTICS,
+      mergeEntries.JUMP_TO_POSITION,
       mergeEntries.READER_IMAGE_GALLERY,
       mergeEntries.SETTINGS,
       mergeEntries.MANAGE
     ];
   } else {
-    menuItems = [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE];
+    menuItems = [
+      mergeEntries.STATISTICS,
+      mergeEntries.JUMP_TO_POSITION,
+      mergeEntries.SETTINGS,
+      mergeEntries.MANAGE
+    ];
   }
 
   function dispatchCustomReadingPointAction(action: any) {
@@ -134,16 +149,6 @@
     <div
       tabindex="0"
       role="button"
-      title="Jump to Position"
-      class={baseIconClasses}
-      on:click={() => dispatch('jumpClick')}
-      on:keyup={dummyFn}
-    >
-      <Fa icon={faHashtag} />
-    </div>
-    <div
-      tabindex="0"
-      role="button"
       title="Complete Book"
       class={baseIconClasses}
       on:click={() => dispatch('completeBook')}
@@ -196,6 +201,8 @@
       on:action={({ detail }) => {
         if (detail === mergeEntries.STATISTICS.label) {
           dispatch('statisticsClick');
+        } else if (detail === mergeEntries.JUMP_TO_POSITION.label) {
+          dispatch('jumpClick');
         } else if (detail === mergeEntries.READER_IMAGE_GALLERY.label) {
           dispatch('readerImageGalleryClick');
         } else if (detail === mergeEntries.SETTINGS.label) {
