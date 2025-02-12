@@ -1467,6 +1467,7 @@
   >
     <BookReaderHeader
       hasChapterData={!!$sectionData$?.length}
+      hasText={!!bookCharCount}
       hasCustomReadingPoint={!!(
         ($customReadingPointEnabled$ || isPaginated) &&
         ((isPaginated && customReadingPointRange) ||

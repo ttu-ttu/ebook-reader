@@ -26,6 +26,7 @@
   import Fa from 'svelte-fa';
 
   export let hasChapterData: boolean;
+  export let hasText: boolean;
   export let autoScrollMultiplier: number;
   export let hasCustomReadingPoint: boolean;
   export let showFullscreenButton: boolean;
@@ -60,37 +61,27 @@
 
   let customReadingPointMenuElm: Popover;
 
-  let menuItems = [
-    mergeEntries.STATISTICS,
-    mergeEntries.JUMP_TO_POSITION,
-    mergeEntries.SETTINGS,
-    mergeEntries.MANAGE
-  ];
+  let menuItems = [];
 
   $: isOldUrl = browser && isOnOldUrl(window);
 
-  $: if (isOldUrl) {
-    menuItems = [
-      mergeEntries.JUMP_TO_POSITION,
-      mergeEntries.SETTINGS,
-      mergeEntries.DOMAIN_HINT,
-      mergeEntries.MANAGE
-    ];
-  } else if ($readerImageGalleryPictures$.length) {
-    menuItems = [
-      mergeEntries.STATISTICS,
-      mergeEntries.JUMP_TO_POSITION,
-      mergeEntries.READER_IMAGE_GALLERY,
-      mergeEntries.SETTINGS,
-      mergeEntries.MANAGE
-    ];
-  } else {
-    menuItems = [
-      mergeEntries.STATISTICS,
-      mergeEntries.JUMP_TO_POSITION,
-      mergeEntries.SETTINGS,
-      mergeEntries.MANAGE
-    ];
+  $: {
+    if (isOldUrl) {
+      menuItems.push(mergeEntries.DOMAIN_HINT);
+    } else {
+      menuItems.push(mergeEntries.STATISTICS);
+    }
+
+    if (hasText) {
+      menuItems.push(mergeEntries.JUMP_TO_POSITION);
+    }
+
+    if ($readerImageGalleryPictures$.length) {
+      menuItems.push(mergeEntries.READER_IMAGE_GALLERY);
+    }
+
+    menuItems.push(mergeEntries.SETTINGS);
+    menuItems.push(mergeEntries.MANAGE);
   }
 
   function dispatchCustomReadingPointAction(action: any) {
