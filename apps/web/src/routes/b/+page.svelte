@@ -563,6 +563,8 @@
   }
 
   async function handleJump() {
+    if (!bookmarkManager) return;
+
     const wasTrackerPausedBefore = $statisticsEnabled$ ? $isTrackerPaused$ : true;
 
     if ($statisticsEnabled$) {
