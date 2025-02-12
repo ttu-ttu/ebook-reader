@@ -563,14 +563,14 @@
   }
 
   async function handleJump() {
-    const target = await new Promise((resolver) => {
+    const target: number? = await new Promise((resolver) => {
       dialogManager.dialogs$.next([
         {
           component: NumberDialog,
           props: {
             dialogHeader: 'Jump to Position',
-            minValue: 0,
-            maxValue: bookCharCount || undefined,
+            minValue: 1,
+            maxValue: bookCharCount || 1,
             resolver
           }
         }

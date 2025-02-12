@@ -6,8 +6,8 @@
 
   export let dialogHeader: string;
   export let showCancel = true;
-  export let minValue = undefined;
-  export let maxValue = undefined;
+  export let minValue = 1;
+  export let maxValue = 1;
   export let resolver: (arg0: number | undefined) => void;
 
   let target = 0;
@@ -18,14 +18,8 @@
   }>();
 
   function closeDialog(position?: number) {
-    if (position < minValue || position > maxValue) {
-      if (minValue !== undefined && maxValue !== undefined) {
-        error = `Must be between ${minValue} and ${maxValue}`;
-      } else if (minValue !== undefined) {
-        error = `Must be at least ${minValue}`;
-      } else if (maxValue !== undefined) {
-        error = `Must be at most ${maxValue}`;
-      }
+    if (typeof position === 'number' && (position < minValue || position > maxValue)) {
+      error = `Must be between ${minValue} and ${maxValue}`;
       return;
     }
     resolver(position);
