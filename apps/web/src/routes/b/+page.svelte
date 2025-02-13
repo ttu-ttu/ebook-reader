@@ -103,6 +103,7 @@
   } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+  import NumberDialog from '$lib/components/number-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { preFilteredTitlesForStatistics$ } from '$lib/components/statistics/statistics-types';
   import {
@@ -559,6 +560,45 @@
     dialogManager.dialogs$.next([]);
     wasTrackerPaused = !$isTrackerPaused$;
     isTrackerPaused$.next(wasTrackerPaused);
+  }
+
+  async function handleJump() {
+    if (!bookmarkManager) return;
+
+    const wasTrackerPausedBefore = $statisticsEnabled$ ? $isTrackerPaused$ : true;
+
+    if ($statisticsEnabled$) {
+      wasTrackerPaused = true;
+      isTrackerPaused$.next(true);
+    }
+
+    const target: number? = await new Promise((resolver) => {
+      dialogManager.dialogs$.next([
+        {
+          component: NumberDialog,
+          props: {
+            dialogHeader: 'Jump to Position',
+            minValue: 1,
+            maxValue: bookCharCount || 1,
+            resolver
+          }
+        }
+      ]);
+    });
+
+    if (target !== undefined) {
+      const data = {
+        dataId: getBookIdSync(),
+        exploredCharCount: target,
+        lastBookmarkModified: new Date().getTime()
+      };
+      bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
+    }
+
+    if ($statisticsEnabled$ && !wasTrackerPausedBefore) {
+      wasTrackerPaused = false;
+      $isTrackerPaused$ = false;
+    }
   }
 
   async function completeBook() {
@@ -1427,6 +1467,7 @@
   >
     <BookReaderHeader
       hasChapterData={!!$sectionData$?.length}
+      hasText={!!bookCharCount}
       hasCustomReadingPoint={!!(
         ($customReadingPointEnabled$ || isPaginated) &&
         ((isPaginated && customReadingPointRange) ||
@@ -1442,6 +1483,7 @@
         showHeader = false;
         tocIsOpen$.next(true);
       }}
+      on:jumpClick={handleJump}
       on:completeBook={completeBook}
       on:setCustomReadingPoint={handleSetCustomReadingPoint}
       on:showCustomReadingPoint={() => {

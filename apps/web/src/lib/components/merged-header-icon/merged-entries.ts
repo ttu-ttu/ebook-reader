@@ -11,6 +11,7 @@ import {
   faFileArrowUp,
   faFileZipper,
   faFolderPlus,
+  faHashtag,
   faImages,
   faSignOutAlt,
   faTriangleExclamation
@@ -29,6 +30,12 @@ export const mergeEntries = {
     label: 'Statistics',
     icon: faChartLine,
     title: 'Go to Statistics'
+  },
+  JUMP_TO_POSITION: {
+    routeId: '',
+    label: 'Jump',
+    icon: faHashtag,
+    title: 'Jump to Position'
   },
   READER_IMAGE_GALLERY: {
     routeId: '',
