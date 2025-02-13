@@ -10,7 +10,7 @@
   export let maxValue = 1;
   export let resolver: (arg0: number | undefined) => void;
 
-  let target = 0;
+  let target = 1;
   let error = '';
 
   const dispatch = createEventDispatcher<{
@@ -41,7 +41,7 @@
         }
       }}
     />
-    <div class="text-red-500">{error}</div>
+    <div class="text-red-500 mt-4">{error}</div>
   </div>
   <div class="flex grow justify-between" slot="footer">
     <button

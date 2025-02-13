@@ -563,16 +563,15 @@
   }
 
   async function handleJump() {
-    if (!bookmarkManager) return;
+    const dataId = getBookIdSync();
 
-    const wasTrackerPausedBefore = $statisticsEnabled$ ? $isTrackerPaused$ : true;
-
-    if ($statisticsEnabled$) {
-      wasTrackerPaused = true;
-      isTrackerPaused$.next(true);
+    if (!bookmarkManager || !dataId) {
+      return;
     }
 
-    const target: number? = await new Promise((resolver) => {
+    pauseTracker();
+
+    const target = await new Promise<number | undefined>((resolver) => {
       dialogManager.dialogs$.next([
         {
           component: NumberDialog,
@@ -586,19 +585,22 @@
       ]);
     });
 
-    if (target !== undefined) {
-      const data = {
-        dataId: getBookIdSync(),
-        exploredCharCount: target,
-        lastBookmarkModified: new Date().getTime()
-      };
-      bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
+    if (typeof target !== 'number') {
+      restartTrackerAfterCharacterChangeOrTime(1);
+      return;
     }
 
-    if ($statisticsEnabled$ && !wasTrackerPausedBefore) {
-      wasTrackerPaused = false;
-      $isTrackerPaused$ = false;
-    }
+    restartTrackerAfterCharacterChangeOrTime(1000);
+
+    bookmarkManager.scrollToBookmark(
+      {
+        dataId: dataId,
+        exploredCharCount: target,
+        lastBookmarkModified: new Date().getTime(),
+        progress: 0
+      },
+      customReadingPointScrollOffset
+    );
   }
 
   async function completeBook() {
