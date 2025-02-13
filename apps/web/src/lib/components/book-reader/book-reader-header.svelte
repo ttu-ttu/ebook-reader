@@ -26,6 +26,7 @@
   import Fa from 'svelte-fa';
 
   export let hasChapterData: boolean;
+  export let hasText: boolean;
   export let autoScrollMultiplier: number;
   export let hasCustomReadingPoint: boolean;
   export let showFullscreenButton: boolean;
@@ -36,6 +37,7 @@
     tocClick: void;
     bookmarkClick: void;
     scrollToBookmarkClick: void;
+    jumpClick: void;
     completeBook: void;
     fullscreenClick: void;
     showCustomReadingPoint: void;
@@ -59,21 +61,27 @@
 
   let customReadingPointMenuElm: Popover;
 
-  let menuItems = [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE];
+  let menuItems = [];
 
   $: isOldUrl = browser && isOnOldUrl(window);
 
-  $: if (isOldUrl) {
-    menuItems = [mergeEntries.SETTINGS, mergeEntries.DOMAIN_HINT, mergeEntries.MANAGE];
-  } else if ($readerImageGalleryPictures$.length) {
-    menuItems = [
-      mergeEntries.STATISTICS,
-      mergeEntries.READER_IMAGE_GALLERY,
-      mergeEntries.SETTINGS,
-      mergeEntries.MANAGE
-    ];
-  } else {
-    menuItems = [mergeEntries.STATISTICS, mergeEntries.SETTINGS, mergeEntries.MANAGE];
+  $: {
+    if (isOldUrl) {
+      menuItems.push(mergeEntries.DOMAIN_HINT);
+    } else {
+      menuItems.push(mergeEntries.STATISTICS);
+    }
+
+    if (hasText) {
+      menuItems.push(mergeEntries.JUMP_TO_POSITION);
+    }
+
+    if ($readerImageGalleryPictures$.length) {
+      menuItems.push(mergeEntries.READER_IMAGE_GALLERY);
+    }
+
+    menuItems.push(mergeEntries.SETTINGS);
+    menuItems.push(mergeEntries.MANAGE);
   }
 
   function dispatchCustomReadingPointAction(action: any) {
@@ -184,6 +192,8 @@
       on:action={({ detail }) => {
         if (detail === mergeEntries.STATISTICS.label) {
           dispatch('statisticsClick');
+        } else if (detail === mergeEntries.JUMP_TO_POSITION.label) {
+          dispatch('jumpClick');
         } else if (detail === mergeEntries.READER_IMAGE_GALLERY.label) {
           dispatch('readerImageGalleryClick');
         } else if (detail === mergeEntries.SETTINGS.label) {
