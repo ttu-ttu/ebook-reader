@@ -7,7 +7,8 @@
     faExpand,
     faFlag,
     faList,
-    faRotateLeft
+    faRotateLeft,
+    type IconDefinition
   } from '@fortawesome/free-solid-svg-icons';
   import { readerImageGalleryPictures$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
@@ -61,27 +62,35 @@
 
   let customReadingPointMenuElm: Popover;
 
-  let menuItems = [];
+  let menuItems: {
+    routeId: string;
+    label: string;
+    icon: IconDefinition;
+    title: string;
+  }[] = [];
 
   $: isOldUrl = browser && isOnOldUrl(window);
 
   $: {
+    const items = [];
+
     if (isOldUrl) {
-      menuItems.push(mergeEntries.DOMAIN_HINT);
+      items.push(mergeEntries.DOMAIN_HINT);
     } else {
-      menuItems.push(mergeEntries.STATISTICS);
+      items.push(mergeEntries.STATISTICS);
     }
 
     if (hasText) {
-      menuItems.push(mergeEntries.JUMP_TO_POSITION);
+      items.push(mergeEntries.JUMP_TO_POSITION);
     }
 
     if ($readerImageGalleryPictures$.length) {
-      menuItems.push(mergeEntries.READER_IMAGE_GALLERY);
+      items.push(mergeEntries.READER_IMAGE_GALLERY);
     }
 
-    menuItems.push(mergeEntries.SETTINGS);
-    menuItems.push(mergeEntries.MANAGE);
+    items.push(mergeEntries.SETTINGS, mergeEntries.MANAGE);
+
+    menuItems = items;
   }
 
   function dispatchCustomReadingPointAction(action: any) {
