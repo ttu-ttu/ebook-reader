@@ -349,7 +349,7 @@
       calculatorInstance.calcExploredCharCount(nodeRange)
     );
   }
-  /** Experimental Code - May be removed any time without warning */
+  /** Experimental Code - May be removed or changed any time without warning */
 
   onDestroy(() => {
     document.removeEventListener('ttu-action', handleAction, false);
@@ -785,12 +785,12 @@
 
     :global(.book-content-container > *:not(.ttu-book-html-wrapper) > *:has(ruby):has(rt)),
     :global(
-        .book-content-container
-          > div.ttu-book-html-wrapper
-          > div.ttu-book-body-wrapper
-          > *
-          > *:has(ruby):has(rt)
-      ) {
+      .book-content-container
+        > div.ttu-book-html-wrapper
+        > div.ttu-book-body-wrapper
+        > *
+        > *:has(ruby):has(rt)
+    ) {
       padding-right: 10px !important;
     }
   }
@@ -798,12 +798,12 @@
   .book-content--writing-horizontal-rl {
     :global(.book-content-container > *:not(.ttu-book-html-wrapper) > *:has(ruby):has(rt)),
     :global(
-        .book-content-container
-          > div.ttu-book-html-wrapper
-          > div.ttu-book-body-wrapper
-          > *
-          > *:has(ruby):has(rt)
-      ) {
+      .book-content-container
+        > div.ttu-book-html-wrapper
+        > div.ttu-book-body-wrapper
+        > *
+        > *:has(ruby):has(rt)
+    ) {
       padding-top: 10px !important;
     }
   }
