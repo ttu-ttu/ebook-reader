@@ -9,7 +9,7 @@ import { getCharacterCount } from './get-character-count';
 import { writableSubject } from '$lib/functions/svelte/store';
 
 function externalTargetFilterFunction(element: HTMLElement) {
-  return getCharacterCount(element) > 0;
+  return !element.closest('rt') && getCharacterCount(element) > 0;
 }
 
 export function isMobile(window: Window) {
