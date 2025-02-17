@@ -42,5 +42,10 @@
       "prettier --write"
     ],
     "*.{json,md,html,scss,yml,yaml}": "prettier --write"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "svelte-preprocess"
+    ]
   }
 }
