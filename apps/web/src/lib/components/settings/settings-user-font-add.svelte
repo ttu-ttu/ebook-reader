@@ -47,6 +47,8 @@
       currentError = 'a font file with this name is already stored';
       resetFileElement();
       return;
+    } else if (!fontName) {
+      currentError = 'Enter a font name to continue';
     }
 
     fontFile = file;
@@ -65,7 +67,7 @@
     isLoading = true;
 
     try {
-      const path = `/userfonts/${fontFile.name}`;
+      const path = `/userfonts/${encodeURIComponent(fontFile.name)}`;
       await fontCache.put(
         path,
         new Response(fontFile, {
@@ -101,6 +103,8 @@
         $userFonts$.find((userFont) => userFont.name === fontName)
       ) {
         currentError = 'a font file with this name is already stored';
+      } else if (!!fontFile && !fontName) {
+        currentError = 'Enter a font name to continue';
       }
     }}
   />
@@ -114,7 +118,7 @@
         bind:this={fileElement}
         on:change={handleFileChange}
       />
-      Choose File (and click Save)
+      {fontFile ? 'File selected' : 'Choose File (and click Save)'}
     </label>
     <div
       tabindex="0"
