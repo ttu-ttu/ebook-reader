@@ -99,8 +99,8 @@ importers:
         specifier: 6.0.0
         version: 6.0.0
       fast-xml-parser:
-        specifier: 5.0.6
-        version: 5.0.6
+        specifier: 5.0.7
+        version: 5.0.7
       idb:
         specifier: 8.0.2
         version: 8.0.2
@@ -1647,8 +1647,8 @@ packages:
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
 
-  fast-xml-parser@5.0.6:
-    resolution: {integrity: sha512-5zIl0jWsewL5LdneswG6aJXx1YH1FXQ02UVIe/CZI3wXhI3SqP62bjcIYRNOgU43/MnN1t/MCpH6UoOtBrDNug==}
+  fast-xml-parser@5.0.7:
+    resolution: {integrity: sha512-hRgQW2Az3ASwFo7wqBM2Uq9LcLoOVhGhE/yhjsIfd4gdDk0pqwKTHOSQYO1Zf7Nl/7Th2ykdmkPNntCfq3gBFg==}
     hasBin: true
 
   fastq@1.13.0:
@@ -4710,7 +4710,7 @@ snapshots:
 
   fast-levenshtein@2.0.6: {}
 
-  fast-xml-parser@5.0.6:
+  fast-xml-parser@5.0.7:
     dependencies:
       strnum: 2.0.4
 
