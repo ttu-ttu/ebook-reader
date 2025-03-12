@@ -33,8 +33,8 @@ importers:
         specifier: 10.1.1
         version: 10.1.1(eslint@9.22.0(jiti@2.4.1))
       eslint-import-resolver-typescript:
-        specifier: 3.8.4
-        version: 3.8.4(eslint-plugin-import@2.29.1)(eslint@9.22.0(jiti@2.4.1))
+        specifier: 3.8.5
+        version: 3.8.5(eslint-plugin-import@2.29.1)(eslint@9.22.0(jiti@2.4.1))
       eslint-plugin-headers:
         specifier: 1.2.1
         version: 1.2.1(eslint@9.22.0(jiti@2.4.1))
@@ -1419,8 +1419,8 @@ packages:
   eslint-import-resolver-node@0.3.9:
     resolution: {integrity: sha512-WFj2isz22JahUv+B788TlO3N6zL3nNJGU8CcZbPZvVEkBPaJdCV4vy5wyghty5ROFbCRnm132v8BScu5/1BQ8g==}
 
-  eslint-import-resolver-typescript@3.8.4:
-    resolution: {integrity: sha512-vjTGvhr528DzCOLQnBxvoB9a2YuzegT1ogfrUwOqMXS/J6vNYQKSHDJxxDVU1gRuTiUK8N2wyp8Uik9JSPAygA==}
+  eslint-import-resolver-typescript@3.8.5:
+    resolution: {integrity: sha512-0ZRnzOqKc7TRm85w6REOUkVLHevN6nWd/xZsmKhSD/dcDktoxQaQAg59e5EK/QEsGFf7o5JSpE6qTwCEz0WjTw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       eslint: '*'
@@ -4369,7 +4369,7 @@ snapshots:
       - supports-color
     optional: true
 
-  eslint-import-resolver-typescript@3.8.4(eslint-plugin-import@2.29.1)(eslint@9.22.0(jiti@2.4.1)):
+  eslint-import-resolver-typescript@3.8.5(eslint-plugin-import@2.29.1)(eslint@9.22.0(jiti@2.4.1)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.0
@@ -4380,18 +4380,18 @@ snapshots:
       stable-hash: 0.0.4
       tinyglobby: 0.2.12
     optionalDependencies:
-      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.8.4)(eslint@9.22.0(jiti@2.4.1))
+      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.8.5)(eslint@9.22.0(jiti@2.4.1))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.8.2(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.4)(eslint@9.22.0(jiti@2.4.1)):
+  eslint-module-utils@2.8.2(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.5)(eslint@9.22.0(jiti@2.4.1)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2)
       eslint: 9.22.0(jiti@2.4.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.8.4(eslint-plugin-import@2.29.1)(eslint@9.22.0(jiti@2.4.1))
+      eslint-import-resolver-typescript: 3.8.5(eslint-plugin-import@2.29.1)(eslint@9.22.0(jiti@2.4.1))
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -4400,7 +4400,7 @@ snapshots:
     dependencies:
       eslint: 9.22.0(jiti@2.4.1)
 
-  eslint-plugin-import@2.29.1(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.8.4)(eslint@9.22.0(jiti@2.4.1)):
+  eslint-plugin-import@2.29.1(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.8.5)(eslint@9.22.0(jiti@2.4.1)):
     dependencies:
       array-includes: 3.1.7
       array.prototype.findlastindex: 1.2.3
@@ -4410,7 +4410,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.22.0(jiti@2.4.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.2(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.4)(eslint@9.22.0(jiti@2.4.1))
+      eslint-module-utils: 2.8.2(@typescript-eslint/parser@8.25.0(eslint@9.22.0(jiti@2.4.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.5)(eslint@9.22.0(jiti@2.4.1))
       hasown: 2.0.0
       is-core-module: 2.13.1
       is-glob: 4.0.3
