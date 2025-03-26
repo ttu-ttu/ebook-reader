@@ -17,8 +17,8 @@ export default async function loadEpub(
   document: Document,
   lastBookModified: number
 ): Promise<LoadData> {
-  const { contents, result: data } = await extractEpub(file);
-  const result = generateEpubHtml(data, contents, document);
+  const { contents, result: data, contentsDirectory } = await extractEpub(file);
+  const result = generateEpubHtml(data, contents, document, contentsDirectory);
 
   const displayData = {
     title: file.name,

@@ -52,6 +52,11 @@ export default async function extractEpub(blob: Blob) {
       ).map(async (item) => {
         const fileRelativePath = item['@_href'];
         const entry = fileMap[path.join(contentsDirectory, fileRelativePath)];
+
+        if (!entry) {
+          throw new Error(`item ${fileRelativePath} not found`);
+        }
+
         if (entry.getData && !entry.directory) {
           let value: string | Blob;
           const mediaType: string = item['@_media-type'];

@@ -18,7 +18,8 @@ export const prependValue = 'ttu-';
 export default function generateEpubHtml(
   data: Record<string, string | Blob>,
   contents: EpubContent | EpubOPFContent,
-  document: Document
+  document: Document,
+  contentsDirectory: string
 ) {
   const fallbackData = new Map<string, string>();
 
@@ -144,7 +145,7 @@ export default function generateEpubHtml(
 
     if (!body?.childNodes?.length) {
       parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/xml');
-      body = parsedContent.querySelector('body'); // XMLDocument doesn't seem to have the body property
+      body = parsedContent.querySelector('body')!;
 
       if (!body?.childNodes?.length) {
         throw new Error('Unable to find valid body content while parsing EPUB');
@@ -154,11 +155,27 @@ export default function generateEpubHtml(
     const htmlClass = parsedContent.querySelector('html')?.className || '';
     const bodyId = body.id || '';
     const bodyClass = body.className || '';
+
+    for (const elm of [...body.querySelectorAll('image,img')]) {
+      const attributes =
+        elm.tagName.toLowerCase() === 'image'
+          ? elm.getAttributeNames().filter((attr) => attr.endsWith('href'))
+          : ['src'];
+
+      for (const attr of attributes) {
+        const value = elm.getAttribute(attr);
+
+        if (value) {
+          elm.setAttribute(attr, path.join(path.dirname(htmlHref), value));
+        }
+      }
+    }
+
     let innerHtml = body.innerHTML || '';
 
     blobLocations.forEach((blobLocation) => {
       innerHtml = innerHtml.replaceAll(
-        relative(htmlHref, blobLocation),
+        relative(contentsDirectory, blobLocation),
         buildDummyBookImage(blobLocation)
       );
     });
