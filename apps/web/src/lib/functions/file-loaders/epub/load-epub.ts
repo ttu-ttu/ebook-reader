@@ -31,11 +31,18 @@ export default async function loadEpub(
     : contents.package.metadata;
 
   if (metadata) {
-    const dcTitle = metadata['dc:title'];
-    if (typeof dcTitle === 'string') {
-      displayData.title = dcTitle;
-    } else if (dcTitle && dcTitle['#text']) {
-      displayData.title = dcTitle['#text'];
+    const titleValues = Array.isArray(metadata['dc:title'])
+      ? metadata['dc:title']
+      : [metadata['dc:title']];
+
+    for (const dcTitle of titleValues) {
+      if (typeof dcTitle === 'string') {
+        displayData.title = dcTitle;
+        break;
+      } else if (dcTitle && dcTitle['#text']) {
+        displayData.title = dcTitle['#text'];
+        break;
+      }
     }
   }
   const blobData = reduceObjToBlobs(data);
