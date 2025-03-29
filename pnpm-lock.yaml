@@ -45,8 +45,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(eslint@9.23.0(jiti@2.4.1))(typescript@5.8.2)
       eslint-plugin-svelte:
-        specifier: 3.3.3
-        version: 3.3.3(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5)
+        specifier: 3.4.0
+        version: 3.4.0(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5)
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -1571,8 +1571,8 @@ packages:
       eslint: ^8.0.0
       typescript: '>=4.0.0'
 
-  eslint-plugin-svelte@3.3.3:
-    resolution: {integrity: sha512-imzGqIgWbfsb/CR14d3k3M8MiVNGet+l9mjPhvo1Rm0Nxi0rNn4/eELqyR8FWlgKBMlGkOp2kshRJm0xpxNfHQ==}
+  eslint-plugin-svelte@3.4.0:
+    resolution: {integrity: sha512-L0eX0W6M0YhIUhWRlOAaornY1lIz6xRSVKVJuiRovMM5wHUBQZmefwJRR0y+sqR0CHtJpFmxYiQbw3UaO8h5KA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.1 || ^9.0.0
@@ -2639,11 +2639,6 @@ packages:
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
-    hasBin: true
-
-  semver@7.6.3:
-    resolution: {integrity: sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==}
-    engines: {node: '>=10'}
     hasBin: true
 
   semver@7.7.1:
@@ -4470,7 +4465,7 @@ snapshots:
   eslint-compat-utils@0.6.4(eslint@9.23.0(jiti@2.4.1)):
     dependencies:
       eslint: 9.23.0(jiti@2.4.1)
-      semver: 7.6.3
+      semver: 7.7.1
 
   eslint-config-prettier@10.1.1(eslint@9.23.0(jiti@2.4.1)):
     dependencies:
@@ -4579,7 +4574,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-svelte@3.3.3(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5):
+  eslint-plugin-svelte@3.4.0(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5):
     dependencies:
       '@eslint-community/eslint-utils': 4.5.0(eslint@9.23.0(jiti@2.4.1))
       '@jridgewell/sourcemap-codec': 1.5.0
@@ -4590,7 +4585,7 @@ snapshots:
       postcss: 8.5.3
       postcss-load-config: 3.1.4(postcss@8.5.3)
       postcss-safe-parser: 7.0.1(postcss@8.5.3)
-      semver: 7.6.3
+      semver: 7.7.1
       svelte-eslint-parser: 1.1.1(svelte@5.0.5)
     optionalDependencies:
       svelte: 5.0.5
@@ -5612,8 +5607,6 @@ snapshots:
 
   semver@6.3.1:
     optional: true
-
-  semver@7.6.3: {}
 
   semver@7.7.1: {}
 
