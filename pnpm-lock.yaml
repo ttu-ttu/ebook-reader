@@ -45,8 +45,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(eslint@9.23.0(jiti@2.4.1))(typescript@5.8.2)
       eslint-plugin-svelte:
-        specifier: 3.4.1
-        version: 3.4.1(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5)
+        specifier: 3.5.0
+        version: 3.5.0(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5)
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -1571,8 +1571,8 @@ packages:
       eslint: ^8.0.0
       typescript: '>=4.0.0'
 
-  eslint-plugin-svelte@3.4.1:
-    resolution: {integrity: sha512-wgbRwN/6FampBBiIuuLSmp4QRqmuHuexbuRJwx+kqzsxKOhakU8o8sVgGhsf/bQiZkOmWF/5Mrj2CHmVMwY+YQ==}
+  eslint-plugin-svelte@3.5.0:
+    resolution: {integrity: sha512-986WKRAFoS5KN/jc0Z06akYxfNs+obca486sf9Y+0VbjRUfqJZYX/HSQR/js3xd3enrFqDLg8MToWgDOvCQUqQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.1 || ^9.0.0
@@ -4574,7 +4574,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-svelte@3.4.1(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5):
+  eslint-plugin-svelte@3.5.0(eslint@9.23.0(jiti@2.4.1))(svelte@5.0.5):
     dependencies:
       '@eslint-community/eslint-utils': 4.5.0(eslint@9.23.0(jiti@2.4.1))
       '@jridgewell/sourcemap-codec': 1.5.0
