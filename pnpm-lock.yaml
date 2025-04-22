@@ -114,8 +114,8 @@ importers:
         specifier: 7.8.2
         version: 7.8.2
       svelte-fa:
-        specifier: 4.0.3
-        version: 4.0.3(svelte@4.2.19)
+        specifier: 4.0.4
+        version: 4.0.4(svelte@4.2.19)
       svelte-gestures:
         specifier: 5.0.7
         version: 5.0.7
@@ -2792,8 +2792,8 @@ packages:
       svelte:
         optional: true
 
-  svelte-fa@4.0.3:
-    resolution: {integrity: sha512-saZ8yACM0k9Aexey+2NXU1W0MBosU5lBsRgqFCJKM+Taw7d0HyimPaPAjmvY/Xkyi3UwEYL/Sdu1IZJv/p0Flw==}
+  svelte-fa@4.0.4:
+    resolution: {integrity: sha512-85BomCGkTrH8kPDGvb8JrVwq9CqR9foprbKjxemP4Dtg3zPR7OXj5hD0xVYK0C+UCzFI1zooLoK/ndIX6aYXAw==}
     peerDependencies:
       svelte: ^4.0.0 || ^5.0.0
 
@@ -5774,7 +5774,7 @@ snapshots:
     optionalDependencies:
       svelte: 5.0.5
 
-  svelte-fa@4.0.3(svelte@4.2.19):
+  svelte-fa@4.0.4(svelte@4.2.19):
     dependencies:
       svelte: 4.2.19
 
