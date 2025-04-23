@@ -17,7 +17,7 @@ RUN pnpm svelte-kit sync
 RUN pnpm build
 
 
-FROM nginx:1.27-alpine
+FROM nginx:1.28-alpine
 
 COPY apps/web/nginx /etc/nginx
 COPY --from=builder /workspace/apps/web/build /usr/share/nginx/html
