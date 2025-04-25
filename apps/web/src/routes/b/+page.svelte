@@ -1660,6 +1660,12 @@
   />
 {/if}
 
+{#if $isMobile$}
+  <div class="fixed top-0 left-0 z-10 h-full w-5" on:click={() => pageManager?.nextPage()} />
+
+  <div class="fixed top-0 right-0 z-10 h-full w-5" on:click={() => pageManager?.prevPage()} />
+{/if}
+
 {#if showSpinner}
   <div class="fixed inset-0 flex h-full w-full items-center justify-center text-7xl">
     <Fa icon={faSpinner} spin />
