@@ -13,6 +13,10 @@
     type IconDefinition
   } from '@fortawesome/free-solid-svg-icons';
   import type { TrackingHistory } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
+  import {
+    getChapterData,
+    type SectionWithProgress
+  } from '$lib/components/book-reader/book-toc/book-toc';
   import { dialogManager } from '$lib/data/dialog-manager';
   import type { BooksDbStatistic } from '$lib/data/database/books-db/versions/books-db';
   import type { ReadingGoal } from '$lib/data/reading-goal';
@@ -35,6 +39,8 @@
   export let wasTrackerPaused: boolean;
   export let canSaveStatistics: boolean;
   export let timeToFinishBook: string;
+  export let sectionData: SectionWithProgress[];
+  export let exploredCharCount: number;
   export let lastExploredCharCount: number;
   export let previousLastExploredCharCount: number;
   export let frozenPosition: number;
@@ -66,6 +72,7 @@
   const trackingItemsPerPage = 15;
 
   let trackingHistoryIndex = 0;
+  let timeToFinishChapter = '';
 
   $: allStatistics = autoScrollerStatistics
     ? [
@@ -103,6 +110,24 @@
         disableCloseOnClick: true
       }
     ]);
+
+    if (sectionData) {
+      const [mainChapters, chapterIndex] = getChapterData(sectionData);
+      const currentChapter = mainChapters[chapterIndex];
+      const remainingCharacters =
+        (currentChapter.startCharacter ?? 0) +
+        (currentChapter.characters ?? 0) -
+        (exploredCharCount ?? 0);
+
+      timeToFinishChapter = sessionStatistics.lastReadingSpeed
+        ? toTimeString(
+            Math.max(
+              0,
+              Math.floor(remainingCharacters / (sessionStatistics.lastReadingSpeed / 3600))
+            )
+          )
+        : 'N/A';
+    }
 
     return () => {
       $skipKeyDownListener$ = false;
@@ -300,7 +325,7 @@
         </div>
         {#if statistic.id === 'Current Session'}
           <button class="text-left" on:click={() => handleBlurredKey('finishETA')}>
-            Estimated Time to Finish:
+            Time to Finish Book:
           </button>
           <div
             role="button"
@@ -311,6 +336,21 @@
           >
             {timeToFinishBook}
           </div>
+          {#if timeToFinishChapter}
+            <button class="text-left" on:click={() => handleBlurredKey('finishChapterETA')}>
+              Time to Finish Chapter:
+            </button>
+            <div
+              role="button"
+              tabindex="0"
+              class:blur={$lastBlurredTrackerItems$.has('finishChapterETA')}
+              on:click={() => handleBlurredKey('finishChapterETA')}
+              on:keyup={dummyFn}
+            >
+              {timeToFinishChapter}
+            </div>
+          {/if}
+
           <div class="mt-3">Current Position:</div>
           <div class="mt-3">{lastExploredCharCount}</div>
           <div>Previous Position</div>

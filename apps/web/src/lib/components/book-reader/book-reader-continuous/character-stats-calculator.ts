@@ -26,6 +26,8 @@ export class CharacterStatsCalculator {
 
   private paragraphPosToAccCharCount = new Map<number, number>();
 
+  private forcedInitTimer: number | undefined;
+
   constructor(
     public readonly containerEl: HTMLElement,
     private readonly axis: 'horizontal' | 'vertical',
@@ -49,7 +51,18 @@ export class CharacterStatsCalculator {
     return this.axis === 'vertical';
   }
 
+  updateParagraphPosIfNeeded(scrollPos = 0) {
+    clearTimeout(this.forcedInitTimer);
+
+    this.forcedInitTimer = window.setTimeout(() => {
+      if (typeof this.paragraphPos[0] !== 'number') {
+        this.updateParagraphPos(scrollPos);
+      }
+    });
+  }
+
   updateParagraphPos(scrollPos = 0) {
+    window.clearTimeout(this.forcedInitTimer);
     const scrollElRect = this.scrollEl.getBoundingClientRect();
     const scrollElRight = formatPos(
       this.verticalMode ? scrollElRect.right : scrollElRect.top,
