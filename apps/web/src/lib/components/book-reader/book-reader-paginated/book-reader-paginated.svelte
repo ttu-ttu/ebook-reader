@@ -50,6 +50,12 @@
 
   export let verticalMode: boolean;
 
+  export let prioritizeReaderStyles: boolean;
+
+  export let enableTextJustification: boolean;
+
+  export let enableTextWrapPretty: boolean;
+
   export let fontColor: string;
 
   export let backgroundColor: string;
@@ -65,6 +71,10 @@
   export let fontSize: number;
 
   export let lineHeight: number;
+
+  export let textIndentation: number;
+
+  export let textMarginValue: number;
 
   export let hideSpoilerImage: boolean;
 
@@ -691,6 +701,8 @@
   style:--book-content-image-max-width="{verticalMode
     ? width
     : (width + gap) / columnCount - gap}px"
+  style:--book-content-text-margin="{textMarginValue ?? 0}rem"
+  style:--book-content-text-intendation="{textIndentation ?? 0}rem"
   class:book-content--avoid-page-break={avoidPageBreak}
   class:book-content--writing-vertical-rl={verticalMode}
   class:book-content--writing-horizontal-rl={!verticalMode}
@@ -700,6 +712,9 @@
   class:book-content--furigana-style-partial={furiganaStyle === FuriganaStyle.Partial}
   class:book-content--furigana-style-toggle={furiganaStyle === FuriganaStyle.Toggle}
   class:book-content--furigana-style-full={furiganaStyle === FuriganaStyle.Full}
+  class:ttu-apply-important={prioritizeReaderStyles}
+  class:ttu-apply-justification={enableTextJustification}
+  class:ttu-text-wrap-pretty={enableTextWrapPretty}
   class="book-content m-auto"
   use:swipe={{ timeframe: 500, minSwipeDistance: $swipeThreshold$, touchAction: 'pan-y' }}
   on:swipe={onSwipe}

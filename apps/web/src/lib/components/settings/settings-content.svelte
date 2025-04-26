@@ -35,9 +35,12 @@
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
     horizontalCustomReadingPosition$,
+    textMarginMode$,
+    textMarginValue$,
     theme$,
     verticalCustomReadingPosition$
   } from '$lib/data/store';
+  import type { TextMarginMode } from '$lib/data/text-margin-mode';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
@@ -62,6 +65,10 @@
 
   export let lineHeight: number;
 
+  export let textIndentation: number;
+
+  export let textMarginValue: number;
+
   export let blurImage: boolean;
 
   export let blurImageMode: string;
@@ -71,6 +78,14 @@
   export let furiganaStyle: FuriganaStyle;
 
   export let writingMode: WritingMode;
+
+  export let prioritizeReaderStyles: boolean;
+
+  export let enableTextJustification: boolean;
+
+  export let enableTextWrapPretty: boolean;
+
+  export let textMarginMode: TextMarginMode;
 
   export let enableReaderWakeLock: boolean;
 
@@ -198,6 +213,17 @@
     }
   ];
 
+  const optionsForTextMarginMode: ToggleOption<TextMarginMode>[] = [
+    {
+      id: 'auto',
+      text: 'Auto'
+    },
+    {
+      id: 'manual',
+      text: 'Manual'
+    }
+  ];
+
   const optionsForViewMode: ToggleOption<ViewMode>[] = [
     {
       id: ViewMode.Continuous,
@@ -309,6 +335,10 @@
   let furiganaStyleTooltip = '';
   let autoReplicationTypeTooltip = '';
   let trackerAutoPauseTooltip = '';
+
+  $: if ($textMarginMode$ === 'auto') {
+    $textMarginValue$ = 0;
+  }
 
   $: autoBookmarkTooltip = `If enabled sets a bookmark after ${autoBookmarkTime} seconds without scrolling/page change`;
   $: wakeLockSupported = browser && 'wakeLock' in navigator;
@@ -516,6 +546,43 @@
       />
     </SettingsItemGroup>
     <SettingsItemGroup
+      title="Paragraph Indentation"
+      tooltip="# of rem added as text indentation of new paragraphs"
+    >
+      <input
+        type="number"
+        class={inputClasses}
+        step=".5"
+        min="0"
+        bind:value={textIndentation}
+        on:blur={() => {
+          const newValue = Number.parseFloat(`${textIndentation ?? 0}`);
+
+          if (isNaN(newValue) || newValue < 1) {
+            textIndentation = 0;
+          }
+        }}
+      />
+    </SettingsItemGroup>
+    {#if textMarginMode === 'manual'}
+      <SettingsItemGroup title="Paragraph Margins" tooltip="# of rem added as margin to paragraphs">
+        <input
+          type="number"
+          class={inputClasses}
+          step=".5"
+          min="0"
+          bind:value={textMarginValue}
+          on:blur={() => {
+            const newValue = Number.parseFloat(`${textMarginValue ?? 0}`);
+
+            if (isNaN(newValue) || newValue < 1) {
+              textMarginValue = 0;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+    {/if}
+    <SettingsItemGroup
       title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}
     >
       <SettingsDimensionPopover
@@ -581,6 +648,39 @@
     {/if}
     <SettingsItemGroup title="Writing mode">
       <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Prioritize Reader Styles"
+      tooltip={'When enabled the "important" declaration is added to certain rules like margins or justification which makes it more likely to be applied in case of conflicting book styles'}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={prioritizeReaderStyles}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Enable Text Justification"
+      tooltip={'When enabled the reader adds styles to justify text content of paragraphs'}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={enableTextJustification}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Enable Pretty Text Wrap"
+      tooltip={'When enabled the reader adds the pretty text wrap style to supported browsers'}
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTextWrapPretty} />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Paragraph Margin Mode"
+      tooltip={'When set to manual it allows to specify a margin value which should be applied to paragraphs'}
+    >
+      <ButtonToggleGroup
+        options={optionsForTextMarginMode}
+        bind:selectedOptionId={textMarginMode}
+      />
     </SettingsItemGroup>
     {#if wakeLockSupported}
       <SettingsItemGroup
@@ -696,7 +796,7 @@
         />
       </SettingsItemGroup>
       {#if !verticalMode}
-        <SettingsItemGroup title="Page Columns">
+        <SettingsItemGroup title="Page Columns" tooltip="# of text columns rendered">
           <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />
         </SettingsItemGroup>
       {/if}
