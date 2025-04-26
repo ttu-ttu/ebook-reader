@@ -18,6 +18,8 @@
     customReadingPointEnabled$,
     disableWheelNavigation$,
     enableReaderWakeLock$,
+    enableTextJustification$,
+    enableTextWrapPretty$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -32,6 +34,7 @@
     overwriteBookCompletion$,
     pageColumns$,
     pauseTrackerOnCustomPointChange$,
+    prioritizeReaderStyles$,
     replicationSaveBehavior$,
     secondDimensionMaxValue$,
     selectionToBookmarkEnabled$,
@@ -41,6 +44,9 @@
     statisticsEnabled$,
     statisticsMergeMode$,
     swipeThreshold$,
+    textIndentation$,
+    textMarginMode$,
+    textMarginValue$,
     theme$,
     trackerAutoPause$,
     trackerBackwardSkipThreshold$,
@@ -136,11 +142,17 @@
       bind:fontFamilyGroupTwo={$fontFamilyGroupTwo$}
       bind:fontSize={$fontSize$}
       bind:lineHeight={$lineHeight$}
+      bind:textIndentation={$textIndentation$}
+      bind:textMarginValue={$textMarginValue$}
       bind:blurImage={$hideSpoilerImage$}
       bind:blurImageMode={$hideSpoilerImageMode$}
       bind:hideFurigana={$hideFurigana$}
       bind:furiganaStyle={$furiganaStyle$}
       bind:writingMode={$writingMode$}
+      bind:prioritizeReaderStyles={$prioritizeReaderStyles$}
+      bind:enableTextJustification={$enableTextJustification$}
+      bind:enableTextWrapPretty={$enableTextWrapPretty$}
+      bind:textMarginMode={$textMarginMode$}
       bind:enableReaderWakeLock={$enableReaderWakeLock$}
       bind:showCharacterCounter={$showCharacterCounter$}
       bind:viewMode={$viewMode$}

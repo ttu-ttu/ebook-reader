@@ -33,6 +33,82 @@
     display: flex;
     justify-content: center;
   }
+
+  &:not(.ttu-apply-important) {
+    :global(p) {
+      text-indent: var(--book-content-text-intendation, 0rem);
+    }
+
+    &.book-content--writing-vertical-rl {
+      :global(p) {
+        margin-right: var(--book-content-text-margin, 0rem);
+        margin-left: var(--book-content-text-margin, 0rem);
+      }
+    }
+
+    &.book-content--writing-horizontal-rl {
+      :global(p) {
+        margin-top: var(--book-content-text-margin, 0rem);
+        margin-bottom: var(--book-content-text-margin, 0rem);
+      }
+    }
+
+    &.ttu-apply-justification {
+      text-align: justify;
+      hyphens: auto;
+
+      :global(p) {
+        text-align: justify;
+        hyphens: auto;
+      }
+    }
+
+    &.ttu-text-wrap-pretty {
+      text-wrap: pretty;
+
+      :global(p) {
+        text-wrap: pretty;
+      }
+    }
+  }
+
+  &.ttu-apply-important {
+    :global(p) {
+      text-indent: var(--book-content-text-intendation, 0rem) !important;
+    }
+
+    &.book-content--writing-vertical-rl {
+      :global(p) {
+        margin-right: var(--book-content-text-margin, 0rem) !important;
+        margin-left: var(--book-content-text-margin, 0rem) !important;
+      }
+    }
+
+    &.book-content--writing-horizontal-rl {
+      :global(p) {
+        margin-top: var(--book-content-text-margin, 0rem) !important;
+        margin-bottom: var(--book-content-text-margin, 0rem) !important;
+      }
+    }
+
+    &.ttu-apply-justification {
+      text-align: justify !important;
+      hyphens: auto !important;
+
+      :global(p) {
+        text-align: justify !important;
+        hyphens: auto !important;
+      }
+    }
+
+    &.ttu-text-wrap-pretty {
+      text-wrap: pretty !important;
+
+      :global(p) {
+        text-wrap: pretty !important;
+      }
+    }
+  }
 }
 
 .book-content--hide-furigana.book-content--furigana-style-hide {

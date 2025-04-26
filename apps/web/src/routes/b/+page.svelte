@@ -41,6 +41,8 @@
     avoidPageBreak$,
     bookReaderKeybindMap$,
     database,
+    enableTextJustification$,
+    enableTextWrapPretty$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -50,7 +52,10 @@
     hideSpoilerImage$,
     multiplier$,
     pageColumns$,
+    prioritizeReaderStyles$,
     secondDimensionMaxValue$,
+    textIndentation$,
+    textMarginValue$,
     theme$,
     verticalMode$,
     writingMode$,
@@ -1578,6 +1583,9 @@
     htmlContent={$bookData$.htmlContent}
     width={$containerViewportWidth$ ?? 0}
     height={$containerViewportHeight$ ?? 0}
+    prioritizeReaderStyles={$prioritizeReaderStyles$}
+    enableTextJustification={$enableTextJustification$}
+    enableTextWrapPretty={$enableTextWrapPretty$}
     verticalMode={$verticalMode$}
     fontColor={$themeOption$?.fontColor}
     backgroundColor={$backgroundColor$}
@@ -1587,6 +1595,8 @@
     fontFamilyGroupTwo={$fontFamilyGroupTwo$}
     fontSize={$fontSize$}
     lineHeight={$lineHeight$}
+    textIndentation={$textIndentation$}
+    textMarginValue={$textMarginValue$}
     hideSpoilerImage={$hideSpoilerImage$}
     hideFurigana={$hideFurigana$}
     furiganaStyle={$furiganaStyle$}
