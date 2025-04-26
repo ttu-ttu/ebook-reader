@@ -264,6 +264,10 @@
         }
 
         bookData = await saveExternalLastRead(externalStorageHandler, bookData);
+
+        if (bookData.language) {
+          document.documentElement.lang = bookData.language;
+        }
       } catch (error: any) {
         const message = `Error loading book: ${error.message}`;
 
@@ -521,6 +525,7 @@
   onDestroy(() => {
     if (browser) {
       document.removeEventListener('ttu-action', handleAction, false);
+      document.documentElement.lang = 'ja';
     }
 
     readerImageGalleryPictures$.next([]);
