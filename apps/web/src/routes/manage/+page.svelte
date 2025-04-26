@@ -51,7 +51,7 @@
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import pLimit from 'p-limit';
   import { combineLatest, map, Observable, share, Subject, switchMap, takeUntil } from 'rxjs';
-  import { tick } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import Fa from 'svelte-fa';
 
   const booksAreLoading$ = database.listLoading$.pipe(map((isLoading) => isLoading));
@@ -112,6 +112,8 @@
       selectedBookIds = new Set();
     }
   }
+
+  onDestroy(() => dialogManager.dialogs$.next([]));
 
   function bookmarkToProgress(b: BooksDbBookmarkData | undefined) {
     return b?.progress
