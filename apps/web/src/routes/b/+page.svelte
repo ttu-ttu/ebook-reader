@@ -57,6 +57,7 @@
     textIndentation$,
     textMarginValue$,
     theme$,
+    trackerAutostartTime$,
     verticalMode$,
     writingMode$,
     viewMode$,
@@ -450,6 +451,18 @@
   const replicator$ = executeReplicate$.pipe(
     auditTime(60000),
     switchMap(() => executeReplication()),
+    reduceToEmptyString()
+  );
+
+  const autoStartTracker$ = iffBrowser(() =>
+    $statisticsEnabled$ && $trackerAutostartTime$ > 0 ? fromEvent(document, PAGE_CHANGE) : NEVER
+  ).pipe(
+    debounceTime($trackerAutostartTime$ * 1000),
+    take(1),
+    tap(() => {
+      wasTrackerPaused = false;
+      isTrackerPaused$.next(wasTrackerPaused);
+    }),
     reduceToEmptyString()
   );
 
@@ -1631,6 +1644,7 @@
   {$setWritingMode$ ?? ''}
   {$textSelector$ ?? ''}
   {$replicator$ ?? ''}
+  {$autoStartTracker$ ?? ''}
 {:else}
   {$leaveIfBookMissing$ ?? ''}
 {/if}

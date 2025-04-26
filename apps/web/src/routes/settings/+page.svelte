@@ -51,6 +51,7 @@
     trackerAutoPause$,
     trackerBackwardSkipThreshold$,
     trackerForwardSkipThreshold$,
+    trackerAutostartTime$,
     trackerIdleTime$,
     trackerPopupDetection$,
     trackerSkipThresholdAction$,
@@ -184,6 +185,7 @@
       bind:trackerAutoPause={$trackerAutoPause$}
       bind:openTrackerOnCompletion={$openTrackerOnCompletion$}
       bind:addCharactersOnCompletion={$addCharactersOnCompletion$}
+      bind:trackerAutoStartTime={$trackerAutostartTime$}
       bind:trackerIdleTime={$trackerIdleTime$}
       bind:trackerForwardSkipThreshold={$trackerForwardSkipThreshold$}
       bind:trackerBackwardSkipThreshold={$trackerBackwardSkipThreshold$}
