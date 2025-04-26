@@ -53,6 +53,10 @@ export class SectionCharacterStatsCalculator {
       this.document
     );
     this.sectionIndex = sectionIndex;
+
+    setTimeout(() => {
+      this.calculator?.updateParagraphPosIfNeeded(this.virtualScrollPos$.getValue());
+    });
   }
 
   updateParagraphPos() {
