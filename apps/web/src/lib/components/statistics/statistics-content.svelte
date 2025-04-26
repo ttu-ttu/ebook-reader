@@ -63,7 +63,7 @@
   import { pluralize } from '$lib/functions/utils';
   import pLimit from 'p-limit';
   import { tap } from 'rxjs';
-  import { onMount, tick } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import Fa from 'svelte-fa';
   import { quintInOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
@@ -292,6 +292,8 @@
   }
 
   onMount(init);
+
+  onDestroy(() => dialogManager.dialogs$.next([]));
 
   function onKeyUp(ev: KeyboardEvent) {
     if (

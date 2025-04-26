@@ -205,6 +205,7 @@
   let confettiWidthModifier = 36;
   let confettiMaxRuns = 0;
   let showReaderImageGallery = false;
+  let dismissDialogs = true;
   let syncedResolver: () => void;
 
   const syncedPromise = new Promise<void>((resolver) => {
@@ -547,6 +548,10 @@
     }
 
     readerImageGalleryPictures$.next([]);
+
+    if (dismissDialogs) {
+      dialogManager.dialogs$.next([]);
+    }
   });
 
   function handleUnload(event: BeforeUnloadEvent) {
@@ -1315,6 +1320,7 @@
     if (message) {
       logger.error(message);
 
+      dismissDialogs = false;
       dialogManager.dialogs$.next([
         {
           component: MessageDialog,

@@ -50,8 +50,9 @@
     ReplicationSaveBehavior,
     AutoReplicationType
   } from '$lib/functions/replication/replication-options';
-  import Fa from 'svelte-fa';
   import { map } from 'rxjs';
+  import Fa from 'svelte-fa';
+  import { onDestroy } from 'svelte';
 
   export let selectedTheme: string;
 
@@ -184,6 +185,8 @@
     thickBorders: true,
     showIcons: true
   }));
+
+  onDestroy(() => dialogManager.dialogs$.next([]));
 
   const optionsForFuriganaStyle: ToggleOption<FuriganaStyle>[] = [
     {

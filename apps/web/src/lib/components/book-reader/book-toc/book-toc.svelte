@@ -70,7 +70,10 @@
       scrollToChapterItem(document.getElementById(`for${currentChapter.reference}`));
     }
 
-    return () => ($skipKeyDownListener$ = false);
+    return () => {
+      $skipKeyDownListener$ = false;
+      dialogManager.dialogs$.next([]);
+    };
   });
 
   function scrollToChapterItem(elm: HTMLElement | null) {
