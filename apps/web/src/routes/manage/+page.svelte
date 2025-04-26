@@ -24,6 +24,7 @@
     cacheStorageData$,
     confirmStatisticsDeletion$,
     database,
+    fileCountData$,
     isOnline$,
     keepLocalStatisticsOnDeletion$,
     lastExportedTarget$,
@@ -298,7 +299,8 @@
         $readingGoalsMergeMode$
       ),
       files,
-      cancelSignal
+      cancelSignal,
+      $fileCountData$
     ).catch((catchedError) => catchedError.message);
 
     resetProgress();

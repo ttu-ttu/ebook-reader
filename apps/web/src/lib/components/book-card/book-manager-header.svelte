@@ -13,6 +13,7 @@
     translateXHeaderFa
   } from '$lib/css-classes';
   import { SortDirection } from '$lib/data/sort-types';
+  import { FilesystemStorageHandler } from '$lib/data/storage/handler/filesystem-handler';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import { StorageKey } from '$lib/data/storage/storage-types';
   import {
@@ -23,6 +24,7 @@
   import {
     booklistSortOptions$,
     cacheStorageData$,
+    fileCountData$,
     fsStorageSource$,
     gDriveStorageSource$,
     isOnline$,
@@ -92,12 +94,15 @@
   let fileImportElm: HTMLElement;
   let folderImportElm: HTMLElement;
   let backupImportElm: HTMLElement;
+  let countImportElm: HTMLInputElement;
   let storageSourceElm: Popover;
   let sortOptionsElm: Popover;
   let isOldUrl = false;
+  let showLoadCount = false;
 
   $: if (browser) {
     isOldUrl = isOnOldUrl(window);
+    showLoadCount = new URLSearchParams(window.location.search).has('count');
 
     importMenuItems.push(
       ...($isMobile$
@@ -170,6 +175,14 @@
     dispatch('importBackup', fileList[0]);
   }
 
+  async function setCountData(fileList: FileList) {
+    try {
+      $fileCountData$ = JSON.parse(await FilesystemStorageHandler.readFileObject(fileList[0]));
+    } catch ({ message }: any) {
+      console.error(`failed to read file: ${message}`);
+    }
+  }
+
   function changeSortOptions(clickedProperty: string, newDirection: SortDirection) {
     const { property, direction } = $booklistSortOptions$[$storageSource$];
 
@@ -214,6 +227,13 @@
   accept=".zip,application/zip"
   use:inputFile={dispatchImportBackup}
   bind:this={backupImportElm}
+/>
+<input
+  hidden
+  type="file"
+  accept=".json,application/json"
+  use:inputFile={setCountData}
+  bind:this={countImportElm}
 />
 <div class={baseHeaderClasses}>
   {#if !replicationToProgress}
@@ -475,6 +495,12 @@
               }}
             />
           </div>
+          {#if showLoadCount}
+            <button
+              style:color={!!$fileCountData$ ? 'red' : null}
+              on:click={() => countImportElm.click()}>C</button
+            >
+          {/if}
         {/if}
 
         {#if selectedCount > 0}

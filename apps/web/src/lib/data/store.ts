@@ -367,6 +367,8 @@ export const lastStatisticsSummarySortDirection$ =
     SortDirection.DESC
   );
 
+export const fileCountData$ = writableSubject<Record<string, number> | undefined>(undefined);
+
 export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyB: BookReaderAvailableKeybind.BOOKMARK,
   b: BookReaderAvailableKeybind.BOOKMARK,

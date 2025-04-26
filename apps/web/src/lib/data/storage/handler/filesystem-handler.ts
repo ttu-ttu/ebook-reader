@@ -910,6 +910,22 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     BaseStorageHandler.reportProgress(progressPerStep);
   }
 
+  static readFileObject(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.addEventListener('load', () => {
+        resolve(reader.result as string);
+      });
+
+      reader.addEventListener('error', () => {
+        reject(new Error(`Error reading file ${file.name}`));
+      });
+
+      reader.readAsText(file);
+    });
+  }
+
   private static async verifyPermission(handle: FileSystemDirectoryHandle) {
     const options: FileSystemHandlePermissionDescriptor = { mode: 'readwrite' };
 
@@ -941,21 +957,5 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     }
 
     return entries;
-  }
-
-  private static readFileObject(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.addEventListener('load', () => {
-        resolve(reader.result as string);
-      });
-
-      reader.addEventListener('error', () => {
-        reject(new Error(`Error reading file ${file.name}`));
-      });
-
-      reader.readAsText(file);
-    });
   }
 }

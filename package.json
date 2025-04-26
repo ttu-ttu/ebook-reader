@@ -45,7 +45,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "svelte-preprocess"
+      "svelte-preprocess",
+      "unrs-resolver"
     ]
   }
 }
