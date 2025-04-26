@@ -33,6 +33,7 @@ interface SubtitleData {
 interface BooksDbV6BookData {
   id: number;
   title: string;
+  language?: string;
   styleSheet: string;
   elementHtml: string;
   blobs: Record<string, Blob>;
