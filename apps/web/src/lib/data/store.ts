@@ -239,6 +239,8 @@ export const addCharactersOnCompletion$ = writableBooleanLocalStorageSubject()(
   false
 );
 
+export const trackerAutostartTime$ = writableNumberLocalStorageSubject()('trackerAutoStartTime', 0);
+
 export const trackerIdleTime$ = writableNumberLocalStorageSubject()('trackerIdleTime', 0);
 
 export const trackerForwardSkipThreshold$ = writableNumberLocalStorageSubject()(

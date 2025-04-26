@@ -151,6 +151,8 @@
 
   export let addCharactersOnCompletion: boolean;
 
+  export let trackerAutoStartTime: number;
+
   export let trackerIdleTime: number;
 
   export let trackerForwardSkipThreshold: number;
@@ -935,6 +937,25 @@
         <ButtonToggleGroup
           options={optionsForToggle}
           bind:selectedOptionId={addCharactersOnCompletion}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Autostart tracker (sec)"
+        tooltip={'Time in seconds without a change to the character count after which the tracker will initially auto start (0 = disabled, higher value recommended to avoid racing conditions)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          step="1"
+          min="0"
+          bind:value={trackerAutoStartTime}
+          on:blur={() => {
+            const newValue = Number.parseFloat(`${trackerAutoStartTime ?? 0}`);
+
+            if (isNaN(newValue) || newValue < 1) {
+              trackerAutoStartTime = 0;
+            }
+          }}
         />
       </SettingsItemGroup>
       <SettingsItemGroup
