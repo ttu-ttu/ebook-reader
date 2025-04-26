@@ -127,6 +127,10 @@
   }
 
   function handleBlurredKey(dataKey: string) {
+    if (window.getSelection()?.toString().trim()) {
+      return;
+    }
+
     if ($lastBlurredTrackerItems$.has(dataKey)) {
       $lastBlurredTrackerItems$.delete(dataKey);
     } else {
@@ -261,28 +265,52 @@
           Characters Read:
         </button>
         <div
+          role="button"
+          tabindex="0"
           class:blur={$lastBlurredTrackerItems$.has('charactersRead')}
           class:mt-3={statistic.id !== 'All Time' && statistic.id !== 'Book Completion'}
+          on:click={() => handleBlurredKey('charactersRead')}
+          on:keyup={dummyFn}
         >
           {statistic.charactersRead}
         </div>
         <button class="text-left" on:click={() => handleBlurredKey('lastReadingSpeed')}>
           Reading Speed:
         </button>
-        <div class:blur={$lastBlurredTrackerItems$.has('lastReadingSpeed')}>
+        <div
+          role="button"
+          tabindex="0"
+          class:blur={$lastBlurredTrackerItems$.has('lastReadingSpeed')}
+          on:click={() => handleBlurredKey('lastReadingSpeed')}
+          on:keyup={dummyFn}
+        >
           {statistic.lastReadingSpeed} / h
         </div>
         <button class="text-left" on:click={() => handleBlurredKey('readingTime')}>
           Reading Time:
         </button>
-        <div class:blur={$lastBlurredTrackerItems$.has('readingTime')}>
+        <div
+          role="button"
+          tabindex="0"
+          class:blur={$lastBlurredTrackerItems$.has('readingTime')}
+          on:click={() => handleBlurredKey('readingTime')}
+          on:keyup={dummyFn}
+        >
           {toTimeString(statistic.readingTime)}
         </div>
         {#if statistic.id === 'Current Session'}
           <button class="text-left" on:click={() => handleBlurredKey('finishETA')}>
             Estimated Time to Finish:
           </button>
-          <div class:blur={$lastBlurredTrackerItems$.has('finishETA')}>{timeToFinishBook}</div>
+          <div
+            role="button"
+            tabindex="0"
+            class:blur={$lastBlurredTrackerItems$.has('finishETA')}
+            on:click={() => handleBlurredKey('finishETA')}
+            on:keyup={dummyFn}
+          >
+            {timeToFinishBook}
+          </div>
           <div class="mt-3">Current Position:</div>
           <div class="mt-3">{lastExploredCharCount}</div>
           <div>Previous Position</div>
