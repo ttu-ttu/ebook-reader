@@ -1553,6 +1553,7 @@
       fontColor={$themeOption$.fontColor}
       backgroundColor={$backgroundColor$}
       bookTitle={$rawBookData$.title}
+      sectionData={$sectionData$}
       {frozenPosition}
       {exploredCharCount}
       {bookCharCount}

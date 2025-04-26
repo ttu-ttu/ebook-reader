@@ -8,6 +8,7 @@
     TrackerAutoPause
   } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
   import BookTimerMenu from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker-menu.svelte';
+  import type { SectionWithProgress } from '$lib/components/book-reader/book-toc/book-toc';
   import type { AutoScroller } from '$lib/components/book-reader/types';
   import type {
     BooksDbReadingGoal,
@@ -63,6 +64,7 @@
   export let wasTrackerPaused: boolean;
   export let exploredCharCount: number;
   export let bookCharCount: number;
+  export let sectionData: SectionWithProgress[];
   export let frozenPosition: number;
   export let autoScroller: AutoScroller | undefined;
   export let blockDataUpdates: boolean;
@@ -791,6 +793,7 @@
       {currentReadingGoalEnd}
       {remainingTimeInReadingGoalWindow}
       {timeToFinishBook}
+      {exploredCharCount}
       {lastExploredCharCount}
       {previousLastExploredCharCount}
       {frozenPosition}
@@ -801,6 +804,7 @@
       {bookCompletionStatistics}
       {autoScrollerStatistics}
       {bookStartDate}
+      {sectionData}
       canSaveStatistics={statisticsToStore.size > 0}
       bind:wasTrackerPaused
       on:trackerMenuClosed
