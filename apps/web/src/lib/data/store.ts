@@ -52,11 +52,12 @@ import {
   writableArrayLocalStorageSubject,
   writableObjectLocalStorageSubject
 } from './internal/writable-object-local-storage-subject';
-import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
+import type { TextMarginMode } from './text-margin-mode';
 import type { ThemeOption } from './theme-option';
 import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
 import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
+import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
@@ -68,6 +69,8 @@ export const fontFamilyGroupOne$ = writableStringLocalStorageSubject()('fontFami
 export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()('fontFamilyGroupTwo', '');
 export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
 export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 1.65);
+export const textIndentation$ = writableNumberLocalStorageSubject()('textIndentation', 0);
+export const textMarginValue$ = writableNumberLocalStorageSubject()('textMarginValue', 0);
 export const hideSpoilerImage$ = writableBooleanLocalStorageSubject()('hideSpoilerImage', true);
 export const hideSpoilerImageMode$ = writableStringLocalStorageSubject<BlurMode>()(
   'hideSpoilerImageMode',
@@ -81,6 +84,22 @@ export const furiganaStyle$ = writableStringLocalStorageSubject<FuriganaStyle>()
 export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()(
   'writingMode',
   'vertical-rl'
+);
+export const prioritizeReaderStyles$ = writableBooleanLocalStorageSubject()(
+  'prioritizeReaderStyles',
+  false
+);
+export const enableTextJustification$ = writableBooleanLocalStorageSubject()(
+  'enableTextJustification',
+  false
+);
+export const enableTextWrapPretty$ = writableBooleanLocalStorageSubject()(
+  'enableTextWrapPretty',
+  false
+);
+export const textMarginMode$ = writableStringLocalStorageSubject<TextMarginMode>()(
+  'textMarginMode',
+  'auto'
 );
 export const enableReaderWakeLock$ = writableBooleanLocalStorageSubject()(
   'enableReaderWakeLock',
@@ -219,6 +238,8 @@ export const addCharactersOnCompletion$ = writableBooleanLocalStorageSubject()(
   'addCharactersOnCompletion',
   false
 );
+
+export const trackerAutostartTime$ = writableNumberLocalStorageSubject()('trackerAutoStartTime', 0);
 
 export const trackerIdleTime$ = writableNumberLocalStorageSubject()('trackerIdleTime', 0);
 
@@ -366,6 +387,8 @@ export const lastStatisticsSummarySortDirection$ =
     'lastStatisticsSummarySortDirection',
     SortDirection.DESC
   );
+
+export const fileCountData$ = writableSubject<Record<string, number> | undefined>(undefined);
 
 export const bookReaderKeybindMap$ = writableSubject<BookReaderKeybindMap>({
   KeyB: BookReaderAvailableKeybind.BOOKMARK,

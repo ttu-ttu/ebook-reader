@@ -29,6 +29,11 @@ export interface EpubContent {
         | {
             '#text': string;
           };
+      'dc:language':
+        | string
+        | {
+            '#text': string;
+          };
       meta?: EpubMetadataMeta | EpubMetadataMeta[];
     };
     manifest: {
@@ -44,6 +49,11 @@ export interface EpubOPFContent {
   'opf:package': {
     'opf:metadata': {
       'dc:title':
+        | string
+        | {
+            '#text': string;
+          };
+      'dc:language':
         | string
         | {
             '#text': string;

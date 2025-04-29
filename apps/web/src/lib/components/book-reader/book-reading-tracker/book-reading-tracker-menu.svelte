@@ -13,6 +13,10 @@
     type IconDefinition
   } from '@fortawesome/free-solid-svg-icons';
   import type { TrackingHistory } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
+  import {
+    getChapterData,
+    type SectionWithProgress
+  } from '$lib/components/book-reader/book-toc/book-toc';
   import { dialogManager } from '$lib/data/dialog-manager';
   import type { BooksDbStatistic } from '$lib/data/database/books-db/versions/books-db';
   import type { ReadingGoal } from '$lib/data/reading-goal';
@@ -35,6 +39,8 @@
   export let wasTrackerPaused: boolean;
   export let canSaveStatistics: boolean;
   export let timeToFinishBook: string;
+  export let sectionData: SectionWithProgress[];
+  export let exploredCharCount: number;
   export let lastExploredCharCount: number;
   export let previousLastExploredCharCount: number;
   export let frozenPosition: number;
@@ -66,6 +72,7 @@
   const trackingItemsPerPage = 15;
 
   let trackingHistoryIndex = 0;
+  let timeToFinishChapter = '';
 
   $: allStatistics = autoScrollerStatistics
     ? [
@@ -104,6 +111,24 @@
       }
     ]);
 
+    if (sectionData) {
+      const [mainChapters, chapterIndex] = getChapterData(sectionData);
+      const currentChapter = mainChapters[chapterIndex];
+      const remainingCharacters =
+        (currentChapter.startCharacter ?? 0) +
+        (currentChapter.characters ?? 0) -
+        (exploredCharCount ?? 0);
+
+      timeToFinishChapter = sessionStatistics.lastReadingSpeed
+        ? toTimeString(
+            Math.max(
+              0,
+              Math.floor(remainingCharacters / (sessionStatistics.lastReadingSpeed / 3600))
+            )
+          )
+        : 'N/A';
+    }
+
     return () => {
       $skipKeyDownListener$ = false;
       dialogManager.dialogs$.next([]);
@@ -127,6 +152,10 @@
   }
 
   function handleBlurredKey(dataKey: string) {
+    if (window.getSelection()?.toString().trim()) {
+      return;
+    }
+
     if ($lastBlurredTrackerItems$.has(dataKey)) {
       $lastBlurredTrackerItems$.delete(dataKey);
     } else {
@@ -261,28 +290,67 @@
           Characters Read:
         </button>
         <div
+          role="button"
+          tabindex="0"
           class:blur={$lastBlurredTrackerItems$.has('charactersRead')}
           class:mt-3={statistic.id !== 'All Time' && statistic.id !== 'Book Completion'}
+          on:click={() => handleBlurredKey('charactersRead')}
+          on:keyup={dummyFn}
         >
           {statistic.charactersRead}
         </div>
         <button class="text-left" on:click={() => handleBlurredKey('lastReadingSpeed')}>
           Reading Speed:
         </button>
-        <div class:blur={$lastBlurredTrackerItems$.has('lastReadingSpeed')}>
+        <div
+          role="button"
+          tabindex="0"
+          class:blur={$lastBlurredTrackerItems$.has('lastReadingSpeed')}
+          on:click={() => handleBlurredKey('lastReadingSpeed')}
+          on:keyup={dummyFn}
+        >
           {statistic.lastReadingSpeed} / h
         </div>
         <button class="text-left" on:click={() => handleBlurredKey('readingTime')}>
           Reading Time:
         </button>
-        <div class:blur={$lastBlurredTrackerItems$.has('readingTime')}>
+        <div
+          role="button"
+          tabindex="0"
+          class:blur={$lastBlurredTrackerItems$.has('readingTime')}
+          on:click={() => handleBlurredKey('readingTime')}
+          on:keyup={dummyFn}
+        >
           {toTimeString(statistic.readingTime)}
         </div>
         {#if statistic.id === 'Current Session'}
           <button class="text-left" on:click={() => handleBlurredKey('finishETA')}>
-            Estimated Time to Finish:
+            Time to Finish Book:
           </button>
-          <div class:blur={$lastBlurredTrackerItems$.has('finishETA')}>{timeToFinishBook}</div>
+          <div
+            role="button"
+            tabindex="0"
+            class:blur={$lastBlurredTrackerItems$.has('finishETA')}
+            on:click={() => handleBlurredKey('finishETA')}
+            on:keyup={dummyFn}
+          >
+            {timeToFinishBook}
+          </div>
+          {#if timeToFinishChapter}
+            <button class="text-left" on:click={() => handleBlurredKey('finishChapterETA')}>
+              Time to Finish Chapter:
+            </button>
+            <div
+              role="button"
+              tabindex="0"
+              class:blur={$lastBlurredTrackerItems$.has('finishChapterETA')}
+              on:click={() => handleBlurredKey('finishChapterETA')}
+              on:keyup={dummyFn}
+            >
+              {timeToFinishChapter}
+            </div>
+          {/if}
+
           <div class="mt-3">Current Position:</div>
           <div class="mt-3">{lastExploredCharCount}</div>
           <div>Previous Position</div>
