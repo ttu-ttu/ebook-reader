@@ -22,6 +22,7 @@ export default async function loadEpub(
 
   const displayData = {
     title: file.name,
+    language: '',
     hasThumb: true,
     styleSheet: generateEpubStyleSheet(data, contents)
   };
@@ -31,6 +32,9 @@ export default async function loadEpub(
     : contents.package.metadata;
 
   if (metadata) {
+    const languageValues = Array.isArray(metadata['dc:language'])
+      ? metadata['dc:language']
+      : [metadata['dc:language']];
     const titleValues = Array.isArray(metadata['dc:title'])
       ? metadata['dc:title']
       : [metadata['dc:title']];
@@ -44,7 +48,28 @@ export default async function loadEpub(
         break;
       }
     }
+
+    displayData.language =
+      languageValues.reduce((languages, dcLanguage) => {
+        try {
+          if (typeof dcLanguage === 'string') {
+            languages.push(...Intl.getCanonicalLocales(dcLanguage.trim()));
+          } else if (dcLanguage && dcLanguage['#text']) {
+            languages.push(...Intl.getCanonicalLocales(dcLanguage.trim()));
+          }
+        } catch (_) {
+          //no-op
+        }
+
+        return languages;
+      }, [])?.[0] || '';
   }
+
+  if (!displayData.language) {
+    displayData.language = 'ja';
+    console.warn(`no language data found for ${file.name} - fallback to ja`);
+  }
+
   const blobData = reduceObjToBlobs(data);
   const coverImageFilename = await getEpubCoverImageFilename(blobData, contents);
   let coverImage: Blob | undefined;

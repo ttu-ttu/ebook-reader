@@ -39,6 +39,16 @@
 
   export let verticalMode: boolean;
 
+  export let prioritizeReaderStyles: boolean;
+
+  export let enableTextJustification: boolean;
+
+  export let enableTextWrapPretty: boolean;
+
+  export let textIndentation: number;
+
+  export let textMarginValue: number;
+
   export let fontColor: string;
 
   export let backgroundColor: string;
@@ -261,6 +271,9 @@
       width={$contentViewportWidth$ ?? 0}
       height={$contentViewportHeight$ ?? 0}
       {verticalMode}
+      {prioritizeReaderStyles}
+      {enableTextJustification}
+      {enableTextWrapPretty}
       {fontColor}
       {backgroundColor}
       {hintFuriganaFontColor}
@@ -269,6 +282,8 @@
       {fontFamilyGroupTwo}
       {fontSize}
       {lineHeight}
+      {textIndentation}
+      {textMarginValue}
       {hideSpoilerImage}
       {hideFurigana}
       {furiganaStyle}
@@ -299,6 +314,9 @@
       width={$contentViewportWidth$ ?? 0}
       height={$contentViewportHeight$ ?? 0}
       {verticalMode}
+      {prioritizeReaderStyles}
+      {enableTextJustification}
+      {enableTextWrapPretty}
       {fontColor}
       {backgroundColor}
       {hintFuriganaFontColor}
@@ -307,6 +325,8 @@
       {fontFamilyGroupTwo}
       {fontSize}
       {lineHeight}
+      {textIndentation}
+      {textMarginValue}
       {hideSpoilerImage}
       {hideFurigana}
       {furiganaStyle}

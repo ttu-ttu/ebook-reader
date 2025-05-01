@@ -41,6 +41,8 @@
     avoidPageBreak$,
     bookReaderKeybindMap$,
     database,
+    enableTextJustification$,
+    enableTextWrapPretty$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -50,8 +52,12 @@
     hideSpoilerImage$,
     multiplier$,
     pageColumns$,
+    prioritizeReaderStyles$,
     secondDimensionMaxValue$,
+    textIndentation$,
+    textMarginValue$,
     theme$,
+    trackerAutostartTime$,
     verticalMode$,
     writingMode$,
     viewMode$,
@@ -199,6 +205,7 @@
   let confettiWidthModifier = 36;
   let confettiMaxRuns = 0;
   let showReaderImageGallery = false;
+  let dismissDialogs = true;
   let syncedResolver: () => void;
 
   const syncedPromise = new Promise<void>((resolver) => {
@@ -264,6 +271,10 @@
         }
 
         bookData = await saveExternalLastRead(externalStorageHandler, bookData);
+
+        if (bookData.language) {
+          document.documentElement.lang = bookData.language;
+        }
       } catch (error: any) {
         const message = `Error loading book: ${error.message}`;
 
@@ -444,6 +455,18 @@
     reduceToEmptyString()
   );
 
+  const autoStartTracker$ = iffBrowser(() =>
+    $statisticsEnabled$ && $trackerAutostartTime$ > 0 ? fromEvent(document, PAGE_CHANGE) : NEVER
+  ).pipe(
+    debounceTime($trackerAutostartTime$ * 1000),
+    take(1),
+    tap(() => {
+      wasTrackerPaused = false;
+      isTrackerPaused$.next(wasTrackerPaused);
+    }),
+    reduceToEmptyString()
+  );
+
   $: if ($tocIsOpen$) {
     autoScroller?.off();
   }
@@ -521,9 +544,14 @@
   onDestroy(() => {
     if (browser) {
       document.removeEventListener('ttu-action', handleAction, false);
+      document.documentElement.lang = 'ja';
     }
 
     readerImageGalleryPictures$.next([]);
+
+    if (dismissDialogs) {
+      dialogManager.dialogs$.next([]);
+    }
   });
 
   function handleUnload(event: BeforeUnloadEvent) {
@@ -1292,6 +1320,7 @@
     if (message) {
       logger.error(message);
 
+      dismissDialogs = false;
       dialogManager.dialogs$.next([
         {
           component: MessageDialog,
@@ -1543,6 +1572,7 @@
       fontColor={$themeOption$.fontColor}
       backgroundColor={$backgroundColor$}
       bookTitle={$rawBookData$.title}
+      sectionData={$sectionData$}
       {frozenPosition}
       {exploredCharCount}
       {bookCharCount}
@@ -1573,6 +1603,9 @@
     htmlContent={$bookData$.htmlContent}
     width={$containerViewportWidth$ ?? 0}
     height={$containerViewportHeight$ ?? 0}
+    prioritizeReaderStyles={$prioritizeReaderStyles$}
+    enableTextJustification={$enableTextJustification$}
+    enableTextWrapPretty={$enableTextWrapPretty$}
     verticalMode={$verticalMode$}
     fontColor={$themeOption$?.fontColor}
     backgroundColor={$backgroundColor$}
@@ -1582,6 +1615,8 @@
     fontFamilyGroupTwo={$fontFamilyGroupTwo$}
     fontSize={$fontSize$}
     lineHeight={$lineHeight$}
+    textIndentation={$textIndentation$}
+    textMarginValue={$textMarginValue$}
     hideSpoilerImage={$hideSpoilerImage$}
     hideFurigana={$hideFurigana$}
     furiganaStyle={$furiganaStyle$}
@@ -1615,6 +1650,7 @@
   {$setWritingMode$ ?? ''}
   {$textSelector$ ?? ''}
   {$replicator$ ?? ''}
+  {$autoStartTracker$ ?? ''}
 {:else}
   {$leaveIfBookMissing$ ?? ''}
 {/if}

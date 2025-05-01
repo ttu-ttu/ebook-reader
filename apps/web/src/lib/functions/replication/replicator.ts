@@ -27,7 +27,8 @@ export async function importData(
   document: Document,
   targetHandler: BaseStorageHandler,
   files: File[],
-  cancelSignal: AbortSignal
+  cancelSignal: AbortSignal,
+  fileCountData?: Record<string, number>
 ) {
   const dataIds: number[] = [];
   const tasks: Promise<void>[] = [];
@@ -46,10 +47,20 @@ export async function importData(
     targetHandler.clearData(false);
   }
 
+  let newFileData = 0;
+
   files.forEach((file) =>
     tasks.push(
       limiter(async () => {
         let currentTitle = file.name;
+
+        if (fileCountData && Object.prototype.hasOwnProperty.call(fileCountData, currentTitle)) {
+          checkCancelAndProgress(cancelSignal, true, true);
+          checkCancelAndProgress(cancelSignal, true, true);
+          checkCancelAndProgress(cancelSignal, true, true);
+
+          return;
+        }
 
         try {
           throwIfAborted(cancelSignal);
@@ -62,6 +73,17 @@ export async function importData(
             bookContent = await loadTxt(file, lastBookModified);
           } else {
             bookContent = await loadHtmlz(file, document, lastBookModified);
+          }
+
+          if (fileCountData) {
+            fileCountData[currentTitle] = bookContent.characters;
+            checkCancelAndProgress(cancelSignal, true, true);
+            checkCancelAndProgress(cancelSignal, true, true);
+            checkCancelAndProgress(cancelSignal, true, true);
+
+            newFileData += 1;
+
+            return;
           }
 
           checkCancelAndProgress(cancelSignal, true, true);
@@ -94,6 +116,23 @@ export async function importData(
   );
 
   await Promise.all(tasks).catch(() => {});
+
+  if (fileCountData && newFileData) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(
+      new Blob([JSON.stringify(fileCountData)], { type: 'application/json' })
+    );
+    a.rel = 'noopener';
+    a.download = 'characters';
+
+    setTimeout(() => {
+      URL.revokeObjectURL(a.href);
+    }, 1e4);
+
+    setTimeout(() => {
+      a.click();
+    });
+  }
 
   return errorMessage;
 }

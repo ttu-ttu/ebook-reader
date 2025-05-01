@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "3.0.8",
-    "@sveltejs/kit": "2.20.7",
+    "@sveltejs/kit": "2.20.8",
     "@sveltejs/vite-plugin-svelte": "3.1.2",
     "@tailwindcss/aspect-ratio": "0.4.2",
     "@tailwindcss/forms": "0.5.10",
@@ -23,14 +23,14 @@
     "@types/wicg-file-system-access": "2023.10.6",
     "autoprefixer": "10.4.21",
     "postcss": "8.5.3",
-    "sass": "1.86.3",
+    "sass": "1.87.0",
     "svelte": "4.2.19",
     "svelte-check": "4.1.6",
     "svelte-preprocess": "6.0.3",
     "tailwindcss": "3.4.17",
     "tslib": "2.8.1",
     "typescript": "5.8.3",
-    "vite": "5.4.18"
+    "vite": "5.4.19"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "6.7.2",
@@ -40,12 +40,12 @@
     "@zip.js/zip.js": "2.4.26",
     "balanced-match": "3.0.1",
     "fake-indexeddb": "6.0.0",
-    "fast-xml-parser": "5.2.0",
+    "fast-xml-parser": "5.2.1",
     "idb": "8.0.2",
     "p-limit": "6.2.0",
     "path-browserify": "1.0.1",
     "rxjs": "7.8.2",
-    "svelte-fa": "4.0.3",
+    "svelte-fa": "4.0.4",
     "svelte-gestures": "5.0.7",
     "svelte-meta-tags": "3.1.4",
     "ua-parser-js": "2.0.3"
