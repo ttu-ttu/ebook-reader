@@ -3,6 +3,11 @@
 }
 
 .book-content {
+  :global(.ttu-book-html-wrapper.ttu-no-text),
+  :global(.ttu-book-body-wrapper.ttu-no-text) {
+    margin: 0 !important;
+  }
+
   :global(svg) {
     margin: auto;
   }
