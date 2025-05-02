@@ -39,6 +39,7 @@
     autoBookmarkTime$,
     autoPositionOnResize$,
     avoidPageBreak$,
+    enableTapEdgeToFlip$,
     bookReaderKeybindMap$,
     database,
     enableTextJustification$,
@@ -1696,10 +1697,17 @@
   />
 {/if}
 
-{#if $isMobile$}
-  <div class="fixed top-0 left-0 z-10 h-full w-5" on:click={() => pageManager?.nextPage()} />
-
-  <div class="fixed top-0 right-0 z-10 h-full w-5" on:click={() => pageManager?.prevPage()} />
+{#if $enableTapEdgeToFlip$ && $isMobile$ && isPaginated}
+  <button
+    class="fixed top-0 left-0 z-10 h-full w-5"
+    on:click={$verticalMode$ ? () => pageManager?.nextPage() : () => pageManager?.prevPage()}
+    style:top={showHeader ? '3rem' : ''}
+  />
+  <button
+    class="fixed top-0 right-0 z-10 h-full w-5"
+    on:click={$verticalMode$ ? () => pageManager?.prevPage() : () => pageManager?.nextPage()}
+    style:top={showHeader ? '3rem' : ''}
+  />
 {/if}
 
 {#if showSpinner}
