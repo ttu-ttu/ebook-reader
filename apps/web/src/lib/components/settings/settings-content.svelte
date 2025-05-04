@@ -104,6 +104,8 @@
 
   export let avoidPageBreak: boolean;
 
+  export let enableTapEdgeToFlip: boolean;
+
   export let pauseTrackerOnCustomPointChange: boolean;
 
   export let customReadingPointEnabled: boolean;
@@ -790,6 +792,12 @@
     {:else}
       <SettingsItemGroup title="Avoid Page Break" tooltip={avoidPageBreakTooltip}>
         <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Tap to Flip"
+        tooltip="Tap the edge of the screen to flip a page on mobile."
+      >
+        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTapEdgeToFlip} />
       </SettingsItemGroup>
       <SettingsItemGroup
         title="Selection to Bookmark"

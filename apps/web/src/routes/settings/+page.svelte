@@ -13,6 +13,7 @@
     autoPositionOnResize$,
     autoReplication$,
     avoidPageBreak$,
+    enableTapEdgeToFlip$,
     cacheStorageData$,
     confirmClose$,
     customReadingPointEnabled$,
@@ -163,6 +164,7 @@
       bind:disableWheelNavigation={$disableWheelNavigation$}
       bind:autoPositionOnResize={$autoPositionOnResize$}
       bind:avoidPageBreak={$avoidPageBreak$}
+      bind:enableTapEdgeToFlip={$enableTapEdgeToFlip$}
       bind:pauseTrackerOnCustomPointChange={$pauseTrackerOnCustomPointChange$}
       bind:customReadingPointEnabled={$customReadingPointEnabled$}
       bind:selectionToBookmarkEnabled={$selectionToBookmarkEnabled$}
