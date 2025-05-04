@@ -39,6 +39,7 @@
     autoBookmarkTime$,
     autoPositionOnResize$,
     avoidPageBreak$,
+    enableTapEdgeToFlip$,
     bookReaderKeybindMap$,
     database,
     enableTextJustification$,
@@ -1693,6 +1694,19 @@
   <div
     class="fixed top-0 z-20 h-full w-[1px] border border-red-500"
     style:left={`${customReadingPointLeft}px`}
+  />
+{/if}
+
+{#if $enableTapEdgeToFlip$ && $isMobile$ && isPaginated}
+  <button
+    class="fixed top-0 left-0 z-10 h-full w-5"
+    on:click={$verticalMode$ ? () => pageManager?.nextPage() : () => pageManager?.prevPage()}
+    style:top={showHeader ? '3rem' : ''}
+  />
+  <button
+    class="fixed top-0 right-0 z-10 h-full w-5"
+    on:click={$verticalMode$ ? () => pageManager?.prevPage() : () => pageManager?.nextPage()}
+    style:top={showHeader ? '3rem' : ''}
   />
 {/if}
 
