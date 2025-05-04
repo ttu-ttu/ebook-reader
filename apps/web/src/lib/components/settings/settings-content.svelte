@@ -475,13 +475,13 @@
       <div slot="header" class="flex items-center">
         <SettingsFontSelector
           availableFonts={[
-            LocalFont.SERIF,
             LocalFont.NOTOSERIFJP,
-            LocalFont.BIZUDMINCHO,
+            LocalFont.KZUDMINCHO,
             LocalFont.GENEI,
+            LocalFont.SHIPPORIMINCHO,
             LocalFont.KLEEONE,
             LocalFont.KLEEONESEMIBOLD,
-            LocalFont.SHIPPORIMINCHO
+            LocalFont.SERIF
           ]}
           bind:fontValue={fontFamilyGroupOne}
         />
@@ -503,12 +503,17 @@
           </div>
         {/if}
       </div>
-      <input type="text" class={inputClasses} placeholder="Serif" bind:value={fontFamilyGroupOne} />
+      <input
+        type="text"
+        class={inputClasses}
+        placeholder="Noto Serif JP"
+        bind:value={fontFamilyGroupOne}
+      />
     </SettingsItemGroup>
     <SettingsItemGroup title="Font family (Group 2)">
       <div slot="header" class="flex items-center">
         <SettingsFontSelector
-          availableFonts={[LocalFont.SANSSERIF, LocalFont.NOTOSANSJP, LocalFont.BIZUDGOTHIC]}
+          availableFonts={[LocalFont.NOTOSANSJP, LocalFont.KZUDGOTHIC, LocalFont.SANSSERIF]}
           bind:fontValue={fontFamilyGroupTwo}
         />
         {#if fontCacheSupported}
@@ -531,7 +536,7 @@
       <input
         type="text"
         class={inputClasses}
-        placeholder="Sans-Serif"
+        placeholder="Noto Sans JP"
         bind:value={fontFamilyGroupTwo}
       />
     </SettingsItemGroup>

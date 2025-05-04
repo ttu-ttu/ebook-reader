@@ -32,47 +32,47 @@
 }
 
 @font-face {
-  font-family: 'BIZ UDMincho';
+  font-family: 'KZ UDMincho';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/biz-udmincho-v1-400.woff2') format('woff2'),
-    url('$lib/assets/fonts/biz-udmincho-v1-400.woff') format('woff');
+    url('$lib/assets/fonts/KZUDMincho-Regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/KZUDMincho-Regular.woff') format('woff');
 }
 
 @font-face {
-  font-family: 'BIZ UDMincho';
+  font-family: 'KZ UDMincho';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/biz-udmincho-v1-700.woff2') format('woff2'),
-    url('$lib/assets/fonts/biz-udmincho-v1-700.woff') format('woff');
+    url('$lib/assets/fonts/KZUDMincho-Bold.woff2') format('woff2'),
+    url('$lib/assets/fonts/KZUDMincho-Bold.woff') format('woff');
 }
 
 @font-face {
-  font-family: 'BIZ UDGothic';
+  font-family: 'KZ UDGothic';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/biz-udgothic-v1-400.woff2') format('woff2'),
-    url('$lib/assets/fonts/biz-udgothic-v1-400.woff') format('woff');
+    url('$lib/assets/fonts/KZUDGothic-Regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/KZUDGothic-Regular.woff') format('woff');
 }
 
 @font-face {
-  font-family: 'BIZ UDGothic';
+  font-family: 'KZ UDGothic';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/biz-udgothic-v1-700.woff2') format('woff2'),
-    url('$lib/assets/fonts/biz-udgothic-v1-700.woff') format('woff');
+    url('$lib/assets/fonts/KZUDGothic-Bold.woff2') format('woff2'),
+    url('$lib/assets/fonts/KZUDGothic-Bold.woff') format('woff');
 }
 
 @font-face {
@@ -82,8 +82,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/genei-koburi-mincho-v5-regular.woff2') format('woff2'),
-    url('$lib/assets/fonts/genei-koburi-mincho-v5-regular.woff') format('woff');
+    url('$lib/assets/fonts/GeneiKoburi-Regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/GeneiKoburi-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -93,8 +93,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/klee-one-v7-regular.woff2') format('woff2'),
-    url('$lib/assets/fonts/klee-one-v7-regular.woff') format('woff');
+    url('$lib/assets/fonts/KleeOne-Regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/KleeOne-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -104,8 +104,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/klee-one-v7-600.woff2') format('woff2'),
-    url('$lib/assets/fonts/klee-one-v7-600.woff') format('woff');
+    url('$lib/assets/fonts/KleeOne-SemiBold.woff2') format('woff2'),
+    url('$lib/assets/fonts/KleeOne-SemiBold.woff') format('woff');
 }
 
 @font-face {
@@ -115,8 +115,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/klee-one-v7-600.woff2') format('woff2'),
-    url('$lib/assets/fonts/klee-one-v7-600.woff') format('woff');
+    url('$lib/assets/fonts/KleeOne-SemiBold.woff2') format('woff2'),
+    url('$lib/assets/fonts/KleeOne-SemiBold.woff') format('woff');
 }
 
 @font-face {
@@ -126,8 +126,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/noto-sans-v42-regular.woff2') format('woff2'),
-    url('$lib/assets/fonts/noto-sans-v42-regular.woff') format('woff');
+    url('$lib/assets/fonts/NotoSansJP-Regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/NotoSansJP-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -137,8 +137,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/noto-sans-v42-500.woff2') format('woff2'),
-    url('$lib/assets/fonts/noto-sans-v42-500.woff') format('woff');
+    url('$lib/assets/fonts/NotoSansJP-Medium.woff2') format('woff2'),
+    url('$lib/assets/fonts/NotoSansJP-Medium.woff') format('woff');
 }
 
 @font-face {
@@ -148,8 +148,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/noto-sans-v42-700.woff2') format('woff2'),
-    url('$lib/assets/fonts/noto-sans-v42-700.woff') format('woff');
+    url('$lib/assets/fonts/NotoSansJP-Bold.woff2') format('woff2'),
+    url('$lib/assets/fonts/NotoSansJP-Bold.woff') format('woff');
 }
 
 @font-face {
@@ -159,8 +159,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/noto-serif-v21-regular.woff2') format('woff2'),
-    url('$lib/assets/fonts/noto-serif-v21-regular.woff') format('woff');
+    url('$lib/assets/fonts/NotoSerifJP-Regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/NotoSerifJP-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -170,8 +170,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/noto-serif-v21-500.woff2') format('woff2'),
-    url('$lib/assets/fonts/noto-serif-v21-500.woff') format('woff');
+    url('$lib/assets/fonts/NotoSerifJP-Medium.woff2') format('woff2'),
+    url('$lib/assets/fonts/NotoSerifJP-Medium.woff') format('woff');
 }
 
 @font-face {
@@ -181,8 +181,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/noto-serif-v21-700.woff2') format('woff2'),
-    url('$lib/assets/fonts/noto-serif-v21-700.woff') format('woff');
+    url('$lib/assets/fonts/NotoSerifJP-Bold.woff2') format('woff2'),
+    url('$lib/assets/fonts/NotoSerifJP-Bold.woff') format('woff');
 }
 
 @font-face {
@@ -192,8 +192,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/shippori-mincho-v15-regular.woff2') format('woff2'),
-    url('$lib/assets/fonts/shippori-mincho-v15-regular.woff') format('woff');
+    url('$lib/assets/fonts/ShipporiMincho-Regular.woff2') format('woff2'),
+    url('$lib/assets/fonts/ShipporiMincho-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -203,8 +203,8 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/shippori-mincho-v15-500.woff2') format('woff2'),
-    url('$lib/assets/fonts/shippori-mincho-v15-500.woff') format('woff');
+    url('$lib/assets/fonts/ShipporiMincho-Medium.woff2') format('woff2'),
+    url('$lib/assets/fonts/ShipporiMincho-Medium.woff') format('woff');
 }
 
 @font-face {
@@ -214,6 +214,6 @@
   font-display: swap;
   src:
     local(''),
-    url('$lib/assets/fonts/shippori-mincho-v15-700.woff2') format('woff2'),
-    url('$lib/assets/fonts/shippori-mincho-v15-700.woff') format('woff');
+    url('$lib/assets/fonts/ShipporiMincho-Bold.woff2') format('woff2'),
+    url('$lib/assets/fonts/ShipporiMincho-Bold.woff') format('woff');
 }
