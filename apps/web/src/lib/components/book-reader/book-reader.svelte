@@ -22,13 +22,13 @@
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { writableSubject } from '$lib/functions/svelte/store';
-  import { isMobile$ } from '$lib/functions/utils';
+  import { convertRemToPixels, isMobile$ } from '$lib/functions/utils';
   import { logger } from '$lib/data/logger';
   import { imageLoadingState } from './image-loading-state';
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
-  import { enableReaderWakeLock$ } from '$lib/data/store';
+  import { enableReaderWakeLock$, enableTapEdgeToFlip$ } from '$lib/data/store';
   import { onDestroy } from 'svelte';
 
   export let htmlContent: string;
@@ -157,7 +157,14 @@
 
   const contentViewportWidth$ = computedStyle$.pipe(
     map((style) =>
-      getAdjustedWidth(width - parsePx(style.paddingLeft) - parsePx(style.paddingRight))
+      getAdjustedWidth(
+        width -
+          parsePx(style.paddingLeft) -
+          parsePx(style.paddingRight) -
+          ($enableTapEdgeToFlip$ && $isMobile$ && ViewMode.Paginated === viewMode && !verticalMode
+            ? convertRemToPixels(window, 1.75)
+            : 0)
+      )
     )
   );
 

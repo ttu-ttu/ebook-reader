@@ -135,11 +135,6 @@ export const autoPositionOnResize$ = writableBooleanLocalStorageSubject()(
 
 export const avoidPageBreak$ = writableBooleanLocalStorageSubject()('avoidPageBreak', false);
 
-export const enableTapEdgeToFlip$ = writableBooleanLocalStorageSubject()(
-  'enableTapEdgeToFlip',
-  false
-);
-
 export const pauseTrackerOnCustomPointChange$ = writableBooleanLocalStorageSubject()(
   'pauseTrackerOnCustomPointChange',
   true
@@ -152,6 +147,11 @@ export const customReadingPointEnabled$ = writableBooleanLocalStorageSubject()(
 
 export const selectionToBookmarkEnabled$ = writableBooleanLocalStorageSubject()(
   'selectionToBookmarkEnabled',
+  false
+);
+
+export const enableTapEdgeToFlip$ = writableBooleanLocalStorageSubject()(
+  'enableTapEdgeToFlip',
   false
 );
 
