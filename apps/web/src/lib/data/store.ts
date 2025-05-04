@@ -65,8 +65,14 @@ export const customThemes$ = writableObjectLocalStorageSubject<Record<string, Th
   {}
 );
 export const multiplier$ = writableNumberLocalStorageSubject()('autoScrollMultiplier', 20);
-export const fontFamilyGroupOne$ = writableStringLocalStorageSubject()('fontFamilyGroupOne', '');
-export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()('fontFamilyGroupTwo', '');
+export const fontFamilyGroupOne$ = writableStringLocalStorageSubject()(
+  'fontFamilyGroupOne',
+  'Noto Serif JP'
+);
+export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()(
+  'fontFamilyGroupTwo',
+  'Noto Sans JP'
+);
 export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
 export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 1.65);
 export const textIndentation$ = writableNumberLocalStorageSubject()('textIndentation', 0);
