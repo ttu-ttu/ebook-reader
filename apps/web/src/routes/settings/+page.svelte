@@ -13,12 +13,12 @@
     autoPositionOnResize$,
     autoReplication$,
     avoidPageBreak$,
-    enableTapEdgeToFlip$,
     cacheStorageData$,
     confirmClose$,
     customReadingPointEnabled$,
     disableWheelNavigation$,
     enableReaderWakeLock$,
+    enableTapEdgeToFlip$,
     enableTextJustification$,
     enableTextWrapPretty$,
     firstDimensionMargin$,
@@ -164,10 +164,10 @@
       bind:disableWheelNavigation={$disableWheelNavigation$}
       bind:autoPositionOnResize={$autoPositionOnResize$}
       bind:avoidPageBreak={$avoidPageBreak$}
-      bind:enableTapEdgeToFlip={$enableTapEdgeToFlip$}
       bind:pauseTrackerOnCustomPointChange={$pauseTrackerOnCustomPointChange$}
       bind:customReadingPointEnabled={$customReadingPointEnabled$}
       bind:selectionToBookmarkEnabled={$selectionToBookmarkEnabled$}
+      bind:enableTapEdgeToFlip={$enableTapEdgeToFlip$}
       bind:pageColumns={$pageColumns$}
       bind:persistentStorage={$persistentStorage$}
       bind:confirmClose={$confirmClose$}

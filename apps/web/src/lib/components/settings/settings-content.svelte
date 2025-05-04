@@ -45,7 +45,7 @@
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
   import { secondsToMinutes } from '$lib/functions/statistic-util';
-  import { dummyFn } from '$lib/functions/utils';
+  import { dummyFn, isMobile$ } from '$lib/functions/utils';
   import {
     ReplicationSaveBehavior,
     AutoReplicationType
@@ -104,13 +104,13 @@
 
   export let avoidPageBreak: boolean;
 
-  export let enableTapEdgeToFlip: boolean;
-
   export let pauseTrackerOnCustomPointChange: boolean;
 
   export let customReadingPointEnabled: boolean;
 
   export let selectionToBookmarkEnabled: boolean;
+
+  export let enableTapEdgeToFlip: boolean;
 
   export let pageColumns: number;
 
@@ -794,12 +794,6 @@
         <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
       </SettingsItemGroup>
       <SettingsItemGroup
-        title="Tap to Flip"
-        tooltip="Tap the edge of the screen to flip a page on mobile."
-      >
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTapEdgeToFlip} />
-      </SettingsItemGroup>
-      <SettingsItemGroup
         title="Selection to Bookmark"
         tooltip={'When enabled bookmarks will be placed to a near paragraph of current/previous selected text instead of page start'}
       >
@@ -808,6 +802,17 @@
           bind:selectedOptionId={selectionToBookmarkEnabled}
         />
       </SettingsItemGroup>
+      {#if $isMobile$}
+        <SettingsItemGroup
+          title="Tap to Flip"
+          tooltip="Reserves small margins on the left and right on which you can tap to turn pages"
+        >
+          <ButtonToggleGroup
+            options={optionsForToggle}
+            bind:selectedOptionId={enableTapEdgeToFlip}
+          />
+        </SettingsItemGroup>
+      {/if}
       {#if !verticalMode}
         <SettingsItemGroup title="Page Columns" tooltip="# of text columns rendered">
           <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />

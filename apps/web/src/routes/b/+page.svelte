@@ -39,9 +39,9 @@
     autoBookmarkTime$,
     autoPositionOnResize$,
     avoidPageBreak$,
-    enableTapEdgeToFlip$,
     bookReaderKeybindMap$,
     database,
+    enableTapEdgeToFlip$,
     enableTextJustification$,
     enableTextWrapPretty$,
     firstDimensionMargin$,
@@ -155,7 +155,7 @@
   } from '$lib/functions/replication/replication-progress';
   import { getDateKey } from '$lib/functions/statistic-util';
   import { clickOutside } from '$lib/functions/use-click-outside';
-  import { dummyFn, isMobile$ } from '$lib/functions/utils';
+  import { convertRemToPixels, dummyFn, isMobile$, limitToRange } from '$lib/functions/utils';
   import { onKeydownReader } from './on-keydown-reader';
   import { onDestroy, onMount, tick } from 'svelte';
   import Fa from 'svelte-fa';
@@ -503,6 +503,15 @@
   }
 
   $: isPaginated = $viewMode$ === ViewMode.Paginated;
+
+  $: firstDimensionMargin =
+    browser && $enableTapEdgeToFlip$ && $isMobile$ && isPaginated && $verticalMode$
+      ? limitToRange(convertRemToPixels(window, 0.5), window.innerWidth, $firstDimensionMargin$)
+      : ($firstDimensionMargin$ ?? 0);
+
+  $: tapButtonHeight = `calc(100% - ${showHeader ? 5 : 4}rem)`;
+
+  $: tapButtonTop = `${showHeader ? 3 : 2}rem`;
 
   $: upSyncEnabled =
     externalStorageHandler &&
@@ -1369,7 +1378,7 @@
       elRightReferencePoint,
       elBottomReferencePoint,
       pointGap
-    } = getReferencePoints(window, contentEl, $verticalMode$, $firstDimensionMargin$);
+    } = getReferencePoints(window, contentEl, $verticalMode$, firstDimensionMargin);
 
     merge(fromEvent(document, 'pointerup'), fromEvent(document, 'pointermove'))
       // eslint-disable-next-line rxjs/no-ignored-takewhile-value
@@ -1623,7 +1632,7 @@
     furiganaStyle={$furiganaStyle$}
     viewMode={$viewMode$}
     secondDimensionMaxValue={$secondDimensionMaxValue$}
-    firstDimensionMargin={$firstDimensionMargin$}
+    {firstDimensionMargin}
     autoPositionOnResize={$autoPositionOnResize$}
     avoidPageBreak={$avoidPageBreak$}
     pageColumns={$pageColumns$}
@@ -1697,16 +1706,18 @@
   />
 {/if}
 
-{#if $enableTapEdgeToFlip$ && $isMobile$ && isPaginated}
+{#if $enableTapEdgeToFlip$ && $isMobile$ && isPaginated && !$skipKeyDownListener$}
   <button
-    class="fixed top-0 left-0 z-10 h-full w-5"
+    class="fixed left-0 z-10 w-5"
     on:click={$verticalMode$ ? () => pageManager?.nextPage() : () => pageManager?.prevPage()}
-    style:top={showHeader ? '3rem' : ''}
+    style:height={tapButtonHeight}
+    style:top={tapButtonTop}
   />
   <button
-    class="fixed top-0 right-0 z-10 h-full w-5"
+    class="fixed right-0 z-10 w-5"
     on:click={$verticalMode$ ? () => pageManager?.prevPage() : () => pageManager?.nextPage()}
-    style:top={showHeader ? '3rem' : ''}
+    style:height={tapButtonHeight}
+    style:top={tapButtonTop}
   />
 {/if}
 
