@@ -746,7 +746,14 @@
     }
   }}
 />
-<svelte:window on:scroll={onScroll} />
+<svelte:window
+  on:scroll={onScroll}
+  on:resize={() => {
+    if (autoPositionOnResize) {
+      isResizeScroll = true;
+    }
+  }}
+/>
 
 <style lang="scss">
   @import '../styles';

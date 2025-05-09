@@ -140,7 +140,7 @@
 
   let useExploredCharCount = false;
 
-  let wasResized = false;
+  let isResizing = false;
 
   let bookmarkTopAdjustment: string | undefined;
 
@@ -377,37 +377,30 @@
       takeUntil(destroy$)
     )
     .subscribe(() => {
-      bookmarkData.then((data) => {
-        if (!calculator || !concretePageManager) return;
+      if (!calculator || !concretePageManager) return;
 
-        const useBookmark =
-          data?.exploredCharCount &&
-          isBookmarkScreen &&
-          (data.exploredCharCount === exploredCharCount ||
-            data.exploredCharCount === previousIntendedCount);
+      concretePageManager.scrollTo(0, false);
+      calculator.updateParagraphPos();
 
-        const scrollPos = calculator.getScrollPosByCharCount(
-          useBookmark && data.exploredCharCount === exploredCharCount
-            ? data.exploredCharCount
-            : previousIntendedCount
-        );
+      const scrollPos = calculator.getScrollPosByCharCount(previousIntendedCount);
 
-        if (scrollPos < 0) return;
+      if (scrollPos < 0) return;
 
-        wasResized = !useBookmark;
-
-        concretePageManager.scrollTo(scrollPos, false);
-      });
+      concretePageManager.scrollTo(scrollPos, false);
+      isResizing = false;
     });
 
   pageChange$.pipe(takeUntil(destroy$)).subscribe((isUser) => {
     if (!calculator) return;
 
-    showCustomReadingPoint = false;
+    if (!isResizing) {
+      showCustomReadingPoint = false;
 
-    pulseElement(customReadingPointRange?.endContainer?.parentElement, 'remove', 1);
+      pulseElement(customReadingPointRange?.endContainer?.parentElement, 'remove', 1);
 
-    customReadingPointRange = undefined;
+      customReadingPointRange = undefined;
+    }
+
     exploredCharCount = calculator.calcExploredCharCount(customReadingPointRange);
 
     if (isUser) {
@@ -419,9 +412,8 @@
     }
 
     bookmarkData.then((data) => {
-      useExploredCharCount = isUser || wasResized;
+      useExploredCharCount = isUser || !!customReadingPointRange;
       updateBookmarkScreen(data);
-      wasResized = false;
     });
   });
 
@@ -557,7 +549,7 @@
         exploredCharCount = data.exploredCharCount || 0;
         bookmarkManager.scrollToBookmark(data);
       });
-    } else if (!wasResized) {
+    } else {
       bookmarkData.then(updateBookmarkScreen);
     }
     allowDisplay = true;
@@ -746,7 +738,7 @@
   </div>
 {/if}
 
-<svelte:window on:keydown={onKeydown} />
+<svelte:window on:keydown={onKeydown} on:resize={() => (isResizing = true)} />
 
 <style lang="scss">
   @import '../styles';
