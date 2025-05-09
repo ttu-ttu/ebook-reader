@@ -30,8 +30,8 @@ importers:
         specifier: 9.26.0
         version: 9.26.0(jiti@2.4.1)
       eslint-config-prettier:
-        specifier: 10.1.3
-        version: 10.1.3(eslint@9.26.0(jiti@2.4.1))
+        specifier: 10.1.5
+        version: 10.1.5(eslint@9.26.0(jiti@2.4.1))
       eslint-import-resolver-typescript:
         specifier: 4.3.4
         version: 4.3.4(eslint-plugin-import@2.29.1)(eslint@9.26.0(jiti@2.4.1))
@@ -40,7 +40,7 @@ importers:
         version: 1.2.1(eslint@9.26.0(jiti@2.4.1))
       eslint-plugin-prettier:
         specifier: 5.4.0
-        version: 5.4.0(@types/eslint@8.56.10)(eslint-config-prettier@10.1.3(eslint@9.26.0(jiti@2.4.1)))(eslint@9.26.0(jiti@2.4.1))(prettier@3.5.3)
+        version: 5.4.0(@types/eslint@8.56.10)(eslint-config-prettier@10.1.5(eslint@9.26.0(jiti@2.4.1)))(eslint@9.26.0(jiti@2.4.1))(prettier@3.5.3)
       eslint-plugin-rxjs:
         specifier: 5.0.3
         version: 5.0.3(eslint@9.26.0(jiti@2.4.1))(typescript@5.8.3)
@@ -1559,8 +1559,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-config-prettier@10.1.3:
-    resolution: {integrity: sha512-vDo4d9yQE+cS2tdIT4J02H/16veRvkHgiLDRpej+WL67oCfbOb97itZXn8wMPJ/GsiEBVjrjs//AVNw2Cp1EcA==}
+  eslint-config-prettier@10.1.5:
+    resolution: {integrity: sha512-zc1UmCpNltmVY34vuLRV61r1K27sWuX39E+uyUnY8xS2Bex88VV9cugG+UZbRSRGtGyFboj+D8JODyme1plMpw==}
     hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
@@ -4804,7 +4804,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-config-prettier@10.1.3(eslint@9.26.0(jiti@2.4.1)):
+  eslint-config-prettier@10.1.5(eslint@9.26.0(jiti@2.4.1)):
     dependencies:
       eslint: 9.26.0(jiti@2.4.1)
 
@@ -4885,7 +4885,7 @@ snapshots:
       - supports-color
     optional: true
 
-  eslint-plugin-prettier@5.4.0(@types/eslint@8.56.10)(eslint-config-prettier@10.1.3(eslint@9.26.0(jiti@2.4.1)))(eslint@9.26.0(jiti@2.4.1))(prettier@3.5.3):
+  eslint-plugin-prettier@5.4.0(@types/eslint@8.56.10)(eslint-config-prettier@10.1.5(eslint@9.26.0(jiti@2.4.1)))(eslint@9.26.0(jiti@2.4.1))(prettier@3.5.3):
     dependencies:
       eslint: 9.26.0(jiti@2.4.1)
       prettier: 3.5.3
@@ -4893,7 +4893,7 @@ snapshots:
       synckit: 0.11.1
     optionalDependencies:
       '@types/eslint': 8.56.10
-      eslint-config-prettier: 10.1.3(eslint@9.26.0(jiti@2.4.1))
+      eslint-config-prettier: 10.1.5(eslint@9.26.0(jiti@2.4.1))
 
   eslint-plugin-rxjs@5.0.3(eslint@9.26.0(jiti@2.4.1))(typescript@5.8.3):
     dependencies:
