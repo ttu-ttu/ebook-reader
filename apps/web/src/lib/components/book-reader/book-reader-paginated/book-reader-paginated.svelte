@@ -789,5 +789,29 @@
       width: 100%;
       height: auto;
     }
+
+    :global(.book-content-container > *:not(.ttu-book-html-wrapper) > *:has(ruby):has(rt)),
+    :global(
+      .book-content-container
+        > div.ttu-book-html-wrapper
+        > div.ttu-book-body-wrapper
+        > *
+        > *:has(ruby):has(rt)
+    ) {
+      overflow: hidden;
+    }
+  }
+
+  .book-content--writing-horizontal-rl {
+    :global(.book-content-container > *:not(.ttu-book-html-wrapper) > *:has(ruby):has(rt)),
+    :global(
+      .book-content-container
+        > div.ttu-book-html-wrapper
+        > div.ttu-book-body-wrapper
+        > *
+        > *:has(ruby):has(rt)
+    ) {
+      overflow: hidden;
+    }
   }
 </style>
