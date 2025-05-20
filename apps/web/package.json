@@ -24,7 +24,7 @@
     "autoprefixer": "10.4.21",
     "postcss": "8.5.3",
     "sass": "1.89.0",
-    "svelte": "4.2.19",
+    "svelte": "4.2.20",
     "svelte-check": "4.2.1",
     "svelte-preprocess": "6.0.3",
     "tailwindcss": "3.4.17",
