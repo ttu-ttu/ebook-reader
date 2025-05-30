@@ -30,7 +30,7 @@
     "lint-staged": "16.1.0",
     "prettier": "3.5.3",
     "prettier-plugin-svelte": "3.4.0",
-    "prettier-plugin-tailwindcss": "0.6.11",
+    "prettier-plugin-tailwindcss": "0.6.12",
     "svelte": "5.0.5",
     "svelte-eslint-parser": "1.2.0",
     "typescript": "5.8.3",
