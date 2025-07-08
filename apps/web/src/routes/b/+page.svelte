@@ -505,7 +505,7 @@
   $: isPaginated = $viewMode$ === ViewMode.Paginated;
 
   $: firstDimensionMargin =
-    browser && $enableTapEdgeToFlip$ && $isMobile$ && isPaginated && $verticalMode$
+    browser && $enableTapEdgeToFlip$ && isPaginated && $verticalMode$
       ? limitToRange(convertRemToPixels(window, 0.5), window.innerWidth, $firstDimensionMargin$)
       : ($firstDimensionMargin$ ?? 0);
 
@@ -1706,7 +1706,7 @@
   />
 {/if}
 
-{#if $enableTapEdgeToFlip$ && $isMobile$ && isPaginated && !$skipKeyDownListener$}
+{#if $enableTapEdgeToFlip$ && isPaginated && !$skipKeyDownListener$}
   <button
     class="fixed left-0 z-10 w-5"
     on:click={$verticalMode$ ? () => pageManager?.nextPage() : () => pageManager?.prevPage()}
