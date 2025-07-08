@@ -45,7 +45,7 @@
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
   import { secondsToMinutes } from '$lib/functions/statistic-util';
-  import { dummyFn, isMobile$ } from '$lib/functions/utils';
+  import { dummyFn } from '$lib/functions/utils';
   import {
     ReplicationSaveBehavior,
     AutoReplicationType
@@ -807,17 +807,12 @@
           bind:selectedOptionId={selectionToBookmarkEnabled}
         />
       </SettingsItemGroup>
-      {#if $isMobile$}
-        <SettingsItemGroup
-          title="Tap to Flip"
-          tooltip="Reserves small margins on the left and right on which you can tap to turn pages"
-        >
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={enableTapEdgeToFlip}
-          />
-        </SettingsItemGroup>
-      {/if}
+      <SettingsItemGroup
+        title="Tap to Flip"
+        tooltip="Reserves small margins on the left and right on which you can tap to turn pages"
+      >
+        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTapEdgeToFlip} />
+      </SettingsItemGroup>
       {#if !verticalMode}
         <SettingsItemGroup title="Page Columns" tooltip="# of text columns rendered">
           <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />

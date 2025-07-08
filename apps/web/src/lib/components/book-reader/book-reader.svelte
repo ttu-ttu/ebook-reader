@@ -22,7 +22,7 @@
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import { writableSubject } from '$lib/functions/svelte/store';
-  import { convertRemToPixels, isMobile$ } from '$lib/functions/utils';
+  import { convertRemToPixels } from '$lib/functions/utils';
   import { logger } from '$lib/data/logger';
   import { imageLoadingState } from './image-loading-state';
   import { reactiveElements } from './reactive-elements';
@@ -161,7 +161,7 @@
         width -
           parsePx(style.paddingLeft) -
           parsePx(style.paddingRight) -
-          ($enableTapEdgeToFlip$ && $isMobile$ && ViewMode.Paginated === viewMode && !verticalMode
+          ($enableTapEdgeToFlip$ && ViewMode.Paginated === viewMode && !verticalMode
             ? convertRemToPixels(window, 1.75)
             : 0)
       )
