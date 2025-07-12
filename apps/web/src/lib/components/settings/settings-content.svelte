@@ -92,6 +92,8 @@
 
   export let showCharacterCounter: boolean;
 
+  export let showPercentage: boolean;
+
   export let secondDimensionMaxValue: number;
 
   export let firstDimensionMargin: number;
@@ -707,6 +709,9 @@
     {/if}
     <SettingsItemGroup title="Show Character Counter">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showCharacterCounter} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Show Percentage">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showPercentage} />
     </SettingsItemGroup>
     <SettingsItemGroup title="Disable Wheel Navigation">
       <ButtonToggleGroup

@@ -67,6 +67,7 @@
     isOnline$,
     multiplier$,
     showCharacterCounter$,
+    showPercentage$,
     enableReaderWakeLock$
   } from '$lib/data/store';
 
@@ -106,6 +107,7 @@
           enableTextWrapPretty: enableTextWrapPretty$.getValue(),
           enableReaderWakeLock: enableReaderWakeLock$.getValue(),
           showCharacterCounter$: showCharacterCounter$.getValue(),
+          showPercentage$: showPercentage$.getValue(),
           confirmClose: confirmClose$.getValue(),
           autoBookmark: autoBookmark$.getValue(),
           autoBookmarkTime: autoBookmarkTime$.getValue(),
