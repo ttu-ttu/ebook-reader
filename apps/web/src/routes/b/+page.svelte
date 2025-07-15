@@ -1779,7 +1779,9 @@
     {@const currentProgress = [
       $showCharacterCounter$ ? `${exploredCharCount} / ${bookCharCount}` : '',
       $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : ''
-    ].filter(Boolean).join(' ')}
+    ]
+      .filter(Boolean)
+      .join(' ')}
     <div
       tabindex="0"
       role="button"
