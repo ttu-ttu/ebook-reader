@@ -85,7 +85,8 @@
     readingGoalsMergeMode$,
     pauseTrackerOnCustomPointChange$,
     hideSpoilerImageMode$,
-    showCharacterCounter$
+    showCharacterCounter$,
+    showPercentage$
   } from '$lib/data/store';
   import BookCompletionConfetti from '$lib/components/book-reader/book-completion-confetti/book-completion-confetti.svelte';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
@@ -1775,19 +1776,21 @@
     {/if}
   </div>
   {#if showFooter && bookCharCount}
-    {@const currentProgress = `${exploredCharCount} / ${bookCharCount} ${(
-      (exploredCharCount / bookCharCount) *
-      100
-    ).toFixed(2)}%`}
+    {@const currentProgress = [
+      $showCharacterCounter$ ? `${exploredCharCount} / ${bookCharCount}` : '',
+      $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : ''
+    ]
+      .filter(Boolean)
+      .join(' ')}
     <div
       tabindex="0"
       role="button"
       title="Click to copy Progress"
       class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none"
-      class:invisible={!$showCharacterCounter$}
+      class:invisible={!$showCharacterCounter$ && !$showPercentage$}
       style:color={$themeOption$?.tooltipTextFontColor}
       on:click|stopPropagation={({ target }) => {
-        if (!$showCharacterCounter$) {
+        if (!$showCharacterCounter$ && !$showPercentage$) {
           return;
         }
 

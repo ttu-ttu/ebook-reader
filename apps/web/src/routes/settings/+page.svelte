@@ -40,6 +40,7 @@
     secondDimensionMaxValue$,
     selectionToBookmarkEnabled$,
     showCharacterCounter$,
+    showPercentage$,
     showExternalPlaceholder$,
     startDayHoursForTracker$,
     statisticsEnabled$,
@@ -157,6 +158,7 @@
       bind:textMarginMode={$textMarginMode$}
       bind:enableReaderWakeLock={$enableReaderWakeLock$}
       bind:showCharacterCounter={$showCharacterCounter$}
+      bind:showPercentage={$showPercentage$}
       bind:viewMode={$viewMode$}
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
       bind:firstDimensionMargin={$firstDimensionMargin$}
