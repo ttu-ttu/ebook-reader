@@ -33,9 +33,9 @@
     "vite": "5.4.19"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "6.7.2",
-    "@fortawesome/free-regular-svg-icons": "6.7.2",
-    "@fortawesome/free-solid-svg-icons": "6.7.2",
+    "@fortawesome/fontawesome-svg-core": "7.0.0",
+    "@fortawesome/free-regular-svg-icons": "7.0.0",
+    "@fortawesome/free-solid-svg-icons": "7.0.0",
     "@popperjs/core": "2.11.8",
     "@zip.js/zip.js": "2.4.26",
     "balanced-match": "3.0.1",
