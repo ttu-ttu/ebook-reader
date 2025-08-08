@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@commitlint/cli':
         specifier: 19.8.1
-        version: 19.8.1(@types/node@22.17.0)(typescript@5.9.2)
+        version: 19.8.1(@types/node@22.17.1)(typescript@5.9.2)
       '@commitlint/config-conventional':
         specifier: 19.8.1
         version: 19.8.1
@@ -24,8 +24,8 @@ importers:
         specifier: 9.14.0
         version: 9.14.0
       '@types/node':
-        specifier: 22.17.0
-        version: 22.17.0
+        specifier: 22.17.1
+        version: 22.17.1
       eslint:
         specifier: 9.32.0
         version: 9.32.0(jiti@2.4.1)
@@ -128,13 +128,13 @@ importers:
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: 3.0.9
-        version: 3.0.9(@sveltejs/kit@2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))
+        version: 3.0.9(@sveltejs/kit@2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))
       '@sveltejs/kit':
         specifier: 2.27.3
-        version: 2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))
+        version: 2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))
       '@sveltejs/vite-plugin-svelte':
         specifier: 3.1.2
-        version: 3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))
+        version: 3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))
       '@tailwindcss/aspect-ratio':
         specifier: 0.4.2
         version: 0.4.2(tailwindcss@3.4.17)
@@ -185,7 +185,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: 5.4.19
-        version: 5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)
+        version: 5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)
 
 packages:
 
@@ -895,8 +895,8 @@ packages:
   '@types/node-fetch@2.6.12':
     resolution: {integrity: sha512-8nneRWKCg3rMtF69nLQJnOYUcbafYeFSjqkw3jCRLsqkWFlHaoQrr5mXmofFGOx3DKn7UfmBMyov8ySvLRVldA==}
 
-  '@types/node@22.17.0':
-    resolution: {integrity: sha512-bbAKTCqX5aNVryi7qXVMi+OkB3w/OyblodicMbvE38blyAz7GxXf6XYhklokijuPwwVg9sDLKRxt0ZHXQwZVfQ==}
+  '@types/node@22.17.1':
+    resolution: {integrity: sha512-y3tBaz+rjspDTylNjAX37jEC3TETEFGNJL6uQDxwF9/8GLLIjW1rvVHlynyuUKMnMr1Roq8jOv3vkopBjC4/VA==}
 
   '@types/path-browserify@1.0.3':
     resolution: {integrity: sha512-ZmHivEbNCBtAfcrFeBCiTjdIc2dey0l7oCGNGpSuRTy8jP6UVND7oUowlvDujBy8r2Hoa8bfFUOCiPWfmtkfxw==}
@@ -3333,11 +3333,11 @@ snapshots:
       '@babel/helper-validator-identifier': 7.25.9
     optional: true
 
-  '@commitlint/cli@19.8.1(@types/node@22.17.0)(typescript@5.9.2)':
+  '@commitlint/cli@19.8.1(@types/node@22.17.1)(typescript@5.9.2)':
     dependencies:
       '@commitlint/format': 19.8.1
       '@commitlint/lint': 19.8.1
-      '@commitlint/load': 19.8.1(@types/node@22.17.0)(typescript@5.9.2)
+      '@commitlint/load': 19.8.1(@types/node@22.17.1)(typescript@5.9.2)
       '@commitlint/read': 19.8.1
       '@commitlint/types': 19.8.1
       tinyexec: 1.0.1
@@ -3384,7 +3384,7 @@ snapshots:
       '@commitlint/rules': 19.8.1
       '@commitlint/types': 19.8.1
 
-  '@commitlint/load@19.8.1(@types/node@22.17.0)(typescript@5.9.2)':
+  '@commitlint/load@19.8.1(@types/node@22.17.1)(typescript@5.9.2)':
     dependencies:
       '@commitlint/config-validator': 19.8.1
       '@commitlint/execute-rule': 19.8.1
@@ -3392,7 +3392,7 @@ snapshots:
       '@commitlint/types': 19.8.1
       chalk: 5.4.1
       cosmiconfig: 9.0.0(typescript@5.9.2)
-      cosmiconfig-typescript-loader: 6.1.0(@types/node@22.17.0)(cosmiconfig@9.0.0(typescript@5.9.2))(typescript@5.9.2)
+      cosmiconfig-typescript-loader: 6.1.0(@types/node@22.17.1)(cosmiconfig@9.0.0(typescript@5.9.2))(typescript@5.9.2)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
@@ -3779,15 +3779,15 @@ snapshots:
     dependencies:
       acorn: 8.15.0
 
-  '@sveltejs/adapter-static@3.0.9(@sveltejs/kit@2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))':
+  '@sveltejs/adapter-static@3.0.9(@sveltejs/kit@2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))':
     dependencies:
-      '@sveltejs/kit': 2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))
+      '@sveltejs/kit': 2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))
 
-  '@sveltejs/kit@2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))':
+  '@sveltejs/kit@2.27.3(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))':
     dependencies:
       '@standard-schema/spec': 1.0.0
       '@sveltejs/acorn-typescript': 1.0.5(acorn@8.15.0)
-      '@sveltejs/vite-plugin-svelte': 3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))
+      '@sveltejs/vite-plugin-svelte': 3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))
       '@types/cookie': 0.6.0
       acorn: 8.15.0
       cookie: 0.6.0
@@ -3800,28 +3800,28 @@ snapshots:
       set-cookie-parser: 2.6.0
       sirv: 3.0.0
       svelte: 4.2.20
-      vite: 5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)
+      vite: 5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)
 
-  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))':
+  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))
+      '@sveltejs/vite-plugin-svelte': 3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))
       debug: 4.4.1
       svelte: 4.2.20
-      vite: 5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)
+      vite: 5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)
     transitivePeerDependencies:
       - supports-color
 
-  '@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))':
+  '@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))
+      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)))(svelte@4.2.20)(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))
       debug: 4.3.7
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.12
       svelte: 4.2.20
       svelte-hmr: 0.16.0(svelte@4.2.20)
-      vite: 5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)
-      vitefu: 0.2.5(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0))
+      vite: 5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)
+      vitefu: 0.2.5(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -3843,7 +3843,7 @@ snapshots:
 
   '@types/conventional-commits-parser@5.0.0':
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 22.17.1
 
   '@types/cookie@0.6.0': {}
 
@@ -3868,10 +3868,10 @@ snapshots:
 
   '@types/node-fetch@2.6.12':
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 22.17.1
       form-data: 4.0.1
 
-  '@types/node@22.17.0':
+  '@types/node@22.17.1':
     dependencies:
       undici-types: 6.21.0
 
@@ -4356,9 +4356,9 @@ snapshots:
 
   cookie@0.6.0: {}
 
-  cosmiconfig-typescript-loader@6.1.0(@types/node@22.17.0)(cosmiconfig@9.0.0(typescript@5.9.2))(typescript@5.9.2):
+  cosmiconfig-typescript-loader@6.1.0(@types/node@22.17.1)(cosmiconfig@9.0.0(typescript@5.9.2))(typescript@5.9.2):
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 22.17.1
       cosmiconfig: 9.0.0(typescript@5.9.2)
       jiti: 2.4.1
       typescript: 5.9.2
@@ -6146,20 +6146,20 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0):
+  vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.5.6
       rollup: 4.21.0
     optionalDependencies:
-      '@types/node': 22.17.0
+      '@types/node': 22.17.1
       fsevents: 2.3.3
       sass: 1.90.0
       terser: 5.39.0
 
-  vitefu@0.2.5(vite@5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)):
+  vitefu@0.2.5(vite@5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)):
     optionalDependencies:
-      vite: 5.4.19(@types/node@22.17.0)(sass@1.90.0)(terser@5.39.0)
+      vite: 5.4.19(@types/node@22.17.1)(sass@1.90.0)(terser@5.39.0)
 
   webidl-conversions@3.0.1: {}
 
