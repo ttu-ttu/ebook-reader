@@ -1,6 +1,7 @@
 <img src="assets/readme/icon.png" align="left" style="margin-right: 1rem;" alt="logo">
 
-## ッツ Ebook Reader
+
+## ッツ Ebook Reader (FORKED FOR KOREAN CHARACTER COUNTER)
 
 An online e-book reader that supports dictionary extensions like Yomitan, which is hosted on [https://reader.ttsu.app](https://reader.ttsu.app)
 
