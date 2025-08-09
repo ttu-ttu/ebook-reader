@@ -11,7 +11,7 @@ export function getCharacterCount(node: Node) {
 }
 
 const isNotJapaneseRegex =
-  /[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]+/gimu;
+    /[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\uAC00-\uD7A3\p{Radical}\p{Unified_Ideograph}]+/gimu;
 
 function getRawCharacterCount(node: Node) {
   if (!node.textContent) return 0;
