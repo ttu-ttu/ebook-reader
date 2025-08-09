@@ -1,6 +1,5 @@
 import adapter from '@sveltejs/adapter-static';
 import preprocess from 'svelte-preprocess';
-import { vitePreprocess } from '@sveltejs/kit/vite';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -8,11 +7,11 @@ const config = {
         immutable: true
     },
 
+    // Use svelte-preprocess with postcss, as configured in your project
     preprocess: [
         preprocess({
             postcss: true
-        }),
-        vitePreprocess()
+        })
     ],
 
     kit: {
@@ -20,8 +19,7 @@ const config = {
             fallback: '404.html'
         }),
         paths: {
-            // Add your repository name as the base path.
-            // This is crucial for GitHub Pages to resolve your links correctly.
+            // Set the base path to your repository name
             base: process.env.NODE_ENV === 'production' ? '/korean-ebook-reader' : ''
         }
     }
