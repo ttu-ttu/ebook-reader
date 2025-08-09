@@ -32,7 +32,7 @@ jobs:
       uses: jacobtomlinson/gha-find-replace@v2
       with:
         find: "import.meta.env.VITE_PAGE_PATH"
-        replace: "'https://peldas.github.io/ebook-reader-korean'"
+        replace: "'https://spazztl.github.io/korean-ebook-reader'"
         regex: false 
 
     - name: Build
