@@ -1,3 +1,6 @@
 .DS_Store
 node_modules
 /.vs/Korean-Ebook_Reader/CopilotIndices/17.14.939.21063
+/.vs/Korean-Ebook_Reader/FileContentIndex
+/.vs/slnx.sqlite
+*.sqlite-journal
