@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "3.0.9",
-    "@sveltejs/kit": "2.27.3",
+    "@sveltejs/kit": "2.30.1",
     "@sveltejs/vite-plugin-svelte": "3.1.2",
     "@tailwindcss/aspect-ratio": "0.4.2",
     "@tailwindcss/forms": "0.5.10",
@@ -42,7 +42,7 @@
     "fake-indexeddb": "6.1.0",
     "fast-xml-parser": "5.2.5",
     "idb": "8.0.3",
-    "p-limit": "6.2.0",
+    "p-limit": "7.0.0",
     "path-browserify": "1.0.1",
     "rxjs": "7.8.2",
     "svelte-fa": "4.0.4",
