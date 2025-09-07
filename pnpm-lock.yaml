@@ -45,8 +45,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(eslint@9.35.0(jiti@2.4.1))(typescript@5.9.2)
       eslint-plugin-svelte:
-        specifier: 3.12.1
-        version: 3.12.1(eslint@9.35.0(jiti@2.4.1))(svelte@5.0.5)
+        specifier: 3.12.2
+        version: 3.12.2(eslint@9.35.0(jiti@2.4.1))(svelte@5.0.5)
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -516,12 +516,6 @@ packages:
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
-
-  '@eslint-community/eslint-utils@4.7.0':
-    resolution: {integrity: sha512-dyybb3AcajC7uha6CvhdVRJqaKyn7w2YKqKyAN37NKYgZT36w+iRb0Dymmc5qEJ549c/S31cMMSFd75bteCpCw==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
-    peerDependencies:
-      eslint: ^6.0.0 || ^7.0.0 || >=8.0.0
 
   '@eslint-community/eslint-utils@4.8.0':
     resolution: {integrity: sha512-MJQFqrZgcW0UNYLGOuQpey/oTN59vyWwplvCGZztn1cKz9agZPPYpJB7h2OMmuu7VLqkvEjN8feFZJmxNF9D+Q==}
@@ -1635,8 +1629,8 @@ packages:
       eslint: ^8.0.0
       typescript: '>=4.0.0'
 
-  eslint-plugin-svelte@3.12.1:
-    resolution: {integrity: sha512-gVwqUHUiD3r/T7wLqGggl24afEkUiJqV1BjBXu0C0Y2l6dB9InYOddksccrL8oOJ+DP4lLFVXVjzHexTbPs/1A==}
+  eslint-plugin-svelte@3.12.2:
+    resolution: {integrity: sha512-NDYltSWcDybvnXD5P3NtrLAfdrgr2lklZsXpyIoSlQfg2d80p/E853XXccu+uVn+w4+Q/iHy4oRw00GJH9I/Cg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.1 || ^9.0.0
@@ -3547,11 +3541,6 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
-  '@eslint-community/eslint-utils@4.7.0(eslint@9.35.0(jiti@2.4.1))':
-    dependencies:
-      eslint: 9.35.0(jiti@2.4.1)
-      eslint-visitor-keys: 3.4.3
-
   '@eslint-community/eslint-utils@4.8.0(eslint@9.35.0(jiti@2.4.1))':
     dependencies:
       eslint: 9.35.0(jiti@2.4.1)
@@ -4018,7 +4007,7 @@ snapshots:
 
   '@typescript-eslint/utils@8.25.0(eslint@9.35.0(jiti@2.4.1))(typescript@5.9.2)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.7.0(eslint@9.35.0(jiti@2.4.1))
+      '@eslint-community/eslint-utils': 4.8.0(eslint@9.35.0(jiti@2.4.1))
       '@typescript-eslint/scope-manager': 8.25.0
       '@typescript-eslint/types': 8.25.0
       '@typescript-eslint/typescript-estree': 8.25.0(typescript@5.9.2)
@@ -4707,9 +4696,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-svelte@3.12.1(eslint@9.35.0(jiti@2.4.1))(svelte@5.0.5):
+  eslint-plugin-svelte@3.12.2(eslint@9.35.0(jiti@2.4.1))(svelte@5.0.5):
     dependencies:
-      '@eslint-community/eslint-utils': 4.7.0(eslint@9.35.0(jiti@2.4.1))
+      '@eslint-community/eslint-utils': 4.8.0(eslint@9.35.0(jiti@2.4.1))
       '@jridgewell/sourcemap-codec': 1.5.0
       eslint: 9.35.0(jiti@2.4.1)
       esutils: 2.0.3
