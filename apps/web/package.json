@@ -30,7 +30,7 @@
     "tailwindcss": "3.4.17",
     "tslib": "2.8.1",
     "typescript": "5.9.2",
-    "vite": "5.4.19"
+    "vite": "5.4.20"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "7.0.1",
