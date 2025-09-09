@@ -767,7 +767,7 @@
       if (bookmarkManager) {
         const data = {
           ...bookmarkManager.formatBookmarkData($rawBookData$.id, customReadingPointScrollOffset),
-          exploredCharCount: isPaginated ? Math.max(0, bookCharCount - 1) : bookCharCount,
+          exploredCharCount: Math.max(0, bookCharCount - 1),
           progress: 1
         };
 
