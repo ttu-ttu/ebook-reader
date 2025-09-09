@@ -764,6 +764,20 @@
         scheduleReplication(StorageDataType.STATISTICS);
       }
 
+      if (bookmarkManager) {
+        const data = {
+          ...bookmarkManager.formatBookmarkData($rawBookData$.id, customReadingPointScrollOffset),
+          exploredCharCount: isPaginated ? Math.max(0, bookCharCount - 1) : bookCharCount,
+          progress: 1
+        };
+
+        await database.putBookmark(data);
+
+        bookmarkData = Promise.resolve(data);
+
+        scheduleReplication(StorageDataType.PROGRESS);
+      }
+
       if ($statisticsEnabled$ && $openTrackerOnCompletion$) {
         confettiWidthModifier = 36;
         confettiMaxRuns = 0;
