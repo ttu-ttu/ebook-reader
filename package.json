@@ -27,7 +27,7 @@
     "eslint-plugin-rxjs": "5.0.3",
     "eslint-plugin-svelte": "3.12.5",
     "husky": "9.1.7",
-    "lint-staged": "16.2.4",
+    "lint-staged": "16.2.5",
     "prettier": "3.6.2",
     "prettier-plugin-svelte": "3.4.0",
     "prettier-plugin-tailwindcss": "0.7.1",
