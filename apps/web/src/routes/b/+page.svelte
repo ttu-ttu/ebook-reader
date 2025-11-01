@@ -609,6 +609,7 @@
     }
 
     pauseTracker();
+    skipKeyDownListener$.next(true);
 
     const target = await new Promise<number | undefined>((resolver) => {
       dialogManager.dialogs$.next([
@@ -623,6 +624,8 @@
         }
       ]);
     });
+
+    skipKeyDownListener$.next(false);
 
     if (typeof target !== 'number') {
       restartTrackerAfterCharacterChangeOrTime(1);
