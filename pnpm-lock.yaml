@@ -96,8 +96,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       fake-indexeddb:
-        specifier: 6.2.4
-        version: 6.2.4
+        specifier: 6.2.5
+        version: 6.2.5
       fast-xml-parser:
         specifier: 5.3.1
         version: 5.3.1
@@ -1696,8 +1696,8 @@ packages:
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
 
-  fake-indexeddb@6.2.4:
-    resolution: {integrity: sha512-INKeIKEtSViN4yVtEWEUqbsqmaIy7Ls+MfU0yxQVXg67pOJ/sH1ZxcVrP8XrKULUFohcPD9gnmym+qBfEybACw==}
+  fake-indexeddb@6.2.5:
+    resolution: {integrity: sha512-CGnyrvbhPlWYMngksqrSSUT1BAVP49dZocrHuK0SvtR0D5TMs5wP0o3j7jexDJW01KSadjBp1M/71o/KR3nD1w==}
     engines: {node: '>=18'}
 
   fast-deep-equal@3.1.3:
@@ -4733,7 +4733,7 @@ snapshots:
 
   eventemitter3@5.0.1: {}
 
-  fake-indexeddb@6.2.4: {}
+  fake-indexeddb@6.2.5: {}
 
   fast-deep-equal@3.1.3: {}
 
