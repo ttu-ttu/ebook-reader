@@ -502,14 +502,14 @@ export const ankiConnectUrl$ = writableStringLocalStorageSubject()(
   'http://127.0.0.1:8765'
 );
 
-export const ankiWordFields$ = writableArrayLocalStorageSubject<string[]>()('ankiWordFields', [
+export const ankiWordFields$ = writableArrayLocalStorageSubject<string>()('ankiWordFields', [
   'Word',
   'Expression'
 ]);
 
-export const ankiSentenceFields$ = writableArrayLocalStorageSubject<string[]>()(
-  'ankiSentenceFields',
-  ['Sentence']
+export const ankiWordDeckNames$ = writableArrayLocalStorageSubject<string>()(
+  'ankiWordDeckNames',
+  []
 );
 
 export const ankiMatureThreshold$ = writableNumberLocalStorageSubject()('ankiMatureThreshold', 21);

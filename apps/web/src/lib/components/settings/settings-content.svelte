@@ -178,7 +178,7 @@
 
   export let ankiWordFields: string[];
 
-  export let ankiSentenceFields: string[];
+  export let ankiWordDeckNames: string[];
 
   $: availableThemes = (
     browser
@@ -773,16 +773,16 @@
         />
       </SettingsItemGroup>
       <SettingsItemGroup
-        title="Sentence Fields"
-        tooltip={'Anki card fields to search for partial matches (words within sentences). Comma-separated list. Example: Sentence, Context, Example'}
+        title="Word Deck Names"
+        tooltip={'Comma-separated list of Anki deck names containing the words for coloring. Example: Japanese::Vocabulary,Japanese::Loanwords'}
       >
         <input
           type="text"
           class={inputClasses}
-          placeholder="Sentence"
-          value={ankiSentenceFields.join(', ')}
+          placeholder="Japanese::Vocabulary, Japanese::Loanwords"
+          value={ankiWordDeckNames.join(', ')}
           on:input={(e) => {
-            ankiSentenceFields = e.currentTarget.value
+            ankiWordDeckNames = e.currentTarget.value
               .split(',')
               .map((s) => s.trim())
               .filter((s) => s.length > 0);

@@ -18,39 +18,31 @@ export interface CardInfo {
 export class Anki {
   private readonly ankiConnectUrl: string;
   private readonly wordFields: string[];
-  private readonly sentenceFields: string[];
-  private readonly deckName: string;
+  private readonly wordDeckNames: string[];
 
   constructor(
     ankiConnectUrl = 'http://127.0.0.1:8765',
     wordFields: string[] = ['Word', 'Expression'],
-    sentenceFields: string[] = ['Sentence'],
-    deckName = ''
+    wordDeckNames: string[] = []
   ) {
     this.ankiConnectUrl = ankiConnectUrl;
     this.wordFields = wordFields;
-    this.sentenceFields = sentenceFields;
-    this.deckName = deckName;
+    this.wordDeckNames = wordDeckNames;
   }
 
-  /**
-   * Get configured word fields for exact matching
-   */
   getWordFields(): string[] {
-    return this.wordFields.filter((f) => f.length > 0);
+    return this.wordFields;
   }
 
-  /**
-   * Get configured sentence fields for partial matching
-   */
-  getSentenceFields(): string[] {
-    return this.sentenceFields.filter((f) => f.length > 0);
+  getWordDecks(): string[] {
+    return this.wordDeckNames;
   }
 
   /**
    * Find cards with exact word match in specified fields
    * @param word - Word to search for (exact match)
    * @param fields - Field names to search in
+   * @param decks - Deck names to filter by
    * @param ankiConnectUrl - Optional override for Anki Connect URL
    * @returns Array of card IDs
    */
@@ -61,31 +53,9 @@ export class Anki {
   ): Promise<number[]> {
     if (!fields.length) return [];
 
-    const fieldQuery = fields.map((field) => `"${field}:${this._escapeQuery(word)}"`).join(' OR ');
+    const fieldQuery = fields.map((field) => `"${field}:${word}"`).join(' OR ');
     const query = this._addDeckFilter(fieldQuery);
-    const response = await this._executeAction('findCards', { query }, ankiConnectUrl);
-
-    return response.result || [];
-  }
-
-  /**
-   * Find cards containing word (partial match with wildcards)
-   * @param word - Word to search for (partial match)
-   * @param fields - Field names to search in
-   * @param ankiConnectUrl - Optional override for Anki Connect URL
-   * @returns Array of card IDs
-   */
-  async findCardsContainingWord(
-    word: string,
-    fields: string[],
-    ankiConnectUrl?: string
-  ): Promise<number[]> {
-    if (!fields.length) return [];
-
-    const fieldQuery = fields
-      .map((field) => `"${field}:*${this._escapeQuery(word)}*"`)
-      .join(' OR ');
-    const query = this._addDeckFilter(fieldQuery);
+    // const escapedQuery = this._escapeQuery(query);
     const response = await this._executeAction('findCards', { query }, ankiConnectUrl);
 
     return response.result || [];
@@ -133,7 +103,7 @@ export class Anki {
    */
   private _escapeQuery(query: string): string {
     // Remove characters that have special meaning in Anki search
-    return query.replace(/[:"*_]/g, '');
+    return query.replace(/([ :"*_])/g, '\\$1');
   }
 
   /**
@@ -142,11 +112,12 @@ export class Anki {
    * @returns Query with deck filter added
    */
   private _addDeckFilter(query: string): string {
-    if (!this.deckName || this.deckName.trim().length === 0) {
+    if (!this.wordDeckNames || this.wordDeckNames.length === 0) {
       return query;
     }
+    const deckQuery = this.wordDeckNames.map((deckName) => `"deck:${deckName}"`).join(' OR ');
     // Wrap in parentheses and add deck filter
-    return `deck:"${this.deckName}" (${query})`;
+    return `(${deckQuery}) (${query})`;
   }
 
   /**
@@ -161,6 +132,7 @@ export class Anki {
     const url = ankiConnectUrl || this.ankiConnectUrl;
 
     // AnkiConnect supports CORS, but use text/plain to be consistent and avoid preflight
+    console.log(url);
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },

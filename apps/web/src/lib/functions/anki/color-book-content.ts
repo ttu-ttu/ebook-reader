@@ -5,7 +5,7 @@
  */
 
 import { Yomitan } from '$lib/data/yomitan';
-import { Anki, type CardInfo } from '$lib/data/anki';
+import { Anki } from '$lib/data/anki';
 import { TokenColor, TokenStyle } from '$lib/data/anki/token-color';
 
 /** Regex to check if text contains letters */
@@ -16,10 +16,9 @@ export interface ColoringOptions {
   yomitanUrl: string;
   ankiConnectUrl: string;
   wordFields: string[];
-  sentenceFields: string[];
+  wordDeckNames: string[];
   matureThreshold: number;
   tokenStyle: TokenStyle;
-  deckName: string;
 }
 
 /**
@@ -37,12 +36,7 @@ export class BookContentColoring {
   constructor(options: ColoringOptions) {
     this.options = options;
     this.yomitan = new Yomitan(options.yomitanUrl);
-    this.anki = new Anki(
-      options.ankiConnectUrl,
-      options.wordFields,
-      options.sentenceFields,
-      options.deckName
-    );
+    this.anki = new Anki(options.ankiConnectUrl, options.wordFields, options.wordDeckNames);
   }
 
   /**
@@ -187,7 +181,7 @@ export class BookContentColoring {
 
     try {
       // Search in word fields first (exact match)
-      let cardIds = await this.anki.findCardsWithWord(token, this.anki.getWordFields());
+      const cardIds = await this.anki.findCardsWithWord(token, this.anki.getWordFields());
 
       if (cardIds.length) {
         const intervals = await this.anki.currentIntervals(cardIds);
@@ -196,9 +190,6 @@ export class BookContentColoring {
         return color;
       }
 
-      // Search in sentence fields (partial match)
-      cardIds = await this.anki.findCardsContainingWord(token, this.anki.getSentenceFields());
-
       if (!cardIds.length) {
         this.tokenColorCache.set(token, TokenColor.UNCOLLECTED);
         return TokenColor.UNCOLLECTED;
@@ -206,14 +197,7 @@ export class BookContentColoring {
 
       // Verify token actually appears in sentence field (tokenized match)
       const cardInfos = await this.anki.cardsInfo(cardIds);
-      const validCardInfos = await this._filterCardsContainingToken(cardInfos, token);
-
-      if (!validCardInfos.length) {
-        this.tokenColorCache.set(token, TokenColor.UNCOLLECTED);
-        return TokenColor.UNCOLLECTED;
-      }
-
-      const intervals = validCardInfos.map((info) => info.interval);
+      const intervals = cardInfos.map((info) => info.interval);
       const color = this._getColorFromIntervals(intervals);
       this.tokenColorCache.set(token, color);
       return color;
@@ -221,42 +205,6 @@ export class BookContentColoring {
       console.error(`Error getting color for token "${token}":`, error);
       return TokenColor.ERROR;
     }
-  }
-
-  /**
-   * Filter cards to only those that actually contain the token when tokenized
-   * This prevents false positives from substring matches
-   * @param cardInfos - Card information objects
-   * @param token - Token to search for
-   * @returns Filtered card information
-   */
-  private async _filterCardsContainingToken(
-    cardInfos: CardInfo[],
-    token: string
-  ): Promise<CardInfo[]> {
-    const validCards: CardInfo[] = [];
-
-    for (const cardInfo of cardInfos) {
-      for (const sentenceField of this.anki.getSentenceFields()) {
-        const field = cardInfo.fields[sentenceField];
-        if (!field) continue;
-
-        // Tokenize sentence field to check if token is present
-        let fieldTokens = this.tokenizeCache.get(field.value);
-        if (!fieldTokens) {
-          fieldTokens = await this.yomitan.tokenize(field.value);
-          this.tokenizeCache.set(field.value, fieldTokens);
-        }
-
-        // Check if token exists in tokenized field
-        if (fieldTokens.map((t) => t.trim()).includes(token)) {
-          validCards.push(cardInfo);
-          break; // Found in this card, move to next card
-        }
-      }
-    }
-
-    return validCards;
   }
 
   /**

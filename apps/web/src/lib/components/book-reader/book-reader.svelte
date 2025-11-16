@@ -32,9 +32,9 @@
     ankiConnectUrl$,
     ankiIntegrationEnabled$,
     ankiMatureThreshold$,
-    ankiSentenceFields$,
     ankiTokenStyle$,
     ankiWordFields$,
+    ankiWordDeckNames$,
     enableReaderWakeLock$,
     enableTapEdgeToFlip$,
     yomitanUrl$
@@ -158,7 +158,7 @@
           yomitanUrl: $yomitanUrl$,
           ankiConnectUrl: $ankiConnectUrl$,
           wordFields: $ankiWordFields$,
-          sentenceFields: $ankiSentenceFields$,
+          wordDeckNames: $ankiWordDeckNames$,
           matureThreshold: $ankiMatureThreshold$,
           tokenStyle: $ankiTokenStyle$
         });

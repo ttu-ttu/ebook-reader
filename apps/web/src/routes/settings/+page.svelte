@@ -10,8 +10,8 @@
     adjustStatisticsAfterIdleTime$,
     ankiConnectUrl$,
     ankiIntegrationEnabled$,
-    ankiSentenceFields$,
     ankiWordFields$,
+    ankiWordDeckNames$,
     autoBookmark$,
     autoBookmarkTime$,
     autoPositionOnResize$,
@@ -205,7 +205,7 @@
       bind:yomitanUrl={$yomitanUrl$}
       bind:ankiConnectUrl={$ankiConnectUrl$}
       bind:ankiWordFields={$ankiWordFields$}
-      bind:ankiSentenceFields={$ankiSentenceFields$}
+      bind:ankiWordDeckNames={$ankiWordDeckNames$}
     />
   </div>
 </div>
