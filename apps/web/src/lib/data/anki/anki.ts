@@ -62,6 +62,65 @@ export class Anki {
   }
 
   /**
+   * Find cards for multiple words in a single batch request
+   * Combines all words into one query for maximum performance
+   * @param words - Array of words to search for
+   * @param fields - Field names to search in
+   * @param ankiConnectUrl - Optional override for Anki Connect URL
+   * @returns Map of word -> card IDs
+   */
+  async findCardsWithWordsBatch(
+    words: string[],
+    fields: string[],
+    ankiConnectUrl?: string
+  ): Promise<Map<string, number[]>> {
+    if (!words.length || !fields.length) return new Map();
+
+    // Build single query with all words OR'd together
+    const wordQueries = words.map((word) => {
+      const fieldQuery = fields.map((field) => `"${field}:${word}"`).join(' OR ');
+      return `(${fieldQuery})`;
+    });
+
+    const combinedQuery = wordQueries.join(' OR ');
+    const query = this._addDeckFilter(combinedQuery);
+
+    // Single findCards request for all words
+    const response = await this._executeAction('findCards', { query }, ankiConnectUrl);
+    const allCardIds: number[] = response.result || [];
+
+    if (!allCardIds.length) {
+      // No cards found for any word
+      return new Map(words.map((word) => [word, []]));
+    }
+
+    // Get card info to match words to cards
+    const cardInfos = await this.cardsInfo(allCardIds, ankiConnectUrl);
+
+    // Map each word to its matching cards
+    const resultMap = new Map<string, number[]>();
+
+    for (const word of words) {
+      const matchingCardIds: number[] = [];
+
+      for (const cardInfo of cardInfos) {
+        // Check if any of the specified fields contain this exact word
+        for (const field of fields) {
+          const fieldValue = cardInfo.fields[field]?.value;
+          if (fieldValue && fieldValue.trim() === word) {
+            matchingCardIds.push(cardInfo.cardId);
+            break; // Found match in this card, move to next card
+          }
+        }
+      }
+
+      resultMap.set(word, matchingCardIds);
+    }
+
+    return resultMap;
+  }
+
+  /**
    * Get detailed information for multiple cards
    * @param cardIds - Array of card IDs
    * @param ankiConnectUrl - Optional override for Anki Connect URL
@@ -94,6 +153,45 @@ export class Anki {
   async version(ankiConnectUrl?: string): Promise<number> {
     const response = await this._executeAction('version', {}, ankiConnectUrl);
     return response.result;
+  }
+
+  /**
+   * Get all cards from configured decks for cache warming
+   * @param ankiConnectUrl - Optional override for Anki Connect URL
+   * @returns Array of card information with word fields
+   */
+  async getAllCardsFromDecks(ankiConnectUrl?: string): Promise<CardInfo[]> {
+    // Build deck query
+    let deckQuery = '';
+    if (this.wordDeckNames && this.wordDeckNames.length > 0) {
+      const deckQueries = this.wordDeckNames.map((deckName) => `"deck:${deckName}"`);
+      deckQuery = deckQueries.join(' OR ');
+    } else {
+      // No deck filter - would return ALL cards, which might be too many
+      // Return empty to avoid overwhelming the system
+      console.warn('No deck configured for cache warming. Skipping.');
+      return [];
+    }
+
+    // Find all cards in the configured decks
+    const response = await this._executeAction('findCards', { query: deckQuery }, ankiConnectUrl);
+    const cardIds: number[] = response.result || [];
+
+    if (cardIds.length === 0) {
+      return [];
+    }
+
+    // Get card info for all cards (in chunks to avoid overwhelming Anki)
+    const CHUNK_SIZE = 100;
+    const allCardInfos: CardInfo[] = [];
+
+    for (let i = 0; i < cardIds.length; i += CHUNK_SIZE) {
+      const chunk = cardIds.slice(i, i + CHUNK_SIZE);
+      const cardInfos = await this.cardsInfo(chunk, ankiConnectUrl);
+      allCardInfos.push(...cardInfos);
+    }
+
+    return allCardInfos;
   }
 
   /**

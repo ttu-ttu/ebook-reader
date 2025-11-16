@@ -39,7 +39,11 @@
     enableTapEdgeToFlip$,
     yomitanUrl$
   } from '$lib/data/store';
-  import { BookContentColoring } from '$lib/functions/anki';
+  import {
+    BookContentColoring,
+    ColoringPriorityQueue,
+    ProcessingPriority
+  } from '$lib/functions/anki';
   import { createAnkiCacheDb, AnkiCacheService } from '$lib/data/database/anki-cache-db';
   import { onDestroy } from 'svelte';
 
@@ -138,7 +142,10 @@
   const ankiCacheService = new AnkiCacheService(ankiCacheDb);
 
   let coloringService: BookContentColoring | undefined;
+  let coloringQueue: ColoringPriorityQueue | undefined;
   let intersectionObserver: IntersectionObserver | undefined;
+  let viewportObserver: IntersectionObserver | undefined;
+  let nearObserver: IntersectionObserver | undefined;
 
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
@@ -153,7 +160,7 @@
       ? firstDimensionMargin * 2
       : 0;
 
-  // Anki word coloring - incremental viewport-based approach
+  // Anki word coloring - incremental viewport-based approach with priority queue
   $: {
     if ($ankiIntegrationEnabled$) {
       // Initialize coloring service with persistent cache
@@ -171,51 +178,118 @@
           ankiCacheService
         );
       }
+
+      // Initialize priority queue with cross-element batching
+      if (!coloringQueue && coloringService) {
+        // maxConcurrent: 1 batch at a time (avoid Anki freezing)
+        // batchSize: 5 elements per batch (smaller batches, faster feedback)
+        // Tokens are chunked to 10 per Anki query for stability
+        coloringQueue = new ColoringPriorityQueue(coloringService, 1, 5);
+      }
     } else {
       // Clean up when disabled
+      if (coloringQueue) {
+        coloringQueue.clear();
+        coloringQueue = undefined;
+      }
       if (coloringService) {
-        coloringService.clearCache();
+        // coloringService.clearCache();
         coloringService = undefined;
       }
       if (intersectionObserver) {
         intersectionObserver.disconnect();
         intersectionObserver = undefined;
       }
+      if (viewportObserver) {
+        viewportObserver.disconnect();
+        viewportObserver = undefined;
+      }
+      if (nearObserver) {
+        nearObserver.disconnect();
+        nearObserver = undefined;
+      }
     }
   }
 
-  // Setup intersection observer when content element changes
-  $: if ($ankiIntegrationEnabled$ && coloringService) {
+  // Setup priority-based intersection observers when content element changes
+  $: if ($ankiIntegrationEnabled$ && coloringQueue) {
     contentEl$.subscribe((element) => {
       if (!element) return;
 
-      // Clean up previous observer
+      // Clean up previous observers
+      if (viewportObserver) {
+        viewportObserver.disconnect();
+      }
+      if (nearObserver) {
+        nearObserver.disconnect();
+      }
       if (intersectionObserver) {
         intersectionObserver.disconnect();
       }
 
-      // Create new observer with prefetch margin
-      intersectionObserver = new IntersectionObserver(
+      // Helper to calculate distance from viewport
+      const calculateDistance = (entry: IntersectionObserverEntry): number => {
+        const rect = entry.boundingClientRect;
+        const viewportHeight = window.innerHeight;
+
+        if (rect.top > viewportHeight) {
+          return rect.top - viewportHeight; // Below viewport
+        } else if (rect.bottom < 0) {
+          return Math.abs(rect.bottom); // Above viewport
+        }
+        return 0; // In viewport
+      };
+
+      // Observer 1: VIEWPORT (currently visible) - highest priority
+      viewportObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting && coloringService) {
-              // Color this element incrementally
-              coloringService.colorizeElement(entry.target as Element).catch((error) => {
-                logger.error('Error colorizing visible element:', error);
-              });
+            if (entry.isIntersecting && coloringQueue) {
+              coloringQueue.enqueue(entry.target as Element, ProcessingPriority.VIEWPORT, 0);
             }
           });
         },
-        {
-          root: null, // viewport
-          rootMargin: '1000px', // Prefetch 1000px ahead/behind
-          threshold: 0.01 // Trigger when 1% visible
-        }
+        { root: null, rootMargin: '0px', threshold: 0.01 }
       );
 
-      // Observe all paragraphs and divs
+      // Observer 2: NEAR (within 500px) - medium priority
+      nearObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            const distance = calculateDistance(entry);
+
+            if (entry.isIntersecting && coloringQueue) {
+              coloringQueue.enqueue(entry.target as Element, ProcessingPriority.NEAR, distance);
+            } else if (distance > 1500 && coloringQueue) {
+              // Scrolled far away, remove from queue
+              coloringQueue.dequeue(entry.target as Element);
+            }
+          });
+        },
+        { root: null, rootMargin: '500px', threshold: 0 }
+      );
+
+      // Observer 3: PREFETCH (within 1000px) - low priority
+      intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && coloringQueue) {
+              const distance = calculateDistance(entry);
+              coloringQueue.enqueue(entry.target as Element, ProcessingPriority.PREFETCH, distance);
+            } else if (coloringQueue) {
+              // Left prefetch zone, remove from queue
+              coloringQueue.dequeue(entry.target as Element);
+            }
+          });
+        },
+        { root: null, rootMargin: '1000px', threshold: 0 }
+      );
+
+      // Observe all paragraphs and divs with all three observers
       const elementsToObserve = element.querySelectorAll('p, div.paragraph, div.section');
       elementsToObserve.forEach((el) => {
+        viewportObserver?.observe(el);
+        nearObserver?.observe(el);
         intersectionObserver?.observe(el);
       });
     });
@@ -230,14 +304,25 @@
 
     releaseWakeLock();
 
-    // Clean up intersection observer
+    // Clean up all intersection observers
     if (intersectionObserver) {
       intersectionObserver.disconnect();
+    }
+    if (viewportObserver) {
+      viewportObserver.disconnect();
+    }
+    if (nearObserver) {
+      nearObserver.disconnect();
+    }
+
+    // Clean up priority queue
+    if (coloringQueue) {
+      coloringQueue.clear();
     }
 
     // Clean up coloring service
     if (coloringService) {
-      coloringService.clearCache();
+      // coloringService.clearCache();
     }
   });
 

@@ -5,3 +5,4 @@
  */
 
 export * from './color-book-content';
+export * from './coloring-priority-queue';

@@ -4,6 +4,8 @@
  * All rights reserved.
  */
 
+import type { AnkiCacheService } from '$lib/data/database/anki-cache-db';
+
 /**
  * Yomitan API client for Japanese text tokenization and lemmatization
  * Based on asbplayer implementation: https://github.com/ShanaryS/asbplayer/tree/yomitan-anki
@@ -11,10 +13,17 @@
 export class Yomitan {
   private readonly yomitanUrl: string;
   private readonly scanLength: number;
+  private termEntriesCache = new Map<string, any>();
+  private cacheService?: AnkiCacheService;
 
-  constructor(yomitanUrl = 'http://127.0.0.1:19633', scanLength = 16) {
+  constructor(
+    yomitanUrl = 'http://127.0.0.1:19633',
+    scanLength = 16,
+    cacheService?: AnkiCacheService
+  ) {
     this.yomitanUrl = yomitanUrl;
     this.scanLength = scanLength;
+    this.cacheService = cacheService;
   }
 
   /**
@@ -49,10 +58,12 @@ export class Yomitan {
    * @returns Array of lemmatized forms
    */
   async lemmatize(token: string, yomitanUrl?: string): Promise<string[]> {
-    const response = await this._executeAction('termEntries', { term: token }, yomitanUrl);
+    // Get full termEntries (from cache or API)
+    const dictionaryEntries = await this.getTermEntries(token, yomitanUrl);
 
+    // Extract lemmas from the cached response
     const lemmas: string[] = [];
-    for (const entry of response['dictionaryEntries']) {
+    for (const entry of dictionaryEntries) {
       for (const headword of entry['headwords']) {
         for (const source of headword['sources']) {
           if (source.originalText !== token) continue;
@@ -68,6 +79,40 @@ export class Yomitan {
     }
 
     return lemmas;
+  }
+
+  /**
+   * Get full termEntries (dictionary data) for a token
+   * This method caches the complete Yomitan response for future use
+   * @param token - Token to lookup
+   * @param yomitanUrl - Optional override for Yomitan URL
+   * @returns Full dictionaryEntries array from Yomitan
+   */
+  async getTermEntries(token: string, yomitanUrl?: string): Promise<any[]> {
+    // Check in-memory cache
+    let dictionaryEntries = this.termEntriesCache.get(token);
+    if (dictionaryEntries) return dictionaryEntries;
+
+    // Check IndexedDB cache
+    if (this.cacheService) {
+      dictionaryEntries = await this.cacheService.getTermEntries(token);
+      if (dictionaryEntries) {
+        this.termEntriesCache.set(token, dictionaryEntries);
+        return dictionaryEntries;
+      }
+    }
+
+    // Fetch from Yomitan API
+    const response = await this._executeAction('termEntries', { term: token }, yomitanUrl);
+    dictionaryEntries = response['dictionaryEntries'] || [];
+
+    // Cache the full response
+    this.termEntriesCache.set(token, dictionaryEntries);
+    if (this.cacheService) {
+      await this.cacheService.setTermEntries(token, dictionaryEntries);
+    }
+
+    return dictionaryEntries;
   }
 
   /**
