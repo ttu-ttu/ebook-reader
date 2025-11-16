@@ -103,7 +103,7 @@ export class Anki {
    */
   private _escapeQuery(query: string): string {
     // Remove characters that have special meaning in Anki search
-    return query.replace(/([ :"*_])/g, '\\$1');
+    return query.replace(/([ :"*_])/g, '$1');
   }
 
   /**
@@ -132,7 +132,6 @@ export class Anki {
     const url = ankiConnectUrl || this.ankiConnectUrl;
 
     // AnkiConnect supports CORS, but use text/plain to be consistent and avoid preflight
-    console.log(url);
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },

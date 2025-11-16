@@ -40,42 +40,6 @@ export class BookContentColoring {
   }
 
   /**
-   * Colorize HTML content by applying token coloring
-   * @param html - HTML content to colorize
-   * @returns Colorized HTML content
-   * @deprecated Use colorizeElement for incremental viewport-based coloring
-   */
-  async colorizeHtml(html: string): Promise<string> {
-    if (!this.options.enabled) return html;
-
-    try {
-      // Parse HTML using browser DOMParser
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      // Find all text nodes (skip ruby/rt tags)
-      const textNodes = this._getTextNodes(doc.body);
-
-      // Process each text node
-      for (const textNode of textNodes) {
-        if (!textNode.textContent || !textNode.parentElement) continue;
-
-        const coloredHtml = await this._colorizeText(textNode.textContent);
-        const span = doc.createElement('span');
-        span.innerHTML = coloredHtml;
-
-        // Replace text node with colored span
-        textNode.parentElement.replaceChild(span, textNode);
-      }
-
-      return doc.body.innerHTML;
-    } catch (error) {
-      console.error('Error colorizing book content:', error);
-      return html; // Return original on error
-    }
-  }
-
-  /**
    * Colorize a single DOM element in-place (incremental coloring)
    * This method is optimized for viewport-based coloring
    * @param element - DOM element to colorize
@@ -195,7 +159,6 @@ export class BookContentColoring {
         return TokenColor.UNCOLLECTED;
       }
 
-      // Verify token actually appears in sentence field (tokenized match)
       const cardInfos = await this.anki.cardsInfo(cardIds);
       const intervals = cardInfos.map((info) => info.interval);
       const color = this._getColorFromIntervals(intervals);
