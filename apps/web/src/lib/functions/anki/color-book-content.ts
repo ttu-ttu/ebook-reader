@@ -7,6 +7,7 @@
 import { Yomitan } from '$lib/data/yomitan';
 import { Anki } from '$lib/data/anki';
 import { TokenColor, TokenStyle } from '$lib/data/anki/token-color';
+import type { AnkiCacheService } from '$lib/data/database/anki-cache-db';
 
 /** Regex to check if text contains letters */
 const HAS_LETTER_REGEX = /\p{L}/u;
@@ -31,12 +32,14 @@ export class BookContentColoring {
   private tokenizeCache = new Map<string, string[]>();
   private lemmatizeCache = new Map<string, string[]>();
   private tokenColorCache = new Map<string, TokenColor>();
+  private cacheService?: AnkiCacheService;
   private options: ColoringOptions;
 
-  constructor(options: ColoringOptions) {
+  constructor(options: ColoringOptions, cacheService?: AnkiCacheService) {
     this.options = options;
     this.yomitan = new Yomitan(options.yomitanUrl);
     this.anki = new Anki(options.ankiConnectUrl, options.wordFields, options.wordDeckNames);
+    this.cacheService = cacheService;
   }
 
   /**
@@ -84,11 +87,22 @@ export class BookContentColoring {
     try {
       let coloredHtml = '';
 
-      // Tokenize using Yomitan
+      // Tokenize using Yomitan (check caches: memory -> persistent -> API)
       let tokens = this.tokenizeCache.get(text);
+      if (!tokens && this.cacheService) {
+        tokens = await this.cacheService.getTokens(text);
+        if (tokens) {
+          this.tokenizeCache.set(text, tokens);
+        }
+      }
       if (!tokens) {
         tokens = await this.yomitan.tokenize(text);
         this.tokenizeCache.set(text, tokens);
+
+        // Persist to IndexedDB cache
+        if (this.cacheService) {
+          await this.cacheService.setTokens(text, tokens);
+        }
       }
 
       // Color each token
@@ -108,9 +122,20 @@ export class BookContentColoring {
         let finalColor = tokenColor;
         if (tokenColor === TokenColor.UNCOLLECTED) {
           let lemmatizedTokens = this.lemmatizeCache.get(trimmedToken);
+          if (!lemmatizedTokens && this.cacheService) {
+            lemmatizedTokens = await this.cacheService.getLemmas(trimmedToken);
+            if (lemmatizedTokens) {
+              this.lemmatizeCache.set(trimmedToken, lemmatizedTokens);
+            }
+          }
           if (!lemmatizedTokens) {
             lemmatizedTokens = await this.yomitan.lemmatize(trimmedToken);
             this.lemmatizeCache.set(trimmedToken, lemmatizedTokens);
+
+            // Persist to IndexedDB cache
+            if (this.cacheService) {
+              await this.cacheService.setLemmas(trimmedToken, lemmatizedTokens);
+            }
           }
 
           // Check each lemmatized form
@@ -139,9 +164,18 @@ export class BookContentColoring {
    * @returns Token color
    */
   private async _getTokenColor(token: string): Promise<TokenColor> {
-    // Check cache first
-    const cached = this.tokenColorCache.get(token);
+    // Check in-memory cache first
+    let cached = this.tokenColorCache.get(token);
     if (cached !== undefined) return cached;
+
+    // Check persistent cache
+    if (this.cacheService) {
+      cached = await this.cacheService.getTokenColor(token);
+      if (cached !== undefined) {
+        this.tokenColorCache.set(token, cached);
+        return cached;
+      }
+    }
 
     try {
       // Search in word fields first (exact match)
@@ -151,11 +185,23 @@ export class BookContentColoring {
         const intervals = await this.anki.currentIntervals(cardIds);
         const color = this._getColorFromIntervals(intervals);
         this.tokenColorCache.set(token, color);
+
+        // Persist to IndexedDB cache
+        if (this.cacheService) {
+          await this.cacheService.setTokenColor(token, color, intervals[0]);
+        }
+
         return color;
       }
 
       if (!cardIds.length) {
         this.tokenColorCache.set(token, TokenColor.UNCOLLECTED);
+
+        // Persist to IndexedDB cache
+        if (this.cacheService) {
+          await this.cacheService.setTokenColor(token, TokenColor.UNCOLLECTED);
+        }
+
         return TokenColor.UNCOLLECTED;
       }
 
@@ -163,6 +209,12 @@ export class BookContentColoring {
       const intervals = cardInfos.map((info) => info.interval);
       const color = this._getColorFromIntervals(intervals);
       this.tokenColorCache.set(token, color);
+
+      // Persist to IndexedDB cache
+      if (this.cacheService) {
+        await this.cacheService.setTokenColor(token, color, intervals[0]);
+      }
+
       return color;
     } catch (error) {
       console.error(`Error getting color for token "${token}":`, error);
@@ -258,11 +310,16 @@ export class BookContentColoring {
   }
 
   /**
-   * Clear all caches
+   * Clear all caches (both in-memory and persistent)
    */
-  clearCache(): void {
+  async clearCache(): Promise<void> {
     this.tokenizeCache.clear();
     this.lemmatizeCache.clear();
     this.tokenColorCache.clear();
+
+    // Also clear persistent cache
+    if (this.cacheService) {
+      await this.cacheService.clearAllCaches();
+    }
   }
 }

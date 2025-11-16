@@ -40,6 +40,7 @@
     yomitanUrl$
   } from '$lib/data/store';
   import { BookContentColoring } from '$lib/functions/anki';
+  import { createAnkiCacheDb, AnkiCacheService } from '$lib/data/database/anki-cache-db';
   import { onDestroy } from 'svelte';
 
   export let htmlContent: string;
@@ -132,6 +133,10 @@
 
   let visibilityState: DocumentVisibilityState;
 
+  // Initialize Anki cache service for persistent caching
+  const ankiCacheDb = createAnkiCacheDb();
+  const ankiCacheService = new AnkiCacheService(ankiCacheDb);
+
   let coloringService: BookContentColoring | undefined;
   let intersectionObserver: IntersectionObserver | undefined;
 
@@ -151,17 +156,20 @@
   // Anki word coloring - incremental viewport-based approach
   $: {
     if ($ankiIntegrationEnabled$) {
-      // Initialize coloring service
+      // Initialize coloring service with persistent cache
       if (!coloringService) {
-        coloringService = new BookContentColoring({
-          enabled: $ankiIntegrationEnabled$,
-          yomitanUrl: $yomitanUrl$,
-          ankiConnectUrl: $ankiConnectUrl$,
-          wordFields: $ankiWordFields$,
-          wordDeckNames: $ankiWordDeckNames$,
-          matureThreshold: $ankiMatureThreshold$,
-          tokenStyle: $ankiTokenStyle$
-        });
+        coloringService = new BookContentColoring(
+          {
+            enabled: $ankiIntegrationEnabled$,
+            yomitanUrl: $yomitanUrl$,
+            ankiConnectUrl: $ankiConnectUrl$,
+            wordFields: $ankiWordFields$,
+            wordDeckNames: $ankiWordDeckNames$,
+            matureThreshold: $ankiMatureThreshold$,
+            tokenStyle: $ankiTokenStyle$
+          },
+          ankiCacheService
+        );
       }
     } else {
       // Clean up when disabled
