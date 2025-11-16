@@ -61,9 +61,10 @@ export class BookContentColoring {
 
       // Process each text node
       for (const textNode of textNodes) {
-        if (!textNode.textContent || !textNode.parentElement) continue;
+        const textContent = textNode.textContent;
+        if (!textContent || !textNode.parentElement) continue;
 
-        const coloredHtml = await this._colorizeText(textNode.textContent);
+        const coloredHtml = await this._colorizeText(textContent);
         const span = document.createElement('span');
         span.innerHTML = coloredHtml;
 
@@ -151,29 +152,40 @@ export class BookContentColoring {
         await this._batchFetchTokenColors(uncachedTokens, globalColorMap);
       }
 
-      // Step 4: Apply colors to all elements
-      for (const [element, textNodes] of elementTextNodes.entries()) {
-        for (const textNode of textNodes) {
-          if (!textNode.textContent || !textNode.parentElement) continue;
+      // Step 4: Apply colors to elements incrementally across animation frames
+      // This creates a smooth, gradual appearance instead of big blocks
+      const elementEntries = Array.from(elementTextNodes.entries());
 
-          const tokens = textToTokensMap.get(textNode.textContent) || [];
-          let coloredHtml = '';
+      for (let i = 0; i < elementEntries.length; i++) {
+        const [element, textNodes] = elementEntries[i];
 
-          for (const rawToken of tokens) {
-            const trimmed = rawToken.trim();
-            const color = HAS_LETTER_REGEX.test(trimmed)
-              ? globalColorMap.get(trimmed) || TokenColor.UNCOLLECTED
-              : TokenColor.MATURE;
+        // Use requestAnimationFrame to spread DOM updates across frames
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            for (const textNode of textNodes) {
+              if (!textNode.textContent || !textNode.parentElement) continue;
 
-            coloredHtml += this._applyTokenStyle(rawToken, color);
-          }
+              const tokens = textToTokensMap.get(textNode.textContent) || [];
+              let coloredHtml = '';
 
-          const span = document.createElement('span');
-          span.innerHTML = coloredHtml;
-          textNode.parentElement.replaceChild(span, textNode);
-        }
+              for (const rawToken of tokens) {
+                const trimmed = rawToken.trim();
+                const color = HAS_LETTER_REGEX.test(trimmed)
+                  ? globalColorMap.get(trimmed) || TokenColor.UNCOLLECTED
+                  : TokenColor.MATURE;
 
-        element.setAttribute('data-anki-colored', 'true');
+                coloredHtml += this._applyTokenStyle(rawToken, color);
+              }
+
+              const span = document.createElement('span');
+              span.innerHTML = coloredHtml;
+              textNode.parentElement.replaceChild(span, textNode);
+            }
+
+            element.setAttribute('data-anki-colored', 'true');
+            resolve();
+          });
+        });
       }
     } catch (error) {
       console.error('Error colorizing elements batch:', error);
@@ -372,7 +384,7 @@ export class BookContentColoring {
       }
 
       // Get intervals for this token's cards
-      const intervals = cardIds.map((id) => cardInfoMap.get(id) || 0);
+      const intervals = cardIds.map((id) => cardInfoMap.get(id));
       const color = this._getColorFromIntervals(intervals);
 
       // Cache and store
@@ -637,7 +649,7 @@ export class BookContentColoring {
 
     // Don't style uncollected tokens
     if (color === TokenColor.UNCOLLECTED) {
-      return token;
+      style = TokenStyle.UNDERLINE;
     }
 
     switch (style) {
@@ -645,7 +657,7 @@ export class BookContentColoring {
         return `<span style="color: ${color};">${token}</span>`;
       case TokenStyle.UNDERLINE: {
         const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
-        return `<span style="text-decoration: underline ${color} ${decoration};">${token}</span>`;
+        return `<span style="text-decoration: underline ${color} ${decoration}; outline: inset ${color} 1px;">${token}</span>`;
       }
       default:
         return token;

@@ -18,7 +18,7 @@ export class Yomitan {
 
   constructor(
     yomitanUrl = 'http://127.0.0.1:19633',
-    scanLength = 16,
+    scanLength = 128,
     cacheService?: AnkiCacheService
   ) {
     this.yomitanUrl = yomitanUrl;
@@ -66,14 +66,9 @@ export class Yomitan {
     for (const entry of dictionaryEntries) {
       for (const headword of entry['headwords']) {
         for (const source of headword['sources']) {
-          if (source.originalText !== token) continue;
+          if (source.originalText !== token) continue; // OK, avoid きれる matching き
           if (source.matchType !== 'exact') continue;
-
-          const lemma = source.deinflectedText;
-          if (lemma === token) continue; // Skip if same as input
-          if (lemmas.includes(lemma)) continue; // Skip duplicates
-
-          lemmas.push(lemma);
+          lemmas.push(headword.term);
         }
       }
     }

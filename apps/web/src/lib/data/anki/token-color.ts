@@ -15,9 +15,9 @@ export enum TokenColor {
   /** Unknown/new card (interval === 0) - Red */
   UNKNOWN = '#f44336',
   /** No card found in Anki - Default text color */
-  UNCOLLECTED = '',
+  UNCOLLECTED = '#ffffff',
   /** Error occurred during lookup - Gray */
-  ERROR = '#9e9e9e'
+  ERROR = '#c355ff'
 }
 
 /**
