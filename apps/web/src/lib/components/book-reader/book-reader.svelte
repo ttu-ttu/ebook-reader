@@ -28,7 +28,18 @@
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
-  import { enableReaderWakeLock$, enableTapEdgeToFlip$ } from '$lib/data/store';
+  import {
+    ankiConnectUrl$,
+    ankiIntegrationEnabled$,
+    ankiMatureThreshold$,
+    ankiSentenceFields$,
+    ankiTokenStyle$,
+    ankiWordFields$,
+    enableReaderWakeLock$,
+    enableTapEdgeToFlip$,
+    yomitanUrl$
+  } from '$lib/data/store';
+  import { BookContentColoring } from '$lib/functions/anki';
   import { onDestroy } from 'svelte';
 
   export let htmlContent: string;
@@ -121,6 +132,9 @@
 
   let visibilityState: DocumentVisibilityState;
 
+  let coloringService: BookContentColoring | undefined;
+  let intersectionObserver: IntersectionObserver | undefined;
+
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
   const width$ = new Subject<number>();
@@ -134,6 +148,71 @@
       ? firstDimensionMargin * 2
       : 0;
 
+  // Anki word coloring - incremental viewport-based approach
+  $: {
+    if ($ankiIntegrationEnabled$) {
+      // Initialize coloring service
+      if (!coloringService) {
+        coloringService = new BookContentColoring({
+          enabled: $ankiIntegrationEnabled$,
+          yomitanUrl: $yomitanUrl$,
+          ankiConnectUrl: $ankiConnectUrl$,
+          wordFields: $ankiWordFields$,
+          sentenceFields: $ankiSentenceFields$,
+          matureThreshold: $ankiMatureThreshold$,
+          tokenStyle: $ankiTokenStyle$
+        });
+      }
+    } else {
+      // Clean up when disabled
+      if (coloringService) {
+        coloringService.clearCache();
+        coloringService = undefined;
+      }
+      if (intersectionObserver) {
+        intersectionObserver.disconnect();
+        intersectionObserver = undefined;
+      }
+    }
+  }
+
+  // Setup intersection observer when content element changes
+  $: if ($ankiIntegrationEnabled$ && coloringService) {
+    contentEl$.subscribe((element) => {
+      if (!element) return;
+
+      // Clean up previous observer
+      if (intersectionObserver) {
+        intersectionObserver.disconnect();
+      }
+
+      // Create new observer with prefetch margin
+      intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && coloringService) {
+              // Color this element incrementally
+              coloringService.colorizeElement(entry.target as Element).catch((error) => {
+                logger.error('Error colorizing visible element:', error);
+              });
+            }
+          });
+        },
+        {
+          root: null, // viewport
+          rootMargin: '1000px', // Prefetch 1000px ahead/behind
+          threshold: 0.01 // Trigger when 1% visible
+        }
+      );
+
+      // Observe all paragraphs and divs
+      const elementsToObserve = element.querySelectorAll('p, div.paragraph, div.section');
+      elementsToObserve.forEach((el) => {
+        intersectionObserver?.observe(el);
+      });
+    });
+  }
+
   $: if ($enableReaderWakeLock$ && visibilityState === 'visible') {
     setTimeout(requestWakeLock, 500);
   }
@@ -142,6 +221,16 @@
     mutationObserver.disconnect();
 
     releaseWakeLock();
+
+    // Clean up intersection observer
+    if (intersectionObserver) {
+      intersectionObserver.disconnect();
+    }
+
+    // Clean up coloring service
+    if (coloringService) {
+      coloringService.clearCache();
+    }
   });
 
   const computedStyle$ = combineLatest([

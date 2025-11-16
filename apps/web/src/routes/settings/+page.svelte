@@ -8,6 +8,10 @@
   import {
     addCharactersOnCompletion$,
     adjustStatisticsAfterIdleTime$,
+    ankiConnectUrl$,
+    ankiIntegrationEnabled$,
+    ankiSentenceFields$,
+    ankiWordFields$,
     autoBookmark$,
     autoBookmarkTime$,
     autoPositionOnResize$,
@@ -60,7 +64,8 @@
     viewMode$,
     writingMode$,
     readingGoalsMergeMode$,
-    hideSpoilerImageMode$
+    hideSpoilerImageMode$,
+    yomitanUrl$
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { pagePath } from '$lib/data/env';
@@ -196,6 +201,11 @@
       bind:trackerSkipThresholdAction={$trackerSkipThresholdAction$}
       bind:trackerPopupDetection={$trackerPopupDetection$}
       bind:adjustStatisticsAfterIdleTime={$adjustStatisticsAfterIdleTime$}
+      bind:ankiIntegrationEnabled={$ankiIntegrationEnabled$}
+      bind:yomitanUrl={$yomitanUrl$}
+      bind:ankiConnectUrl={$ankiConnectUrl$}
+      bind:ankiWordFields={$ankiWordFields$}
+      bind:ankiSentenceFields={$ankiSentenceFields$}
     />
   </div>
 </div>
