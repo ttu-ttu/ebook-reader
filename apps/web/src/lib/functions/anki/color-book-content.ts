@@ -170,6 +170,13 @@ export class BookContentColoring {
         const tokens = await this._getOrFetchTokens(combinedText);
         elementTokensMap.set(element, tokens);
 
+        // Debug: log if combined text contains specific characters
+        if (combinedText.includes('嫉') || combinedText.includes('妬')) {
+          console.log(`🔍 DEBUG: Combined text contains 嫉/妬:`);
+          console.log(`  Combined text: "${combinedText}"`);
+          console.log(`  Tokens:`, tokens);
+        }
+
         // Collect unique tokens that need color checking
         for (const token of tokens) {
           const trimmed = token.trim();
@@ -210,19 +217,27 @@ export class BookContentColoring {
         // Use requestAnimationFrame to spread DOM updates across frames
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => {
-            // Build a map of character position -> token color
+            // Build a map of character position -> token info (including token index)
             let currentPos = 0;
-            const positionColorMap = new Map<number, { token: string; color: TokenColor }>();
+            const positionColorMap = new Map<
+              number,
+              { token: string; color: TokenColor; tokenIndex: number }
+            >();
 
-            for (const rawToken of tokens) {
+            for (let tokenIdx = 0; tokenIdx < tokens.length; tokenIdx++) {
+              const rawToken = tokens[tokenIdx];
               const trimmed = rawToken.trim();
               const color = HAS_LETTER_REGEX.test(trimmed)
                 ? globalColorMap.get(trimmed) || TokenColor.UNCOLLECTED
                 : TokenColor.MATURE;
 
-              // Map each character position in this token to its color
+              // Map each character position in this token to its color and token index
               for (let charIdx = 0; charIdx < rawToken.length; charIdx++) {
-                positionColorMap.set(currentPos + charIdx, { token: rawToken, color });
+                positionColorMap.set(currentPos + charIdx, {
+                  token: rawToken,
+                  color,
+                  tokenIndex: tokenIdx
+                });
               }
               currentPos += rawToken.length;
             }
@@ -239,19 +254,24 @@ export class BookContentColoring {
               const nodeTokens: Array<{ text: string; color: TokenColor }> = [];
               let currentToken = '';
               let currentColor: TokenColor | null = null;
+              let currentTokenIndex: number | null = null;
 
               for (let pos = textNodeStartPos; pos < nodeEndPos; pos++) {
                 const posInfo = positionColorMap.get(pos);
                 if (!posInfo) continue;
 
-                // If color changes, save the current token and start a new one
-                if (currentColor !== null && currentColor !== posInfo.color) {
+                // If color OR token index changes, save the current token and start a new one
+                if (
+                  currentColor !== null &&
+                  (currentColor !== posInfo.color || currentTokenIndex !== posInfo.tokenIndex)
+                ) {
                   nodeTokens.push({ text: currentToken, color: currentColor });
                   currentToken = '';
                 }
 
                 currentToken += nodeText[pos - textNodeStartPos];
                 currentColor = posInfo.color;
+                currentTokenIndex = posInfo.tokenIndex;
               }
 
               // Save the last token
@@ -267,60 +287,195 @@ export class BookContentColoring {
 
               // Replace this text node with colored version (preserves structure)
               if (coloredHtml && textNode.parentElement) {
-                // Save reference to parent before replacing (needed for ruby check)
-                const parentElement = textNode.parentElement;
-
-                // Check if this text node is inside a ruby element BEFORE replacing
-                let rubyElement: Element | null = parentElement;
-                while (rubyElement && rubyElement !== element) {
-                  if (rubyElement.tagName === 'RUBY') {
-                    break;
-                  }
-                  rubyElement = rubyElement.parentElement;
-                }
-
                 // Replace the text node with colored HTML
                 const template = document.createElement('template');
                 template.innerHTML = coloredHtml;
                 const fragment = template.content;
-                parentElement.replaceChild(fragment, textNode);
-
-                // If this text node was inside a ruby element, color the furigana too
-                if (rubyElement && rubyElement.tagName === 'RUBY') {
-                  // Find RT elements in this ruby and apply the same colors
-                  const rtElements = rubyElement.querySelectorAll('rt');
-                  for (const rt of rtElements) {
-                    // Get the first color from nodeTokens (the base text color)
-                    const baseColor =
-                      nodeTokens.length > 0 ? nodeTokens[0].color : TokenColor.MATURE;
-                    // Color all text in the RT element
-                    const rtTextNodes = this._getTextNodesFromElement(rt);
-                    for (const rtTextNode of rtTextNodes) {
-                      if (rtTextNode.textContent && rtTextNode.parentElement) {
-                        const rtColoredHtml = this._applyTokenStyle(
-                          rtTextNode.textContent,
-                          baseColor
-                        );
-                        const rtTemplate = document.createElement('template');
-                        rtTemplate.innerHTML = rtColoredHtml;
-                        const rtFragment = rtTemplate.content;
-                        rtTextNode.parentElement.replaceChild(rtFragment, rtTextNode);
-                      }
-                    }
-                  }
-                }
+                textNode.parentElement.replaceChild(fragment, textNode);
               }
 
               textNodeStartPos = nodeEndPos;
             }
 
             element.setAttribute('data-anki-colored', 'true');
+
+            // Attach hover event listeners to all token spans for on-demand refresh
+            this._attachHoverListeners(element);
+
             resolve();
           });
         });
       }
     } catch (error) {
       console.error('Error colorizing elements batch:', error);
+    }
+  }
+
+  /**
+   * Attach hover event listeners to token spans for on-demand refresh
+   * @param element - Root element containing token spans
+   */
+  private _attachHoverListeners(element: Element): void {
+    const tokenSpans = element.querySelectorAll('[data-anki-token]');
+
+    for (const span of tokenSpans) {
+      const token = span.getAttribute('data-anki-token');
+      if (!token) continue;
+
+      // Add mouseenter listener to refresh token on hover
+      span.addEventListener('mouseenter', async () => {
+        await this._refreshToken(token, span as HTMLElement);
+      });
+    }
+  }
+
+  /**
+   * Refresh a single token by fetching fresh data from Anki
+   * @param token - Token to refresh
+   * @param span - HTML span element to update
+   */
+  private async _refreshToken(token: string, span: HTMLElement): Promise<void> {
+    try {
+      // Clear cached data for this token to force fresh lookup
+      this.wordDataCache.delete(token);
+      this.tokenColorCache.delete(token);
+
+      // Fetch fresh data from Anki (bypassing cache)
+      const wordData = await this._fetchWordDataFromAnki(token);
+
+      if (!wordData) {
+        console.log(`🔄 Token "${token}" not found in Anki (unknown/uncollected)`);
+        return;
+      }
+
+      // Update IndexedDB cache with fresh data
+      if (this.cacheService) {
+        await this.cacheService.setWordData(token, wordData.status, wordData.cardIds);
+        console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
+      }
+
+      // Update in-memory cache
+      this.wordDataCache.set(token, wordData);
+
+      // Map status to color (same logic as in _checkTokenColors)
+      const color =
+        wordData.status === 'mature'
+          ? TokenColor.MATURE
+          : wordData.status === 'young'
+            ? TokenColor.YOUNG
+            : wordData.status === 'new'
+              ? TokenColor.UNKNOWN
+              : TokenColor.UNCOLLECTED;
+
+      // Update token color cache
+      this.tokenColorCache.set(token, color);
+
+      // Update the span styling with new color
+      const style = this.options.tokenStyle;
+      const whiteSpaceStyle = 'white-space: pre-wrap;';
+
+      if (style === TokenStyle.TEXT) {
+        span.style.cssText = `color: ${color}; ${whiteSpaceStyle}`;
+      } else {
+        const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
+        span.style.cssText = `text-decoration: underline ${color} ${decoration}; ${whiteSpaceStyle}`;
+      }
+
+      console.log(
+        `🔄 Refreshed token on hover: "${token}" -> status: ${wordData.status}, color: ${color}`
+      );
+    } catch (error) {
+      console.error(`❌ Failed to refresh token "${token}":`, error);
+    }
+  }
+
+  /**
+   * Fetch word data directly from Anki (bypassing all caches)
+   * Uses prop:s queries to check stability since it's not exposed by AnkiConnect API
+   * @param token - Token to look up
+   * @returns Word data or undefined if not found
+   */
+  private async _fetchWordDataFromAnki(
+    token: string
+  ): Promise<{ status: 'mature' | 'young' | 'new' | 'unknown'; cardIds: number[] } | undefined> {
+    try {
+      // Get lemmas for this token
+      const lemmas = await this.yomitan.lemmatize(token);
+
+      // Check all lemmas against Anki
+      let bestStatus: 'mature' | 'young' | 'new' | 'unknown' = 'unknown';
+      const allCardIds: number[] = [];
+
+      for (const lemma of lemmas) {
+        // Find cards with this lemma in configured word fields
+        const cardIds = await this.anki.findCardsWithWord(lemma, this.anki.getWordFields());
+
+        if (cardIds.length > 0) {
+          allCardIds.push(...cardIds);
+
+          // Check stability category for each card using prop:s queries
+          for (const cardId of cardIds) {
+            const status = await this._checkCardStability(cardId);
+
+            // Update best status (priority: mature > young > new > unknown)
+            if (status === 'mature') {
+              bestStatus = 'mature';
+              break; // Found mature, stop searching
+            } else if (status === 'young' && bestStatus !== 'mature') {
+              bestStatus = 'young';
+            } else if (status === 'new' && bestStatus === 'unknown') {
+              bestStatus = 'new';
+            }
+          }
+
+          // If we found a mature card, stop searching lemmas
+          if (bestStatus === 'mature') break;
+        }
+      }
+
+      // If no cards found, return undefined
+      if (allCardIds.length === 0) {
+        return undefined;
+      }
+
+      return {
+        status: bestStatus,
+        cardIds: allCardIds
+      };
+    } catch (error) {
+      console.error(`Error fetching word data from Anki for "${token}":`, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Check stability category for a single card using Anki search queries
+   * @param cardId - Card ID to check
+   * @returns Card status: 'mature', 'young', 'new', or 'unknown'
+   */
+  private async _checkCardStability(
+    cardId: number
+  ): Promise<'mature' | 'young' | 'new' | 'unknown'> {
+    try {
+      // Check if card is new (never reviewed, stability=0)
+      const newQuery = `cid:${cardId} is:new`;
+      const newResponse = await this.anki['_executeAction']('findCards', { query: newQuery });
+      if (newResponse.result && newResponse.result.length > 0) {
+        return 'new';
+      }
+
+      // Check if card is mature (stability >= threshold)
+      const matureQuery = `cid:${cardId} prop:s>=${this.options.matureThreshold}`;
+      const matureResponse = await this.anki['_executeAction']('findCards', { query: matureQuery });
+      if (matureResponse.result && matureResponse.result.length > 0) {
+        return 'mature';
+      }
+
+      // Otherwise it's young (reviewed but stability < threshold)
+      return 'young';
+    } catch (error) {
+      console.error(`Error checking card stability for card ${cardId}:`, error);
+      return 'unknown';
     }
   }
 
@@ -636,12 +791,16 @@ export class BookContentColoring {
     // Preserve whitespace in the styled spans to maintain formatting
     const whiteSpaceStyle = 'white-space: pre-wrap;';
 
+    // Add data attribute with token for hover refresh functionality
+    const tokenData = `data-anki-token="${this._escapeHtml(token.trim())}"`;
+
     switch (style) {
       case TokenStyle.TEXT:
-        return `<span style="color: ${color}; ${whiteSpaceStyle}">${token}</span>`;
+        return `<span ${tokenData} style="color: ${color}; ${whiteSpaceStyle}">${token}</span>`;
       case TokenStyle.UNDERLINE: {
         const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
-        return `<span style="text-decoration: underline ${color} ${decoration}; outline: inset ${color} 1px; ${whiteSpaceStyle}">${token}</span>`;
+        // Use simple underline to avoid confusion with ruby/furigana boundaries
+        return `<span ${tokenData} style="text-decoration: underline ${color} ${decoration}; ${whiteSpaceStyle}">${token}</span>`;
       }
       default:
         return token;
@@ -649,28 +808,17 @@ export class BookContentColoring {
   }
 
   /**
-   * Get text nodes from a specific element (for RT elements)
-   * @param element - Element to get text nodes from
-   * @returns Array of text nodes
+   * Escape HTML special characters
+   * @param text - Text to escape
+   * @returns Escaped text
    */
-  private _getTextNodesFromElement(element: Element): Text[] {
-    const textNodes: Text[] = [];
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-      acceptNode: (node) => {
-        // Accept all text nodes in this element
-        if (!node.textContent?.trim()) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-
-    let node;
-    while ((node = walker.nextNode())) {
-      textNodes.push(node as Text);
-    }
-
-    return textNodes;
+  private _escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   /**
@@ -762,13 +910,15 @@ export class BookContentColoring {
       // Just check age, don't preload
       const oldestTimestamp = cursor.value.timestamp;
       const cacheAge = Date.now() - oldestTimestamp;
+      const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+      const needsRefresh = cacheAge > CACHE_TTL_MS;
 
       console.log(
-        `📦 Cache exists (age: ${Math.round(cacheAge / 60000)} min) - queries will happen on-demand`
+        `📦 Cache exists (age: ${Math.round(cacheAge / 60000)} min, TTL: ${Math.round(CACHE_TTL_MS / 60000)} min) - needsRefresh: ${needsRefresh}`
       );
 
       // Return 0 loaded words since we're not preloading anymore
-      return { loadedWords: 0, needsRefresh: true, cacheAge };
+      return { loadedWords: 0, needsRefresh, cacheAge };
     } catch (error) {
       console.error('❌ Failed to check cache status:', error);
       return { loadedWords: 0, needsRefresh: true, cacheAge: Number.MAX_SAFE_INTEGER };

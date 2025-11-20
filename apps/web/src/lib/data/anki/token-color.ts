@@ -9,11 +9,11 @@
  */
 export enum TokenColor {
   /** Mature card (interval >= threshold, default 21 days) - Green */
-  MATURE = '#4caf50',
+  MATURE = '#71ff34',
   /** Young/learning card (0 < interval < threshold) - Orange */
-  YOUNG = '#ff9800',
+  YOUNG = '#ffbe3b',
   /** Unknown/new card (interval === 0) - Red */
-  UNKNOWN = '#f44336',
+  UNKNOWN = '#ff7878',
   /** No card found in Anki - Default text color */
   UNCOLLECTED = '#ffffff',
   /** Error occurred during lookup - Gray */
