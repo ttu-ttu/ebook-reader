@@ -35,7 +35,7 @@ export class Yomitan {
   async tokenize(text: string, yomitanUrl?: string): Promise<string[]> {
     const response = await this._executeAction(
       'tokenize',
-      { text, scanLength: this.scanLength },
+      { text, scanLength: this.scanLength, parser: 'mecab' },
       yomitanUrl
     );
 

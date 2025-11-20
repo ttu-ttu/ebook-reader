@@ -32,7 +32,11 @@ export class BookContentColoring {
   private tokenizeCache = new Map<string, string[]>();
   private lemmatizeCache = new Map<string, string[]>();
   private tokenColorCache = new Map<string, TokenColor>();
-  private tokenCardIdsCache = new Map<string, number[]>();
+  // Single cache: word -> {status, cardIds}
+  private wordDataCache = new Map<
+    string,
+    { status: 'mature' | 'young' | 'new' | 'unknown'; cardIds: number[] }
+  >();
   private cacheService?: AnkiCacheService;
   private options: ColoringOptions;
 
@@ -41,6 +45,46 @@ export class BookContentColoring {
     this.yomitan = new Yomitan(options.yomitanUrl, 12, cacheService);
     this.anki = new Anki(options.ankiConnectUrl, options.wordFields, options.wordDeckNames);
     this.cacheService = cacheService;
+
+    // Mark as ready immediately - cache will load in background
+    this.isReady = true;
+
+    // Initialize ready promise as already resolved
+    this.readyPromise = Promise.resolve();
+  }
+
+  private markReady(): void {
+    // No-op, kept for compatibility
+  }
+
+  /**
+   * Build stability cache for all cards in configured decks
+   * Should be called once on initialization for optimal performance
+   * @returns Promise with cache statistics
+   */
+  async buildStabilityCache(): Promise<{
+    matureCards: number;
+    youngCards: number;
+    newCards: number;
+  }> {
+    try {
+      this.stabilityCache = await this.anki.buildStabilityCacheForDecks(
+        this.options.matureThreshold
+      );
+
+      const matureCards = Array.from(this.stabilityCache.values()).filter(
+        (c) => c === 'mature'
+      ).length;
+      const youngCards = Array.from(this.stabilityCache.values()).filter(
+        (c) => c === 'young'
+      ).length;
+      const newCards = Array.from(this.stabilityCache.values()).filter((c) => c === 'new').length;
+
+      return { matureCards, youngCards, newCards };
+    } catch (error) {
+      console.error('Error building stability cache:', error);
+      return { matureCards: 0, youngCards: 0, newCards: 0 };
+    }
   }
 
   /**
@@ -65,11 +109,15 @@ export class BookContentColoring {
         if (!textContent || !textNode.parentElement) continue;
 
         const coloredHtml = await this._colorizeText(textContent);
-        const span = document.createElement('span');
-        span.innerHTML = coloredHtml;
 
-        // Replace text node with colored span
-        textNode.parentElement.replaceChild(span, textNode);
+        // Use a template element to parse HTML and create a document fragment
+        // This avoids creating an extra wrapper span
+        const template = document.createElement('template');
+        template.innerHTML = coloredHtml;
+        const fragment = template.content;
+
+        // Replace text node with the fragment (which contains the colored spans)
+        textNode.parentElement.replaceChild(fragment, textNode);
       }
 
       // Mark as colored to avoid reprocessing
@@ -90,10 +138,14 @@ export class BookContentColoring {
     if (!this.options.enabled) return;
     if (elements.length === 0) return;
 
+    console.log(
+      `🎨 colorizeElementsBatch called with ${elements.length} elements, cache has ${this.wordDataCache.size} words`
+    );
+
     try {
-      // Step 1: Collect all text nodes from all elements
+      // Step 1: Collect all text nodes and combine adjacent ones for proper tokenization
       const elementTextNodes = new Map<Element, Text[]>();
-      const allTexts = new Set<string>();
+      const elementCombinedText = new Map<Element, string>();
 
       for (const element of elements) {
         if (element.hasAttribute('data-anki-colored')) continue;
@@ -101,21 +153,22 @@ export class BookContentColoring {
         const textNodes = this._getTextNodes(element);
         if (textNodes.length > 0) {
           elementTextNodes.set(element, textNodes);
-          textNodes.forEach((node) => {
-            if (node.textContent) allTexts.add(node.textContent);
-          });
+          // Combine all text from this element for tokenization
+          // This ensures words split across ruby/span boundaries are tokenized together
+          const combinedText = textNodes.map((node) => node.textContent || '').join('');
+          elementCombinedText.set(element, combinedText);
         }
       }
 
-      if (allTexts.size === 0) return;
+      if (elementCombinedText.size === 0) return;
 
-      // Step 2: Collect all unique tokens from all texts
+      // Step 2: Tokenize the combined text from each element
+      const elementTokensMap = new Map<Element, string[]>();
       const allTokens = new Set<string>();
-      const textToTokensMap = new Map<string, string[]>();
 
-      for (const text of allTexts) {
-        const tokens = await this._getOrFetchTokens(text);
-        textToTokensMap.set(text, tokens);
+      for (const [element, combinedText] of elementCombinedText.entries()) {
+        const tokens = await this._getOrFetchTokens(combinedText);
+        elementTokensMap.set(element, tokens);
 
         // Collect unique tokens that need color checking
         for (const token of tokens) {
@@ -131,14 +184,8 @@ export class BookContentColoring {
       const uncachedTokens: string[] = [];
 
       for (const token of allTokens) {
-        // Check caches
-        let cached = this.tokenColorCache.get(token);
-        if (cached === undefined && this.cacheService) {
-          cached = await this.cacheService.getTokenColor(token);
-          if (cached !== undefined) {
-            this.tokenColorCache.set(token, cached);
-          }
-        }
+        // Check memory cache only (no persistent cache lookup)
+        const cached = this.tokenColorCache.get(token);
 
         if (cached !== undefined) {
           globalColorMap.set(token, cached);
@@ -153,33 +200,118 @@ export class BookContentColoring {
       }
 
       // Step 4: Apply colors to elements incrementally across animation frames
-      // This creates a smooth, gradual appearance instead of big blocks
+      // Map tokens to character positions, then color each text node individually
       const elementEntries = Array.from(elementTextNodes.entries());
 
       for (let i = 0; i < elementEntries.length; i++) {
         const [element, textNodes] = elementEntries[i];
+        const tokens = elementTokensMap.get(element) || [];
 
         // Use requestAnimationFrame to spread DOM updates across frames
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => {
+            // Build a map of character position -> token color
+            let currentPos = 0;
+            const positionColorMap = new Map<number, { token: string; color: TokenColor }>();
+
+            for (const rawToken of tokens) {
+              const trimmed = rawToken.trim();
+              const color = HAS_LETTER_REGEX.test(trimmed)
+                ? globalColorMap.get(trimmed) || TokenColor.UNCOLLECTED
+                : TokenColor.MATURE;
+
+              // Map each character position in this token to its color
+              for (let charIdx = 0; charIdx < rawToken.length; charIdx++) {
+                positionColorMap.set(currentPos + charIdx, { token: rawToken, color });
+              }
+              currentPos += rawToken.length;
+            }
+
+            // Color each text node individually based on its position in the combined text
+            let textNodeStartPos = 0;
             for (const textNode of textNodes) {
               if (!textNode.textContent || !textNode.parentElement) continue;
 
-              const tokens = textToTokensMap.get(textNode.textContent) || [];
-              let coloredHtml = '';
+              const nodeText = textNode.textContent;
+              const nodeEndPos = textNodeStartPos + nodeText.length;
 
-              for (const rawToken of tokens) {
-                const trimmed = rawToken.trim();
-                const color = HAS_LETTER_REGEX.test(trimmed)
-                  ? globalColorMap.get(trimmed) || TokenColor.UNCOLLECTED
-                  : TokenColor.MATURE;
+              // Determine which tokens overlap with this text node
+              const nodeTokens: Array<{ text: string; color: TokenColor }> = [];
+              let currentToken = '';
+              let currentColor: TokenColor | null = null;
 
-                coloredHtml += this._applyTokenStyle(rawToken, color);
+              for (let pos = textNodeStartPos; pos < nodeEndPos; pos++) {
+                const posInfo = positionColorMap.get(pos);
+                if (!posInfo) continue;
+
+                // If color changes, save the current token and start a new one
+                if (currentColor !== null && currentColor !== posInfo.color) {
+                  nodeTokens.push({ text: currentToken, color: currentColor });
+                  currentToken = '';
+                }
+
+                currentToken += nodeText[pos - textNodeStartPos];
+                currentColor = posInfo.color;
               }
 
-              const span = document.createElement('span');
-              span.innerHTML = coloredHtml;
-              textNode.parentElement.replaceChild(span, textNode);
+              // Save the last token
+              if (currentToken && currentColor !== null) {
+                nodeTokens.push({ text: currentToken, color: currentColor });
+              }
+
+              // Build colored HTML for this text node
+              let coloredHtml = '';
+              for (const { text, color } of nodeTokens) {
+                coloredHtml += this._applyTokenStyle(text, color);
+              }
+
+              // Replace this text node with colored version (preserves structure)
+              if (coloredHtml && textNode.parentElement) {
+                // Save reference to parent before replacing (needed for ruby check)
+                const parentElement = textNode.parentElement;
+
+                // Check if this text node is inside a ruby element BEFORE replacing
+                let rubyElement: Element | null = parentElement;
+                while (rubyElement && rubyElement !== element) {
+                  if (rubyElement.tagName === 'RUBY') {
+                    break;
+                  }
+                  rubyElement = rubyElement.parentElement;
+                }
+
+                // Replace the text node with colored HTML
+                const template = document.createElement('template');
+                template.innerHTML = coloredHtml;
+                const fragment = template.content;
+                parentElement.replaceChild(fragment, textNode);
+
+                // If this text node was inside a ruby element, color the furigana too
+                if (rubyElement && rubyElement.tagName === 'RUBY') {
+                  // Find RT elements in this ruby and apply the same colors
+                  const rtElements = rubyElement.querySelectorAll('rt');
+                  for (const rt of rtElements) {
+                    // Get the first color from nodeTokens (the base text color)
+                    const baseColor =
+                      nodeTokens.length > 0 ? nodeTokens[0].color : TokenColor.MATURE;
+                    // Color all text in the RT element
+                    const rtTextNodes = this._getTextNodesFromElement(rt);
+                    for (const rtTextNode of rtTextNodes) {
+                      if (rtTextNode.textContent && rtTextNode.parentElement) {
+                        const rtColoredHtml = this._applyTokenStyle(
+                          rtTextNode.textContent,
+                          baseColor
+                        );
+                        const rtTemplate = document.createElement('template');
+                        rtTemplate.innerHTML = rtColoredHtml;
+                        const rtFragment = rtTemplate.content;
+                        rtTextNode.parentElement.replaceChild(rtFragment, rtTextNode);
+                      }
+                    }
+                  }
+                }
+              }
+
+              textNodeStartPos = nodeEndPos;
             }
 
             element.setAttribute('data-anki-colored', 'true');
@@ -219,21 +351,11 @@ export class BookContentColoring {
         // Skip if already processed
         if (tokenColorMap.has(trimmedToken)) continue;
 
-        // Check memory cache
-        let cached = this.tokenColorCache.get(trimmedToken);
+        // Check memory cache only (no persistent cache lookup)
+        const cached = this.tokenColorCache.get(trimmedToken);
         if (cached !== undefined) {
           tokenColorMap.set(trimmedToken, cached);
           continue;
-        }
-
-        // Check persistent cache
-        if (this.cacheService) {
-          cached = await this.cacheService.getTokenColor(trimmedToken);
-          if (cached !== undefined) {
-            this.tokenColorCache.set(trimmedToken, cached);
-            tokenColorMap.set(trimmedToken, cached);
-            continue;
-          }
         }
 
         // Mark as uncached
@@ -292,8 +414,34 @@ export class BookContentColoring {
   }
 
   /**
+   * Get word data for a token, checking memory cache first, then IndexedDB
+   * This makes IndexedDB the primary cache, with wordDataCache as a read-through cache
+   * @param word - Word to lookup
+   * @returns Word data if found, undefined otherwise
+   */
+  private async _getWordData(
+    word: string
+  ): Promise<{ status: 'mature' | 'young' | 'new' | 'unknown'; cardIds: number[] } | undefined> {
+    // Check memory cache first (fast path)
+    let wordData = this.wordDataCache.get(word);
+    if (wordData) return wordData;
+
+    // Fall back to IndexedDB (primary cache)
+    if (this.cacheService) {
+      wordData = await this.cacheService.getWordData(word);
+      if (wordData) {
+        // Populate memory cache for future lookups
+        this.wordDataCache.set(word, wordData);
+        return wordData;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
    * Batch fetch token colors from Anki for multiple uncached tokens
-   * Processes tokens in small chunks to avoid overwhelming Anki Connect
+   * Uses pre-built wordDataCache for instant lookups (no API calls!)
    * @param tokens - Array of uncached tokens
    * @param colorMap - Map to populate with token -> color mappings
    */
@@ -301,102 +449,82 @@ export class BookContentColoring {
     tokens: string[],
     colorMap: Map<string, TokenColor>
   ): Promise<void> {
-    const CHUNK_SIZE = 10; // Process 10 tokens at a time
-    const tokenToCardIds = new Map<string, number[]>();
-    const allCardIds: number[] = [];
-    const uncachedTokens: string[] = [];
-
-    // Step 1: Check card ID caches (memory + IndexedDB)
-    for (const token of tokens) {
-      // Check in-memory cache
-      let cardIds = this.tokenCardIdsCache.get(token);
-
-      // Check IndexedDB cache if not in memory
-      if (cardIds === undefined && this.cacheService) {
-        cardIds = await this.cacheService.getTokenCardIds(token);
-        if (cardIds !== undefined) {
-          this.tokenCardIdsCache.set(token, cardIds);
-        }
-      }
-
-      if (cardIds !== undefined) {
-        // Use cached card IDs (even if empty array)
-        tokenToCardIds.set(token, cardIds);
-        if (cardIds.length > 0) {
-          allCardIds.push(...cardIds);
-        }
-      } else {
-        // Need to query Anki
-        uncachedTokens.push(token);
-      }
-    }
-
-    // Step 2: Query Anki only for uncached tokens
-    if (uncachedTokens.length > 0) {
-      // Create chunks
-      const chunks: string[][] = [];
-      for (let i = 0; i < uncachedTokens.length; i += CHUNK_SIZE) {
-        chunks.push(uncachedTokens.slice(i, i + CHUNK_SIZE));
-      }
-
-      // Query all chunks in parallel
-      const chunkResults = await Promise.all(
-        chunks.map((chunk) => this.anki.findCardsWithWordsBatch(chunk, this.anki.getWordFields()))
-      );
-
-      // Collect card IDs from all chunks
-      for (const cardMap of chunkResults) {
-        for (const [token, cardIds] of cardMap.entries()) {
-          tokenToCardIds.set(token, cardIds);
-
-          // Cache the card IDs
-          this.tokenCardIdsCache.set(token, cardIds);
-          if (this.cacheService) {
-            await this.cacheService.setTokenCardIds(token, cardIds);
-          }
-
-          if (cardIds.length > 0) {
-            allCardIds.push(...cardIds);
-          }
-        }
-      }
-    }
-
-    // Batch fetch card info for all cards (still batch this part)
-    const cardInfoMap = new Map<number, number>(); // cardId -> interval
-    if (allCardIds.length > 0) {
-      const cardInfos = await this.anki.cardsInfo(allCardIds);
-      cardInfos.forEach((info) => {
-        cardInfoMap.set(info.cardId, info.interval);
-      });
-    }
-
-    // Process results for each token
     const uncollectedTokens: string[] = [];
 
+    // Look up tokens in pre-built wordDataCache (instant, no API calls!)
     for (const token of tokens) {
-      const cardIds = tokenToCardIds.get(token);
+      // Look up word data from cache
+      let wordData = await this._getWordData(token);
 
-      if (!cardIds || cardIds.length === 0) {
-        // No cards found - will need lemmatization
+      // If no direct entry, try lemmas as a fallback (local cache -> persistent cache -> yomitan)
+      if (!wordData || wordData.cardIds.length === 0) {
+        try {
+          let lemmas = this.lemmatizeCache.get(token);
+
+          if (!lemmas && this.cacheService) {
+            lemmas = await this.cacheService.getLemmas(token);
+            if (lemmas) this.lemmatizeCache.set(token, lemmas);
+          }
+
+          if (!lemmas) {
+            lemmas = await this.yomitan.lemmatize(token);
+            this.lemmatizeCache.set(token, lemmas);
+            if (this.cacheService) {
+              await this.cacheService.setLemmas(token, lemmas);
+            }
+          }
+
+          if (lemmas && lemmas.length > 0) {
+            console.debug(`🔍 Token "${token}" lemmatized to:`, lemmas);
+            // Try to find a lemma that exists in wordDataCache with cardIds
+            for (const lemma of lemmas) {
+              const lemmaData = await this._getWordData(lemma);
+              console.debug(`🔍 Checking lemma "${lemma}":`, lemmaData);
+              if (lemmaData && lemmaData.cardIds && lemmaData.cardIds.length > 0) {
+                console.debug(`✅ Found data for lemma "${lemma}":`, lemmaData);
+                wordData = lemmaData;
+                break;
+              }
+            }
+            if (!wordData || wordData.cardIds.length === 0) {
+              console.debug(`❌ No lemma data found for token "${token}"`);
+            }
+          }
+        } catch (err) {
+          // Non-fatal; if lemmatization fails we'll treat token as uncollected below
+          console.debug('Lemmatization fallback failed for token', token, err);
+        }
+      }
+
+      if (!wordData || wordData.cardIds.length === 0) {
+        // Still no data found -> will need further handling (e.g. batch lemmatize)
         uncollectedTokens.push(token);
         continue;
       }
 
-      // Get intervals for this token's cards
-      const intervals = cardIds.map((id) => cardInfoMap.get(id));
-      const color = this._getColorFromIntervals(intervals);
+      // Map status to color
+      const color =
+        wordData.status === 'mature'
+          ? TokenColor.MATURE
+          : wordData.status === 'young'
+            ? TokenColor.YOUNG
+            : wordData.status === 'new'
+              ? TokenColor.UNKNOWN
+              : TokenColor.UNCOLLECTED;
 
-      // Cache and store
+      console.debug(`🎨 Token "${token}" -> status: ${wordData.status}, color: ${color}`);
+
+      if (color === TokenColor.UNCOLLECTED) {
+        uncollectedTokens.push(token);
+        continue;
+      }
+
+      // Cache and store (cache mapping is for the original token)
       this.tokenColorCache.set(token, color);
       colorMap.set(token, color);
-
-      if (this.cacheService) {
-        await this.cacheService.setTokenColor(token, color, intervals[0]);
-      }
     }
 
-    // Handle uncollected tokens with lemmatization (also chunked)
+    // Handle uncollected tokens with lemmatization
     if (uncollectedTokens.length > 0) {
       await this._handleUncollectedTokensBatch(uncollectedTokens, colorMap);
     }
@@ -404,6 +532,7 @@ export class BookContentColoring {
 
   /**
    * Handle uncollected tokens by lemmatizing and checking lemmas
+   * Uses pre-built stability cache for instant lookups (no API calls!)
    * @param tokens - Array of uncollected tokens
    * @param colorMap - Map to populate with token -> color mappings
    */
@@ -411,7 +540,7 @@ export class BookContentColoring {
     tokens: string[],
     colorMap: Map<string, TokenColor>
   ): Promise<void> {
-    // Parallelize lemmatization (Phase 2 optimization)
+    // Parallelize lemmatization
     const lemmaPromises = tokens.map(async (token) => {
       let lemmas = this.lemmatizeCache.get(token);
 
@@ -445,192 +574,44 @@ export class BookContentColoring {
       lemmas.forEach((lemma) => allLemmas.add(lemma));
     }
 
-    // Batch query Anki for all lemmas (in chunks of 10, parallelized)
-    const CHUNK_SIZE = 10;
-    const lemmaCardMap = new Map<string, number[]>();
-    const lemmasArray = Array.from(allLemmas);
-    const uncachedLemmas: string[] = [];
-
-    // Check card ID cache for lemmas
-    for (const lemma of lemmasArray) {
-      // Check in-memory cache
-      let cardIds = this.tokenCardIdsCache.get(lemma);
-
-      // Check IndexedDB cache if not in memory
-      if (cardIds === undefined && this.cacheService) {
-        cardIds = await this.cacheService.getTokenCardIds(lemma);
-        if (cardIds !== undefined) {
-          this.tokenCardIdsCache.set(lemma, cardIds);
-        }
-      }
-
-      if (cardIds !== undefined) {
-        // Use cached card IDs
-        lemmaCardMap.set(lemma, cardIds);
-      } else {
-        // Need to query Anki
-        uncachedLemmas.push(lemma);
-      }
-    }
-
-    // Query Anki only for uncached lemmas
-    if (uncachedLemmas.length > 0) {
-      // Create chunks
-      const lemmaChunks: string[][] = [];
-      for (let i = 0; i < uncachedLemmas.length; i += CHUNK_SIZE) {
-        lemmaChunks.push(uncachedLemmas.slice(i, i + CHUNK_SIZE));
-      }
-
-      // Query all chunks in parallel
-      const lemmaChunkResults = await Promise.all(
-        lemmaChunks.map((chunk) =>
-          this.anki.findCardsWithWordsBatch(chunk, this.anki.getWordFields())
-        )
-      );
-
-      // Merge results and cache
-      for (const chunkCardMap of lemmaChunkResults) {
-        for (const [lemma, cardIds] of chunkCardMap.entries()) {
-          lemmaCardMap.set(lemma, cardIds);
-
-          // Cache the card IDs
-          this.tokenCardIdsCache.set(lemma, cardIds);
-          if (this.cacheService) {
-            await this.cacheService.setTokenCardIds(lemma, cardIds);
-          }
-        }
-      }
-    }
-
-    // Collect all lemma card IDs
-    const allLemmaCardIds: number[] = [];
-    for (const cardIds of lemmaCardMap.values()) {
-      allLemmaCardIds.push(...cardIds);
-    }
-
-    // Batch fetch card info for lemmas
-    const lemmaCardInfoMap = new Map<number, number>();
-    if (allLemmaCardIds.length > 0) {
-      const cardInfos = await this.anki.cardsInfo(allLemmaCardIds);
-      cardInfos.forEach((info) => {
-        lemmaCardInfoMap.set(info.cardId, info.interval);
-      });
-    }
-
+    // Look up lemmas using IndexedDB as primary cache
     // Process each uncollected token
     for (const token of tokens) {
       const lemmas = tokenToLemmas.get(token) || [];
       let finalColor = TokenColor.UNCOLLECTED;
 
-      // Check each lemma
+      // Check each lemma - use the highest priority color found
       for (const lemma of lemmas) {
-        const cardIds = lemmaCardMap.get(lemma) || [];
+        const wordData = await this._getWordData(lemma);
 
-        if (cardIds.length > 0) {
-          const intervals = cardIds.map((id) => lemmaCardInfoMap.get(id) || 0);
-          const color = this._getColorFromIntervals(intervals);
+        if (wordData && wordData.cardIds.length > 0) {
+          // Map status to color
+          const color =
+            wordData.status === 'mature'
+              ? TokenColor.MATURE
+              : wordData.status === 'young'
+                ? TokenColor.YOUNG
+                : wordData.status === 'new'
+                  ? TokenColor.UNKNOWN
+                  : TokenColor.UNCOLLECTED;
 
-          if (color !== TokenColor.UNCOLLECTED) {
-            finalColor = color;
-            break;
+          if (color === TokenColor.MATURE) {
+            finalColor = TokenColor.MATURE;
+            break; // Mature is highest priority, stop here
+          } else if (color === TokenColor.YOUNG && finalColor === TokenColor.UNCOLLECTED) {
+            finalColor = TokenColor.YOUNG;
+          } else if (color === TokenColor.UNKNOWN && finalColor === TokenColor.UNCOLLECTED) {
+            finalColor = TokenColor.UNKNOWN;
           }
         }
+
+        if (finalColor === TokenColor.MATURE) break; // Already found mature, stop
       }
 
       // Cache and store
       this.tokenColorCache.set(token, finalColor);
       colorMap.set(token, finalColor);
-
-      if (this.cacheService) {
-        await this.cacheService.setTokenColor(token, finalColor);
-      }
     }
-  }
-
-  /**
-   * Get color for a token based on Anki card intervals
-   * @param token - Token to look up
-   * @returns Token color
-   */
-  private async _getTokenColor(token: string): Promise<TokenColor> {
-    // Check in-memory cache first
-    let cached = this.tokenColorCache.get(token);
-    if (cached !== undefined) return cached;
-
-    // Check persistent cache
-    if (this.cacheService) {
-      cached = await this.cacheService.getTokenColor(token);
-      if (cached !== undefined) {
-        this.tokenColorCache.set(token, cached);
-        return cached;
-      }
-    }
-
-    try {
-      // Search in word fields first (exact match)
-      const cardIds = await this.anki.findCardsWithWord(token, this.anki.getWordFields());
-
-      if (cardIds.length) {
-        const intervals = await this.anki.currentIntervals(cardIds);
-        const color = this._getColorFromIntervals(intervals);
-        this.tokenColorCache.set(token, color);
-
-        // Persist to IndexedDB cache
-        if (this.cacheService) {
-          await this.cacheService.setTokenColor(token, color, intervals[0]);
-        }
-
-        return color;
-      }
-
-      if (!cardIds.length) {
-        this.tokenColorCache.set(token, TokenColor.UNCOLLECTED);
-
-        // Persist to IndexedDB cache
-        if (this.cacheService) {
-          await this.cacheService.setTokenColor(token, TokenColor.UNCOLLECTED);
-        }
-
-        return TokenColor.UNCOLLECTED;
-      }
-
-      const cardInfos = await this.anki.cardsInfo(cardIds);
-      const intervals = cardInfos.map((info) => info.interval);
-      const color = this._getColorFromIntervals(intervals);
-      this.tokenColorCache.set(token, color);
-
-      // Persist to IndexedDB cache
-      if (this.cacheService) {
-        await this.cacheService.setTokenColor(token, color, intervals[0]);
-      }
-
-      return color;
-    } catch (error) {
-      console.error(`Error getting color for token "${token}":`, error);
-      return TokenColor.ERROR;
-    }
-  }
-
-  /**
-   * Determine color based on card intervals
-   * @param intervals - Array of card intervals in days
-   * @returns Token color
-   */
-  private _getColorFromIntervals(intervals: number[]): TokenColor {
-    if (!intervals.length) return TokenColor.ERROR;
-
-    // All cards are mature
-    if (intervals.some((i) => i >= this.options.matureThreshold)) {
-      return TokenColor.MATURE;
-    }
-
-    // All cards are new/unknown
-    if (intervals.every((i) => i === 0)) {
-      return TokenColor.UNKNOWN;
-    }
-
-    // Mixed or learning cards
-    return TokenColor.YOUNG;
   }
 
   /**
@@ -652,16 +633,44 @@ export class BookContentColoring {
       style = TokenStyle.UNDERLINE;
     }
 
+    // Preserve whitespace in the styled spans to maintain formatting
+    const whiteSpaceStyle = 'white-space: pre-wrap;';
+
     switch (style) {
       case TokenStyle.TEXT:
-        return `<span style="color: ${color};">${token}</span>`;
+        return `<span style="color: ${color}; ${whiteSpaceStyle}">${token}</span>`;
       case TokenStyle.UNDERLINE: {
         const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
-        return `<span style="text-decoration: underline ${color} ${decoration}; outline: inset ${color} 1px;">${token}</span>`;
+        return `<span style="text-decoration: underline ${color} ${decoration}; outline: inset ${color} 1px; ${whiteSpaceStyle}">${token}</span>`;
       }
       default:
         return token;
     }
+  }
+
+  /**
+   * Get text nodes from a specific element (for RT elements)
+   * @param element - Element to get text nodes from
+   * @returns Array of text nodes
+   */
+  private _getTextNodesFromElement(element: Element): Text[] {
+    const textNodes: Text[] = [];
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        // Accept all text nodes in this element
+        if (!node.textContent?.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    let node;
+    while ((node = walker.nextNode())) {
+      textNodes.push(node as Text);
+    }
+
+    return textNodes;
   }
 
   /**
@@ -676,9 +685,14 @@ export class BookContentColoring {
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
 
-        // Skip ruby text (furigana) and ruby parentheses
-        if (parent.tagName === 'RT' || parent.tagName === 'RP') {
-          return NodeFilter.FILTER_REJECT;
+        // Check if this text node is inside RT or RP elements (furigana/parentheses)
+        // We need to check all ancestors up to the root element
+        let current: Element | null = parent;
+        while (current && current !== element) {
+          if (current.tagName === 'RT' || current.tagName === 'RP') {
+            return NodeFilter.FILTER_REJECT;
+          }
+          current = current.parentElement;
         }
 
         // Skip empty/whitespace-only nodes
@@ -705,7 +719,7 @@ export class BookContentColoring {
     this.tokenizeCache.clear();
     this.lemmatizeCache.clear();
     this.tokenColorCache.clear();
-    this.tokenCardIdsCache.clear();
+    this.wordDataCache.clear();
 
     // Also clear persistent cache
     if (this.cacheService) {
@@ -713,9 +727,97 @@ export class BookContentColoring {
     }
   }
 
+  private lastCacheRefreshTime = 0;
+  private isReady = false;
+  private readyPromise: Promise<void>;
+
+  /**
+   * Check IndexedDB cache status without preloading
+   * Cache queries now happen on-demand via _getWordData
+   * @returns Object with cache status
+   */
+  async loadCacheFromIndexedDB(): Promise<{
+    loadedWords: number;
+    needsRefresh: boolean;
+    cacheAge: number;
+  }> {
+    console.log('📦 Checking IndexedDB cache status (no preload - queries on-demand)...');
+
+    if (!this.cacheService) {
+      console.warn('⚠️ No cache service available');
+      return { loadedWords: 0, needsRefresh: true, cacheAge: Number.MAX_SAFE_INTEGER };
+    }
+
+    try {
+      const db = await this.cacheService['db'];
+      const tx = db.transaction('wordData', 'readonly');
+      const store = tx.objectStore('wordData');
+      const cursor = await store.openCursor();
+
+      if (!cursor) {
+        console.log('📦 No cache found in IndexedDB');
+        return { loadedWords: 0, needsRefresh: true, cacheAge: Number.MAX_SAFE_INTEGER };
+      }
+
+      // Just check age, don't preload
+      const oldestTimestamp = cursor.value.timestamp;
+      const cacheAge = Date.now() - oldestTimestamp;
+
+      console.log(
+        `📦 Cache exists (age: ${Math.round(cacheAge / 60000)} min) - queries will happen on-demand`
+      );
+
+      // Return 0 loaded words since we're not preloading anymore
+      return { loadedWords: 0, needsRefresh: true, cacheAge };
+    } catch (error) {
+      console.error('❌ Failed to check cache status:', error);
+      return { loadedWords: 0, needsRefresh: true, cacheAge: Number.MAX_SAFE_INTEGER };
+    }
+  }
+
+  /**
+   * Re-colorize elements that were already processed
+   * Useful after cache has been loaded/refreshed to update colors
+   */
+  async recolorizeProcessedElements(): Promise<void> {
+    // Small delay to ensure DOM is settled
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Clear token color cache to force fresh lookups from IndexedDB
+    // This ensures all tokens are recomputed with the latest data
+    this.tokenColorCache.clear();
+    console.log('🔄 Cleared token color cache to force fresh lookups from IndexedDB');
+
+    console.log('🔄 Re-colorizing already processed elements with updated cache...');
+    console.log(
+      `📊 Cache stats: ${this.wordDataCache.size} words in memory, querying IndexedDB on miss`
+    );
+
+    // Find all elements that were already colored
+    const coloredElements = Array.from(document.querySelectorAll('[data-anki-colored="true"]'));
+
+    if (coloredElements.length === 0) {
+      console.log('🔄 No elements to re-colorize (none have been processed yet)');
+      return;
+    }
+
+    // Remove the marker and actually re-colorize them
+    coloredElements.forEach((element) => {
+      element.removeAttribute('data-anki-colored');
+    });
+
+    console.log(`🔄 Re-colorizing ${coloredElements.length} elements with cached data...`);
+
+    // Re-colorize all these elements in one batch
+    await this.colorizeElementsBatch(coloredElements);
+
+    console.log(`✅ Re-colorized ${coloredElements.length} elements successfully`);
+  }
+
   /**
    * Preemptively warm the cache with all cards from configured Anki decks
-   * Runs in the background to populate the cache for faster future lookups
+   * Builds stability cache and word caches for faster future lookups
+   * This should run in the background after loading cached data
    * @returns Promise with cache warming statistics
    */
   async warmCache(): Promise<{
@@ -728,9 +830,40 @@ export class BookContentColoring {
 
     try {
       console.log('Starting Anki cache warming...');
+      const deckNames = this.anki.getWordDecks();
+      const wordFields = this.anki.getWordFields();
+      console.log('Deck names:', deckNames);
+      console.log('Word fields:', wordFields);
+      console.log('Mature threshold:', this.options.matureThreshold);
 
-      // Get all cards from configured decks
+      // Early validation
+      if (!deckNames || deckNames.length === 0) {
+        console.warn('❌ No deck names configured! Cache warming aborted.');
+        console.warn('Please configure deck names in Settings > Anki Integration');
+        return { totalCards: 0, cachedWords: 0, duration: Date.now() - startTime };
+      }
+
+      if (!wordFields || wordFields.length === 0) {
+        console.warn('❌ No word fields configured! Cache warming aborted.');
+        console.warn('Please configure word fields in Settings > Anki Integration');
+        return { totalCards: 0, cachedWords: 0, duration: Date.now() - startTime };
+      }
+
+      // Step 0: Test Anki Connect connection
+      console.log('🔌 Testing Anki Connect connection...');
+      try {
+        const version = await this.anki.version();
+        console.log(`✅ Anki Connect version ${version} connected`);
+      } catch (error) {
+        console.error('❌ Failed to connect to Anki Connect:', error);
+        console.error('Make sure Anki is running and AnkiConnect addon is installed');
+        throw new Error(`Anki Connect connection failed: ${error}`);
+      }
+
+      // Step 1: Get all cards from configured decks (for field values)
+      console.log('✅ Configuration valid. Step 1: Fetching all cards from decks...');
       const allCards = await this.anki.getAllCardsFromDecks();
+      console.log(`Got ${allCards.length} cards from getAllCardsFromDecks`);
 
       if (allCards.length === 0) {
         console.warn('No cards found for cache warming');
@@ -741,7 +874,6 @@ export class BookContentColoring {
 
       // Extract unique words from configured word fields
       const wordToCardIds = new Map<string, number[]>();
-      const wordFields = this.anki.getWordFields();
 
       for (const card of allCards) {
         for (const field of wordFields) {
@@ -759,29 +891,63 @@ export class BookContentColoring {
 
       console.log(`Extracted ${wordToCardIds.size} unique words from cards`);
 
-      // Build interval map
-      const cardIntervalMap = new Map<number, number>();
-      for (const card of allCards) {
-        cardIntervalMap.set(card.cardId, card.interval);
-      }
+      // Step 2: Build stability cache using prop:s queries
+      console.log('Step 2: Building stability cache with 3 prop:s queries...');
+      const stabilityCache = await this.anki.buildStabilityCacheForDecks(
+        this.options.matureThreshold
+      );
+      console.log(`Stability cache has ${stabilityCache.size} card entries`);
 
-      // Cache all words with their colors and card IDs
+      // Step 3: Build single cache: word -> {status, cardIds}
+      console.log('Step 3: Mapping words to status...');
+      let matureCount = 0,
+        youngCount = 0,
+        newCount = 0,
+        unknownCount = 0;
+
       for (const [word, cardIds] of wordToCardIds.entries()) {
-        const intervals = cardIds.map((id) => cardIntervalMap.get(id) || 0);
-        const color = this._getColorFromIntervals(intervals);
+        // Determine status from stability cache (prefer mature > young > new > unknown)
+        let status: 'mature' | 'young' | 'new' | 'unknown' = 'unknown';
 
-        // Store in memory caches
-        this.tokenColorCache.set(word, color);
-        this.tokenCardIdsCache.set(word, cardIds);
+        // Check cards against stability categories from prop:s queries
+        for (const cardId of cardIds) {
+          const category = stabilityCache.get(cardId);
 
-        // Store in persistent caches
+          if (category === 'mature') {
+            status = 'mature';
+            break; // Mature is highest priority
+          } else if (category === 'young' && status === 'unknown') {
+            status = 'young';
+          } else if (category === 'new' && status === 'unknown') {
+            status = 'new';
+          }
+        }
+
+        // Count by status
+        if (status === 'mature') matureCount++;
+        else if (status === 'young') youngCount++;
+        else if (status === 'new') newCount++;
+        else unknownCount++;
+
+        // Store in single combined cache
+        this.wordDataCache.set(word, { status, cardIds });
+
+        // Store in persistent cache
         if (this.cacheService) {
-          await this.cacheService.setTokenColor(word, color, intervals[0]);
-          await this.cacheService.setTokenCardIds(word, cardIds);
+          await this.cacheService.setWordData(word, status, cardIds);
         }
 
         cachedWords++;
       }
+
+      console.log(
+        `Words by status: ${matureCount} mature, ${youngCount} young, ${newCount} new, ${unknownCount} unknown`
+      );
+
+      // Clear token color cache so all tokens are recomputed with updated wordDataCache
+      // This fixes the issue where tokens like "見て" were cached as UNCOLLECTED before their lemma "見る" was loaded.
+      this.tokenColorCache.clear();
+      console.log('🔄 Cleared token color cache to force recomputation with updated word data');
 
       const duration = Date.now() - startTime;
       console.log(`Cache warming complete: ${cachedWords} words cached in ${duration}ms`);
@@ -789,6 +955,7 @@ export class BookContentColoring {
       return { totalCards: allCards.length, cachedWords, duration };
     } catch (error) {
       console.error('Error during cache warming:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       const duration = Date.now() - startTime;
       return { totalCards: 0, cachedWords, duration };
     }

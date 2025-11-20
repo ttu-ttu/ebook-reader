@@ -76,13 +76,13 @@ export class Anki {
   ): Promise<Map<string, number[]>> {
     if (!words.length || !fields.length) return new Map();
 
-    // Build single query with all words OR'd together
-    const wordQueries = words.map((word) => {
-      const fieldQuery = fields.map((field) => `"${field}:${word}"`).join(' OR ');
-      return `(${fieldQuery})`;
-    });
+    // Build regex pattern with all words OR'd together: ^(word1|word2|word3)$
+    const escapedWords = words.map((word) => this._escapeRegex(word));
+    const regexPattern = `^(${escapedWords.join('|')})$`;
 
-    const combinedQuery = wordQueries.join(' OR ');
+    // Build query with regex for each field
+    const fieldQueries = fields.map((field) => `"${field}:re:${regexPattern}"`);
+    const combinedQuery = fieldQueries.join(' OR ');
     const query = this._addDeckFilter(combinedQuery);
 
     // Single findCards request for all words
@@ -118,6 +118,83 @@ export class Anki {
     }
 
     return resultMap;
+  }
+
+  private _escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
+   * Build a complete card ID -> stability category cache for all cards in configured decks
+   * This should be called once on initialization to avoid repeated property queries
+   * @param matureThreshold - Stability threshold for mature cards (e.g., 21 days)
+   * @param ankiConnectUrl - Optional override for Anki Connect URL
+   * @returns Map of card ID -> category ('mature', 'young', or 'new')
+   */
+  async buildStabilityCacheForDecks(
+    matureThreshold: number,
+    ankiConnectUrl?: string
+  ): Promise<Map<number, 'mature' | 'young' | 'new'>> {
+    const result = new Map<number, 'mature' | 'young' | 'new'>();
+
+    // Build deck query
+    let deckQuery = '';
+    if (this.wordDeckNames && this.wordDeckNames.length > 0) {
+      const deckQueries = this.wordDeckNames.map((deckName) => `"deck:${deckName}"`);
+      deckQuery = deckQueries.join(' OR ');
+    } else {
+      // No deck filter - would query ALL cards
+      console.warn('No deck configured for stability cache. Skipping.');
+      return result;
+    }
+
+    console.log('Building stability cache with threshold:', matureThreshold);
+
+    // Query 1: Find all mature cards in decks (prop:s > threshold)
+    const matureQuery = `(${deckQuery}) prop:s>${matureThreshold}`;
+    console.log('Querying mature cards:', matureQuery);
+    const matureResponse = await this._executeAction(
+      'findCards',
+      { query: matureQuery },
+      ankiConnectUrl
+    );
+    const matureCardIds: number[] = matureResponse.result || [];
+    console.log(`Found ${matureCardIds.length} mature cards`);
+
+    // Query 2: Find all young cards in decks (prop:s <= threshold AND not new)
+    const youngQuery = `(${deckQuery}) prop:s<=${matureThreshold} -is:new`;
+    console.log('Querying young cards:', youngQuery);
+    const youngResponse = await this._executeAction(
+      'findCards',
+      { query: youngQuery },
+      ankiConnectUrl
+    );
+    const youngCardIds: number[] = youngResponse.result || [];
+    console.log(`Found ${youngCardIds.length} young cards`);
+
+    // Query 3: Find all new cards in decks (not reviewed yet)
+    const newQuery = `(${deckQuery}) is:new`;
+    console.log('Querying new cards:', newQuery);
+    const newResponse = await this._executeAction('findCards', { query: newQuery }, ankiConnectUrl);
+    const newCardIds: number[] = newResponse.result || [];
+    console.log(`Found ${newCardIds.length} new cards`);
+
+    // Build cache
+    for (const cardId of matureCardIds) {
+      result.set(cardId, 'mature');
+    }
+    for (const cardId of youngCardIds) {
+      result.set(cardId, 'young');
+    }
+    for (const cardId of newCardIds) {
+      result.set(cardId, 'new');
+    }
+
+    console.log(
+      `Stability cache built: ${matureCardIds.length} mature, ${youngCardIds.length} young, ${newCardIds.length} new`
+    );
+
+    return result;
   }
 
   /**
@@ -161,11 +238,14 @@ export class Anki {
    * @returns Array of card information with word fields
    */
   async getAllCardsFromDecks(ankiConnectUrl?: string): Promise<CardInfo[]> {
+    console.log('getAllCardsFromDecks: Starting...');
+
     // Build deck query
     let deckQuery = '';
     if (this.wordDeckNames && this.wordDeckNames.length > 0) {
       const deckQueries = this.wordDeckNames.map((deckName) => `"deck:${deckName}"`);
       deckQuery = deckQueries.join(' OR ');
+      console.log('getAllCardsFromDecks: Deck query:', deckQuery);
     } else {
       // No deck filter - would return ALL cards, which might be too many
       // Return empty to avoid overwhelming the system
@@ -174,8 +254,10 @@ export class Anki {
     }
 
     // Find all cards in the configured decks
+    console.log('getAllCardsFromDecks: Finding all cards in decks...');
     const response = await this._executeAction('findCards', { query: deckQuery }, ankiConnectUrl);
     const cardIds: number[] = response.result || [];
+    console.log(`getAllCardsFromDecks: Found ${cardIds.length} card IDs`);
 
     if (cardIds.length === 0) {
       return [];
@@ -184,13 +266,18 @@ export class Anki {
     // Get card info for all cards (in chunks to avoid overwhelming Anki)
     const CHUNK_SIZE = 100;
     const allCardInfos: CardInfo[] = [];
+    console.log(`getAllCardsFromDecks: Fetching card info in chunks of ${CHUNK_SIZE}...`);
 
     for (let i = 0; i < cardIds.length; i += CHUNK_SIZE) {
       const chunk = cardIds.slice(i, i + CHUNK_SIZE);
+      console.log(
+        `getAllCardsFromDecks: Fetching chunk ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(cardIds.length / CHUNK_SIZE)}`
+      );
       const cardInfos = await this.cardsInfo(chunk, ankiConnectUrl);
       allCardInfos.push(...cardInfos);
     }
 
+    console.log(`getAllCardsFromDecks: Completed, got ${allCardInfos.length} cards with full info`);
     return allCardInfos;
   }
 

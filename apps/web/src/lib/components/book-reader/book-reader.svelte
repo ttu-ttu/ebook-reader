@@ -161,53 +161,105 @@
       : 0;
 
   // Anki word coloring - incremental viewport-based approach with priority queue
-  $: {
-    if ($ankiIntegrationEnabled$) {
-      // Initialize coloring service with persistent cache
-      if (!coloringService) {
-        coloringService = new BookContentColoring(
-          {
-            enabled: $ankiIntegrationEnabled$,
-            yomitanUrl: $yomitanUrl$,
-            ankiConnectUrl: $ankiConnectUrl$,
-            wordFields: $ankiWordFields$,
-            wordDeckNames: $ankiWordDeckNames$,
-            matureThreshold: $ankiMatureThreshold$,
-            tokenStyle: $ankiTokenStyle$
-          },
-          ankiCacheService
-        );
-      }
+  let cacheLoadingPromise: Promise<void> | null = null;
 
-      // Initialize priority queue with cross-element batching
-      if (!coloringQueue && coloringService) {
-        // maxConcurrent: 1 batch at a time (avoid Anki freezing)
-        // batchSize: 5 elements per batch (smaller batches, faster feedback)
-        // Tokens are chunked to 10 per Anki query for stability
-        coloringQueue = new ColoringPriorityQueue(coloringService, 1, 5);
-      }
-    } else {
-      // Clean up when disabled
-      if (coloringQueue) {
-        coloringQueue.clear();
-        coloringQueue = undefined;
-      }
-      if (coloringService) {
-        // coloringService.clearCache();
-        coloringService = undefined;
-      }
-      if (intersectionObserver) {
-        intersectionObserver.disconnect();
-        intersectionObserver = undefined;
-      }
-      if (viewportObserver) {
-        viewportObserver.disconnect();
-        viewportObserver = undefined;
-      }
-      if (nearObserver) {
-        nearObserver.disconnect();
-        nearObserver = undefined;
-      }
+  $: if ($ankiIntegrationEnabled$) {
+    // Initialize coloring service with persistent cache
+    if (!coloringService && !cacheLoadingPromise) {
+      console.log('🔧 Creating Anki coloring service...');
+
+      coloringService = new BookContentColoring(
+        {
+          enabled: true,
+          yomitanUrl: $yomitanUrl$,
+          ankiConnectUrl: $ankiConnectUrl$,
+          wordFields: $ankiWordFields$,
+          wordDeckNames: $ankiWordDeckNames$,
+          matureThreshold: $ankiMatureThreshold$,
+          tokenStyle: $ankiTokenStyle$
+        },
+        ankiCacheService
+      );
+
+      // Step 1: Check if IndexedDB cache exists (no preloading)
+      console.log('⚡ Checking IndexedDB cache status...');
+      cacheLoadingPromise = (async () => {
+        const service = coloringService; // Capture reference
+        if (!service) {
+          console.error('⚠️ Service is null, cannot check cache');
+          return;
+        }
+
+        console.log('⚡ Calling loadCacheFromIndexedDB...');
+        const cacheInfo = await service.loadCacheFromIndexedDB();
+        console.log(`⚡ loadCacheFromIndexedDB returned:`, cacheInfo);
+
+        if (cacheInfo.loadedWords === 0) {
+          console.log(
+            `⚡ Cache exists (age: ${Math.round(cacheInfo.cacheAge / 60000)} min) - queries will use IndexedDB on-demand`
+          );
+        } else {
+          console.log('⚠️ No cache found - will query Anki after warming');
+        }
+
+        // Step 2: Start colorization immediately
+        // IndexedDB queries happen on-demand, no need to wait for preloading
+        if (!coloringQueue && service) {
+          console.log(`🎨 Starting colorization with IndexedDB as primary cache...`);
+          // maxConcurrent: 1 batch at a time (avoid Anki freezing)
+          // batchSize: 5 elements per batch (smaller batches, faster feedback)
+          // Tokens are chunked to 10 per Anki query for stability
+          coloringQueue = new ColoringPriorityQueue(service, 1, 5);
+        }
+
+        // Step 3: Refresh cache in background (don't block colorization)
+        if (cacheInfo.needsRefresh) {
+          console.log('🔄 Refreshing cache from Anki in background...');
+          service
+            .warmCache()
+            .then(async (stats) => {
+              console.log(
+                `✅ Cache refreshed: ${stats.cachedWords} words from ${stats.totalCards} cards in ${stats.duration}ms`
+              );
+
+              // Re-colorize all elements to pick up updated cards
+              console.log('🔄 Re-colorizing with updated cache...');
+              await service.recolorizeProcessedElements();
+              console.log('✅ Re-colorization complete');
+            })
+            .catch((err) => {
+              console.error('❌ Failed to refresh cache:', err);
+            });
+        }
+
+        cacheLoadingPromise = null;
+      })().catch((err) => {
+        console.error('❌ Failed to initialize cache:', err);
+        console.error('Error stack:', err.stack);
+        cacheLoadingPromise = null;
+      });
+    }
+  } else {
+    // Clean up when disabled
+    if (coloringQueue) {
+      coloringQueue.clear();
+      coloringQueue = undefined;
+    }
+    if (coloringService) {
+      // coloringService.clearCache();
+      coloringService = undefined;
+    }
+    if (intersectionObserver) {
+      intersectionObserver.disconnect();
+      intersectionObserver = undefined;
+    }
+    if (viewportObserver) {
+      viewportObserver.disconnect();
+      viewportObserver = undefined;
+    }
+    if (nearObserver) {
+      nearObserver.disconnect();
+      nearObserver = undefined;
     }
   }
 
