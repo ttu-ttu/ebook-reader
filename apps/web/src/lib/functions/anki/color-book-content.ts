@@ -39,6 +39,9 @@ export class BookContentColoring {
   >();
   private cacheService?: AnkiCacheService;
   private options: ColoringOptions;
+  // Rate limiting: track last refresh timestamp for each token
+  private lastRefreshTime = new Map<string, number>();
+  private readonly REFRESH_COOLDOWN_MS = 5000; // 5 seconds
 
   constructor(options: ColoringOptions, cacheService?: AnkiCacheService) {
     this.options = options;
@@ -331,22 +334,120 @@ export class BookContentColoring {
 
   /**
    * Refresh a single token by fetching fresh data from Anki
+   * Rate limited to once per 5 seconds to avoid excessive queries
    * @param token - Token to refresh
    * @param span - HTML span element to update
    */
   private async _refreshToken(token: string, span: HTMLElement): Promise<void> {
     try {
-      // Clear cached data for this token to force fresh lookup
-      this.wordDataCache.delete(token);
-      this.tokenColorCache.delete(token);
+      // Rate limiting: check if token was refreshed recently
+      const now = Date.now();
+      const lastRefresh = this.lastRefreshTime.get(token);
 
-      // Fetch fresh data from Anki (bypassing cache)
-      const wordData = await this._fetchWordDataFromAnki(token);
-
-      if (!wordData) {
-        console.log(`🔄 Token "${token}" not found in Anki (unknown/uncollected)`);
+      if (lastRefresh && now - lastRefresh < this.REFRESH_COOLDOWN_MS) {
+        console.log(
+          `⏱️ Token "${token}" was refreshed ${Math.round((now - lastRefresh) / 1000)}s ago, skipping (cooldown: ${this.REFRESH_COOLDOWN_MS / 1000}s)`
+        );
         return;
       }
+
+      // Update last refresh timestamp
+      this.lastRefreshTime.set(token, now);
+
+      // Get existing card IDs from cache (assume they haven't changed)
+      // Try direct lookup first, then lemmatization
+      let existingData = this.wordDataCache.get(token);
+
+      // If not found directly, try lemmatizing to find the base form
+      if (!existingData || existingData.cardIds.length === 0) {
+        console.log(`🔍 Token "${token}" not in cache, trying lemmatization...`);
+        const lemmas = await this.yomitan.lemmatize(token);
+
+        for (const lemma of lemmas) {
+          const lemmaData = this.wordDataCache.get(lemma);
+          if (lemmaData && lemmaData.cardIds.length > 0) {
+            console.log(`✅ Found cached data via lemma "${lemma}"`);
+            existingData = lemmaData;
+            break;
+          }
+        }
+      }
+
+      if (!existingData || existingData.cardIds.length === 0) {
+        console.log(`🔄 Token "${token}" has no cached card IDs, performing full refresh`);
+        // Clear caches and do full fetch
+        this.wordDataCache.delete(token);
+        this.tokenColorCache.delete(token);
+        const wordData = await this._fetchWordDataFromAnki(token);
+
+        if (!wordData) {
+          console.log(`🔄 Token "${token}" not found in Anki (unknown/uncollected)`);
+          return;
+        }
+
+        // Update caches
+        this.wordDataCache.set(token, wordData);
+
+        // Update IndexedDB cache with fresh data
+        if (this.cacheService) {
+          await this.cacheService.setWordData(token, wordData.status, wordData.cardIds);
+          console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
+        }
+
+        // Map status to color
+        const color =
+          wordData.status === 'mature'
+            ? TokenColor.MATURE
+            : wordData.status === 'young'
+              ? TokenColor.YOUNG
+              : wordData.status === 'new'
+                ? TokenColor.UNKNOWN
+                : TokenColor.UNCOLLECTED;
+
+        this.tokenColorCache.set(token, color);
+
+        // Update span styling
+        const style = this.options.tokenStyle;
+        const whiteSpaceStyle = 'white-space: pre-wrap;';
+
+        if (style === TokenStyle.TEXT) {
+          span.style.cssText = `color: ${color}; ${whiteSpaceStyle}`;
+        } else {
+          const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
+          span.style.cssText = `text-decoration: underline ${color} ${decoration}; ${whiteSpaceStyle}`;
+        }
+
+        console.log(
+          `🔄 Refreshed token on hover: "${token}" -> status: ${wordData.status}, color: ${color}`
+        );
+        return;
+      }
+
+      // Fast path: reuse existing card IDs and only check stability
+      console.log(
+        `⚡ Fast refresh for "${token}" using ${existingData.cardIds.length} cached card IDs`
+      );
+      const stabilityCache = await this._batchCheckCardStability(existingData.cardIds);
+
+      // Determine new status
+      let newStatus: 'mature' | 'young' | 'new' | 'unknown' = 'unknown';
+      for (const cardId of existingData.cardIds) {
+        const status = stabilityCache.get(cardId) || 'unknown';
+
+        if (status === 'mature') {
+          newStatus = 'mature';
+          break;
+        } else if (status === 'young' && newStatus !== 'mature') {
+          newStatus = 'young';
+        } else if (status === 'new' && newStatus === 'unknown') {
+          newStatus = 'new';
+        }
+      }
+
+      const wordData = {
+        status: newStatus,
+        cardIds: existingData.cardIds
+      };
 
       // Update IndexedDB cache with fresh data
       if (this.cacheService) {
@@ -476,6 +577,55 @@ export class BookContentColoring {
     } catch (error) {
       console.error(`Error checking card stability for card ${cardId}:`, error);
       return 'unknown';
+    }
+  }
+
+  /**
+   * Batch check stability category for multiple cards using 2 queries total
+   * Cards that are neither mature nor new are young (by elimination)
+   * @param cardIds - Array of card IDs to check
+   * @returns Map of card ID -> status
+   */
+  private async _batchCheckCardStability(
+    cardIds: number[]
+  ): Promise<Map<number, 'mature' | 'young' | 'new'>> {
+    const result = new Map<number, 'mature' | 'young' | 'new'>();
+
+    if (cardIds.length === 0) return result;
+
+    // Build card ID filter: (cid:123 OR cid:456 OR cid:789)
+    const cidFilter = `(${cardIds.map((id) => `cid:${id}`).join(' OR ')})`;
+
+    try {
+      // Query 1: Find mature cards (prop:s >= threshold)
+      const matureQuery = `${cidFilter} prop:s>=${this.options.matureThreshold}`;
+      const matureResponse = await this.anki['_executeAction']('findCards', { query: matureQuery });
+      const matureCardIds: number[] = matureResponse.result || [];
+
+      for (const cardId of matureCardIds) {
+        result.set(cardId, 'mature');
+      }
+
+      // Query 2: Find new cards (never reviewed)
+      const newQuery = `${cidFilter} is:new`;
+      const newResponse = await this.anki['_executeAction']('findCards', { query: newQuery });
+      const newCardIds: number[] = newResponse.result || [];
+
+      for (const cardId of newCardIds) {
+        result.set(cardId, 'new');
+      }
+
+      // All remaining cards are young (not mature and not new)
+      for (const cardId of cardIds) {
+        if (!result.has(cardId)) {
+          result.set(cardId, 'young');
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error batch checking card stability:', error);
+      return result;
     }
   }
 
