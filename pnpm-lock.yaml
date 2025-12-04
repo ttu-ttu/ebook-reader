@@ -66,8 +66,8 @@ importers:
         specifier: 5.0.5
         version: 5.0.5
       svelte-eslint-parser:
-        specifier: 1.4.0
-        version: 1.4.0(svelte@5.0.5)
+        specifier: 1.4.1
+        version: 1.4.1(svelte@5.0.5)
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -2797,9 +2797,9 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
 
-  svelte-eslint-parser@1.4.0:
-    resolution: {integrity: sha512-fjPzOfipR5S7gQ/JvI9r2H8y9gMGXO3JtmrylHLLyahEMquXI0lrebcjT+9/hNgDej0H7abTyox5HpHmW1PSWA==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0, pnpm: 10.18.3}
+  svelte-eslint-parser@1.4.1:
+    resolution: {integrity: sha512-1eqkfQ93goAhjAXxZiu1SaKI9+0/sxp4JIWQwUpsz7ybehRE5L8dNuz7Iry7K22R47p5/+s9EM+38nHV2OlgXA==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0, pnpm: 10.24.0}
     peerDependencies:
       svelte: ^3.37.0 || ^4.0.0 || ^5.0.0
     peerDependenciesMeta:
@@ -4645,7 +4645,7 @@ snapshots:
       postcss-load-config: 3.1.4(postcss@8.5.6)
       postcss-safe-parser: 7.0.1(postcss@8.5.6)
       semver: 7.7.1
-      svelte-eslint-parser: 1.4.0(svelte@5.0.5)
+      svelte-eslint-parser: 1.4.1(svelte@5.0.5)
     optionalDependencies:
       svelte: 5.0.5
     transitivePeerDependencies:
@@ -5795,7 +5795,7 @@ snapshots:
     transitivePeerDependencies:
       - picomatch
 
-  svelte-eslint-parser@1.4.0(svelte@5.0.5):
+  svelte-eslint-parser@1.4.1(svelte@5.0.5):
     dependencies:
       eslint-scope: 8.4.0
       eslint-visitor-keys: 4.2.1
