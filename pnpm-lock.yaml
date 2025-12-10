@@ -137,10 +137,10 @@ importers:
         version: 3.1.2(svelte@4.2.20)(vite@5.4.21(@types/node@24.10.2)(sass@1.95.1)(terser@5.39.0))
       '@tailwindcss/aspect-ratio':
         specifier: 0.4.2
-        version: 0.4.2(tailwindcss@3.4.18)
+        version: 0.4.2(tailwindcss@3.4.19)
       '@tailwindcss/forms':
         specifier: 0.5.10
-        version: 0.5.10(tailwindcss@3.4.18)
+        version: 0.5.10(tailwindcss@3.4.19)
       '@types/balanced-match':
         specifier: 3.0.2
         version: 3.0.2
@@ -175,8 +175,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3(@babel/core@7.26.9)(postcss-load-config@4.0.2(postcss@8.5.6))(postcss@8.5.6)(sass@1.95.1)(svelte@4.2.20)(typescript@5.9.3)
       tailwindcss:
-        specifier: 3.4.18
-        version: 3.4.18
+        specifier: 3.4.19
+        version: 3.4.19
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -2874,8 +2874,8 @@ packages:
     resolution: {integrity: sha512-/5aUeiRPqmY0CRTJ+iVWfOOMHWTDh8JAIuNF1A6nZ2/RdCNWwKaUrO5Qw5ephLK6dYa7NclYBI0ahdgUECvdhA==}
     engines: {node: ^14.18.0 || >=16.0.0}
 
-  tailwindcss@3.4.18:
-    resolution: {integrity: sha512-6A2rnmW5xZMdw11LYjhcI5846rt9pbLSabY5XPxo+XWdxwZaFEn47Go4NzFiHu9sNNmr/kXivP1vStfvMaK1GQ==}
+  tailwindcss@3.4.19:
+    resolution: {integrity: sha512-3ofp+LL8E+pK/JuPLPggVAIaEuhvIz4qNcf3nA1Xn2o/7fb7s/TYpHhwGDv1ZU3PkBluUVaF8PyCHcm48cKLWQ==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -3787,14 +3787,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tailwindcss/aspect-ratio@0.4.2(tailwindcss@3.4.18)':
+  '@tailwindcss/aspect-ratio@0.4.2(tailwindcss@3.4.19)':
     dependencies:
-      tailwindcss: 3.4.18
+      tailwindcss: 3.4.19
 
-  '@tailwindcss/forms@0.5.10(tailwindcss@3.4.18)':
+  '@tailwindcss/forms@0.5.10(tailwindcss@3.4.19)':
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.4.18
+      tailwindcss: 3.4.19
 
   '@tybys/wasm-util@0.9.0':
     dependencies:
@@ -5870,7 +5870,7 @@ snapshots:
     dependencies:
       '@pkgr/core': 0.2.4
 
-  tailwindcss@3.4.18:
+  tailwindcss@3.4.19:
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
