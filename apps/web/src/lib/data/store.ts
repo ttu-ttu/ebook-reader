@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -91,6 +91,11 @@ export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()(
   'writingMode',
   'vertical-rl'
 );
+export const enableVerticalFontKerning$ = writableBooleanLocalStorageSubject()(
+  'enableVerticalFontKerning',
+  false
+);
+export const enableFontVPAL$ = writableBooleanLocalStorageSubject()('enableFontVPAL', false);
 export const prioritizeReaderStyles$ = writableBooleanLocalStorageSubject()(
   'prioritizeReaderStyles',
   false

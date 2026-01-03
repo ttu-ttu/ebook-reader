@@ -60,7 +60,9 @@
     viewMode$,
     writingMode$,
     readingGoalsMergeMode$,
-    hideSpoilerImageMode$
+    hideSpoilerImageMode$,
+    enableVerticalFontKerning$,
+    enableFontVPAL$
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { pagePath } from '$lib/data/env';
@@ -152,6 +154,8 @@
       bind:hideFurigana={$hideFurigana$}
       bind:furiganaStyle={$furiganaStyle$}
       bind:writingMode={$writingMode$}
+      bind:enableFontKerning={$enableVerticalFontKerning$}
+      bind:enableFontVPAL={$enableFontVPAL$}
       bind:prioritizeReaderStyles={$prioritizeReaderStyles$}
       bind:enableTextJustification={$enableTextJustification$}
       bind:enableTextWrapPretty={$enableTextWrapPretty$}

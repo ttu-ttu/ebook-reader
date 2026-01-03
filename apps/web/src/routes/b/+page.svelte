@@ -86,7 +86,9 @@
     pauseTrackerOnCustomPointChange$,
     hideSpoilerImageMode$,
     showCharacterCounter$,
-    showPercentage$
+    showPercentage$,
+    enableVerticalFontKerning$,
+    enableFontVPAL$
   } from '$lib/data/store';
   import BookCompletionConfetti from '$lib/components/book-reader/book-completion-confetti/book-completion-confetti.svelte';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
@@ -214,6 +216,12 @@
     syncedResolver = resolver;
   });
   const queuedReaderImageGalleryPictures = new Map<string, boolean>();
+  const fontFeatureSettings = [
+    $enableVerticalFontKerning$ && '"vkrn"',
+    $enableFontVPAL$ && '"vpal"'
+  ]
+    .filter((f) => !!f && $verticalMode$)
+    .join(', ');
 
   const bookId$ = iffBrowser(() => readableToObservable(page)).pipe(
     map((pageObj) => Number(pageObj.url.searchParams.get('id'))),
@@ -1631,6 +1639,7 @@
     htmlContent={$bookData$.htmlContent}
     width={$containerViewportWidth$ ?? 0}
     height={$containerViewportHeight$ ?? 0}
+    {fontFeatureSettings}
     prioritizeReaderStyles={$prioritizeReaderStyles$}
     enableTextJustification={$enableTextJustification$}
     enableTextWrapPretty={$enableTextWrapPretty$}
