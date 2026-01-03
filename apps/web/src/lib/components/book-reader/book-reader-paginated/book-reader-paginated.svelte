@@ -50,6 +50,8 @@
 
   export let verticalMode: boolean;
 
+  export let fontFeatureSettings: string;
+
   export let prioritizeReaderStyles: boolean;
 
   export let enableTextJustification: boolean;
@@ -695,6 +697,7 @@
     : (width + gap) / columnCount - gap}px"
   style:--book-content-text-margin="{textMarginValue ?? 0}rem"
   style:--book-content-text-intendation="{textIndentation ?? 0}rem"
+  style:font-feature-settings={fontFeatureSettings}
   class:book-content--avoid-page-break={avoidPageBreak}
   class:book-content--writing-vertical-rl={verticalMode}
   class:book-content--writing-horizontal-rl={!verticalMode}

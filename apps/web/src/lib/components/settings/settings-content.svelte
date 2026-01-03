@@ -80,6 +80,10 @@
 
   export let writingMode: WritingMode;
 
+  export let enableFontKerning: boolean;
+
+  export let enableFontVPAL: boolean;
+
   export let prioritizeReaderStyles: boolean;
 
   export let enableTextJustification: boolean;
@@ -663,6 +667,20 @@
     <SettingsItemGroup title="Writing mode">
       <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
     </SettingsItemGroup>
+    {#if verticalMode}
+      <SettingsItemGroup
+        title="Enable Font Kerning"
+        tooltip={'Can lead to better visual balance for vertical spacing of text if font and browser supports it'}
+      >
+        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableFontKerning} />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Enable VPAL"
+        tooltip={'Can lead to more natural spacing for vertically laid-out text if font and browser supports it'}
+      >
+        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableFontVPAL} />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup
       title="Prioritize Reader Styles"
       tooltip={'When enabled the "important" declaration is added to certain rules like margins or justification which makes it more likely to be applied in case of conflicting book styles'}
