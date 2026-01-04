@@ -88,7 +88,8 @@
     showCharacterCounter$,
     showPercentage$,
     enableVerticalFontKerning$,
-    enableFontVPAL$
+    enableFontVPAL$,
+    verticalTextOrientation$
   } from '$lib/data/store';
   import BookCompletionConfetti from '$lib/components/book-reader/book-completion-confetti/book-completion-confetti.svelte';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
@@ -222,6 +223,7 @@
   ]
     .filter((f) => !!f && $verticalMode$)
     .join(', ');
+  const verticalTextOrientation = $verticalMode$ ? $verticalTextOrientation$ : '';
 
   const bookId$ = iffBrowser(() => readableToObservable(page)).pipe(
     map((pageObj) => Number(pageObj.url.searchParams.get('id'))),
@@ -1640,6 +1642,7 @@
     width={$containerViewportWidth$ ?? 0}
     height={$containerViewportHeight$ ?? 0}
     {fontFeatureSettings}
+    {verticalTextOrientation}
     prioritizeReaderStyles={$prioritizeReaderStyles$}
     enableTextJustification={$enableTextJustification$}
     enableTextWrapPretty={$enableTextWrapPretty$}

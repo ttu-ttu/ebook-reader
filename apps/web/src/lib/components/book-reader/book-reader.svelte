@@ -41,6 +41,8 @@
 
   export let fontFeatureSettings: string;
 
+  export let verticalTextOrientation: string;
+
   export let prioritizeReaderStyles: boolean;
 
   export let enableTextJustification: boolean;
@@ -281,6 +283,7 @@
       height={$contentViewportHeight$ ?? 0}
       {verticalMode}
       {fontFeatureSettings}
+      {verticalTextOrientation}
       {prioritizeReaderStyles}
       {enableTextJustification}
       {enableTextWrapPretty}
@@ -325,6 +328,7 @@
       height={$contentViewportHeight$ ?? 0}
       {verticalMode}
       {fontFeatureSettings}
+      {verticalTextOrientation}
       {prioritizeReaderStyles}
       {enableTextJustification}
       {enableTextWrapPretty}
