@@ -42,6 +42,7 @@
   } from '$lib/data/store';
   import type { TextMarginMode } from '$lib/data/text-margin-mode';
   import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
+  import type { VerticalTextOrientation } from '$lib/data/vertical-text-orientation';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
   import { secondsToMinutes } from '$lib/functions/statistic-util';
@@ -83,6 +84,8 @@
   export let enableFontKerning: boolean;
 
   export let enableFontVPAL: boolean;
+
+  export let verticalTextOrientation: VerticalTextOrientation;
 
   export let prioritizeReaderStyles: boolean;
 
@@ -226,6 +229,17 @@
     }
   ];
 
+  const optionsForVerticalTextOrientation: ToggleOption<VerticalTextOrientation>[] = [
+    {
+      id: 'mixed',
+      text: 'Mixed'
+    },
+    {
+      id: 'upright',
+      text: 'Upright'
+    }
+  ];
+
   const optionsForTextMarginMode: ToggleOption<TextMarginMode>[] = [
     {
       id: 'auto',
@@ -353,6 +367,10 @@
     $textMarginValue$ = 0;
   }
 
+  $: verticalTextOrientationTooltip =
+    verticalTextOrientation === 'mixed'
+      ? 'Rotates the characters of horizontal scripts 90° clockwise'
+      : 'Lays out the characters of horizontal scripts naturally (upright), as well as the glyphs for vertical scripts.';
   $: autoBookmarkTooltip = `If enabled sets a bookmark after ${autoBookmarkTime} seconds without scrolling/page change`;
   $: wakeLockSupported = browser && 'wakeLock' in navigator;
   $: verticalMode = writingMode === 'vertical-rl';
@@ -679,6 +697,12 @@
         tooltip={'Can lead to more natural spacing for vertically laid-out text if font and browser supports it'}
       >
         <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableFontVPAL} />
+      </SettingsItemGroup>
+      <SettingsItemGroup title="Text Orientation" tooltip={verticalTextOrientationTooltip}>
+        <ButtonToggleGroup
+          options={optionsForVerticalTextOrientation}
+          bind:selectedOptionId={verticalTextOrientation}
+        />
       </SettingsItemGroup>
     {/if}
     <SettingsItemGroup
