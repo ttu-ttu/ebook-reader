@@ -58,6 +58,8 @@
 
   export let fontFeatureSettings: string;
 
+  export let verticalTextOrientation: string;
+
   export let prioritizeReaderStyles: boolean;
 
   export let enableTextJustification: boolean;
@@ -676,6 +678,7 @@
   style:--book-content-text-margin="{textMarginValue ?? 0}rem"
   style:--book-content-text-intendation="{textIndentation ?? 0}rem"
   style:font-feature-settings={fontFeatureSettings}
+  style:text-orientation={verticalTextOrientation}
   class:book-content--writing-vertical-rl={verticalMode}
   class:book-content--writing-horizontal-rl={!verticalMode}
   class:book-content--hide-furigana={hideFurigana}

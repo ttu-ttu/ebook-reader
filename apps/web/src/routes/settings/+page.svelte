@@ -17,10 +17,12 @@
     confirmClose$,
     customReadingPointEnabled$,
     disableWheelNavigation$,
+    enableFontVPAL$,
     enableReaderWakeLock$,
     enableTapEdgeToFlip$,
     enableTextJustification$,
     enableTextWrapPretty$,
+    enableVerticalFontKerning$,
     firstDimensionMargin$,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -57,12 +59,11 @@
     trackerIdleTime$,
     trackerPopupDetection$,
     trackerSkipThresholdAction$,
+    verticalTextOrientation$,
     viewMode$,
     writingMode$,
     readingGoalsMergeMode$,
-    hideSpoilerImageMode$,
-    enableVerticalFontKerning$,
-    enableFontVPAL$
+    hideSpoilerImageMode$
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { pagePath } from '$lib/data/env';
@@ -156,6 +157,7 @@
       bind:writingMode={$writingMode$}
       bind:enableFontKerning={$enableVerticalFontKerning$}
       bind:enableFontVPAL={$enableFontVPAL$}
+      bind:verticalTextOrientation={$verticalTextOrientation$}
       bind:prioritizeReaderStyles={$prioritizeReaderStyles$}
       bind:enableTextJustification={$enableTextJustification$}
       bind:enableTextWrapPretty={$enableTextWrapPretty$}

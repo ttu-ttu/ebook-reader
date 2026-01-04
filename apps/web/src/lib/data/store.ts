@@ -54,6 +54,7 @@ import {
 } from './internal/writable-object-local-storage-subject';
 import type { TextMarginMode } from './text-margin-mode';
 import type { ThemeOption } from './theme-option';
+import type { VerticalTextOrientation } from './vertical-text-orientation';
 import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
 import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
@@ -96,6 +97,8 @@ export const enableVerticalFontKerning$ = writableBooleanLocalStorageSubject()(
   false
 );
 export const enableFontVPAL$ = writableBooleanLocalStorageSubject()('enableFontVPAL', false);
+export const verticalTextOrientation$ =
+  writableStringLocalStorageSubject<VerticalTextOrientation>()('verticalTextOrientation', 'mixed');
 export const prioritizeReaderStyles$ = writableBooleanLocalStorageSubject()(
   'prioritizeReaderStyles',
   false
