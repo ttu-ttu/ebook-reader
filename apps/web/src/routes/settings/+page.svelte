@@ -30,6 +30,7 @@
     furiganaStyle$,
     hideFurigana$,
     hideSpoilerImage$,
+    importHTMLFixMode$,
     lineHeight$,
     manualBookmark$,
     keepLocalStatisticsOnDeletion$,
@@ -39,6 +40,7 @@
     pauseTrackerOnCustomPointChange$,
     prioritizeReaderStyles$,
     replicationSaveBehavior$,
+    restrictImportFixToAnchor$,
     secondDimensionMaxValue$,
     selectionToBookmarkEnabled$,
     showCharacterCounter$,
@@ -182,6 +184,8 @@
       bind:manualBookmark={$manualBookmark$}
       bind:autoBookmark={$autoBookmark$}
       bind:autoBookmarkTime={$autoBookmarkTime$}
+      bind:importHTMLFixMode={$importHTMLFixMode$}
+      bind:restrictImportFixToAnchor={$restrictImportFixToAnchor$}
       bind:cacheStorageData={$cacheStorageData$}
       bind:replicationSaveBehavior={$replicationSaveBehavior$}
       bind:autoReplication={$autoReplication$}
