@@ -24,6 +24,7 @@
   import { dialogManager } from '$lib/data/dialog-manager';
   import { LocalFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
+  import { ImportHTMLFixMode } from '$lib/data/import-html-fix-mode';
   import { logger } from '$lib/data/logger';
   import { MergeMode } from '$lib/data/merge-mode';
   import { isAppDefault } from '$lib/data/storage/storage-source-manager';
@@ -136,6 +137,10 @@
   export let autoBookmarkTime: number;
 
   export let activeSettings: string;
+
+  export let importHTMLFixMode: string;
+
+  export let restrictImportFixToAnchor: boolean;
 
   export let cacheStorageData: boolean;
 
@@ -273,6 +278,21 @@
     }
   ];
 
+  const optionsForImportHTMLFixes: ToggleOption<ImportHTMLFixMode>[] = [
+    {
+      id: ImportHTMLFixMode.OFF,
+      text: 'Off'
+    },
+    {
+      id: ImportHTMLFixMode.STANDARD,
+      text: 'Standard'
+    },
+    {
+      id: ImportHTMLFixMode.EXTENDED,
+      text: 'Extended'
+    }
+  ];
+
   const optionsForAutoReplicationType: ToggleOption<AutoReplicationType>[] = [
     {
       id: AutoReplicationType.Off,
@@ -360,6 +380,7 @@
 
   let showSpinner = false;
   let furiganaStyleTooltip = '';
+  let importHTMLFixModeTooltip = '';
   let autoReplicationTypeTooltip = '';
   let trackerAutoPauseTooltip = '';
 
@@ -395,6 +416,19 @@
   $: persistentStorageTooltip = persistentStorage
     ? 'Reader uses higher storage limit for local data'
     : 'Uses lower temporary storage for local data.\nMay require bookmark or notification permissions for enablement';
+  $: switch (importHTMLFixMode) {
+    case ImportHTMLFixMode.OFF:
+      importHTMLFixModeTooltip = 'Imports epub files as is';
+      break;
+    case ImportHTMLFixMode.EXTENDED:
+      importHTMLFixModeTooltip =
+        'Applies additional fixes for epub imports like removing control characters, replacing html entities etc.';
+      break;
+    default:
+      importHTMLFixModeTooltip =
+        'Applies fixes for epub imports like wrong self closing elements etc.';
+      break;
+  }
   $: cacheStorageDataTooltip = cacheStorageData
     ? 'Storage data is cached. Saves network traffic/latency but requires to reload current/open a new tab to retrieve data changes'
     : 'Storage data is refetched on every action. May consume more network traffic/latency but ensures current data';
@@ -875,6 +909,23 @@
         {/if}
       </div>
     </SettingsItemGroup>
+    <SettingsItemGroup title="Epub Import Fixes" tooltip={importHTMLFixModeTooltip}>
+      <ButtonToggleGroup
+        options={optionsForImportHTMLFixes}
+        bind:selectedOptionId={importHTMLFixMode}
+      />
+    </SettingsItemGroup>
+    {#if importHTMLFixMode !== ImportHTMLFixMode.OFF}
+      <SettingsItemGroup
+        title="Restrict to Links"
+        tooltip="Restricts epub fixes for self closing tags to links only"
+      >
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={restrictImportFixToAnchor}
+        />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup title="Cache Data" tooltip={cacheStorageDataTooltip}>
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={cacheStorageData} />
     </SettingsItemGroup>

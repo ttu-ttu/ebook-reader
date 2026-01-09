@@ -9,11 +9,43 @@ import type { Section } from '../../../data/database/books-db/versions/v3/books-
 import buildDummyBookImage from '../utils/build-dummy-book-image';
 import clearAllBadImageRef from '../utils/clear-all-bad-image-ref';
 import fixXHtmlHref from '../utils/fix-xhtml-href';
+import { importHTMLFixMode$, restrictImportFixToAnchor$ } from '$lib/data/store';
+import { ImportHTMLFixMode } from '$lib/data/import-html-fix-mode';
 import { getCharacterCount } from '$lib/functions/get-character-count';
 import { getParagraphNodes } from '../../../components/book-reader/get-paragraph-nodes';
 import path from 'path-browserify';
 
 export const prependValue = 'ttu-';
+
+// eslint-disable-next-line no-control-regex
+const controlCharactersRegex = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/gim;
+const htmlHexEntitiesRegex = /&#x([0-9A-Fa-f]+);/gim;
+const htmlDecEntitiesRegex = /&#(\d+);/gim;
+const selfClosingTagsRegex = /><\/(meta|link)>/gim;
+const selfClosingContentTags = [
+  'a',
+  'body',
+  'code',
+  'div',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'ol',
+  'ops:default',
+  'p',
+  'rb',
+  'rt',
+  'ruby',
+  'script',
+  'span',
+  'td',
+  'th',
+  'title'
+];
 
 export default function generateEpubHtml(
   data: Record<string, string | Blob>,
@@ -22,6 +54,11 @@ export default function generateEpubHtml(
   contentsDirectory: string
 ) {
   const fallbackData = new Map<string, string>();
+  const importHTMLFixMode = importHTMLFixMode$.getValue();
+  const restrictImportFixToAnchor = restrictImportFixToAnchor$.getValue();
+  const applyImportFixes = importHTMLFixMode !== ImportHTMLFixMode.OFF;
+  const selfClosingContentTagsToFix =
+    applyImportFixes && !restrictImportFixToAnchor ? selfClosingContentTags : [];
 
   let tocData = { type: 3, content: '' };
   let navKey = '';
@@ -71,6 +108,10 @@ export default function generateEpubHtml(
 
   let mainChapters: Section[] = [];
   let firstChapterMatchIndex = -1;
+
+  if (applyImportFixes && restrictImportFixToAnchor) {
+    selfClosingContentTagsToFix.push('a');
+  }
 
   if (tocData.type && tocData.content) {
     let parsedToc = parser.parseFromString(tocData.content, 'text/html');
@@ -140,11 +181,33 @@ export default function generateEpubHtml(
       htmlHref = itemIdToHtmlRef[itemIdRef];
     }
 
-    let parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/html');
+    let contentToParse = (data[htmlHref] as string) || '';
+
+    for (const tagMatch of selfClosingContentTagsToFix) {
+      const matches = contentToParse.match(new RegExp(`<${tagMatch}[^>]+?>`, 'gim')) || [];
+
+      for (const match of matches) {
+        if (match.endsWith('/>')) {
+          contentToParse = contentToParse.replace(match, `${match.slice(0, -2)}></${tagMatch}>`);
+        }
+      }
+    }
+
+    if (importHTMLFixMode === ImportHTMLFixMode.EXTENDED) {
+      contentToParse = contentToParse
+        .replace(controlCharactersRegex, '')
+        .replace(selfClosingTagsRegex, '>')
+        .replace(htmlHexEntitiesRegex, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+        .replace(htmlDecEntitiesRegex, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+        .replace('<!DOCTYPE html []>', '<!DOCTYPE html>')
+        .trim();
+    }
+
+    let parsedContent = parser.parseFromString(contentToParse, 'text/html');
     let body = parsedContent.body;
 
     if (!body?.childNodes?.length) {
-      parsedContent = parser.parseFromString(data[htmlHref] as string, 'text/xml');
+      parsedContent = parser.parseFromString(contentToParse, 'text/xml');
       body = parsedContent.querySelector('body')!;
 
       if (!body?.childNodes?.length) {

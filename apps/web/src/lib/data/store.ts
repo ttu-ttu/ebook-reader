@@ -46,6 +46,7 @@ import { BookReaderAvailableKeybind, type BookReaderKeybindMap } from './book-re
 import { DatabaseService } from './database/books-db/database.service';
 import { createBooksDb } from './database/books-db/factory';
 import { FuriganaStyle } from './furigana-style';
+import { ImportHTMLFixMode } from './import-html-fix-mode';
 import { writableBooleanLocalStorageSubject } from './internal/writable-boolean-local-storage-subject';
 import { writableNumberLocalStorageSubject } from './internal/writable-number-local-storage-subject';
 import {
@@ -183,6 +184,16 @@ export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0
 export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(
   'requestPersistentStorage',
   true
+);
+
+export const importHTMLFixMode$ = writableStringLocalStorageSubject<ImportHTMLFixMode>()(
+  'importHTMLFixMode',
+  ImportHTMLFixMode.STANDARD
+);
+
+export const restrictImportFixToAnchor$ = writableBooleanLocalStorageSubject()(
+  'restrictImportFixToAnchor',
+  false
 );
 
 export const cacheStorageData$ = writableBooleanLocalStorageSubject()('cacheStorageData', false);
