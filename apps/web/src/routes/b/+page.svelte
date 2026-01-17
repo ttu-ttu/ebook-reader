@@ -177,6 +177,8 @@
     pulseElement
   } from '$lib/functions/range-util';
 
+  void getWeightedAverage;
+
   let showSpinner = true;
   let showHeader = false;
   let isBookmarkScreen = false;
