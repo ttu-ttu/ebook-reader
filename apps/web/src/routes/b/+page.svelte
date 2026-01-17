@@ -1859,7 +1859,7 @@
         class="writing-horizontal-tb fixed bottom-2 left-1/2 z-10 text-xs leading-none select-none -translate-x-1/2"
         style:color={$themeOption$?.tooltipTextFontColor}
       >
-        Chapter: {chapterProgress}%
+        Chapter Progress: {chapterProgress}%
       </div>
     {/if}
   {/if}
