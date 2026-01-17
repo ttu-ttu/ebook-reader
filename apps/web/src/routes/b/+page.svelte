@@ -1804,7 +1804,7 @@
       </div>
     {/if}
   </div>
-  {#if showFooter && bookCharCount}
+    {#if showFooter && bookCharCount}
     {@const currentProgress = [
       $showCharacterCounter$ ? `${exploredCharCount} / ${bookCharCount}` : '',
       $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : ''
@@ -1833,6 +1833,26 @@
     >
       {currentProgress}
     </div>
+    {#if $sectionData$?.length}
+      {@const [, , chapterProgress] = (() => {
+        const [mainChapters, chapterIndex] = getChapterData($sectionData$);
+        const relevantSections = $sectionData$.filter(section => 
+          section.reference === mainChapters[chapterIndex]?.reference || 
+          section.parentChapter === mainChapters[chapterIndex]?.reference
+        );
+        const progress = relevantSections.length ? getWeightedAverage(
+          relevantSections.map(s => s.progress),
+          relevantSections.map(s => s.charactersWeight)
+        ).toFixed(2) : '0.00';
+        return [mainChapters, chapterIndex, progress];
+      })()}
+      <div
+        class="writing-horizontal-tb fixed bottom-2 left-1/2 z-10 text-xs leading-none select-none -translate-x-1/2"
+        style:color={$themeOption$?.tooltipTextFontColor}
+      >
+        Chapter: {chapterProgress}%
+      </div>
+    {/if}
   {/if}
 </div>
 
