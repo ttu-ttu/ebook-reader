@@ -159,7 +159,13 @@
   } from '$lib/functions/replication/replication-progress';
   import { getDateKey } from '$lib/functions/statistic-util';
   import { clickOutside } from '$lib/functions/use-click-outside';
-  import { convertRemToPixels, dummyFn, isMobile$, limitToRange } from '$lib/functions/utils';
+  import {
+    convertRemToPixels,
+    dummyFn,
+    isMobile$,
+    limitToRange,
+    getWeightedAverage
+  } from '$lib/functions/utils';
   import { onKeydownReader } from './on-keydown-reader';
   import { onDestroy, onMount, tick } from 'svelte';
   import Fa from 'svelte-fa';
@@ -1804,7 +1810,7 @@
       </div>
     {/if}
   </div>
-    {#if showFooter && bookCharCount}
+  {#if showFooter && bookCharCount}
     {@const currentProgress = [
       $showCharacterCounter$ ? `${exploredCharCount} / ${bookCharCount}` : '',
       $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : ''
@@ -1836,14 +1842,17 @@
     {#if $sectionData$?.length}
       {@const [, , chapterProgress] = (() => {
         const [mainChapters, chapterIndex] = getChapterData($sectionData$);
-        const relevantSections = $sectionData$.filter(section => 
-          section.reference === mainChapters[chapterIndex]?.reference || 
-          section.parentChapter === mainChapters[chapterIndex]?.reference
+        const relevantSections = $sectionData$.filter(
+          (section) =>
+            section.reference === mainChapters[chapterIndex]?.reference ||
+            section.parentChapter === mainChapters[chapterIndex]?.reference
         );
-        const progress = relevantSections.length ? getWeightedAverage(
-          relevantSections.map(s => s.progress),
-          relevantSections.map(s => s.charactersWeight)
-        ).toFixed(2) : '0.00';
+        const progress = relevantSections.length
+          ? getWeightedAverage(
+              relevantSections.map((s) => s.progress),
+              relevantSections.map((s) => s.charactersWeight)
+            ).toFixed(2)
+          : '0.00';
         return [mainChapters, chapterIndex, progress];
       })()}
       <div
