@@ -90,20 +90,22 @@ Explanation from [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Keyboard
 > For example, the code returned is "KeyQ" for the Q key on a QWERTY layout keyboard, but the same code value also
 > represents the ' key on Dvorak keyboards and the A key on AZERTY keyboards.
 
-| Key Code            | Description                               |
-| ------------------- | ----------------------------------------- |
-| <kbd>Space</kbd>    | Toggle auto-scroll (continuous mode)      |
-| <kbd>a</kbd>        | Increase auto-scroll speed                |
-| <kbd>d</kbd>        | Decrease auto-scroll speed                |
-| <kbd>b</kbd>        | Create bookmark at your current location  |
-| <kbd>r</kbd>        | Return to bookmark location               |
-| <kbd>t</kbd>        | Select a new custom reading point         |
-| <kbd>p</kbd>        | Toggles Reading Tracker                   |
-| <kbd>f</kbd>        | Toggles a Reading Tracker Freeze Position |
-| <kbd>PageDown</kbd> | Move to next page                         |
-| <kbd>PageUp</kbd>   | Move to previous page                     |
-| <kbd>n</kbd>        | Move to next/previous chapter             |
-| <kbd>m</kbd>        | Move to next/previous chapter             |
+| Key Code            | Description                                |
+| ------------------- | ------------------------------------------ |
+| <kbd>Space</kbd>    | Toggle auto-scroll (continuous mode)       |
+| <kbd>a</kbd>        | Continous Mode: Increase auto-scroll speed |
+|                     | Paginated Mode: Move to next/previous Page |
+| <kbd>d</kbd>        | Decrease auto-scroll speed                 |
+|                     | Paginated Mode: Move to next/previous Page |
+| <kbd>b</kbd>        | Create bookmark at your current location   |
+| <kbd>r</kbd>        | Return to bookmark location                |
+| <kbd>t</kbd>        | Select a new custom reading point          |
+| <kbd>p</kbd>        | Toggles Reading Tracker                    |
+| <kbd>f</kbd>        | Toggles a Reading Tracker Freeze Position  |
+| <kbd>PageDown</kbd> | Move to next page                          |
+| <kbd>PageUp</kbd>   | Move to previous page                      |
+| <kbd>n</kbd>        | Move to next/previous chapter              |
+| <kbd>m</kbd>        | Move to next/previous chapter              |
 
 # Book Manager
 

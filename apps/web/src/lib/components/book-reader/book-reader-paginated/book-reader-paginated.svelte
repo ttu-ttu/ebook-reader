@@ -640,9 +640,11 @@
       return;
     switch (ev.code) {
       case 'ArrowLeft':
+      case 'KeyA':
         concretePageManager[verticalMode ? 'nextPage' : 'prevPage']();
         break;
       case 'ArrowRight':
+      case 'KeyD':
         concretePageManager[verticalMode ? 'prevPage' : 'nextPage']();
         break;
       case 'ArrowUp':
