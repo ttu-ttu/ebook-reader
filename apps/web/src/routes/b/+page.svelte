@@ -159,7 +159,13 @@
   } from '$lib/functions/replication/replication-progress';
   import { getDateKey } from '$lib/functions/statistic-util';
   import { clickOutside } from '$lib/functions/use-click-outside';
-  import { convertRemToPixels, dummyFn, isMobile$, limitToRange } from '$lib/functions/utils';
+  import {
+    convertRemToPixels,
+    dummyFn,
+    isMobile$,
+    limitToRange,
+    getWeightedAverage
+  } from '$lib/functions/utils';
   import { onKeydownReader } from './on-keydown-reader';
   import { onDestroy, onMount, tick } from 'svelte';
   import Fa from 'svelte-fa';
@@ -1807,15 +1813,46 @@
   {#if showFooter && bookCharCount}
     {@const currentProgress = [
       $showCharacterCounter$ ? `${exploredCharCount} / ${bookCharCount}` : '',
-      $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : ''
+      $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}% T` : ''
     ]
       .filter(Boolean)
       .join(' ')}
+    {@const [mainChapters, chapterIndex, referenceId] = $sectionData$?.length
+      ? getChapterData($sectionData$)
+      : [[], -1, '']}
+    {@const relevantSections = $sectionData$?.length
+      ? $sectionData$.filter(
+          (section) => section.reference === referenceId || section.parentChapter === referenceId
+        )
+      : []}
+    {@const chapterProgress = relevantSections.length
+      ? getWeightedAverage(
+          relevantSections.map((section) => section.progress),
+          relevantSections.map((section) => section.charactersWeight)
+        ).toFixed(2)
+      : '0.00'}
+    {@const currentChapter = mainChapters[chapterIndex]}
+    {@const endCharacter = currentChapter?.characters ?? 0}
+    {@const currentChapterCharacterProgress = `${Math.min(
+      Math.max(exploredCharCount - (currentChapter?.startCharacter ?? 0), 0),
+      endCharacter
+    )} / ${endCharacter}`}
+    {@const chapterDisplayText = $sectionData$?.length
+      ? [
+          $showCharacterCounter$ ? currentChapterCharacterProgress : '',
+          $showPercentage$ ? `${chapterProgress}% C` : ''
+        ]
+          .filter(Boolean)
+          .join(' ')
+      : ''}
+    {@const fullProgress = $sectionData$?.length
+      ? [chapterDisplayText, currentProgress].filter(Boolean).join('    ')
+      : currentProgress}
     <div
       tabindex="0"
       role="button"
       title="Click to copy Progress"
-      class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none"
+      class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none whitespace-pre"
       class:invisible={!$showCharacterCounter$ && !$showPercentage$}
       style:color={$themeOption$?.tooltipTextFontColor}
       on:click|stopPropagation={({ target }) => {
@@ -1823,7 +1860,7 @@
           return;
         }
 
-        copyCurrentProgress(currentProgress);
+        copyCurrentProgress(fullProgress);
 
         if (target instanceof HTMLElement) {
           pulseElement(target, 'add', 0.5, 500);
@@ -1831,7 +1868,7 @@
       }}
       on:keyup={dummyFn}
     >
-      {currentProgress}
+      {fullProgress}
     </div>
   {/if}
 </div>
