@@ -45,6 +45,8 @@
     selectionToBookmarkEnabled$,
     showCharacterCounter$,
     showPercentage$,
+    showFooterChapterCharacterCounter$,
+    showFooterChapterPercentage$,
     showExternalPlaceholder$,
     startDayHoursForTracker$,
     statisticsEnabled$,
@@ -167,6 +169,8 @@
       bind:enableReaderWakeLock={$enableReaderWakeLock$}
       bind:showCharacterCounter={$showCharacterCounter$}
       bind:showPercentage={$showPercentage$}
+      bind:showFooterChapterCharacterCounter={$showFooterChapterCharacterCounter$}
+      bind:showFooterChapterPercentage={$showFooterChapterPercentage$}
       bind:viewMode={$viewMode$}
       bind:secondDimensionMaxValue={$secondDimensionMaxValue$}
       bind:firstDimensionMargin={$firstDimensionMargin$}

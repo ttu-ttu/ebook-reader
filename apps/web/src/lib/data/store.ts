@@ -126,6 +126,14 @@ export const showCharacterCounter$ = writableBooleanLocalStorageSubject()(
   true
 );
 export const showPercentage$ = writableBooleanLocalStorageSubject()('showPercentage', true);
+export const showFooterChapterCharacterCounter$ = writableBooleanLocalStorageSubject()(
+  'showFooterChapterCharacterCounter',
+  false
+);
+export const showFooterChapterPercentage$ = writableBooleanLocalStorageSubject()(
+  'showFooterChapterPercentage',
+  false
+);
 export const viewMode$ = writableStringLocalStorageSubject<ViewMode>()(
   'viewMode',
   ViewMode.Paginated
