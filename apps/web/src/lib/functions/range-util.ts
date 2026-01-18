@@ -63,6 +63,13 @@ export function getRangeForUserSelection(window: Window, preSelection: Range | u
 }
 
 export function getNodeBoundingRect(document: Document, node: Node) {
+  // Check if node has a parent - orphaned nodes cannot be selected
+  // This can happen when DOM is modified (e.g., by Anki word coloring)
+  if (!node.parentNode) {
+    // Return zero-size rect for orphaned nodes
+    return new DOMRect(0, 0, 0, 0);
+  }
+
   const range = document.createRange();
   range.selectNode(node);
   return range.getBoundingClientRect();

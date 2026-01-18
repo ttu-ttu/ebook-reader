@@ -28,7 +28,23 @@
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
-  import { enableReaderWakeLock$, enableTapEdgeToFlip$ } from '$lib/data/store';
+  import {
+    ankiConnectUrl$,
+    ankiIntegrationEnabled$,
+    ankiMatureThreshold$,
+    ankiTokenStyle$,
+    ankiWordFields$,
+    ankiWordDeckNames$,
+    enableReaderWakeLock$,
+    enableTapEdgeToFlip$,
+    yomitanUrl$
+  } from '$lib/data/store';
+  import {
+    BookContentColoring,
+    ColoringPriorityQueue,
+    ProcessingPriority
+  } from '$lib/functions/anki';
+  import { createAnkiCacheDb, AnkiCacheService } from '$lib/data/database/anki-cache-db';
   import { onDestroy } from 'svelte';
 
   export let htmlContent: string;
@@ -125,6 +141,16 @@
 
   let visibilityState: DocumentVisibilityState;
 
+  // Initialize Anki cache service for persistent caching
+  const ankiCacheDb = createAnkiCacheDb();
+  const ankiCacheService = new AnkiCacheService(ankiCacheDb);
+
+  let coloringService: BookContentColoring | undefined;
+  let coloringQueue: ColoringPriorityQueue | undefined;
+  let intersectionObserver: IntersectionObserver | undefined;
+  let viewportObserver: IntersectionObserver | undefined;
+  let nearObserver: IntersectionObserver | undefined;
+
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
   const width$ = new Subject<number>();
@@ -138,6 +164,193 @@
       ? firstDimensionMargin * 2
       : 0;
 
+  // Anki word coloring - incremental viewport-based approach with priority queue
+  let cacheLoadingPromise: Promise<void> | null = null;
+
+  $: if ($ankiIntegrationEnabled$) {
+    // Initialize coloring service with persistent cache
+    if (!coloringService && !cacheLoadingPromise) {
+      console.log('🔧 Creating Anki coloring service...');
+
+      coloringService = new BookContentColoring(
+        {
+          enabled: true,
+          yomitanUrl: $yomitanUrl$,
+          ankiConnectUrl: $ankiConnectUrl$,
+          wordFields: $ankiWordFields$,
+          wordDeckNames: $ankiWordDeckNames$,
+          matureThreshold: $ankiMatureThreshold$,
+          tokenStyle: $ankiTokenStyle$
+        },
+        ankiCacheService
+      );
+
+      // Step 1: Check if IndexedDB cache exists (no preloading)
+      console.log('⚡ Checking IndexedDB cache status...');
+      cacheLoadingPromise = (async () => {
+        const service = coloringService; // Capture reference
+        if (!service) {
+          console.error('⚠️ Service is null, cannot check cache');
+          return;
+        }
+
+        console.log('⚡ Calling loadCacheFromIndexedDB...');
+        const cacheInfo = await service.loadCacheFromIndexedDB();
+        console.log(`⚡ loadCacheFromIndexedDB returned:`, cacheInfo);
+
+        if (cacheInfo.loadedWords === 0) {
+          console.log(
+            `⚡ Cache exists (age: ${Math.round(cacheInfo.cacheAge / 60000)} min) - queries will use IndexedDB on-demand`
+          );
+        } else {
+          console.log('⚠️ No cache found - will query Anki after warming');
+        }
+
+        // Step 2: Start colorization immediately
+        // IndexedDB queries happen on-demand, no need to wait for preloading
+        if (!coloringQueue && service) {
+          console.log(`🎨 Starting colorization with IndexedDB as primary cache...`);
+          // maxConcurrent: 1 batch at a time (avoid Anki freezing)
+          // batchSize: 5 elements per batch (smaller batches, faster feedback)
+          // Tokens are chunked to 10 per Anki query for stability
+          coloringQueue = new ColoringPriorityQueue(service, 1, 5);
+        }
+
+        // Step 3: Refresh cache in background (don't block colorization)
+        if (cacheInfo.needsRefresh) {
+          console.log('🔄 Refreshing cache from Anki in background...');
+          service
+            .warmCache()
+            .then(async (stats) => {
+              console.log(
+                `✅ Cache refreshed: ${stats.cachedWords} words from ${stats.totalCards} cards in ${stats.duration}ms`
+              );
+
+              // Re-colorize all elements to pick up updated cards
+              console.log('🔄 Re-colorizing with updated cache...');
+              await service.recolorizeProcessedElements();
+              console.log('✅ Re-colorization complete');
+            })
+            .catch((err) => {
+              console.error('❌ Failed to refresh cache:', err);
+            });
+        }
+
+        cacheLoadingPromise = null;
+      })().catch((err) => {
+        console.error('❌ Failed to initialize cache:', err);
+        console.error('Error stack:', err.stack);
+        cacheLoadingPromise = null;
+      });
+    }
+  } else {
+    // Clean up when disabled
+    if (coloringQueue) {
+      coloringQueue.clear();
+      coloringQueue = undefined;
+    }
+    if (coloringService) {
+      // coloringService.clearCache();
+      coloringService = undefined;
+    }
+    if (intersectionObserver) {
+      intersectionObserver.disconnect();
+      intersectionObserver = undefined;
+    }
+    if (viewportObserver) {
+      viewportObserver.disconnect();
+      viewportObserver = undefined;
+    }
+    if (nearObserver) {
+      nearObserver.disconnect();
+      nearObserver = undefined;
+    }
+  }
+
+  // Setup priority-based intersection observers when content element changes
+  $: if ($ankiIntegrationEnabled$ && coloringQueue) {
+    contentEl$.subscribe((element) => {
+      if (!element) return;
+
+      // Clean up previous observers
+      if (viewportObserver) {
+        viewportObserver.disconnect();
+      }
+      if (nearObserver) {
+        nearObserver.disconnect();
+      }
+      if (intersectionObserver) {
+        intersectionObserver.disconnect();
+      }
+
+      // Helper to calculate distance from viewport
+      const calculateDistance = (entry: IntersectionObserverEntry): number => {
+        const rect = entry.boundingClientRect;
+        const viewportHeight = window.innerHeight;
+
+        if (rect.top > viewportHeight) {
+          return rect.top - viewportHeight; // Below viewport
+        } else if (rect.bottom < 0) {
+          return Math.abs(rect.bottom); // Above viewport
+        }
+        return 0; // In viewport
+      };
+
+      // Observer 1: VIEWPORT (currently visible) - highest priority
+      viewportObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && coloringQueue) {
+              coloringQueue.enqueue(entry.target as Element, ProcessingPriority.VIEWPORT, 0);
+            }
+          });
+        },
+        { root: null, rootMargin: '0px', threshold: 0.01 }
+      );
+
+      // Observer 2: NEAR (within 500px) - medium priority
+      nearObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            const distance = calculateDistance(entry);
+
+            if (entry.isIntersecting && coloringQueue) {
+              coloringQueue.enqueue(entry.target as Element, ProcessingPriority.NEAR, distance);
+            } else if (distance > 1500 && coloringQueue) {
+              // Scrolled far away, remove from queue
+              coloringQueue.dequeue(entry.target as Element);
+            }
+          });
+        },
+        { root: null, rootMargin: '500px', threshold: 0 }
+      );
+
+      // Observer 3: PREFETCH (within 1000px) - low priority
+      intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && coloringQueue) {
+              const distance = calculateDistance(entry);
+              coloringQueue.enqueue(entry.target as Element, ProcessingPriority.PREFETCH, distance);
+            } else if (coloringQueue) {
+              // Left prefetch zone, remove from queue
+              coloringQueue.dequeue(entry.target as Element);
+            }
+          });
+        },
+        { root: null, rootMargin: '1000px', threshold: 0 }
+      );
+
+      // Observe all paragraphs and divs with all three observers
+      const elementsToObserve = element.querySelectorAll('p, div.paragraph, div.section');
+      elementsToObserve.forEach((el) => {
+        viewportObserver?.observe(el);
+        nearObserver?.observe(el);
+        intersectionObserver?.observe(el);
+      });
+    });
+  }
+
   $: if ($enableReaderWakeLock$ && visibilityState === 'visible') {
     setTimeout(requestWakeLock, 500);
   }
@@ -146,6 +359,27 @@
     mutationObserver.disconnect();
 
     releaseWakeLock();
+
+    // Clean up all intersection observers
+    if (intersectionObserver) {
+      intersectionObserver.disconnect();
+    }
+    if (viewportObserver) {
+      viewportObserver.disconnect();
+    }
+    if (nearObserver) {
+      nearObserver.disconnect();
+    }
+
+    // Clean up priority queue
+    if (coloringQueue) {
+      coloringQueue.clear();
+    }
+
+    // Clean up coloring service
+    if (coloringService) {
+      // coloringService.clearCache();
+    }
   });
 
   const computedStyle$ = combineLatest([

@@ -60,6 +60,7 @@ import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
 import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
+import { TokenStyle } from './anki/token-color';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
@@ -503,3 +504,38 @@ export const isOnline$ = writableSubject<boolean>(true);
 export const skipKeyDownListener$ = writableSubject<boolean>(false);
 
 export const userFonts$ = writableArrayLocalStorageSubject<UserFont>()('userfonts', []);
+
+// Anki Integration Settings
+export const ankiIntegrationEnabled$ = writableBooleanLocalStorageSubject()(
+  'ankiIntegrationEnabled',
+  false
+);
+
+export const yomitanUrl$ = writableStringLocalStorageSubject()(
+  'yomitanUrl',
+  'http://127.0.0.1:19633'
+);
+
+export const ankiConnectUrl$ = writableStringLocalStorageSubject()(
+  'ankiConnectUrl',
+  'http://127.0.0.1:8765'
+);
+
+export const ankiWordFields$ = writableArrayLocalStorageSubject<string>()('ankiWordFields', [
+  'Word',
+  'Expression'
+]);
+
+export const ankiWordDeckNames$ = writableArrayLocalStorageSubject<string>()(
+  'ankiWordDeckNames',
+  []
+);
+
+export const ankiMatureThreshold$ = writableNumberLocalStorageSubject()('ankiMatureThreshold', 21);
+
+export const ankiTokenStyle$ = writableStringLocalStorageSubject<TokenStyle>()(
+  'ankiTokenStyle',
+  TokenStyle.TEXT
+);
+
+export const ankiDeckName$ = writableStringLocalStorageSubject()('ankiDeckName', '');

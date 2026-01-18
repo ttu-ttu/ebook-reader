@@ -182,6 +182,16 @@
 
   export let adjustStatisticsAfterIdleTime: boolean;
 
+  export let ankiIntegrationEnabled: boolean;
+
+  export let yomitanUrl: string;
+
+  export let ankiConnectUrl: string;
+
+  export let ankiWordFields: string[];
+
+  export let ankiWordDeckNames: string[];
+
   $: availableThemes = (
     browser
       ? [...Array.from(availableThemesMap.entries()), ...Object.entries($customThemes$)]
@@ -789,6 +799,73 @@
     <SettingsItemGroup title="Show Percentage">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showPercentage} />
     </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Enable Anki Word Coloring"
+      tooltip={'When enabled, words in the book are colored based on Anki card intervals. Requires Yomitan extension and Anki Connect to be running.'}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={ankiIntegrationEnabled}
+      />
+    </SettingsItemGroup>
+    {#if ankiIntegrationEnabled}
+      <SettingsItemGroup
+        title="Yomitan API URL"
+        tooltip={'URL where Yomitan API server is running. Default: http://127.0.0.1:19633'}
+      >
+        <input
+          type="text"
+          class={inputClasses}
+          placeholder="http://127.0.0.1:19633"
+          bind:value={yomitanUrl}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Anki Connect URL"
+        tooltip={'URL where Anki Connect is running. Default: http://127.0.0.1:8765'}
+      >
+        <input
+          type="text"
+          class={inputClasses}
+          placeholder="http://127.0.0.1:8765"
+          bind:value={ankiConnectUrl}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Word Fields"
+        tooltip={'Anki card fields to search for exact word matches. Comma-separated list. Example: Word, Expression, Vocabulary'}
+      >
+        <input
+          type="text"
+          class={inputClasses}
+          placeholder="Word, Expression"
+          value={ankiWordFields.join(', ')}
+          on:input={(e) => {
+            ankiWordFields = e.currentTarget.value
+              .split(',')
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0);
+          }}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Word Deck Names"
+        tooltip={'Comma-separated list of Anki deck names containing the words for coloring. Example: Japanese::Vocabulary,Japanese::Loanwords'}
+      >
+        <input
+          type="text"
+          class={inputClasses}
+          placeholder="Japanese::Vocabulary, Japanese::Loanwords"
+          value={ankiWordDeckNames.join(', ')}
+          on:input={(e) => {
+            ankiWordDeckNames = e.currentTarget.value
+              .split(',')
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0);
+          }}
+        />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup title="Disable Wheel Navigation">
       <ButtonToggleGroup
         options={optionsForToggle}
