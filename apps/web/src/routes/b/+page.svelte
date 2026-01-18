@@ -1860,7 +1860,7 @@
           return;
         }
 
-        copyCurrentProgress($sectionData$?.length ? fullProgress : currentProgress);
+        copyCurrentProgress(fullProgress);
 
         if (target instanceof HTMLElement) {
           pulseElement(target, 'add', 0.5, 500);
@@ -1868,7 +1868,7 @@
       }}
       on:keyup={dummyFn}
     >
-      {$sectionData$?.length ? fullProgress : currentProgress}
+      {fullProgress}
     </div>
   {/if}
 </div>
