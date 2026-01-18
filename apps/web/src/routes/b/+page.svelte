@@ -55,6 +55,8 @@
     pageColumns$,
     prioritizeReaderStyles$,
     secondDimensionMaxValue$,
+    showFooterChapterCharacterCounter$,
+    showFooterChapterPercentage$,
     textIndentation$,
     textMarginValue$,
     theme$,
@@ -110,7 +112,8 @@
     nextChapter$,
     sectionList$,
     sectionProgress$,
-    tocIsOpen$
+    tocIsOpen$,
+    type SectionWithProgress
   } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
@@ -530,6 +533,8 @@
 
   $: tapButtonTop = `${showHeader ? 3 : 2}rem`;
 
+  $: footerChapterProgress = getCurrentChapterProgress($sectionData$);
+
   $: upSyncEnabled =
     externalStorageHandler &&
     ($autoReplication$ === AutoReplicationType.Up || $autoReplication$ === AutoReplicationType.All);
@@ -825,6 +830,46 @@
         }
       ]);
     }
+  }
+
+  function getCurrentChapterProgress(sectionData: SectionWithProgress[]) {
+    if (
+      (!$showFooterChapterCharacterCounter$ && !$showFooterChapterPercentage$) ||
+      !sectionData?.length
+    ) {
+      return '';
+    }
+
+    let chapterProgress = '';
+    let chapterCharacters = '';
+
+    const [mainChapters, chapterIndex, referenceId] = getChapterData($sectionData$);
+
+    if ($showFooterChapterPercentage$) {
+      const relevantSections = sectionData.filter(
+        (section) => section.reference === referenceId || section.parentChapter === referenceId
+      );
+
+      chapterProgress = `${getWeightedAverage(
+        relevantSections.map((section) => section.progress),
+        relevantSections.map((section) => section.charactersWeight)
+      ).toFixed(2)}%`;
+    }
+
+    if ($showFooterChapterCharacterCounter$) {
+      const currentChapter = mainChapters[chapterIndex];
+
+      if (currentChapter) {
+        const endCharacter = currentChapter.characters as number;
+
+        chapterCharacters = `${Math.min(
+          Math.max(exploredCharCount - (currentChapter.startCharacter as number), 0),
+          endCharacter
+        )} / ${endCharacter}`;
+      }
+    }
+
+    return [chapterCharacters, chapterProgress, 'C'].filter(Boolean).join(' ');
   }
 
   function copyCurrentProgress(currentProgress: string) {
@@ -1813,62 +1858,36 @@
   {#if showFooter && bookCharCount}
     {@const currentProgress = [
       $showCharacterCounter$ ? `${exploredCharCount} / ${bookCharCount}` : '',
-      $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}% T` : ''
+      $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : '',
+      $showFooterChapterCharacterCounter$ || $showFooterChapterPercentage$ ? 'T' : ''
     ]
       .filter(Boolean)
       .join(' ')}
-    {@const [mainChapters, chapterIndex, referenceId] = $sectionData$?.length
-      ? getChapterData($sectionData$)
-      : [[], -1, '']}
-    {@const relevantSections = $sectionData$?.length
-      ? $sectionData$.filter(
-          (section) => section.reference === referenceId || section.parentChapter === referenceId
-        )
-      : []}
-    {@const chapterProgress = relevantSections.length
-      ? getWeightedAverage(
-          relevantSections.map((section) => section.progress),
-          relevantSections.map((section) => section.charactersWeight)
-        ).toFixed(2)
-      : '0.00'}
-    {@const currentChapter = mainChapters[chapterIndex]}
-    {@const endCharacter = currentChapter?.characters ?? 0}
-    {@const currentChapterCharacterProgress = `${Math.min(
-      Math.max(exploredCharCount - (currentChapter?.startCharacter ?? 0), 0),
-      endCharacter
-    )} / ${endCharacter}`}
-    {@const chapterDisplayText = $sectionData$?.length
-      ? [
-          $showCharacterCounter$ ? currentChapterCharacterProgress : '',
-          $showPercentage$ ? `${chapterProgress}% C` : ''
-        ]
-          .filter(Boolean)
-          .join(' ')
-      : ''}
-    {@const fullProgress = $sectionData$?.length
-      ? [chapterDisplayText, currentProgress].filter(Boolean).join('    ')
-      : currentProgress}
     <div
       tabindex="0"
       role="button"
       title="Click to copy Progress"
       class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none whitespace-pre"
-      class:invisible={!$showCharacterCounter$ && !$showPercentage$}
+      class:invisible={!$showCharacterCounter$ &&
+        !$showPercentage$ &&
+        !$showFooterChapterCharacterCounter$ &&
+        !$showFooterChapterPercentage$}
       style:color={$themeOption$?.tooltipTextFontColor}
       on:click|stopPropagation={({ target }) => {
         if (!$showCharacterCounter$ && !$showPercentage$) {
           return;
         }
 
-        copyCurrentProgress(fullProgress);
+        copyCurrentProgress(currentProgress.replace(/ T$/, ''));
 
         if (target instanceof HTMLElement) {
-          pulseElement(target, 'add', 0.5, 500);
+          pulseElement(target.parentElement || target, 'add', 0.5, 500);
         }
       }}
       on:keyup={dummyFn}
     >
-      {fullProgress}
+      <span class="mr-4" class:invisible={!footerChapterProgress}>{footerChapterProgress}</span>
+      <span class:invisible={!$showCharacterCounter$ && !$showPercentage$}>{currentProgress}</span>
     </div>
   {/if}
 </div>
