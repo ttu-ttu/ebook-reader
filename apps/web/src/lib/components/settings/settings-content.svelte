@@ -102,6 +102,10 @@
 
   export let showPercentage: boolean;
 
+  export let showFooterChapterCharacterCounter: boolean;
+
+  export let showFooterChapterPercentage: boolean;
+
   export let secondDimensionMaxValue: number;
 
   export let firstDimensionMargin: number;
@@ -788,6 +792,18 @@
     </SettingsItemGroup>
     <SettingsItemGroup title="Show Percentage">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showPercentage} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Show Footer Chapter Characters">
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={showFooterChapterCharacterCounter}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Show Footer Chapter Percentage">
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={showFooterChapterPercentage}
+      />
     </SettingsItemGroup>
     <SettingsItemGroup title="Disable Wheel Navigation">
       <ButtonToggleGroup

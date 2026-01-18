@@ -73,6 +73,8 @@
     multiplier$,
     showCharacterCounter$,
     showPercentage$,
+    showFooterChapterCharacterCounter$,
+    showFooterChapterPercentage$,
     enableReaderWakeLock$
   } from '$lib/data/store';
 
@@ -116,6 +118,8 @@
           enableReaderWakeLock: enableReaderWakeLock$.getValue(),
           showCharacterCounter$: showCharacterCounter$.getValue(),
           showPercentage$: showPercentage$.getValue(),
+          showFooterChapterCharacterCounter: showFooterChapterCharacterCounter$.getValue(),
+          showFooterChapterPercentage: showFooterChapterPercentage$.getValue(),
           confirmClose: confirmClose$.getValue(),
           autoBookmark: autoBookmark$.getValue(),
           autoBookmarkTime: autoBookmarkTime$.getValue(),
