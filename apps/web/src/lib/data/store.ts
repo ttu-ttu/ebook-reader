@@ -492,6 +492,7 @@ export const booklistSortOptions$ = writableObjectLocalStorageSubject<Record<str
     [StorageKey.BROWSER]: { property: 'lastBookOpen', direction: SortDirection.DESC },
     [StorageKey.GDRIVE]: { property: 'title', direction: SortDirection.ASC },
     [StorageKey.ONEDRIVE]: { property: 'title', direction: SortDirection.ASC },
+    [StorageKey.TTSU_REMOTE]: { property: 'title', direction: SortDirection.ASC },
     [StorageKey.FS]: { property: 'title', direction: SortDirection.ASC }
   }
 );
