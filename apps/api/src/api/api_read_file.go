@@ -40,4 +40,3 @@ func (this *TsuApi) ReadFileData(w http.ResponseWriter, r *http.Request) {
 
 	NotFound(w)
 }
-

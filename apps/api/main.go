@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-
 func main() {
 
 	os.MkdirAll(config.StorageFolder, 0755)

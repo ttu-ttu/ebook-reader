@@ -30,4 +30,3 @@ func ReadFormString(length int, part *multipart.Part) (string, bool) {
 
 	return "", false
 }
-

@@ -20,7 +20,7 @@ func (this *TsuApi) DeletePath(w http.ResponseWriter, r *http.Request) {
 	this.Lock()
 	defer this.Unlock()
 
-	for _, file  := range this.Files {
+	for _, file := range this.Files {
 
 		// TODO: actually delete from the array
 		if file.ID == idToDelete {

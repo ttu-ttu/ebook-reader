@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (this*TsuApi)ListDirectoryFiles(w http.ResponseWriter, r *http.Request) {
+func (this *TsuApi) ListDirectoryFiles(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
@@ -32,9 +32,8 @@ func (this*TsuApi)ListDirectoryFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Slice(files, func(i, j int) bool {
-		return files[i].Name > files[j].Name 
+		return files[i].Name > files[j].Name
 	})
 
 	WriteJson(w, files)
 }
-

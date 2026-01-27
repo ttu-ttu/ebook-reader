@@ -30,7 +30,7 @@ func (this *TsuApi) CreateFolder(w http.ResponseWriter, r *http.Request) {
 	this.Lock()
 	defer this.Unlock()
 
-	for _, file  := range this.Files {
+	for _, file := range this.Files {
 
 		if file.Parent == payload.Parent && file.Name == payload.Name {
 
@@ -45,9 +45,9 @@ func (this *TsuApi) CreateFolder(w http.ResponseWriter, r *http.Request) {
 	rand.Read(id[:])
 
 	this.Files = append(this.Files, TsuFile{
-		ID: hex.EncodeToString(id[:]),
+		ID:     hex.EncodeToString(id[:]),
 		Parent: payload.Parent,
-		Name: payload.Name,
+		Name:   payload.Name,
 	})
 
 	WriteJson(w, CreateFolderResponse{
