@@ -7,7 +7,7 @@
 import { BaseStorageHandler, type ExternalFile } from './base-handler';
 import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 import { ApiStorageHandler, type RequestOptions } from './api-handler';
-import { database } from '$lib/data/store';
+import { database, ttsuRemoteStorageSource$ } from '$lib/data/store';
 import type { StorageKey } from '../storage-types';
 import { StorageBasicAuthManager } from '../storage-basic-auth-manager';
 
@@ -59,8 +59,15 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
   }
 
   protected setInternalSettings(storageSourceName: string): void {
-    this.storageSourceName = storageSourceName;
+    const newStorageSource = storageSourceName || ttsuRemoteStorageSource$.getValue();
+
+    if (newStorageSource !== this.storageSourceName) {
+      this.clearData();
+    }
+
+    this.storageSourceName = newStorageSource;
   }
+
   protected async ensureTitle(
     name = BaseStorageHandler.rootName,
     parent = 'root',
@@ -153,6 +160,9 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
   ): Promise<ExternalFile> {
     const form = new FormData();
 
+    if (externalFile) {
+      form.append('id', externalFile.id);
+    }
     form.append('parent', folderId);
     form.append('name', name);
     if (data) {
@@ -167,7 +177,7 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     const response = await this.reqAny<TsuFile>(
       `upload`,
       {
-        method: 'POST',
+        method: data ? 'POST' : 'PATCH',
         body: form,
         trackUpload: true
       },
@@ -198,10 +208,13 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
       database.listLoading$.next(true);
 
       try {
-        const files = await this.list(this.rootId);
+        await this.ensureTitle();
 
-        for (const file of files) {
-          this.titleToBookCard.set(file.card.title, file.card);
+        const bookFolders = await this.list(this.rootId);
+
+        for (const folder of bookFolders) {
+          const bookFiles = await this.list(folder.id);
+          this.setTitleData(folder.name, bookFiles);
         }
 
         this.dataListFetched = true;

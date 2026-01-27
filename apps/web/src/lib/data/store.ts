@@ -231,6 +231,10 @@ export const oneDriveStorageSource$ = writableStringLocalStorageSubject()(
   'oneDriveStorageSource',
   StorageSourceDefault.ONEDRIVE_DEFAULT
 );
+export const ttsuRemoteStorageSource$ = writableStringLocalStorageSubject()(
+  'ttsuRemoteStorageSource',
+  StorageSourceDefault.TTSU_REMOTE_DEFAULT
+);
 
 export const fsStorageSource$ = writableStringLocalStorageSubject()('fsStorageSource', '');
 

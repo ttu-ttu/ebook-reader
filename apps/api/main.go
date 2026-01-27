@@ -155,11 +155,12 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var fileId string
 	var fileName string
 	var folderId string
 	var filePath string
 
-	finished := false
+	didFileUpload := false
 	startTime := time.Now()
 	sha1Hash := sha1.New()
 	fileSize := int64(0)
@@ -185,12 +186,23 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch part.FormName() {
 
+		case "id":
+
+			idStr, ok := form.ReadFormString(512, part)
+
+			if !ok || idStr == "" {
+				api.Done(w, http.StatusForbidden, "invalid file ID")
+				return
+			}
+
+			fileId = idStr 
+
 		case "parent":
 
 			parentStr, ok := form.ReadFormString(512, part)
 
 			if !ok || parentStr == "" {
-				api.Done(w, http.StatusForbidden, "invalid csrf token")
+				api.Done(w, http.StatusForbidden, "invalid parent ID")
 				return
 			}
 
@@ -201,7 +213,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			filenameStr, ok := form.ReadFormString(512, part)
 
 			if !ok || filenameStr == "" {
-				api.Done(w, http.StatusForbidden, "invalid csrf token")
+				api.Done(w, http.StatusForbidden, "invalid filename")
 				return
 			}
 
@@ -258,7 +270,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			finished = true
+			didFileUpload = true
 
 		default:
 			api.Donef(w, http.StatusBadRequest, "got unexpected form part")
@@ -266,7 +278,9 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if !finished {
+	doPatch := r.Method == "PATCH"
+
+	if !didFileUpload && !doPatch {
 		api.Done(w, http.StatusBadRequest, "unexpected EOF")
 		return
 	}
@@ -283,16 +297,30 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, file := range db.Files {
 
-		if file.Parent == folderId && file.Name == fileName {
+		if doPatch { 
+
+			if file.ID == fileId {
+				file.Name = fileName
+				api.WriteJson(w, file)
+				return
+			}
+
+		} else if file.Parent == folderId && file.Name == fileName {
 
 			if err := os.Remove(file.Path); err != nil {
 				log.Error().Err(err).Msg("failed to delete file")
 			}
-			file.Path = filePath 
+
+			file.Path = filePath
 
 			api.WriteJson(w, file)
 			return
 		}
+	}
+
+	if doPatch {
+		api.Done(w, http.StatusBadRequest, "Cannot patch a file that does not exist")
+		return
 	}
 
 	var id [16]byte
