@@ -41,7 +41,7 @@ func Closef(r io.ReadCloser, w http.ResponseWriter, code int, msg string, a ...a
 }
 
 func WriteJson(w http.ResponseWriter, data any) {
-	Ok(w)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
+	Ok(w)
 }

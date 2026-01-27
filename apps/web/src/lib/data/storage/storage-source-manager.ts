@@ -9,7 +9,12 @@ import {
   StorageSourceDefault,
   internalStorageSourceName
 } from '$lib/data/storage/storage-types';
-import { fsStorageSource$, gDriveStorageSource$, oneDriveStorageSource$, ttsuRemoteStorageSource$ } from '$lib/data/store';
+import {
+  fsStorageSource$,
+  gDriveStorageSource$,
+  oneDriveStorageSource$,
+  ttsuRemoteStorageSource$
+} from '$lib/data/store';
 
 import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
 import StorageUnlock from '$lib/components/storage-unlock.svelte';

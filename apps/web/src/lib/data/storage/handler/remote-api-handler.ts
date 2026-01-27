@@ -83,10 +83,16 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
       return externalId;
     }
 
-    const titleId = await this.postJson<{ id: string }>('ensureTitle', {
-      name: name,
-      parent: parent,
-      readOnly: readOnly
+    const titleId = await this.reqAny<{ id: string }>('folder', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: name,
+        parent: parent,
+        readOnly: readOnly
+      })
     });
 
     if (titleId) {
@@ -134,16 +140,10 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     progressBase?: number
   ): Promise<any> {
     return this.reqAny(
-      'readFileData',
+      `file/${file.id}`,
       {
         trackDownload: true,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          file: file.id
-        })
+        method: 'GET'
       },
       typeToRetrieve,
       progressBase
@@ -175,7 +175,7 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     }
 
     const response = await this.reqAny<TsuFile>(
-      `upload`,
+      `file`,
       {
         method: data ? 'POST' : 'PATCH',
         body: form,
@@ -199,8 +199,8 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     return response;
   }
   protected async executeDelete(id: string): Promise<void> {
-    this.postJson<void>('executeDelete', {
-      id: id
+    this.reqAny<void>(`delete/${id}`, {
+      method: 'DELETE'
     });
   }
   async getBookList(): Promise<BookCardProps[]> {
@@ -228,8 +228,8 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
   }
 
   private async list(folderId: string) {
-    return this.postJson<TsuFile[]>('listFiles', {
-      parent: folderId
+    return this.reqAny<TsuFile[]>(`list/${folderId}`, {
+      method: 'GET'
     });
   }
 
@@ -268,6 +268,8 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
 
         bookCard.progress = progress;
         bookCard.lastBookmarkModified = lastBookmarkModified;
+      } else if (file.name.startsWith('cover_')) {
+        bookCard.imagePath = `${this.serverRoot}/file/${file.id}`;
       }
     }
 

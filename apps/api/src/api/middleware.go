@@ -1,7 +1,13 @@
 package api
 
-import "net/http"
+import (
+	"crypto/subtle"
+	"net/http"
+	"ttsu-server/src/config"
+)
+
 func Cors(next http.Handler) http.Handler {
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -14,5 +20,29 @@ func Cors(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func BasicAuth(username, password, realm string) func(http.Handler) http.Handler {
+
+	return func(next http.Handler) http.Handler {
+
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			u, p, ok := r.BasicAuth()
+
+			if config.RequireAuth {
+
+				if !ok ||
+					subtle.ConstantTimeCompare([]byte(u), []byte(username)) != 1 ||
+					subtle.ConstantTimeCompare([]byte(p), []byte(password)) != 1 {
+					w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
+					Unauthorized(w)
+					return
+				}
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
