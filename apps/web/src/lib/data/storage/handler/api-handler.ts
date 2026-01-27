@@ -34,7 +34,7 @@ import { mergeStatistics, updateStatisticToStore } from '$lib/functions/statisti
 import pLimit from 'p-limit';
 import { AuthType, type StorageAuthManager } from '../storage-auth-manager';
 
-interface RequestOptions {
+export interface RequestOptions {
   method?: string;
   headers?: Record<string, string>;
   body?: XMLHttpRequestBodyInit | null | undefined;

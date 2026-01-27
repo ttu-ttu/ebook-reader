@@ -6,7 +6,7 @@
 
 import { BaseStorageHandler, type ExternalFile } from './base-handler';
 import type { BookCardProps } from '$lib/components/book-card/book-card-props';
-import { ApiStorageHandler } from './api-handler';
+import { ApiStorageHandler, type RequestOptions } from './api-handler';
 import { database } from '$lib/data/store';
 import type { StorageKey } from '../storage-types';
 import { StorageBasicAuthManager } from '../storage-basic-auth-manager';
@@ -19,24 +19,43 @@ interface TsuFile {
 }
 
 export class RemoteApiStorageHandler extends ApiStorageHandler {
-  private serverRoot = 'http://localhost:8080';
+  private serverRoot = 'http://127.0.01:8080';
 
   constructor(storageType: StorageKey, window: Window) {
     super(storageType, window, new StorageBasicAuthManager());
   }
 
-  // Generic JSON POST method
-  private async callJson<T>(path: string, data?: any, signal?: AbortSignal): Promise<T> {
-    const response = await fetch(`${this.serverRoot}/${path}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+  private reqAny<T>(
+    path: string,
+    options: RequestOptions = {},
+    typeToRetrieve: XMLHttpRequestResponseType = 'json',
+    progressBase?: number
+  ): Promise<T> {
+    return super.request(
+      `${this.serverRoot}/${path}`,
+      options,
+      typeToRetrieve,
+      progressBase
+    ) as Promise<T>;
+  }
+  private postJson<T>(
+    path: string,
+    data?: any,
+    typeToRetrieve: XMLHttpRequestResponseType = 'json',
+    progressBase?: number
+  ): Promise<T> {
+    return this.reqAny<T>(
+      path,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: data ? JSON.stringify(data) : undefined
       },
-      body: data ? JSON.stringify(data) : undefined,
-      signal
-    });
-    if (!response.ok) throw new Error(`API error ${response.status}`);
-    return response.json() as Promise<T>;
+      typeToRetrieve,
+      progressBase
+    );
   }
 
   protected setInternalSettings(storageSourceName: string): void {
@@ -57,7 +76,7 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
       return externalId;
     }
 
-    const titleId = await this.callJson<{ id: string }>('ensureTitle', {
+    const titleId = await this.postJson<{ id: string }>('ensureTitle', {
       name: name,
       parent: parent,
       readOnly: readOnly
@@ -107,8 +126,8 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     typeToRetrieve: XMLHttpRequestResponseType,
     progressBase?: number
   ): Promise<any> {
-    return this.request(
-      `${this.serverRoot}/readFileData`,
+    return this.reqAny(
+      'readFileData',
       {
         trackDownload: true,
         method: 'POST',
@@ -132,18 +151,24 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     rootFilePrefix?: string,
     progressBase?: number
   ): Promise<ExternalFile> {
-    const response = await this.request(
-      `${this.serverRoot}/upload`,
+    const form = new FormData();
+
+    form.append('parent', folderId);
+    form.append('name', name);
+    if (data) {
+      if (data instanceof Blob) {
+        form.append('data', data);
+      } else {
+        const blob = new Blob([data], { type: 'text/plain' });
+        form.append('data', blob);
+      }
+    }
+
+    const response = await this.reqAny<TsuFile>(
+      `upload`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          parent: folderId,
-          name: name,
-          data: data
-        }),
+        body: form,
         trackUpload: true
       },
       'json',
@@ -164,7 +189,7 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     return response;
   }
   protected async executeDelete(id: string): Promise<void> {
-    this.callJson<void>('executeDelete', {
+    this.postJson<void>('executeDelete', {
       id: id
     });
   }
@@ -190,12 +215,12 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
   }
 
   private async list(folderId: string) {
-    return this.callJson<TsuFile[]>('listFiles', {
+    return this.postJson<TsuFile[]>('listFiles', {
       parent: folderId
     });
   }
 
-  private async setTitleData(title: string, files: ExternalFile[]) {
+  private async setTitleData(title: string, files: TsuFile[]) {
     if (!files.length) {
       return;
     }
