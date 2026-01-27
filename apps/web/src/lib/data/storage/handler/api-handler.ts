@@ -21,7 +21,6 @@ import {
   type ExternalFile
 } from '$lib/data/storage/handler/base-handler';
 import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
-import { StorageOAuthManager } from '$lib/data/storage/storage-oauth-manager';
 import { StorageKey } from '$lib/data/storage/storage-types';
 import { database } from '$lib/data/store';
 import {
@@ -33,8 +32,9 @@ import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-
 import { replicationProgress$ } from '$lib/functions/replication/replication-progress';
 import { mergeStatistics, updateStatisticToStore } from '$lib/functions/statistic-util';
 import pLimit from 'p-limit';
+import { AuthType, type StorageAuthManager } from '../storage-auth-manager';
 
-interface RequestOptions {
+export interface RequestOptions {
   method?: string;
   headers?: Record<string, string>;
   body?: XMLHttpRequestBodyInit | null | undefined;
@@ -74,7 +74,7 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
   protected abstract executeDelete(id: string): Promise<void>;
 
-  protected authManager: StorageOAuthManager;
+  protected authManager: StorageAuthManager;
 
   protected rootId = '';
 
@@ -82,9 +82,9 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
   protected titleToFiles = new Map<string, ExternalFile[]>();
 
-  constructor(storageType: StorageKey, window: Window, refreshEndpoint: string) {
+  constructor(storageType: StorageKey, window: Window, authManager: StorageAuthManager) {
     super(window, storageType);
-    this.authManager = new StorageOAuthManager(this.storageType, refreshEndpoint);
+    this.authManager = authManager;
   }
 
   updateSettings(
@@ -701,7 +701,15 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
       }
 
       if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        switch (this.authManager.getAuthType()) {
+          case AuthType.BASIC:
+            xhr.setRequestHeader('Authorization', `Basic ${token}`);
+            break;
+
+          case AuthType.OAUTH:
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            break;
+        }
       }
 
       xhr.send(options.body || null);
