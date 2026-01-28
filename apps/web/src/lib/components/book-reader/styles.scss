@@ -28,6 +28,10 @@
     user-select: none;
   }
 
+  :global(ruby) {
+    line-height: 1;
+  }
+
   :global([data-ttu-spoiler-img]) {
     :global(.spoiler-label) {
       display: none;
