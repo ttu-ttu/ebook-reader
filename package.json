@@ -13,8 +13,8 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "@commitlint/cli": "20.3.1",
-    "@commitlint/config-conventional": "20.3.1",
+    "@commitlint/cli": "20.4.0",
+    "@commitlint/config-conventional": "20.4.0",
     "@eslint/compat": "2.0.1",
     "@eslint/js": "9.39.2",
     "@types/eslint__js": "9.14.0",
