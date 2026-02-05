@@ -18,7 +18,7 @@
     "@eslint/compat": "2.0.2",
     "@eslint/js": "9.39.2",
     "@types/eslint__js": "9.14.0",
-    "@types/node": "24.10.10",
+    "@types/node": "24.10.11",
     "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.4",
