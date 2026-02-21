@@ -38,25 +38,6 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
       progressBase
     ) as Promise<T>;
   }
-  private postJson<T>(
-    path: string,
-    data?: any,
-    typeToRetrieve: XMLHttpRequestResponseType = 'json',
-    progressBase?: number
-  ): Promise<T> {
-    return this.reqAny<T>(
-      path,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: data ? JSON.stringify(data) : undefined
-      },
-      typeToRetrieve,
-      progressBase
-    );
-  }
 
   protected setInternalSettings(storageSourceName: string): void {
     const newStorageSource = storageSourceName || ttsuRemoteStorageSource$.getValue();
@@ -68,6 +49,10 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     this.storageSourceName = newStorageSource;
   }
 
+  /**
+   * If there is a file/folder with the given name in the given folder, it's ID is gotten.
+   * Otherwise it is created and it's ID is gotten.
+   */
   protected async ensureTitle(
     name = BaseStorageHandler.rootName,
     parent = 'root',
@@ -110,30 +95,9 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     return titleId.id;
   }
 
-  protected async getExternalFiles(remoteTitleId: string): Promise<ExternalFile[]> {
-    if (
-      (!this.cacheStorageData || !this.dataListFetched) &&
-      !this.titleToFiles.has(this.currentContext.title)
-    ) {
-      const externalFiles = await this.list(remoteTitleId);
-      if (externalFiles.length) {
-        this.setTitleData(this.currentContext.title, externalFiles);
-      }
-    }
-
-    return this.titleToFiles.get(this.currentContext.title) || [];
-  }
-  protected async setRootFiles(): Promise<void> {
-    if ((!this.cacheStorageData || !this.rootFileListFetched) && !this.rootFiles.size) {
-      const rootFiles = await this.list(this.rootId);
-
-      for (const rootFile of rootFiles) {
-        this.setRootFile(rootFile.name, rootFile);
-      }
-
-      this.rootFileListFetched = true;
-    }
-  }
+  /**
+   * Reads a files data.
+   */
   protected retrieve(
     file: TsuFile,
     typeToRetrieve: XMLHttpRequestResponseType,
@@ -149,6 +113,29 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
       progressBase
     );
   }
+
+  /**
+   * Deletes a file or folder by ID.
+   */
+  protected async executeDelete(id: string): Promise<void> {
+    this.reqAny<void>(`delete/${id}`, {
+      method: 'DELETE'
+    });
+  }
+  /**
+   * Get a list of files and folders in the given folder.
+   */
+  private async list(folderId: string) {
+    return this.reqAny<TsuFile[]>(`list/${folderId}`, {
+      method: 'GET'
+    });
+  }
+
+  /**
+   * Uploads or renames a file.
+   * If an externalFile is given, the remote data is replaced (if data is present), and the file is renamed with the given name.
+   * If there is no externalFile, a new file will be created in the given folder.
+   */
   protected async upload(
     folderId: string,
     name: string,
@@ -162,9 +149,12 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
 
     if (externalFile) {
       form.append('id', externalFile.id);
+    } else {
+      form.append('parent', folderId);
     }
-    form.append('parent', folderId);
+
     form.append('name', name);
+
     if (data) {
       if (data instanceof Blob) {
         form.append('data', data);
@@ -177,7 +167,7 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     const response = await this.reqAny<TsuFile>(
       `file`,
       {
-        method: data ? 'POST' : 'PATCH',
+        method: 'POST',
         body: form,
         trackUpload: true
       },
@@ -198,11 +188,33 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
 
     return response;
   }
-  protected async executeDelete(id: string): Promise<void> {
-    this.reqAny<void>(`delete/${id}`, {
-      method: 'DELETE'
-    });
+
+  protected async getExternalFiles(remoteTitleId: string): Promise<ExternalFile[]> {
+    if (
+      (!this.cacheStorageData || !this.dataListFetched) &&
+      !this.titleToFiles.has(this.currentContext.title)
+    ) {
+      const externalFiles = await this.list(remoteTitleId);
+      if (externalFiles.length) {
+        await this.setTitleData(this.currentContext.title, externalFiles);
+      }
+    }
+
+    return this.titleToFiles.get(this.currentContext.title) || [];
   }
+
+  protected async setRootFiles(): Promise<void> {
+    if ((!this.cacheStorageData || !this.rootFileListFetched) && !this.rootFiles.size) {
+      const rootFiles = await this.list(this.rootId);
+
+      for (const rootFile of rootFiles) {
+        this.setRootFile(rootFile.name, rootFile);
+      }
+
+      this.rootFileListFetched = true;
+    }
+  }
+
   async getBookList(): Promise<BookCardProps[]> {
     if (!this.dataListFetched) {
       database.listLoading$.next(true);
@@ -214,7 +226,7 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
 
         for (const folder of bookFolders) {
           const bookFiles = await this.list(folder.id);
-          this.setTitleData(folder.name, bookFiles);
+          await this.setTitleData(folder.name, bookFiles);
         }
 
         this.dataListFetched = true;
@@ -225,12 +237,6 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
     }
 
     return [...this.titleToBookCard.values()];
-  }
-
-  private async list(folderId: string) {
-    return this.reqAny<TsuFile[]>(`list/${folderId}`, {
-      method: 'GET'
-    });
   }
 
   private async setTitleData(title: string, files: TsuFile[]) {
@@ -269,7 +275,8 @@ export class RemoteApiStorageHandler extends ApiStorageHandler {
         bookCard.progress = progress;
         bookCard.lastBookmarkModified = lastBookmarkModified;
       } else if (file.name.startsWith('cover_')) {
-        bookCard.imagePath = `${this.serverRoot}/file/${file.id}`;
+        // doing this because we need auth to read from the server
+        bookCard.imagePath = (await this.reqAny(`file/${file.id}`, {}, 'blob')) as Blob;
       }
     }
 
