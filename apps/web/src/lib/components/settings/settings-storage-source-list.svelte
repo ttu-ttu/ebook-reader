@@ -37,6 +37,7 @@
     gDriveStorageSource$,
     isOnline$,
     oneDriveStorageSource$,
+    ttsuRemoteStorageSource$,
     syncTarget$
   } from '$lib/data/store';
   import { AutoReplicationType } from '$lib/functions/replication/replication-options';
@@ -72,6 +73,9 @@
         break;
       case StorageKey.ONEDRIVE:
         configuredIsSourceDefault = name === $oneDriveStorageSource$;
+        break;
+      case StorageKey.TTSU_REMOTE:
+        configuredIsSourceDefault = name === $ttsuRemoteStorageSource$;
         break;
       case StorageKey.FS:
         configuredIsSourceDefault = name === $fsStorageSource$;
@@ -258,7 +262,7 @@
           {@const storageSourceIsSourceDefault = isStorageSourceDefault(
             storageSource.name,
             storageSource.type,
-            [$gDriveStorageSource$, $oneDriveStorageSource$, $fsStorageSource$]
+            [$gDriveStorageSource$, $oneDriveStorageSource$, $ttsuRemoteStorageSource$, $fsStorageSource$]
           )}
           <div class="flex flex-col">
             <div class="flex">

@@ -56,7 +56,8 @@
   let storageSourceEncryptionDisabled = configuredEncryptionDisabled || false;
   let storageSourceTypes = [
     { key: StorageKey.GDRIVE, label: 'GDrive' },
-    { key: StorageKey.ONEDRIVE, label: 'OneDrive' }
+    { key: StorageKey.ONEDRIVE, label: 'OneDrive' },
+    { key: StorageKey.TTSU_REMOTE, label: 'RemoteAPI' }
   ];
 
   $: if (browser && 'showDirectoryPicker' in window) {
