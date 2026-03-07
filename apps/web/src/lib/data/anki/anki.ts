@@ -53,6 +53,13 @@ export interface CardReviewInfo {
   type: number;
 }
 
+export interface CardMetricInfo {
+  cardId: number;
+  'prop:r': number | null;
+  'prop:s': number | null;
+  'prop:d': number | null;
+}
+
 export class Anki {
   private readonly ankiConnectUrl: string;
   private readonly wordFields: string[];
@@ -108,15 +115,18 @@ export class Anki {
    * Thresholds:
    * - `mature`: retrievability > 0.9
    * - `young`: retrievability > 0.8
-   * - `new`: retrievability >= 0.6
-   * - `low`: retrievability < 0.6
+   * - `new`: retrievability >= desiredRetention
+   * - `low`: retrievability < desiredRetention
+   * @param desiredRetention - Decimal retrievability threshold for low/new split
    * @param ankiConnectUrl - Optional override for Anki Connect URL
    * @returns Map of card ID -> category
    */
   async buildRetrievabilityCacheForDecks(
+    desiredRetention = 0.6,
     ankiConnectUrl?: string
   ): Promise<Map<number, ResolvedWordStatus>> {
     const result = new Map<number, ResolvedWordStatus>();
+    const retention = Math.min(1, Math.max(0, desiredRetention));
 
     // Build deck query
     let deckQuery = '';
@@ -129,7 +139,9 @@ export class Anki {
       return result;
     }
 
-    console.log('Building retrievability cache with thresholds: >0.9, >0.8, >=0.6, <0.6');
+    console.log(
+      `Building retrievability cache with thresholds: >0.9, >0.8, >=${retention}, <${retention}`
+    );
 
     // Query 1: Find all mature cards in decks (prop:r > 0.9)
     const matureQuery = `(${deckQuery}) prop:r>0.9`;
@@ -153,15 +165,15 @@ export class Anki {
     const youngCardIds: number[] = youngResponse.result || [];
     console.log(`Found ${youngCardIds.length} young cards`);
 
-    // Query 3: Find all medium cards in decks (0.6 <= prop:r <= 0.8) plus brand-new cards.
-    const newQuery = `(${deckQuery}) (is:new OR (prop:r>=0.6 -prop:r>0.8))`;
+    // Query 3: Find all medium cards in decks (desiredRetention <= prop:r <= 0.8) plus brand-new cards.
+    const newQuery = `(${deckQuery}) (is:new OR (prop:r>=${retention} -prop:r>0.8))`;
     console.log('Querying new cards:', newQuery);
     const newResponse = await this._executeAction('findCards', { query: newQuery }, ankiConnectUrl);
     const newCardIds: number[] = newResponse.result || [];
     console.log(`Found ${newCardIds.length} new cards`);
 
-    // Query 4: Find all low cards in decks (prop:r < 0.6), excluding brand-new cards
-    const lowQuery = `(${deckQuery}) prop:r<0.6 -is:new`;
+    // Query 4: Find all low cards in decks (prop:r < desiredRetention), excluding brand-new cards
+    const lowQuery = `(${deckQuery}) prop:r<${retention} -is:new`;
     console.log('Querying low cards:', lowQuery);
     const lowResponse = await this._executeAction('findCards', { query: lowQuery }, ankiConnectUrl);
     const lowCardIds: number[] = lowResponse.result || [];
@@ -195,7 +207,7 @@ export class Anki {
     _matureThreshold: number,
     ankiConnectUrl?: string
   ): Promise<Map<number, ResolvedWordStatus>> {
-    return this.buildRetrievabilityCacheForDecks(ankiConnectUrl);
+    return this.buildRetrievabilityCacheForDecks(0.6, ankiConnectUrl);
   }
 
   /**
@@ -375,35 +387,55 @@ export class Anki {
     cardIds: number[],
     ankiConnectUrl?: string
   ): Promise<Map<number, number | null>> {
+    const metrics = await this.cardMetricsMap(cardIds, ['prop:r'], ankiConnectUrl);
     const result = new Map<number, number | null>();
+    for (const [cardId, metric] of metrics.entries()) {
+      result.set(cardId, metric['prop:r']);
+    }
+
+    return result;
+  }
+
+  async cardMetricsMap(
+    cardIds: number[],
+    fields: CardMetricField[] = ['prop:r', 'prop:s'],
+    ankiConnectUrl?: string
+  ): Promise<Map<number, CardMetricInfo>> {
+    const result = new Map<number, CardMetricInfo>();
     const uniqueCardIds = Array.from(new Set(cardIds.filter((id) => Number.isFinite(id))));
     if (uniqueCardIds.length === 0) {
       return result;
     }
 
-    const query = `(${uniqueCardIds.map((id) => `cid:${id}`).join(' OR ')})`;
-    const response = await this._executeAction(
-      'findCards',
-      { query, fields: ['prop:r'] },
-      ankiConnectUrl
-    );
+    const QUERY_CHUNK_SIZE = 250;
 
-    if (!Array.isArray(response.result)) {
-      throw new Error('Unexpected findCards(fields) response payload.');
-    }
+    for (let index = 0; index < uniqueCardIds.length; index += QUERY_CHUNK_SIZE) {
+      const chunk = uniqueCardIds.slice(index, index + QUERY_CHUNK_SIZE);
+      const query = `(${chunk.map((id) => `cid:${id}`).join(' OR ')})`;
+      const response = await this._executeAction('findCards', { query, fields }, ankiConnectUrl);
 
-    for (const entry of response.result) {
-      if (!entry || typeof entry !== 'object') {
-        throw new Error('findCards(fields) is not supported by this AnkiConnect build.');
+      if (!Array.isArray(response.result)) {
+        throw new Error('Unexpected findCards(fields) response payload.');
       }
 
-      const cardId = Number((entry as Record<string, unknown>).cardId);
-      if (!Number.isFinite(cardId)) {
-        continue;
-      }
+      for (const entry of response.result) {
+        if (!entry || typeof entry !== 'object') {
+          throw new Error('findCards(fields) is not supported by this AnkiConnect build.');
+        }
 
-      const propR = (entry as Record<string, unknown>)['prop:r'];
-      result.set(cardId, typeof propR === 'number' ? propR : null);
+        const values = entry as Record<string, unknown>;
+        const cardId = Number(values.cardId);
+        if (!Number.isFinite(cardId)) {
+          continue;
+        }
+
+        result.set(cardId, {
+          cardId,
+          'prop:r': typeof values['prop:r'] === 'number' ? (values['prop:r'] as number) : null,
+          'prop:s': typeof values['prop:s'] === 'number' ? (values['prop:s'] as number) : null,
+          'prop:d': typeof values['prop:d'] === 'number' ? (values['prop:d'] as number) : null
+        });
+      }
     }
 
     return result;

@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -10,6 +10,7 @@ import {
   faCog,
   faFileArrowUp,
   faFileZipper,
+  faFilter,
   faFolderPlus,
   faHashtag,
   faImages,
@@ -42,6 +43,12 @@ export const mergeEntries = {
     label: 'Images',
     icon: faImages,
     title: 'Open Image Gallery'
+  },
+  TOKEN_PANEL: {
+    routeId: '',
+    label: 'Tokens',
+    icon: faFilter,
+    title: 'Open Token Panel'
   },
   DOMAIN_HINT: {
     routeId: '',

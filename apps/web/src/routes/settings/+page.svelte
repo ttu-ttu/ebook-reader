@@ -9,8 +9,11 @@
     addCharactersOnCompletion$,
     adjustStatisticsAfterIdleTime$,
     ankiConnectUrl$,
+    ankiColorMode$,
     ankiColorPalette$,
+    ankiDesiredRetention$,
     ankiIntegrationEnabled$,
+    ankiMatureThreshold$,
     ankiWordFields$,
     ankiWordDeckNames$,
     autoBookmark$,
@@ -205,7 +208,10 @@
       bind:ankiIntegrationEnabled={$ankiIntegrationEnabled$}
       bind:yomitanUrl={$yomitanUrl$}
       bind:ankiConnectUrl={$ankiConnectUrl$}
+      bind:ankiColorMode={$ankiColorMode$}
       bind:ankiColorPalette={$ankiColorPalette$}
+      bind:ankiDesiredRetention={$ankiDesiredRetention$}
+      bind:ankiMatureThreshold={$ankiMatureThreshold$}
       bind:ankiWordFields={$ankiWordFields$}
       bind:ankiWordDeckNames={$ankiWordDeckNames$}
     />

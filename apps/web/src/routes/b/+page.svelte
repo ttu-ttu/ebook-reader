@@ -35,6 +35,7 @@
   import MessageDialog from '$lib/components/message-dialog.svelte';
   import StyleSheetRenderer from '$lib/components/style-sheet-renderer.svelte';
   import {
+    ankiIntegrationEnabled$,
     autoBookmark$,
     autoBookmarkTime$,
     autoPositionOnResize$,
@@ -207,6 +208,7 @@
   let confettiWidthModifier = 36;
   let confettiMaxRuns = 0;
   let showReaderImageGallery = false;
+  let showTokenPanel = false;
   let dismissDialogs = true;
   let syncedResolver: () => void;
 
@@ -1587,9 +1589,14 @@
         showHeader = false;
         showReaderImageGallery = true;
       }}
+      on:tokenPanelClick={() => {
+        showHeader = false;
+        showTokenPanel = !showTokenPanel;
+      }}
       on:settingsClick={() => leaveReader(mergeEntries.SETTINGS.routeId, false)}
       on:domainHintClick={onDomainHintClick}
       on:bookManagerClick={() => leaveReader(mergeEntries.MANAGE.routeId)}
+      showTokenPanelButton={$ankiIntegrationEnabled$}
     />
   </div>
 {/if}
@@ -1670,8 +1677,10 @@
     bind:customReadingPointScrollOffset
     bind:customReadingPointRange
     bind:showCustomReadingPoint
+    {showTokenPanel}
     on:bookmark={bookmarkPage}
     on:trackerPause={() => pauseTracker(true)}
+    on:tokenPanelClose={() => (showTokenPanel = false)}
   />
   {$initBookmarkData$ ?? ''}
   {$setBackgroundColor$ ?? ''}

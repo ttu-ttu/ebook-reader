@@ -8,6 +8,7 @@ import { Yomitan } from '$lib/data/yomitan';
 import { Anki, type CardInfo } from '$lib/data/anki';
 import {
   TokenColor,
+  TokenColorMode,
   TokenColorPalette,
   TokenStyle,
   type WordStatus
@@ -23,9 +24,34 @@ export interface ColoringOptions {
   ankiConnectUrl: string;
   wordFields: string[];
   wordDeckNames: string[];
+  colorMode: TokenColorMode;
+  desiredRetention: number;
   matureThreshold: number;
   tokenStyle: TokenStyle;
   colorPalette: TokenColorPalette;
+}
+
+export type DocumentTokenStatus = 'uncollected' | 'new' | 'young' | 'mature' | 'unknown';
+
+export interface DocumentTokenAnalysisEntry {
+  token: string;
+  count: number;
+  status: DocumentTokenStatus;
+  due: boolean;
+  cardIds: number[];
+}
+
+export interface DocumentTokenAnalysisProgress {
+  completedSteps: number;
+  totalSteps: number;
+  percentage: number;
+  phase: 'tokenize' | 'resolve';
+}
+
+export interface DocumentTokenAnalysisResult {
+  entries: DocumentTokenAnalysisEntry[];
+  totalTokens: number;
+  uniqueTokens: number;
 }
 
 interface GradeDialogInfo {
@@ -88,6 +114,43 @@ export class BookContentColoring {
     this.tokenColorCache.clear();
   }
 
+  async setColorMode(colorMode: TokenColorMode): Promise<void> {
+    if (this.options.colorMode === colorMode) {
+      return;
+    }
+
+    this.options.colorMode = colorMode;
+    await this.clearCache();
+  }
+
+  async setDesiredRetention(desiredRetention: number): Promise<void> {
+    const normalizedRetention = this._normalizeDesiredRetention(desiredRetention);
+    if (this.options.desiredRetention === normalizedRetention) {
+      return;
+    }
+
+    this.options.desiredRetention = normalizedRetention;
+    await this.clearCache();
+  }
+
+  getDesiredRetention(): number {
+    return this._normalizeDesiredRetention(this.options.desiredRetention);
+  }
+
+  async setMatureThreshold(matureThreshold: number): Promise<void> {
+    const normalizedThreshold = this._normalizeMatureThreshold(matureThreshold);
+    if (this.options.matureThreshold === normalizedThreshold) {
+      return;
+    }
+
+    this.options.matureThreshold = normalizedThreshold;
+    await this.clearCache();
+  }
+
+  getMatureThreshold(): number {
+    return this._normalizeMatureThreshold(this.options.matureThreshold);
+  }
+
   /**
    * Build retrievability cache for all cards in configured decks
    * Should be called once on initialization for optimal performance
@@ -100,7 +163,9 @@ export class BookContentColoring {
     lowCards: number;
   }> {
     try {
-      const retrievabilityCache = await this.anki.buildRetrievabilityCacheForDecks();
+      const retrievabilityCache = await this.anki.buildRetrievabilityCacheForDecks(
+        this.getDesiredRetention()
+      );
 
       const matureCards = Array.from(retrievabilityCache.values()).filter(
         (c) => c === 'mature'
@@ -340,6 +405,95 @@ export class BookContentColoring {
     } catch (error) {
       console.error('Error colorizing elements batch:', error);
     }
+  }
+
+  async analyzeDocumentText(
+    text: string,
+    options?: {
+      signal?: AbortSignal;
+      onProgress?: (progress: DocumentTokenAnalysisProgress) => void;
+      chunkSize?: number;
+      batchSize?: number;
+      scanLength?: number;
+    }
+  ): Promise<DocumentTokenAnalysisResult> {
+    const normalizedText = text.trim();
+    if (!normalizedText) {
+      return { entries: [], totalTokens: 0, uniqueTokens: 0 };
+    }
+
+    const chunkSize = options?.chunkSize ?? 12000;
+    const batchSize = options?.batchSize ?? 250;
+    const scanLength = options?.scanLength ?? 4096;
+    const textChunks = this._chunkDocumentText(normalizedText, chunkSize);
+    const uniqueCounts = new Map<string, number>();
+    let completedSteps = 0;
+    let totalTokens = 0;
+
+    const reportProgress = (phase: 'tokenize' | 'resolve', completed: number, total: number) => {
+      options?.onProgress?.({
+        completedSteps: completed,
+        totalSteps: total,
+        percentage: total === 0 ? 100 : Math.round((completed / total) * 100),
+        phase
+      });
+    };
+
+    let totalSteps = textChunks.length;
+
+    for (const chunk of textChunks) {
+      this._throwIfAborted(options?.signal);
+      const tokens = await this.yomitan.tokenize(chunk, undefined, scanLength);
+
+      for (const token of tokens) {
+        const trimmedToken = token.trim();
+        if (!HAS_LETTER_REGEX.test(trimmedToken)) {
+          continue;
+        }
+
+        uniqueCounts.set(trimmedToken, (uniqueCounts.get(trimmedToken) || 0) + 1);
+        totalTokens++;
+      }
+
+      completedSteps++;
+      reportProgress('tokenize', completedSteps, totalSteps);
+    }
+
+    const uniqueTokens = Array.from(uniqueCounts.keys());
+    const resolveBatches = this._chunkArray(uniqueTokens, batchSize);
+    totalSteps = textChunks.length + Math.max(1, resolveBatches.length);
+    const analysisEntries: DocumentTokenAnalysisEntry[] = [];
+
+    for (const batch of resolveBatches) {
+      this._throwIfAborted(options?.signal);
+      const tokenData = await this._resolveTokenAnalysisData(batch);
+
+      for (const token of batch) {
+        const resolved = tokenData.get(token) || {
+          status: 'uncollected' as const,
+          due: false,
+          cardIds: []
+        };
+        analysisEntries.push({
+          token,
+          count: uniqueCounts.get(token) || 0,
+          status: resolved.status,
+          due: resolved.due,
+          cardIds: resolved.cardIds
+        });
+      }
+
+      completedSteps++;
+      reportProgress('resolve', completedSteps, totalSteps);
+    }
+
+    analysisEntries.sort((a, b) => b.count - a.count || a.token.localeCompare(b.token, 'ja'));
+
+    return {
+      entries: analysisEntries,
+      totalTokens,
+      uniqueTokens: analysisEntries.length
+    };
   }
 
   /**
@@ -758,11 +912,11 @@ export class BookContentColoring {
 
   private async _buildGradeDialogInfo(
     cardId: number,
-    status: WordStatus
+    _status: WordStatus
   ): Promise<GradeDialogInfo> {
     let cardInfo: CardInfo | undefined;
     try {
-      const cardInfos = await this.anki.cardsInfo([cardId], ['prop:r'], undefined, {
+      const cardInfos = await this.anki.cardsInfo([cardId], ['prop:r', 'prop:s'], undefined, {
         noteFields: this.options.wordFields,
         retrievedInfoMode: 'COMPACT'
       });
@@ -773,7 +927,7 @@ export class BookContentColoring {
         error
       );
       try {
-        const legacyInfos = await this.anki.cardsInfo([cardId], ['prop:r'], undefined, {
+        const legacyInfos = await this.anki.cardsInfo([cardId], ['prop:r', 'prop:s'], undefined, {
           noteFields: this.options.wordFields,
           compact: true
         });
@@ -783,7 +937,7 @@ export class BookContentColoring {
           `cardsInfo compact/noteFields not available for popup card ${cardId}, falling back to full:`,
           legacyError
         );
-        const fallbackInfos = await this.anki.cardsInfo([cardId], ['prop:r']);
+        const fallbackInfos = await this.anki.cardsInfo([cardId], ['prop:r', 'prop:s']);
         cardInfo = fallbackInfos[0];
       }
     }
@@ -793,6 +947,7 @@ export class BookContentColoring {
     const fieldLabel = preferredField?.name ? `Field (${preferredField.name})` : 'Field Value';
     const fieldValue = preferredField?.value || 'Unavailable';
     const rawPropR = cardInfo?.['prop:r'];
+    const rawPropS = cardInfo?.['prop:s'];
     let exactRetrievability = typeof rawPropR === 'number' ? rawPropR : undefined;
     let isNewCard = (cardInfo?.queue === 0 || cardInfo?.type === 0) && rawPropR === null;
 
@@ -808,11 +963,11 @@ export class BookContentColoring {
       }
     }
 
-    const retrievability = this._formatRetrievabilityText(exactRetrievability, status, isNewCard);
-    const stability =
-      typeof cardInfo?.interval === 'number'
-        ? `${cardInfo.interval} day${cardInfo.interval === 1 ? '' : 's'}`
-        : 'Unavailable';
+    const retrievability = this._formatRetrievabilityText(exactRetrievability, isNewCard);
+    const stability = this._formatStabilityText(
+      typeof rawPropS === 'number' ? rawPropS : undefined,
+      cardInfo?.interval
+    );
 
     let lastReviewed = 'Never reviewed';
     let latestReviewMs: number | undefined;
@@ -874,14 +1029,13 @@ export class BookContentColoring {
 
   private _formatRetrievabilityText(
     exactRetrievability: number | undefined,
-    status: WordStatus,
     isNewCard: boolean
   ): string {
     if (isNewCard) {
       return 'New card (not reviewed yet)';
     }
 
-    const bucket = this._statusToRetrievabilityText(status);
+    const bucket = this._retrievabilityBucketText(exactRetrievability);
     if (typeof exactRetrievability === 'number') {
       return `${(exactRetrievability * 100).toFixed(2)}% (${bucket})`;
     }
@@ -889,19 +1043,32 @@ export class BookContentColoring {
     return bucket;
   }
 
-  private _statusToRetrievabilityText(status: WordStatus): string {
-    switch (status) {
-      case 'mature':
-        return '> 90%';
-      case 'young':
-        return '> 80%';
-      case 'new':
-        return '>= 60%';
-      case 'low':
-        return '< 60%';
-      default:
-        return 'Unknown';
+  private _retrievabilityBucketText(exactRetrievability: number | undefined): string {
+    const retention = Math.round(this.getDesiredRetention() * 100);
+    if (typeof exactRetrievability !== 'number') {
+      return 'Unknown';
     }
+
+    if (exactRetrievability >= this.getDesiredRetention()) {
+      return `>= ${retention}%`;
+    }
+
+    return `< ${retention}%`;
+  }
+
+  private _formatStabilityText(
+    exactStability: number | undefined,
+    interval: number | undefined
+  ): string {
+    if (typeof exactStability === 'number') {
+      return `${exactStability.toFixed(2)} days`;
+    }
+
+    if (typeof interval === 'number') {
+      return `${interval} day${interval === 1 ? '' : 's'} (interval)`;
+    }
+
+    return 'Unavailable';
   }
 
   private _formatNextExpectedReview(
@@ -1250,8 +1417,6 @@ export class BookContentColoring {
         new Set([token, ...lemmas].map((word) => word.trim()).filter((word) => word.length > 0))
       );
 
-      // Check all candidates against Anki
-      let bestStatus: WordStatus = 'unknown';
       const allCardIds = new Set<number>();
 
       for (const candidateWord of candidateWords) {
@@ -1260,26 +1425,6 @@ export class BookContentColoring {
 
         if (cardIds.length > 0) {
           cardIds.forEach((id) => allCardIds.add(id));
-
-          // Check retrievability category for each card using prop:r queries
-          for (const cardId of cardIds) {
-            const status = await this._checkCardRetrievability(cardId);
-
-            // Update best status (priority: mature > young > new > low > unknown)
-            if (status === 'mature') {
-              bestStatus = 'mature';
-              break; // Found mature, stop searching
-            } else if (status === 'young') {
-              bestStatus = 'young';
-            } else if (status === 'new' && (bestStatus === 'unknown' || bestStatus === 'low')) {
-              bestStatus = 'new';
-            } else if (status === 'low' && bestStatus === 'unknown') {
-              bestStatus = 'low';
-            }
-          }
-
-          // If we found a mature card, stop searching candidates
-          if (bestStatus === 'mature') break;
         }
       }
 
@@ -1288,9 +1433,12 @@ export class BookContentColoring {
         return undefined;
       }
 
+      const resolvedCardIds = Array.from(allCardIds);
+      const statusMap = await this._batchCheckCardRetrievability(resolvedCardIds);
+
       return {
-        status: bestStatus,
-        cardIds: Array.from(allCardIds)
+        status: this._pickBestStatus(resolvedCardIds, statusMap),
+        cardIds: resolvedCardIds
       };
     } catch (error) {
       console.error(`Error fetching word data from Anki for "${token}":`, error);
@@ -1306,28 +1454,8 @@ export class BookContentColoring {
   private async _checkCardRetrievability(cardId: number): Promise<WordStatus> {
     try {
       const isNewCard = await this.anki.isCardNew(cardId);
-      if (isNewCard) {
-        return 'new';
-      }
-
-      const retrievability = await this.anki.cardRetrievability(cardId, 4, false);
-      if (typeof retrievability !== 'number') {
-        return 'unknown';
-      }
-
-      if (retrievability > 0.9) {
-        return 'mature';
-      }
-
-      if (retrievability > 0.8) {
-        return 'young';
-      }
-
-      if (retrievability >= 0.6) {
-        return 'new';
-      }
-
-      return 'low';
+      const metrics = await this.anki.cardMetricsMap([cardId], ['prop:r', 'prop:s']);
+      return this._classifyCardMetrics(metrics.get(cardId), isNewCard);
     } catch (error) {
       console.error(`Error checking card retrievability for card ${cardId}:`, error);
       return 'unknown';
@@ -1345,82 +1473,36 @@ export class BookContentColoring {
     if (uniqueCardIds.length === 0) return result;
 
     try {
-      // Fast path: one request via findCards(fields=["prop:r"]).
-      const retrievabilityMap = await this.anki.cardRetrievabilityMap(uniqueCardIds);
-      if (retrievabilityMap.size > 0) {
-        for (const cardId of uniqueCardIds) {
-          const retrievability = retrievabilityMap.get(cardId);
-
-          if (typeof retrievability === 'number') {
-            if (retrievability > 0.9) {
-              result.set(cardId, 'mature');
-            } else if (retrievability > 0.8) {
-              result.set(cardId, 'young');
-            } else if (retrievability >= 0.6) {
-              result.set(cardId, 'new');
-            } else {
-              result.set(cardId, 'low');
-            }
-          } else if (retrievability === null) {
-            // prop:r can be null for unreviewed cards.
-            result.set(cardId, 'new');
-          } else {
-            result.set(cardId, 'unknown');
+      const metricsMap = await this.anki.cardMetricsMap(uniqueCardIds, ['prop:r', 'prop:s']);
+      if (metricsMap.size > 0) {
+        const newCardIds = new Set<number>();
+        try {
+          const newCardsResponse = await this.anki['_executeAction']('findCards', {
+            query: `(${uniqueCardIds.map((id) => `cid:${id}`).join(' OR ')}) is:new`
+          });
+          for (const cardId of newCardsResponse.result || []) {
+            newCardIds.add(cardId);
           }
+        } catch (error) {
+          console.debug('Failed to check new cards during batch status classification:', error);
+        }
+
+        for (const cardId of uniqueCardIds) {
+          result.set(
+            cardId,
+            this._classifyCardMetrics(metricsMap.get(cardId), newCardIds.has(cardId))
+          );
         }
 
         return result;
       }
     } catch {
-      // Fallback to query-bucket approach below when prop fields are not supported.
+      // Fallback to per-card checks below when metric fields are not supported.
     }
 
-    // Build card ID filter: (cid:123 OR cid:456 OR cid:789)
-    const cidFilter = `(${uniqueCardIds.map((id) => `cid:${id}`).join(' OR ')})`;
-
     try {
-      // Query 0: Find brand-new cards (never reviewed) and treat them as new.
-      const newCardsQuery = `${cidFilter} is:new`;
-      const newCardsResponse = await this.anki['_executeAction']('findCards', {
-        query: newCardsQuery
-      });
-      const newCardsFromIsNew: number[] = newCardsResponse.result || [];
-      for (const cardId of newCardsFromIsNew) {
-        result.set(cardId, 'new');
-      }
-
-      // Query 1: Find mature cards (>90%)
-      const matureQuery = `${cidFilter} prop:r>0.9`;
-      const matureResponse = await this.anki['_executeAction']('findCards', { query: matureQuery });
-      const matureCardIds: number[] = matureResponse.result || [];
-
-      for (const cardId of matureCardIds) {
-        result.set(cardId, 'mature');
-      }
-
-      // Query 2: Find young cards (80%-90%)
-      const youngQuery = `${cidFilter} prop:r>0.8 -prop:r>0.9`;
-      const youngResponse = await this.anki['_executeAction']('findCards', { query: youngQuery });
-      const youngCardIds: number[] = youngResponse.result || [];
-
-      for (const cardId of youngCardIds) {
-        result.set(cardId, 'young');
-      }
-
-      // Query 3: Find medium cards (60%-80%)
-      const newQuery = `${cidFilter} prop:r>=0.6 -prop:r>0.8`;
-      const newResponse = await this.anki['_executeAction']('findCards', { query: newQuery });
-      const newCardIds: number[] = newResponse.result || [];
-
-      for (const cardId of newCardIds) {
-        result.set(cardId, 'new');
-      }
-
-      // All remaining cards are low (<60%)
       for (const cardId of uniqueCardIds) {
-        if (!result.has(cardId)) {
-          result.set(cardId, 'low');
-        }
+        result.set(cardId, await this._checkCardRetrievability(cardId));
       }
 
       return result;
@@ -1704,20 +1786,12 @@ export class BookContentColoring {
   }
 
   private _statusToColor(status: WordStatus): TokenColor {
-    if (this.options.colorPalette === TokenColorPalette.SIMPLE) {
-      switch (status) {
-        case 'low':
-          return TokenColor.LOW;
-        case 'unknown':
-          return TokenColor.UNKNOWN;
-        default:
-          return TokenColor.UNKNOWN;
-      }
-    }
-
     switch (status) {
       case 'mature':
-        return TokenColor.MATURE;
+        return this.options.colorMode === TokenColorMode.COMBINED &&
+          this.options.colorPalette === TokenColorPalette.SIMPLE
+          ? TokenColor.UNKNOWN
+          : TokenColor.MATURE;
       case 'young':
         return TokenColor.YOUNG;
       case 'new':
@@ -1729,6 +1803,141 @@ export class BookContentColoring {
       default:
         return TokenColor.UNKNOWN;
     }
+  }
+
+  private _classifyCardMetrics(
+    metric:
+      | {
+          'prop:r'?: number | null;
+          'prop:s'?: number | null;
+        }
+      | undefined,
+    isNewCard: boolean
+  ): WordStatus {
+    const retrievability = metric?.['prop:r'];
+    const stability = metric?.['prop:s'];
+    const highRetrievability =
+      typeof retrievability === 'number' && retrievability >= this.getDesiredRetention();
+    const highStability = typeof stability === 'number' && stability >= this.getMatureThreshold();
+
+    switch (this.options.colorMode) {
+      case TokenColorMode.STABILITY:
+        if (typeof stability !== 'number') {
+          return isNewCard ? 'low' : 'unknown';
+        }
+        return highStability ? 'mature' : 'low';
+      case TokenColorMode.RETRIEVABILITY:
+        if (typeof retrievability !== 'number') {
+          return isNewCard ? 'low' : 'unknown';
+        }
+        return highRetrievability ? 'mature' : 'low';
+      case TokenColorMode.COMBINED:
+      default:
+        if ((typeof stability !== 'number' && typeof retrievability !== 'number') || isNewCard) {
+          return isNewCard ? 'low' : 'unknown';
+        }
+
+        if (highStability && highRetrievability) {
+          return 'mature';
+        }
+        if (highStability && !highRetrievability) {
+          return 'young';
+        }
+        if (!highStability && highRetrievability) {
+          return 'new';
+        }
+        return 'low';
+    }
+  }
+
+  private _classifyLearningStatus(
+    metric:
+      | {
+          'prop:r'?: number | null;
+          'prop:s'?: number | null;
+        }
+      | undefined,
+    isNewCard: boolean
+  ): DocumentTokenStatus {
+    if (isNewCard) {
+      return 'new';
+    }
+
+    const stability = metric?.['prop:s'];
+    if (typeof stability !== 'number') {
+      return 'unknown';
+    }
+
+    return stability >= this.getMatureThreshold() ? 'mature' : 'young';
+  }
+
+  private _isCardDue(
+    metric:
+      | {
+          'prop:r'?: number | null;
+        }
+      | undefined,
+    isNewCard: boolean
+  ): boolean {
+    if (isNewCard) {
+      return false;
+    }
+
+    return typeof metric?.['prop:r'] === 'number' && metric['prop:r'] < this.getDesiredRetention();
+  }
+
+  private _documentStatusPriority(status: DocumentTokenStatus): number {
+    switch (status) {
+      case 'mature':
+        return 4;
+      case 'young':
+        return 3;
+      case 'new':
+        return 2;
+      case 'unknown':
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
+  private _pickBestStatus(cardIds: number[], statuses: Map<number, WordStatus>): WordStatus {
+    let bestStatus: WordStatus = 'unknown';
+
+    for (const cardId of cardIds) {
+      const status = statuses.get(cardId) || 'unknown';
+      if (this._statusPriority(status) > this._statusPriority(bestStatus)) {
+        bestStatus = status;
+        if (bestStatus === 'mature') {
+          break;
+        }
+      }
+    }
+
+    return bestStatus;
+  }
+
+  private async _findNewCardIds(cardIds: number[]): Promise<Set<number>> {
+    const result = new Set<number>();
+    const uniqueCardIds = Array.from(new Set(cardIds.filter((cardId) => Number.isFinite(cardId))));
+    const chunkSize = 250;
+
+    for (let index = 0; index < uniqueCardIds.length; index += chunkSize) {
+      const chunk = uniqueCardIds.slice(index, index + chunkSize);
+      try {
+        const response = await this.anki['_executeAction']('findCards', {
+          query: `(${chunk.map((cardId) => `cid:${cardId}`).join(' OR ')}) is:new`
+        });
+
+        for (const cardId of response.result || []) {
+          result.add(cardId);
+        }
+      } catch (error) {
+        console.debug('Failed to fetch new card IDs:', error);
+      }
+    }
+
+    return result;
   }
 
   private _statusPriority(status: WordStatus): number {
@@ -1963,7 +2172,9 @@ export class BookContentColoring {
       const wordFields = this.anki.getWordFields();
       console.log('Deck names:', deckNames);
       console.log('Word fields:', wordFields);
-      console.log('Retrievability thresholds: >0.9, >0.8, >=0.6, <0.6');
+      console.log(
+        `Retrievability thresholds: >0.9, >0.8, >=${this.getDesiredRetention()}, <${this.getDesiredRetention()}`
+      );
 
       // Early validation
       if (!deckNames || deckNames.length === 0) {
@@ -2033,10 +2244,26 @@ export class BookContentColoring {
 
       console.log(`Extracted ${wordToCardIds.size} unique words from cards`);
 
-      // Step 2: Build retrievability cache using prop:r queries
-      console.log('Step 2: Building retrievability cache with prop:r queries...');
-      const retrievabilityCache = await this.anki.buildRetrievabilityCacheForDecks();
-      console.log(`Retrievability cache has ${retrievabilityCache.size} card entries`);
+      // Step 2: Fetch card metrics used by the active coloring mode
+      console.log('Step 2: Fetching card metrics (prop:r, prop:s)...');
+      const cardIds = allCards.map((card) => card.cardId);
+      const metricsByCardId = await this.anki.cardMetricsMap(cardIds, ['prop:r', 'prop:s']);
+      const newCardIds = new Set<number>();
+      try {
+        const query = this.anki
+          .getWordDecks()
+          .map((deckName) => `"deck:${deckName}"`)
+          .join(' OR ');
+        const newCardsResponse = await this.anki['_executeAction']('findCards', {
+          query: `(${query}) is:new`
+        });
+        for (const cardId of newCardsResponse.result || []) {
+          newCardIds.add(cardId);
+        }
+      } catch (error) {
+        console.debug('Failed to fetch new cards during warm cache:', error);
+      }
+      console.log(`Fetched metrics for ${metricsByCardId.size} cards`);
 
       // Step 3: Build single cache: word -> {status, cardIds}
       console.log('Step 3: Mapping words to status...');
@@ -2047,24 +2274,15 @@ export class BookContentColoring {
         unknownCount = 0;
 
       for (const [word, cardIds] of wordToCardIds.entries()) {
-        // Determine status from retrievability cache (prefer mature > young > new > low > unknown)
-        let status: WordStatus = 'unknown';
-
-        // Check cards against retrievability categories from prop:r queries
-        for (const cardId of cardIds) {
-          const category = retrievabilityCache.get(cardId);
-
-          if (category === 'mature') {
-            status = 'mature';
-            break; // Mature is highest priority
-          } else if (category === 'young') {
-            status = 'young';
-          } else if (category === 'new' && (status === 'unknown' || status === 'low')) {
-            status = 'new';
-          } else if (category === 'low' && status === 'unknown') {
-            status = 'low';
-          }
-        }
+        const status = this._pickBestStatus(
+          cardIds,
+          new Map(
+            cardIds.map((cardId) => [
+              cardId,
+              this._classifyCardMetrics(metricsByCardId.get(cardId), newCardIds.has(cardId))
+            ])
+          )
+        );
 
         // Count by status
         if (status === 'mature') matureCount++;
@@ -2111,5 +2329,153 @@ export class BookContentColoring {
       .replace(/&nbsp;/gi, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private _normalizeDesiredRetention(desiredRetention: number): number {
+    if (!Number.isFinite(desiredRetention)) {
+      return 0.6;
+    }
+
+    const normalized = desiredRetention > 1 ? desiredRetention / 100 : desiredRetention;
+    return Math.min(1, Math.max(0, normalized));
+  }
+
+  private _normalizeMatureThreshold(matureThreshold: number): number {
+    if (!Number.isFinite(matureThreshold)) {
+      return 21;
+    }
+
+    return Math.max(0, matureThreshold);
+  }
+
+  private _throwIfAborted(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+      throw new DOMException('The operation was aborted.', 'AbortError');
+    }
+  }
+
+  private _chunkDocumentText(text: string, chunkSize: number): string[] {
+    if (!text) {
+      return [];
+    }
+
+    const normalizedChunkSize = Math.max(1, Math.floor(chunkSize));
+    const chunks: string[] = [];
+
+    for (let index = 0; index < text.length; index += normalizedChunkSize) {
+      chunks.push(text.slice(index, index + normalizedChunkSize));
+    }
+
+    return chunks;
+  }
+
+  private _chunkArray<T>(items: T[], chunkSize: number): T[][] {
+    if (items.length === 0) {
+      return [];
+    }
+
+    const normalizedChunkSize = Math.max(1, Math.floor(chunkSize));
+    const chunks: T[][] = [];
+
+    for (let index = 0; index < items.length; index += normalizedChunkSize) {
+      chunks.push(items.slice(index, index + normalizedChunkSize));
+    }
+
+    return chunks;
+  }
+
+  private async _resolveTokenAnalysisData(
+    tokens: string[]
+  ): Promise<Map<string, { status: DocumentTokenStatus; due: boolean; cardIds: number[] }>> {
+    const resolved = new Map<
+      string,
+      { status: DocumentTokenStatus; due: boolean; cardIds: number[] }
+    >();
+
+    const tokenToCardIds = new Map<string, number[]>();
+    const allCardIds = new Set<number>();
+
+    for (const token of tokens) {
+      const directData = await this._getWordData(token);
+      if (directData && directData.cardIds.length > 0) {
+        const cardIds = Array.from(new Set(directData.cardIds));
+        tokenToCardIds.set(token, cardIds);
+        cardIds.forEach((cardId) => allCardIds.add(cardId));
+        continue;
+      }
+
+      try {
+        let lemmas = this.lemmatizeCache.get(token);
+
+        if (!lemmas && this.cacheService) {
+          lemmas = await this.cacheService.getLemmas(token);
+          if (lemmas) {
+            this.lemmatizeCache.set(token, lemmas);
+          }
+        }
+
+        if (!lemmas) {
+          lemmas = await this.yomitan.lemmatize(token);
+          this.lemmatizeCache.set(token, lemmas);
+
+          if (this.cacheService) {
+            await this.cacheService.setLemmas(token, lemmas);
+          }
+        }
+
+        const cardIds = new Set<number>();
+
+        for (const lemma of lemmas) {
+          const lemmaData = await this._getWordData(lemma);
+          if (!lemmaData || lemmaData.cardIds.length === 0) {
+            continue;
+          }
+
+          lemmaData.cardIds.forEach((cardId) => cardIds.add(cardId));
+        }
+
+        const resolvedCardIds = Array.from(cardIds);
+        tokenToCardIds.set(token, resolvedCardIds);
+        resolvedCardIds.forEach((cardId) => allCardIds.add(cardId));
+      } catch (error) {
+        console.debug(`Document token analysis failed for "${token}"`, error);
+        tokenToCardIds.set(token, []);
+      }
+    }
+
+    const metricsMap = await this.anki.cardMetricsMap(Array.from(allCardIds), ['prop:r', 'prop:s']);
+    const newCardIds = await this._findNewCardIds(Array.from(allCardIds));
+
+    for (const token of tokens) {
+      const cardIds = tokenToCardIds.get(token) || [];
+      if (cardIds.length === 0) {
+        resolved.set(token, { status: 'uncollected', due: false, cardIds: [] });
+        continue;
+      }
+
+      let bestStatus: DocumentTokenStatus = 'unknown';
+      let bestPriority = -1;
+      let due = false;
+
+      for (const cardId of cardIds) {
+        const isNewCard = newCardIds.has(cardId);
+        const learningStatus = this._classifyLearningStatus(metricsMap.get(cardId), isNewCard);
+        const cardDue = this._isCardDue(metricsMap.get(cardId), isNewCard);
+
+        if (cardDue) {
+          due = true;
+        }
+
+        const priority = this._documentStatusPriority(learningStatus);
+        if (priority > bestPriority) {
+          bestStatus = learningStatus;
+          bestPriority = priority;
+        }
+      }
+
+      resolved.set(token, { status: bestStatus, due, cardIds });
+    }
+
+    return resolved;
   }
 }

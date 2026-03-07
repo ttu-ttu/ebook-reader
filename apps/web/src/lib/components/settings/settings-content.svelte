@@ -26,7 +26,7 @@
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { logger } from '$lib/data/logger';
   import { MergeMode } from '$lib/data/merge-mode';
-  import { TokenColorPalette } from '$lib/data/anki/token-color';
+  import { TokenColorMode, TokenColorPalette } from '$lib/data/anki/token-color';
   import { isAppDefault } from '$lib/data/storage/storage-source-manager';
   import { defaultStorageSources } from '$lib/data/storage/storage-types';
   import { isStorageSourceAvailable } from '$lib/data/storage/storage-view';
@@ -177,7 +177,13 @@
 
   export let ankiConnectUrl: string;
 
+  export let ankiColorMode: TokenColorMode;
+
   export let ankiColorPalette: TokenColorPalette;
+
+  export let ankiDesiredRetention: number;
+
+  export let ankiMatureThreshold: number;
 
   export let ankiWordFields: string[];
 
@@ -335,14 +341,29 @@
     }
   ];
 
+  const optionsForAnkiColorMode: ToggleOption<TokenColorMode>[] = [
+    {
+      id: TokenColorMode.STABILITY,
+      text: 'Stability'
+    },
+    {
+      id: TokenColorMode.RETRIEVABILITY,
+      text: 'Retrievability'
+    },
+    {
+      id: TokenColorMode.COMBINED,
+      text: 'Combined'
+    }
+  ];
+
   const optionsForAnkiColorPalette: ToggleOption<TokenColorPalette>[] = [
     {
       id: TokenColorPalette.FULL,
-      text: 'R Palette'
+      text: 'Green'
     },
     {
       id: TokenColorPalette.SIMPLE,
-      text: 'Simple'
+      text: 'Default'
     }
   ];
 
@@ -739,7 +760,7 @@
     </SettingsItemGroup>
     <SettingsItemGroup
       title="Enable Anki Word Coloring"
-      tooltip={'When enabled, words in the book are colored based on Anki card retrievability (R). Requires Yomitan extension and Anki Connect to be running.'}
+      tooltip={'When enabled, words in the book are colored from Anki card Stability, Retrievability, or both. Requires Yomitan extension and Anki Connect to be running.'}
     >
       <ButtonToggleGroup
         options={optionsForToggle}
@@ -748,12 +769,62 @@
     </SettingsItemGroup>
     {#if ankiIntegrationEnabled}
       <SettingsItemGroup
-        title="Color Palette"
-        tooltip={'Choose between retrievability gradient colors or simplified known/low/unmined colors'}
+        title="Coloring Mode"
+        tooltip={'Choose whether token colors are based on Stability, Retrievability, or both'}
+      >
+        <ButtonToggleGroup
+          options={optionsForAnkiColorMode}
+          bind:selectedOptionId={ankiColorMode}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="High S + High R Color"
+        tooltip={'Use green or the default text color for tokens that are both high Stability and high Retrievability'}
       >
         <ButtonToggleGroup
           options={optionsForAnkiColorPalette}
           bind:selectedOptionId={ankiColorPalette}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Mature Stability Threshold"
+        tooltip={'Cards at or above this Stability in days are treated as high Stability'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          min="0"
+          step="1"
+          bind:value={ankiMatureThreshold}
+          on:blur={() => {
+            if (typeof ankiMatureThreshold !== 'number' || isNaN(ankiMatureThreshold)) {
+              ankiMatureThreshold = 21;
+              return;
+            }
+
+            ankiMatureThreshold = Math.max(0, Math.round(ankiMatureThreshold));
+          }}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Desired Retention"
+        tooltip={'Cards at or below this retrievability are treated as "To Review" (low R)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          min="0"
+          max="100"
+          step="1"
+          bind:value={ankiDesiredRetention}
+          on:blur={() => {
+            if (typeof ankiDesiredRetention !== 'number' || isNaN(ankiDesiredRetention)) {
+              ankiDesiredRetention = 60;
+              return;
+            }
+
+            ankiDesiredRetention = Math.min(100, Math.max(0, Math.round(ankiDesiredRetention)));
+          }}
         />
       </SettingsItemGroup>
       <SettingsItemGroup

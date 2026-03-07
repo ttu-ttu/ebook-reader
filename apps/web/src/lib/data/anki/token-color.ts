@@ -5,16 +5,16 @@
  */
 
 /**
- * Token color values based on Anki card retrievability
+ * Token color values for Anki-derived token states.
  */
 export enum TokenColor {
-  /** High retrievability (>90%) - Green */
+  /** Best state bucket */
   MATURE = '#16a34a',
-  /** Good retrievability (>80%) - Yellow */
+  /** Secondary state bucket */
   YOUNG = '#ca8a04',
-  /** Medium retrievability (>=60%) - Orange */
+  /** Tertiary state bucket */
   NEW = '#ea580c',
-  /** Low retrievability (<60%) - Red */
+  /** Lowest state bucket */
   LOW = '#dc2626',
   /** Known card but status could not be resolved - inherit current text color */
   UNKNOWN = 'currentColor',
@@ -26,6 +26,12 @@ export enum TokenColor {
 
 export type WordStatus = 'mature' | 'young' | 'new' | 'low' | 'unknown';
 export type ResolvedWordStatus = Exclude<WordStatus, 'unknown'>;
+
+export enum TokenColorMode {
+  STABILITY = 'stability',
+  RETRIEVABILITY = 'retrievability',
+  COMBINED = 'combined'
+}
 
 export enum TokenColorPalette {
   FULL = 'full',

@@ -32,10 +32,14 @@ export class Yomitan {
    * @param yomitanUrl - Optional override for Yomitan URL
    * @returns Array of tokens (words)
    */
-  async tokenize(text: string, yomitanUrl?: string): Promise<string[]> {
+  async tokenize(
+    text: string,
+    yomitanUrl?: string,
+    scanLengthOverride?: number
+  ): Promise<string[]> {
     const response = await this._executeAction(
       'tokenize',
-      { text, scanLength: this.scanLength, parser: 'mecab' },
+      { text, scanLength: scanLengthOverride ?? this.scanLength, parser: 'mecab' },
       yomitanUrl
     );
 

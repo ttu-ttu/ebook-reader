@@ -33,6 +33,7 @@
   export let showFullscreenButton: boolean;
   export let isBookmarkScreen: boolean;
   export let hasBookmarkData: boolean;
+  export let showTokenPanelButton = false;
 
   const dispatch = createEventDispatcher<{
     tocClick: void;
@@ -46,6 +47,7 @@
     resetCustomReadingPoint: void;
     statisticsClick: void;
     readerImageGalleryClick: void;
+    tokenPanelClick: void;
     settingsClick: void;
     domainHintClick: void;
     bookManagerClick: void;
@@ -86,6 +88,10 @@
 
     if ($readerImageGalleryPictures$.length) {
       items.push(mergeEntries.READER_IMAGE_GALLERY);
+    }
+
+    if (showTokenPanelButton) {
+      items.push(mergeEntries.TOKEN_PANEL);
     }
 
     items.push(mergeEntries.SETTINGS, mergeEntries.MANAGE);
@@ -205,6 +211,8 @@
           dispatch('jumpClick');
         } else if (detail === mergeEntries.READER_IMAGE_GALLERY.label) {
           dispatch('readerImageGalleryClick');
+        } else if (detail === mergeEntries.TOKEN_PANEL.label) {
+          dispatch('tokenPanelClick');
         } else if (detail === mergeEntries.SETTINGS.label) {
           dispatch('settingsClick');
         } else if (detail === mergeEntries.DOMAIN_HINT.label) {

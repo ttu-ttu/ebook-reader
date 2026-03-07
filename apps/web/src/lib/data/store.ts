@@ -58,7 +58,7 @@ import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
 import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
-import { TokenColorPalette, TokenStyle } from './anki/token-color';
+import { TokenColorMode, TokenColorPalette, TokenStyle } from './anki/token-color';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
@@ -514,6 +514,11 @@ export const ankiWordDeckNames$ = writableArrayLocalStorageSubject<string>()(
 
 export const ankiMatureThreshold$ = writableNumberLocalStorageSubject()('ankiMatureThreshold', 21);
 
+export const ankiColorMode$ = writableStringLocalStorageSubject<TokenColorMode>()(
+  'ankiColorMode',
+  TokenColorMode.COMBINED
+);
+
 export const ankiTokenStyle$ = writableStringLocalStorageSubject<TokenStyle>()(
   'ankiTokenStyle',
   TokenStyle.TEXT
@@ -522,6 +527,11 @@ export const ankiTokenStyle$ = writableStringLocalStorageSubject<TokenStyle>()(
 export const ankiColorPalette$ = writableStringLocalStorageSubject<TokenColorPalette>()(
   'ankiColorPalette',
   TokenColorPalette.FULL
+);
+
+export const ankiDesiredRetention$ = writableNumberLocalStorageSubject()(
+  'ankiDesiredRetention',
+  60
 );
 
 export const ankiDeckName$ = writableStringLocalStorageSubject()('ankiDeckName', '');

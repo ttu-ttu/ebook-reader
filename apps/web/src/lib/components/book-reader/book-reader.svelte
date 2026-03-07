@@ -24,13 +24,16 @@
   import { writableSubject } from '$lib/functions/svelte/store';
   import { convertRemToPixels } from '$lib/functions/utils';
   import { logger } from '$lib/data/logger';
+  import BookReaderTokenPanel from './book-reader-token-panel.svelte';
   import { imageLoadingState } from './image-loading-state';
   import { reactiveElements } from './reactive-elements';
   import type { AutoScroller, BookmarkManager, PageManager } from './types';
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
   import {
     ankiConnectUrl$,
+    ankiColorMode$,
     ankiColorPalette$,
+    ankiDesiredRetention$,
     ankiIntegrationEnabled$,
     ankiMatureThreshold$,
     ankiTokenStyle$,
@@ -40,14 +43,16 @@
     enableTapEdgeToFlip$,
     yomitanUrl$
   } from '$lib/data/store';
-  import { TokenColorPalette } from '$lib/data/anki/token-color';
+  import { TokenColorMode, TokenColorPalette } from '$lib/data/anki/token-color';
   import {
     BookContentColoring,
     ColoringPriorityQueue,
+    type DocumentTokenAnalysisProgress,
+    type DocumentTokenAnalysisResult,
     ProcessingPriority
   } from '$lib/functions/anki';
   import { createAnkiCacheDb, AnkiCacheService } from '$lib/data/database/anki-cache-db';
-  import { onDestroy } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
 
   export let htmlContent: string;
 
@@ -133,6 +138,12 @@
 
   export let showCustomReadingPoint: boolean;
 
+  export let showTokenPanel = false;
+
+  const dispatch = createEventDispatcher<{
+    tokenPanelClose: void;
+  }>();
+
   let showBlurMessage = false;
 
   let wakeLock: WakeLockSentinel | undefined;
@@ -148,7 +159,16 @@
   let intersectionObserver: IntersectionObserver | undefined;
   let viewportObserver: IntersectionObserver | undefined;
   let nearObserver: IntersectionObserver | undefined;
+  let previousAnkiColorMode: TokenColorMode | undefined;
   let previousAnkiColorPalette: TokenColorPalette | undefined;
+  let previousAnkiDesiredRetention: number | undefined;
+  let previousAnkiMatureThreshold: number | undefined;
+  let tokenPanelProgress: DocumentTokenAnalysisProgress | undefined;
+  let tokenPanelResult: DocumentTokenAnalysisResult | undefined;
+  let tokenPanelError = '';
+  let tokenPanelLoading = false;
+  let tokenPanelAnalysisAbortController: AbortController | undefined;
+  let tokenPanelAnalysisKey = '';
 
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
@@ -178,6 +198,8 @@
           ankiConnectUrl: $ankiConnectUrl$,
           wordFields: $ankiWordFields$,
           wordDeckNames: $ankiWordDeckNames$,
+          colorMode: $ankiColorMode$,
+          desiredRetention: $ankiDesiredRetention$ / 100,
           matureThreshold: $ankiMatureThreshold$,
           tokenStyle: $ankiTokenStyle$,
           colorPalette: $ankiColorPalette$
@@ -265,7 +287,25 @@
       nearObserver.disconnect();
       nearObserver = undefined;
     }
+    previousAnkiColorMode = undefined;
     previousAnkiColorPalette = undefined;
+    previousAnkiDesiredRetention = undefined;
+    previousAnkiMatureThreshold = undefined;
+  }
+
+  $: if ($ankiIntegrationEnabled$ && coloringService) {
+    const currentMode = $ankiColorMode$;
+    if (previousAnkiColorMode !== undefined && previousAnkiColorMode !== currentMode) {
+      void (async () => {
+        const service = coloringService;
+        if (!service) return;
+
+        await service.setColorMode(currentMode);
+        await service.warmCache();
+        await service.recolorizeProcessedElements();
+      })();
+    }
+    previousAnkiColorMode = currentMode;
   }
 
   $: if ($ankiIntegrationEnabled$ && coloringService) {
@@ -275,6 +315,43 @@
       void coloringService.recolorizeProcessedElements();
     }
     previousAnkiColorPalette = currentPalette;
+  }
+
+  $: if ($ankiIntegrationEnabled$ && coloringService) {
+    const currentDesiredRetention = $ankiDesiredRetention$ / 100;
+    if (
+      previousAnkiDesiredRetention !== undefined &&
+      previousAnkiDesiredRetention !== currentDesiredRetention
+    ) {
+      void (async () => {
+        const service = coloringService;
+        if (!service) return;
+
+        await service.setDesiredRetention(currentDesiredRetention);
+        await service.warmCache();
+        await service.recolorizeProcessedElements();
+      })();
+    }
+
+    previousAnkiDesiredRetention = currentDesiredRetention;
+  }
+
+  $: if ($ankiIntegrationEnabled$ && coloringService) {
+    const currentMatureThreshold = $ankiMatureThreshold$;
+    if (
+      previousAnkiMatureThreshold !== undefined &&
+      previousAnkiMatureThreshold !== currentMatureThreshold
+    ) {
+      void (async () => {
+        const service = coloringService;
+        if (!service) return;
+
+        await service.setMatureThreshold(currentMatureThreshold);
+        await service.warmCache();
+        await service.recolorizeProcessedElements();
+      })();
+    }
+    previousAnkiMatureThreshold = currentMatureThreshold;
   }
 
   // Setup priority-based intersection observers when content element changes
@@ -366,6 +443,7 @@
   }
 
   onDestroy(() => {
+    tokenPanelAnalysisAbortController?.abort();
     mutationObserver.disconnect();
 
     releaseWakeLock();
@@ -506,6 +584,99 @@
 
     wakeLock = undefined;
   }
+
+  function extractDocumentText(html: string): string {
+    if (typeof document === 'undefined' || !html) {
+      return '';
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    container.querySelectorAll('rt, rp, script, style').forEach((node) => node.remove());
+    container.querySelectorAll('br').forEach((node) => node.replaceWith('\n'));
+    container
+      .querySelectorAll('p, div, section, article, li, tr, h1, h2, h3, h4, h5, h6')
+      .forEach((node) => {
+        node.append(document.createTextNode('\n'));
+      });
+
+    return container.textContent?.replace(/\n{3,}/g, '\n\n').trim() || '';
+  }
+
+  function getTokenPanelAnalysisKey(): string {
+    const prefix = htmlContent.slice(0, 256);
+    const suffix = htmlContent.slice(-256);
+    return [
+      htmlContent.length,
+      prefix,
+      suffix,
+      $ankiColorMode$,
+      $ankiDesiredRetention$,
+      $ankiMatureThreshold$,
+      $ankiWordDeckNames$.join('|'),
+      $ankiWordFields$.join('|')
+    ].join('::');
+  }
+
+  async function analyzeForTokenPanel(): Promise<void> {
+    const service = coloringService;
+    if (!service || !showTokenPanel || !$ankiIntegrationEnabled$) {
+      return;
+    }
+
+    const nextKey = getTokenPanelAnalysisKey();
+    if (tokenPanelResult && tokenPanelAnalysisKey === nextKey && !tokenPanelError) {
+      return;
+    }
+
+    tokenPanelAnalysisAbortController?.abort();
+    const abortController = new AbortController();
+    tokenPanelAnalysisAbortController = abortController;
+    tokenPanelAnalysisKey = nextKey;
+    tokenPanelLoading = true;
+    tokenPanelProgress = undefined;
+    tokenPanelError = '';
+
+    try {
+      if (cacheLoadingPromise) {
+        await cacheLoadingPromise;
+      }
+
+      const analysisChunkSize = 1000;
+      const fullText = extractDocumentText(htmlContent);
+      tokenPanelResult = await service.analyzeDocumentText(fullText, {
+        signal: abortController.signal,
+        onProgress: (progress) => {
+          tokenPanelProgress = progress;
+        },
+        chunkSize: analysisChunkSize,
+        batchSize: 250,
+        scanLength: analysisChunkSize
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
+      console.error('Token panel analysis failed:', error);
+      tokenPanelResult = undefined;
+      tokenPanelError = error instanceof Error ? error.message : `${error}`;
+    } finally {
+      if (tokenPanelAnalysisAbortController === abortController) {
+        tokenPanelLoading = false;
+      }
+    }
+  }
+
+  $: if (!showTokenPanel) {
+    tokenPanelAnalysisAbortController?.abort();
+    tokenPanelLoading = false;
+    tokenPanelProgress = undefined;
+  }
+
+  $: if (showTokenPanel && coloringService && $ankiIntegrationEnabled$) {
+    void analyzeForTokenPanel();
+  }
 </script>
 
 {#if showBlurMessage}
@@ -605,6 +776,17 @@
     />
   {/if}
 </div>
+{#if showTokenPanel}
+  <BookReaderTokenPanel
+    loading={tokenPanelLoading}
+    progress={tokenPanelProgress}
+    entries={tokenPanelResult?.entries || []}
+    totalTokens={tokenPanelResult?.totalTokens || 0}
+    uniqueTokens={tokenPanelResult?.uniqueTokens || 0}
+    error={tokenPanelError}
+    on:close={() => dispatch('tokenPanelClose')}
+  />
+{/if}
 {$blurListener$ ?? ''}
 {$reactiveElements$ ?? ''}
 <svelte:document bind:visibilityState />
