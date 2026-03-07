@@ -7,6 +7,8 @@
 import { openDB, type DBSchema } from 'idb';
 import type { TokenColor, WordStatus } from '$lib/data/anki/token-color';
 
+type CachedDocumentTokenStatus = 'uncollected' | 'new' | 'young' | 'mature' | 'unknown';
+
 /**
  * IndexedDB schema for Anki word coloring cache
  * Stores tokenization, lemmatization, and card retrievability results
@@ -18,6 +20,8 @@ export interface AnkiCacheDb extends DBSchema {
     value: {
       word: string;
       status: WordStatus;
+      analysisStatus?: CachedDocumentTokenStatus;
+      due?: boolean;
       cardIds: number[];
       timestamp: number;
     };

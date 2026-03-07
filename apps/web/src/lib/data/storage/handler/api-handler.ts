@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -125,12 +125,14 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
     let idToReturn = 0;
     let bookData: Omit<BooksDbBookData, 'id'> | undefined = data;
+    let shouldPersistToBrowser = !data?.id;
 
     if (!bookData || !bookData.elementHtml) {
-      const { file } = await this.getExternalFile('bookdata_');
+      const { file, data: externalBookBlob } = await this.getExternalFile('bookdata_', 'blob');
 
-      bookData = file
-        ? bookData || {
+      if (file && externalBookBlob) {
+        bookData = (await this.extractBookData(externalBookBlob, file.name, 1)) ||
+          bookData || {
             title: this.currentContext.title,
             styleSheet: '',
             elementHtml: '',
@@ -142,8 +144,10 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
             lastBookModified: 0,
             lastBookOpen: 0,
             storageSource: undefined
-          }
-        : undefined;
+          };
+      } else {
+        bookData = undefined;
+      }
     }
 
     if (!bookData) {
@@ -152,7 +156,10 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
     if (bookData.storageSource !== this.storageSourceName) {
       bookData.storageSource = this.storageSourceName;
+      shouldPersistToBrowser = true;
+    }
 
+    if (shouldPersistToBrowser) {
       idToReturn = await getStorageHandler(
         this.window,
         StorageKey.BROWSER,
@@ -729,7 +736,7 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     }
 
     const files = await this.getExternalFiles(titleId);
-    const file = files.find((entry) => entry.name.startsWith(fileIdentifier));
+    const file = BaseStorageHandler.getPreferredMatchingFile(files, fileIdentifier);
 
     BaseStorageHandler.reportProgress(progressPerStep);
 

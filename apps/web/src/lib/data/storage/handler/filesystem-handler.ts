@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -106,12 +106,16 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
 
     let idToReturn = 0;
     let data: Omit<BooksDbBookData, 'id'> | undefined = book;
+    let shouldPersistToBrowser = !book?.id;
 
     if (!data || !data.elementHtml) {
       const { file } = await this.getExternalFile('bookdata_');
 
-      data = file
-        ? data || {
+      if (file) {
+        const bookFile = await file.getFile();
+
+        data = (await this.extractBookData(bookFile, bookFile.name, 1)) ||
+          data || {
             title: this.currentContext.title,
             styleSheet: '',
             elementHtml: '',
@@ -123,8 +127,10 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
             lastBookModified: 0,
             lastBookOpen: 0,
             storageSource: undefined
-          }
-        : undefined;
+          };
+      } else {
+        data = undefined;
+      }
     }
 
     if (!data) {
@@ -133,7 +139,10 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
 
     if (data.storageSource !== this.storageSourceName) {
       data.storageSource = this.storageSourceName;
+      shouldPersistToBrowser = true;
+    }
 
+    if (shouldPersistToBrowser) {
       idToReturn = await getStorageHandler(
         this.window,
         StorageKey.BROWSER,
@@ -799,7 +808,7 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     BaseStorageHandler.reportProgress(progressPerStep);
 
     const files = await this.getExternalFiles(rootDirectory);
-    const file = files.find((entry) => entry.name.startsWith(fileIdentifier));
+    const file = BaseStorageHandler.getPreferredMatchingFile(files, fileIdentifier);
 
     BaseStorageHandler.reportProgress(progressPerStep);
 

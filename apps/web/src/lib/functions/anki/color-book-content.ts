@@ -14,6 +14,7 @@ import {
   type WordStatus
 } from '$lib/data/anki/token-color';
 import type { AnkiCacheService } from '$lib/data/database/anki-cache-db';
+import type { CachedWordData } from '$lib/data/database/anki-cache-db/anki-cache.service';
 
 /** Regex to check if text contains letters */
 const HAS_LETTER_REGEX = /\p{L}/u;
@@ -81,7 +82,7 @@ export class BookContentColoring {
   private lemmatizeCache = new Map<string, string[]>();
   private tokenColorCache = new Map<string, TokenColor>();
   // Single cache: word -> {status, cardIds}
-  private wordDataCache = new Map<string, { status: WordStatus; cardIds: number[] }>();
+  private wordDataCache = new Map<string, CachedWordData>();
   private cacheService?: AnkiCacheService;
   private options: ColoringOptions;
   // Rate limiting: track last refresh timestamp for each token
@@ -1238,9 +1239,7 @@ export class BookContentColoring {
     }
   }
 
-  private async _resolveWordDataForToken(
-    token: string
-  ): Promise<{ status: WordStatus; cardIds: number[] } | undefined> {
+  private async _resolveWordDataForToken(token: string): Promise<CachedWordData | undefined> {
     let existingData = await this._getWordData(token);
 
     // If not found directly, try lemmatizing to find the base form
@@ -1302,7 +1301,7 @@ export class BookContentColoring {
 
         // Update IndexedDB cache with fresh data
         if (this.cacheService) {
-          await this.cacheService.setWordData(token, wordData.status, wordData.cardIds);
+          await this.cacheService.setWordData(token, wordData);
           console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
         }
 
@@ -1368,7 +1367,7 @@ export class BookContentColoring {
 
       // Update IndexedDB cache with fresh data
       if (this.cacheService) {
-        await this.cacheService.setWordData(token, wordData.status, wordData.cardIds);
+        await this.cacheService.setWordData(token, wordData);
         console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
       }
 
@@ -1406,9 +1405,7 @@ export class BookContentColoring {
    * @param token - Token to look up
    * @returns Word data or undefined if not found
    */
-  private async _fetchWordDataFromAnki(
-    token: string
-  ): Promise<{ status: WordStatus; cardIds: number[] } | undefined> {
+  private async _fetchWordDataFromAnki(token: string): Promise<CachedWordData | undefined> {
     try {
       // Get lemmas for this token
       const lemmas = await this.yomitan.lemmatize(token);
@@ -1435,9 +1432,21 @@ export class BookContentColoring {
 
       const resolvedCardIds = Array.from(allCardIds);
       const statusMap = await this._batchCheckCardRetrievability(resolvedCardIds);
+      const metricsMap = await this.anki.cardMetricsMap(resolvedCardIds, ['prop:r', 'prop:s']);
+      const newCardIds = await this._findNewCardIds(resolvedCardIds);
+      const documentStatusMap = new Map(
+        resolvedCardIds.map((cardId) => [
+          cardId,
+          this._classifyLearningStatus(metricsMap.get(cardId), newCardIds.has(cardId))
+        ])
+      );
 
       return {
         status: this._pickBestStatus(resolvedCardIds, statusMap),
+        analysisStatus: this._pickBestDocumentStatus(resolvedCardIds, documentStatusMap),
+        due: resolvedCardIds.some((cardId) =>
+          this._isCardDue(metricsMap.get(cardId), newCardIds.has(cardId))
+        ),
         cardIds: resolvedCardIds
       };
     } catch (error) {
@@ -1607,17 +1616,26 @@ export class BookContentColoring {
    * @param word - Word to lookup
    * @returns Word data if found, undefined otherwise
    */
-  private async _getWordData(
-    word: string
-  ): Promise<{ status: WordStatus; cardIds: number[] } | undefined> {
+  private async _getWordData(word: string): Promise<CachedWordData | undefined> {
     // Check memory cache first (fast path)
     let wordData = this.wordDataCache.get(word);
-    if (wordData) return wordData;
+    if (wordData) {
+      if (!Array.isArray(wordData.cardIds)) {
+        wordData = { ...wordData, cardIds: [] };
+        this.wordDataCache.set(word, wordData);
+      }
+
+      return wordData;
+    }
 
     // Fall back to IndexedDB (primary cache)
     if (this.cacheService) {
       wordData = await this.cacheService.getWordData(word);
       if (wordData) {
+        if (!Array.isArray(wordData.cardIds)) {
+          wordData = { ...wordData, cardIds: [] };
+        }
+
         // Populate memory cache for future lookups
         this.wordDataCache.set(word, wordData);
         return wordData;
@@ -1907,6 +1925,25 @@ export class BookContentColoring {
     for (const cardId of cardIds) {
       const status = statuses.get(cardId) || 'unknown';
       if (this._statusPriority(status) > this._statusPriority(bestStatus)) {
+        bestStatus = status;
+        if (bestStatus === 'mature') {
+          break;
+        }
+      }
+    }
+
+    return bestStatus;
+  }
+
+  private _pickBestDocumentStatus(
+    cardIds: number[],
+    statuses: Map<number, DocumentTokenStatus>
+  ): DocumentTokenStatus {
+    let bestStatus: DocumentTokenStatus = 'unknown';
+
+    for (const cardId of cardIds) {
+      const status = statuses.get(cardId) || 'unknown';
+      if (this._documentStatusPriority(status) > this._documentStatusPriority(bestStatus)) {
         bestStatus = status;
         if (bestStatus === 'mature') {
           break;
@@ -2274,6 +2311,12 @@ export class BookContentColoring {
         unknownCount = 0;
 
       for (const [word, cardIds] of wordToCardIds.entries()) {
+        const documentStatusMap = new Map(
+          cardIds.map((cardId) => [
+            cardId,
+            this._classifyLearningStatus(metricsByCardId.get(cardId), newCardIds.has(cardId))
+          ])
+        );
         const status = this._pickBestStatus(
           cardIds,
           new Map(
@@ -2291,12 +2334,21 @@ export class BookContentColoring {
         else if (status === 'low') lowCount++;
         else unknownCount++;
 
+        const wordData: CachedWordData = {
+          status,
+          analysisStatus: this._pickBestDocumentStatus(cardIds, documentStatusMap),
+          due: cardIds.some((cardId) =>
+            this._isCardDue(metricsByCardId.get(cardId), newCardIds.has(cardId))
+          ),
+          cardIds
+        };
+
         // Store in single combined cache
-        this.wordDataCache.set(word, { status, cardIds });
+        this.wordDataCache.set(word, wordData);
 
         // Store in persistent cache
         if (this.cacheService) {
-          await this.cacheService.setWordData(word, status, cardIds);
+          await this.cacheService.setWordData(word, wordData);
         }
 
         cachedWords++;
@@ -2397,6 +2449,20 @@ export class BookContentColoring {
 
     for (const token of tokens) {
       const directData = await this._getWordData(token);
+      if (
+        directData &&
+        directData.cardIds.length > 0 &&
+        directData.analysisStatus !== undefined &&
+        directData.due !== undefined
+      ) {
+        resolved.set(token, {
+          status: directData.analysisStatus,
+          due: directData.due,
+          cardIds: Array.from(new Set(directData.cardIds))
+        });
+        continue;
+      }
+
       if (directData && directData.cardIds.length > 0) {
         const cardIds = Array.from(new Set(directData.cardIds));
         tokenToCardIds.set(token, cardIds);
@@ -2431,7 +2497,20 @@ export class BookContentColoring {
             continue;
           }
 
+          if (lemmaData.analysisStatus !== undefined && lemmaData.due !== undefined) {
+            resolved.set(token, {
+              status: lemmaData.analysisStatus,
+              due: lemmaData.due,
+              cardIds: Array.from(new Set(lemmaData.cardIds))
+            });
+            break;
+          }
+
           lemmaData.cardIds.forEach((cardId) => cardIds.add(cardId));
+        }
+
+        if (resolved.has(token)) {
+          continue;
         }
 
         const resolvedCardIds = Array.from(cardIds);
@@ -2471,6 +2550,26 @@ export class BookContentColoring {
           bestStatus = learningStatus;
           bestPriority = priority;
         }
+      }
+
+      const wordData: CachedWordData = {
+        status: this._pickBestStatus(
+          cardIds,
+          new Map(
+            cardIds.map((cardId) => [
+              cardId,
+              this._classifyCardMetrics(metricsMap.get(cardId), newCardIds.has(cardId))
+            ])
+          )
+        ),
+        analysisStatus: bestStatus,
+        due,
+        cardIds
+      };
+
+      this.wordDataCache.set(token, wordData);
+      if (this.cacheService) {
+        await this.cacheService.setWordData(token, wordData);
       }
 
       resolved.set(token, { status: bestStatus, due, cardIds });

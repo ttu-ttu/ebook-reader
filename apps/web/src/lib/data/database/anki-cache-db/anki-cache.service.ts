@@ -8,6 +8,15 @@ import type { IDBPDatabase } from 'idb';
 import type { AnkiCacheDb } from './factory';
 import type { TokenColor, WordStatus } from '$lib/data/anki/token-color';
 
+export type CachedDocumentTokenStatus = 'uncollected' | 'new' | 'young' | 'mature' | 'unknown';
+
+export interface CachedWordData {
+  status: WordStatus;
+  analysisStatus?: CachedDocumentTokenStatus;
+  due?: boolean;
+  cardIds: number[];
+}
+
 /** Cache TTL: 6 hours in milliseconds */
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
@@ -23,7 +32,7 @@ export class AnkiCacheService {
    * @param word - Word to lookup
    * @returns Word data if found and not expired, undefined otherwise
    */
-  async getWordData(word: string): Promise<{ status: WordStatus; cardIds: number[] } | undefined> {
+  async getWordData(word: string): Promise<CachedWordData | undefined> {
     const database = await this.db;
     const entry = await database.get('wordData', word);
 
@@ -33,7 +42,12 @@ export class AnkiCacheService {
       return undefined;
     }
 
-    return { status: entry.status, cardIds: entry.cardIds };
+    return {
+      status: entry.status,
+      analysisStatus: entry.analysisStatus,
+      due: entry.due,
+      cardIds: Array.isArray(entry.cardIds) ? entry.cardIds : []
+    };
   }
 
   /**
@@ -42,12 +56,14 @@ export class AnkiCacheService {
    * @param status - Card status (mature/young/new/low/unknown)
    * @param cardIds - Array of card IDs for this word
    */
-  async setWordData(word: string, status: WordStatus, cardIds: number[]): Promise<void> {
+  async setWordData(word: string, data: CachedWordData): Promise<void> {
     const database = await this.db;
     await database.put('wordData', {
       word,
-      status,
-      cardIds,
+      status: data.status,
+      analysisStatus: data.analysisStatus,
+      due: data.due,
+      cardIds: data.cardIds,
       timestamp: Date.now()
     });
   }

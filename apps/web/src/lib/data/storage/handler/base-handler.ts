@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -637,6 +637,71 @@ export abstract class BaseStorageHandler {
 
   protected static getDummyId() {
     return Math.floor(Date.now() * Math.random());
+  }
+
+  protected static getPreferredMatchingFile<T extends { name: string }>(
+    files: T[],
+    fileIdentifier: string
+  ) {
+    const candidates = files.filter((entry) => entry.name.startsWith(fileIdentifier));
+
+    if (candidates.length <= 1) {
+      return candidates[0];
+    }
+
+    const scoreEntry = (entry: T) => {
+      try {
+        if (fileIdentifier === 'bookdata_') {
+          const metadata = BaseStorageHandler.getBookMetadata(entry.name);
+
+          return [
+            metadata.lastBookOpen || 0,
+            metadata.lastBookModified || 0,
+            metadata.characters || 0
+          ];
+        }
+        if (fileIdentifier === 'progress_') {
+          const metadata = BaseStorageHandler.getProgressMetadata(entry.name);
+
+          return [metadata.lastBookmarkModified || 0, metadata.progress || 0];
+        }
+        if (fileIdentifier === 'statistics_') {
+          const metadata = BaseStorageHandler.getStatisticsMetadata(entry.name);
+
+          return [metadata.lastStatisticModified || 0];
+        }
+        if (fileIdentifier === FilePrefix.AUDIO_BOOK) {
+          const metadata = BaseStorageHandler.getAudioBookMetadata(entry.name);
+
+          return [metadata.lastAudioBookModified || 0];
+        }
+        if (fileIdentifier === FilePrefix.SUBTITLE) {
+          const metadata = BaseStorageHandler.getSubtitleDataMetadata(entry.name);
+
+          return [metadata.lastSubtitleDataModified || 0];
+        }
+      } catch {
+        // Ignore malformed metadata and let it sort last.
+      }
+
+      return [0];
+    };
+
+    return [...candidates].sort((entryA, entryB) => {
+      const scoreA = scoreEntry(entryA);
+      const scoreB = scoreEntry(entryB);
+      const maxLength = Math.max(scoreA.length, scoreB.length);
+
+      for (let index = 0; index < maxLength; index += 1) {
+        const diff = (scoreB[index] || 0) - (scoreA[index] || 0);
+
+        if (diff) {
+          return diff;
+        }
+      }
+
+      return entryB.name.localeCompare(entryA.name);
+    })[0];
   }
 
   protected static sanitizeForFilename(title: string) {
