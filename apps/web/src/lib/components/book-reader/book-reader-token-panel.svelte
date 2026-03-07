@@ -6,20 +6,26 @@
   } from '$lib/functions/anki';
   import { createEventDispatcher } from 'svelte';
 
+  type FilterId = 'all' | 'due' | DocumentTokenStatus;
+
   export let loading = false;
   export let progress: DocumentTokenAnalysisProgress | undefined;
   export let entries: DocumentTokenAnalysisEntry[] = [];
   export let totalTokens = 0;
   export let uniqueTokens = 0;
   export let error = '';
+  export let activeFilter: FilterId = 'all';
+  export let activeToken: string | null = null;
+  export let tokenSentences: Record<string, { sentence: string; page: number | null }[]> = {};
+  export let sentenceLoadingToken: string | null = null;
 
   const dispatch = createEventDispatcher<{
     close: void;
+    filterChange: { filter: FilterId };
+    tokenSelect: { token: string };
+    tokenHover: { token: string };
+    sentenceSelect: { token: string; sentence: string };
   }>();
-
-  type FilterId = 'all' | 'due' | DocumentTokenStatus;
-
-  let activeFilter: FilterId = 'all';
 
   const filters: { id: FilterId; label: string }[] = [
     { id: 'all', label: 'All' },
@@ -61,6 +67,97 @@
       default:
         return 'bg-slate-500/15 text-slate-100 border-slate-300/30';
     }
+  }
+
+  function onTokenSelect(token: string): void {
+    dispatch('tokenSelect', { token });
+  }
+
+  function onTokenHover(token: string): void {
+    dispatch('tokenHover', { token });
+  }
+
+  function onSentenceSelect(token: string, sentence: string): void {
+    dispatch('sentenceSelect', { token, sentence });
+  }
+
+  function onFilterSelect(filter: FilterId): void {
+    if (activeFilter === filter) {
+      return;
+    }
+
+    activeFilter = filter;
+    dispatch('filterChange', { filter });
+  }
+
+  function escapeHtml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function getTokenHighlightClass(status: DocumentTokenStatus, due: boolean): string {
+    if (due) {
+      return 'rounded bg-red-500/25 px-0.5 text-red-100';
+    }
+
+    switch (status) {
+      case 'mature':
+        return 'rounded bg-green-500/25 px-0.5 text-green-100';
+      case 'young':
+        return 'rounded bg-orange-500/25 px-0.5 text-orange-100';
+      case 'new':
+        return 'rounded bg-cyan-500/25 px-0.5 text-cyan-100';
+      case 'uncollected':
+        return 'rounded bg-fuchsia-500/25 px-0.5 text-fuchsia-100';
+      default:
+        return 'rounded bg-slate-500/25 px-0.5 text-slate-100';
+    }
+  }
+
+  function highlightTokenInSentence(
+    sentence: string,
+    token: string,
+    status: DocumentTokenStatus,
+    due: boolean
+  ): string {
+    if (!sentence) {
+      return '';
+    }
+
+    if (!token) {
+      return escapeHtml(sentence);
+    }
+
+    const tokenPattern = new RegExp(escapeRegExp(token), 'g');
+    const tokenHighlightClass = getTokenHighlightClass(status, due);
+    let previousIndex = 0;
+    let highlighted = '';
+
+    for (const match of sentence.matchAll(tokenPattern)) {
+      const startIndex = match.index ?? -1;
+      if (startIndex < 0) {
+        continue;
+      }
+
+      highlighted += escapeHtml(sentence.slice(previousIndex, startIndex));
+      highlighted += `<mark class="${tokenHighlightClass}">${escapeHtml(match[0])}</mark>`;
+      previousIndex = startIndex + match[0].length;
+    }
+
+    if (previousIndex === 0) {
+      return escapeHtml(sentence);
+    }
+
+    highlighted += escapeHtml(sentence.slice(previousIndex));
+    return highlighted;
   }
 </script>
 
@@ -125,7 +222,7 @@
             ? 'border-cyan-400 bg-cyan-400/15 text-cyan-100'
             : 'border-slate-700 text-slate-300 hover:border-slate-500'
         }`}
-        on:click={() => (activeFilter = filter.id)}
+        on:click={() => onFilterSelect(filter.id)}
       >
         {filter.label} ({counts[filter.id]})
       </button>
@@ -141,7 +238,17 @@
           <li class="px-4 py-3">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <div class="truncate text-base font-semibold">{entry.token}</div>
+                <button
+                  class={`w-full truncate text-left text-base font-semibold transition ${
+                    activeToken === entry.token
+                      ? 'text-cyan-200'
+                      : 'text-slate-100 hover:text-cyan-100 focus:text-cyan-100'
+                  }`}
+                  on:mouseenter={() => onTokenHover(entry.token)}
+                  on:click={() => onTokenSelect(entry.token)}
+                >
+                  {entry.token}
+                </button>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                   {entry.count} occurrence{entry.count === 1 ? '' : 's'}
                   {#if entry.due}
@@ -161,6 +268,41 @@
                 {entry.status === 'uncollected' ? 'Unmined' : entry.status}
               </span>
             </div>
+            {#if activeToken === entry.token}
+              <div class="mt-3 rounded-lg border border-slate-700/70 bg-slate-900/70 p-2">
+                <div class="mb-2 text-[11px] uppercase tracking-wide text-slate-400">
+                  Sentences in document
+                </div>
+                {#if sentenceLoadingToken === entry.token}
+                  <div class="text-xs text-slate-400">Searching sentences...</div>
+                {:else if (tokenSentences[entry.token] || []).length === 0}
+                  <div class="text-xs text-slate-400">No sentence found for this token.</div>
+                {:else}
+                  <ul class="space-y-1">
+                    {#each tokenSentences[entry.token] || [] as match}
+                      <li>
+                        <button
+                          class="w-full rounded border border-slate-700/70 bg-slate-800/60 px-2 py-1 text-left text-xs text-slate-100 hover:border-cyan-400/70 hover:text-cyan-100"
+                          on:click={() => onSentenceSelect(entry.token, match.sentence)}
+                        >
+                          <div class="whitespace-normal">
+                            {@html highlightTokenInSentence(
+                              match.sentence,
+                              entry.token,
+                              entry.status,
+                              entry.due
+                            )}
+                          </div>
+                          {#if match.page}
+                            <div class="mt-1 text-[11px] text-cyan-200/90">Page {match.page}</div>
+                          {/if}
+                        </button>
+                      </li>
+                    {/each}
+                  </ul>
+                {/if}
+              </div>
+            {/if}
           </li>
         {/each}
       </ul>

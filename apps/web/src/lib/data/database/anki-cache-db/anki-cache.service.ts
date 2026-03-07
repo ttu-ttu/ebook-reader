@@ -19,6 +19,8 @@ export interface CachedWordData {
 
 /** Cache TTL: 6 hours in milliseconds */
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+/** Token panel token-count cache TTL: 30 days in milliseconds */
+const DOCUMENT_TOKEN_COUNTS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Service for managing persistent Anki word coloring cache in IndexedDB
@@ -195,12 +197,63 @@ export class AnkiCacheService {
   }
 
   /**
+   * Get cached document token counts used by token panel analysis
+   * @param key - Document signature key
+   * @returns Token counts + total token count if found and not expired
+   */
+  async getDocumentTokenCounts(
+    key: string
+  ): Promise<{ entries: { token: string; count: number }[]; totalTokens: number } | undefined> {
+    const database = await this.db;
+    const entry = await database.get('documentTokenCounts', key);
+
+    if (!entry) return undefined;
+    if (Date.now() - entry.timestamp > DOCUMENT_TOKEN_COUNTS_TTL_MS) {
+      await database.delete('documentTokenCounts', key);
+      return undefined;
+    }
+
+    return {
+      entries: Array.isArray(entry.entries) ? entry.entries : [],
+      totalTokens: Number.isFinite(entry.totalTokens) ? entry.totalTokens : 0
+    };
+  }
+
+  /**
+   * Store document token counts used by token panel analysis
+   * @param key - Document signature key
+   * @param entries - Token frequency entries
+   * @param totalTokens - Total number of tokens in the document
+   */
+  async setDocumentTokenCounts(
+    key: string,
+    entries: { token: string; count: number }[],
+    totalTokens: number
+  ): Promise<void> {
+    const database = await this.db;
+    await database.put('documentTokenCounts', {
+      key,
+      entries,
+      totalTokens,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
    * Clear all cache stores
    */
   async clearAllCaches(): Promise<void> {
     const database = await this.db;
     const tx = database.transaction(
-      ['wordData', 'tokenColor', 'tokenCardIds', 'tokenize', 'lemmatize', 'termEntries'],
+      [
+        'wordData',
+        'tokenColor',
+        'tokenCardIds',
+        'tokenize',
+        'lemmatize',
+        'termEntries',
+        'documentTokenCounts'
+      ],
       'readwrite'
     );
 
@@ -210,7 +263,8 @@ export class AnkiCacheService {
       tx.objectStore('tokenCardIds').clear(),
       tx.objectStore('tokenize').clear(),
       tx.objectStore('lemmatize').clear(),
-      tx.objectStore('termEntries').clear()
+      tx.objectStore('termEntries').clear(),
+      tx.objectStore('documentTokenCounts').clear()
     ]);
 
     await tx.done;
@@ -227,6 +281,7 @@ export class AnkiCacheService {
     tokenizeCount: number;
     lemmatizeCount: number;
     termEntriesCount: number;
+    documentTokenCountsCount: number;
   }> {
     const database = await this.db;
     const [
@@ -235,14 +290,16 @@ export class AnkiCacheService {
       tokenCardIdsCount,
       tokenizeCount,
       lemmatizeCount,
-      termEntriesCount
+      termEntriesCount,
+      documentTokenCountsCount
     ] = await Promise.all([
       database.count('wordData'),
       database.count('tokenColor'),
       database.count('tokenCardIds'),
       database.count('tokenize'),
       database.count('lemmatize'),
-      database.count('termEntries')
+      database.count('termEntries'),
+      database.count('documentTokenCounts')
     ]);
 
     return {
@@ -251,7 +308,8 @@ export class AnkiCacheService {
       tokenCardIdsCount,
       tokenizeCount,
       lemmatizeCount,
-      termEntriesCount
+      termEntriesCount,
+      documentTokenCountsCount
     };
   }
 

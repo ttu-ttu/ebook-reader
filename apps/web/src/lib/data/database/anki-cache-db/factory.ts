@@ -72,6 +72,16 @@ export interface AnkiCacheDb extends DBSchema {
       timestamp: number;
     };
   };
+  /** Cache for document-level token frequencies used by the token panel */
+  documentTokenCounts: {
+    key: string;
+    value: {
+      key: string;
+      entries: { token: string; count: number }[];
+      totalTokens: number;
+      timestamp: number;
+    };
+  };
 }
 
 /**
@@ -80,7 +90,7 @@ export interface AnkiCacheDb extends DBSchema {
  * @returns Promise resolving to database instance
  */
 export function createAnkiCacheDb(name = 'anki-cache') {
-  return openDB<AnkiCacheDb>(name, 4, {
+  return openDB<AnkiCacheDb>(name, 5, {
     upgrade(db, oldVersion) {
       // Version 1: Initial stores
       if (oldVersion < 1) {
@@ -102,6 +112,11 @@ export function createAnkiCacheDb(name = 'anki-cache') {
       // Version 4: Add wordData store (combines status + cardIds)
       if (oldVersion < 4) {
         db.createObjectStore('wordData', { keyPath: 'word' });
+      }
+
+      // Version 5: Add documentTokenCounts store (token panel frequency snapshots)
+      if (oldVersion < 5) {
+        db.createObjectStore('documentTokenCounts', { keyPath: 'key' });
       }
     }
   });

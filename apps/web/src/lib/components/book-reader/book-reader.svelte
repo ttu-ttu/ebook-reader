@@ -49,6 +49,7 @@
     ColoringPriorityQueue,
     type DocumentTokenAnalysisProgress,
     type DocumentTokenAnalysisResult,
+    type DocumentTokenStatus,
     ProcessingPriority
   } from '$lib/functions/anki';
   import { createAnkiCacheDb, AnkiCacheService } from '$lib/data/database/anki-cache-db';
@@ -144,6 +145,13 @@
     tokenPanelClose: void;
   }>();
 
+  interface TokenPanelSentenceMatch {
+    sentence: string;
+    page: number | null;
+  }
+
+  type TokenPanelFilterId = 'all' | 'due' | DocumentTokenStatus;
+
   let showBlurMessage = false;
 
   let wakeLock: WakeLockSentinel | undefined;
@@ -170,6 +178,34 @@
   let tokenPanelAnalysisAbortController: AbortController | undefined;
   let tokenPanelAnalysisKey = '';
   let tokenPanelCacheVersion = 0;
+  let tokenPanelActiveFilter: TokenPanelFilterId = 'all';
+  let tokenPanelActiveToken: string | null = null;
+  let tokenPanelSentenceMatches: Record<string, TokenPanelSentenceMatch[]> = {};
+  let tokenPanelSentenceLoadingToken: string | null = null;
+  let tokenPanelSentenceSourceKey = '';
+  let tokenPanelDocumentSentences: string[] = [];
+  const tokenPanelHoverRefreshCooldownMs = 2500;
+  let tokenPanelLastHoverRefresh = new Map<string, number>();
+  const tokenPanelFilterStorageKey = 'book-reader-token-panel-filter-v1';
+
+  function isTokenPanelFilter(value: string): value is TokenPanelFilterId {
+    return (
+      value === 'all' ||
+      value === 'due' ||
+      value === 'uncollected' ||
+      value === 'new' ||
+      value === 'young' ||
+      value === 'mature' ||
+      value === 'unknown'
+    );
+  }
+
+  if (typeof window !== 'undefined') {
+    const savedFilter = window.localStorage.getItem(tokenPanelFilterStorageKey);
+    if (savedFilter && isTokenPanelFilter(savedFilter)) {
+      tokenPanelActiveFilter = savedFilter;
+    }
+  }
 
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
@@ -636,6 +672,296 @@
     return container.textContent?.replace(/\n{3,}/g, '\n\n').trim() || '';
   }
 
+  function getDocumentSentenceSourceKey(): string {
+    const prefix = htmlContent.slice(0, 256);
+    const suffix = htmlContent.slice(-256);
+    return [htmlContent.length, prefix, suffix].join('::');
+  }
+
+  function normalizeSentenceSearchText(value: string): string {
+    return value.replace(/\s+/g, ' ').trim();
+  }
+
+  function splitIntoSentences(text: string): string[] {
+    const sentencePattern = /[^。！？!?]+[。！？!?]+[」』）】〕］〉》〗〙〛"'”’]*|[^。！？!?]+$/g;
+    const normalizedLines = text
+      .replace(/\r/g, '\n')
+      .split(/\n+/g)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    const sentences: string[] = [];
+
+    for (const line of normalizedLines) {
+      const matches = line.match(sentencePattern);
+      if (!matches) {
+        sentences.push(line);
+        continue;
+      }
+
+      for (const match of matches) {
+        const sentence = match.trim();
+        if (sentence.length > 0) {
+          sentences.push(sentence);
+        }
+      }
+    }
+
+    return sentences;
+  }
+
+  function getDocumentSentences(): string[] {
+    const sourceKey = getDocumentSentenceSourceKey();
+    if (tokenPanelSentenceSourceKey !== sourceKey) {
+      tokenPanelSentenceSourceKey = sourceKey;
+      tokenPanelSentenceMatches = {};
+      tokenPanelDocumentSentences = splitIntoSentences(extractDocumentText(htmlContent));
+    }
+
+    return tokenPanelDocumentSentences;
+  }
+
+  function findSentencesForToken(token: string, limit = 5): string[] {
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      return [];
+    }
+
+    return getDocumentSentences()
+      .filter((sentence) => sentence.includes(normalizedToken))
+      .slice(0, limit);
+  }
+
+  function resolveSentencePageNumber(target: HTMLElement): number | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    if (viewMode === ViewMode.Continuous) {
+      const absoluteOffset = verticalMode
+        ? target.getBoundingClientRect().left + window.scrollX
+        : target.getBoundingClientRect().top + window.scrollY;
+      const viewportSize = verticalMode ? window.innerWidth : window.innerHeight;
+      const margin = Math.max(0, firstDimensionMargin || 0) * 2;
+      const pageSize = Math.max(1, viewportSize - margin);
+
+      return Math.max(1, Math.floor(absoluteOffset / pageSize) + 1);
+    }
+
+    const scrollContainer = target.closest('.book-content') as HTMLElement | null;
+    if (!scrollContainer) {
+      return null;
+    }
+
+    const targetRect = target.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const horizontalOverflow = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+    const verticalOverflow = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    const isHorizontalFlow = horizontalOverflow >= verticalOverflow;
+
+    if (isHorizontalFlow) {
+      const offset = targetRect.left - containerRect.left + scrollContainer.scrollLeft;
+      const pageSize = Math.max(1, scrollContainer.clientWidth);
+      return Math.max(1, Math.floor(offset / pageSize) + 1);
+    }
+
+    const offset = targetRect.top - containerRect.top + scrollContainer.scrollTop;
+    const pageSize = Math.max(1, scrollContainer.clientHeight);
+    return Math.max(1, Math.floor(offset / pageSize) + 1);
+  }
+
+  function findSentenceMatchesForToken(token: string, limit = 5): TokenPanelSentenceMatch[] {
+    return findSentencesForToken(token, limit).map((sentence) => {
+      const target = findReaderTargetForSentence(token, sentence);
+      const page = target ? resolveSentencePageNumber(target) : null;
+      return { sentence, page };
+    });
+  }
+
+  function flashReaderTarget(target: HTMLElement, durationMs = 1700): void {
+    const previousBackground = target.style.backgroundColor;
+    const previousOutline = target.style.outline;
+    const previousTransition = target.style.transition;
+
+    target.style.transition = 'background-color 180ms ease, outline-color 180ms ease';
+    target.style.backgroundColor = 'rgba(34, 211, 238, 0.20)';
+    target.style.outline = '2px solid rgba(34, 211, 238, 0.55)';
+
+    setTimeout(() => {
+      target.style.backgroundColor = previousBackground;
+      target.style.outline = previousOutline;
+      target.style.transition = previousTransition;
+    }, durationMs);
+  }
+
+  async function waitForScrollToSettle(target: HTMLElement, timeoutMs = 1600): Promise<void> {
+    const start = performance.now();
+    let stableFrames = 0;
+    let previousTop = target.getBoundingClientRect().top;
+
+    await new Promise<void>((resolve) => {
+      const tick = () => {
+        const now = performance.now();
+        const currentTop = target.getBoundingClientRect().top;
+        const delta = Math.abs(currentTop - previousTop);
+        previousTop = currentTop;
+
+        if (delta < 0.5) {
+          stableFrames += 1;
+        } else {
+          stableFrames = 0;
+        }
+
+        if (stableFrames >= 6 || now - start >= timeoutMs) {
+          resolve();
+          return;
+        }
+
+        requestAnimationFrame(tick);
+      };
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function findReaderTargetForSentence(token: string, sentence: string): HTMLElement | null {
+    const container = $containerEl$;
+    if (!container) {
+      return null;
+    }
+
+    const normalizedSentence = normalizeSentenceSearchText(sentence);
+    const sentenceSnippet = normalizedSentence.slice(0, Math.min(40, normalizedSentence.length));
+
+    const tokenSpans = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-anki-token]')
+    ).filter((span) => span.getAttribute('data-anki-token') === token);
+
+    for (const span of tokenSpans) {
+      const contextHost =
+        (span.closest('p,li,section,article,div,td') as HTMLElement | null) || span;
+      const contextText = normalizeSentenceSearchText(contextHost.textContent || '');
+
+      if (!sentenceSnippet || contextText.includes(sentenceSnippet)) {
+        return span;
+      }
+    }
+
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const nodeText = normalizeSentenceSearchText(node.textContent || '');
+      if (sentenceSnippet && nodeText.includes(sentenceSnippet)) {
+        return (node.parentElement as HTMLElement | null) || null;
+      }
+    }
+
+    return tokenSpans[0] || null;
+  }
+
+  async function scrollToSentence(token: string, sentence: string): Promise<void> {
+    const target = findReaderTargetForSentence(token, sentence);
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    await waitForScrollToSettle(target);
+    flashReaderTarget(target);
+  }
+
+  async function onTokenPanelTokenSelect(event: CustomEvent<{ token: string }>): Promise<void> {
+    const token = event.detail.token;
+
+    if (tokenPanelActiveToken === token) {
+      tokenPanelActiveToken = null;
+      tokenPanelSentenceLoadingToken = null;
+      return;
+    }
+
+    tokenPanelActiveToken = token;
+    getDocumentSentences();
+
+    if (tokenPanelSentenceMatches[token]) {
+      return;
+    }
+
+    tokenPanelSentenceLoadingToken = token;
+    await Promise.resolve();
+
+    try {
+      const matches = findSentenceMatchesForToken(token, 5);
+      tokenPanelSentenceMatches = { ...tokenPanelSentenceMatches, [token]: matches };
+    } finally {
+      if (tokenPanelSentenceLoadingToken === token) {
+        tokenPanelSentenceLoadingToken = null;
+      }
+    }
+  }
+
+  function onTokenPanelSentenceSelect(
+    event: CustomEvent<{ token: string; sentence: string }>
+  ): void {
+    const { token, sentence } = event.detail;
+    void scrollToSentence(token, sentence);
+  }
+
+  function onTokenPanelFilterChange(event: CustomEvent<{ filter: TokenPanelFilterId }>): void {
+    tokenPanelActiveFilter = event.detail.filter;
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(tokenPanelFilterStorageKey, tokenPanelActiveFilter);
+    }
+  }
+
+  async function onTokenPanelTokenHover(event: CustomEvent<{ token: string }>): Promise<void> {
+    const token = event.detail.token;
+    const service = coloringService;
+
+    if (!service || !tokenPanelResult || tokenPanelLoading) {
+      return;
+    }
+
+    const now = Date.now();
+    const lastRefreshAt = tokenPanelLastHoverRefresh.get(token) || 0;
+    if (now - lastRefreshAt < tokenPanelHoverRefreshCooldownMs) {
+      return;
+    }
+    tokenPanelLastHoverRefresh.set(token, now);
+
+    try {
+      const refreshed = await service.refreshTokenAnalysisFromAnki(token);
+
+      if (!tokenPanelResult) {
+        return;
+      }
+
+      let hasMatch = false;
+      const updatedEntries = tokenPanelResult.entries.map((entry) => {
+        if (entry.token !== token) {
+          return entry;
+        }
+
+        hasMatch = true;
+        return {
+          ...entry,
+          status: refreshed.status,
+          due: refreshed.due,
+          cardIds: refreshed.cardIds
+        };
+      });
+
+      if (!hasMatch) {
+        return;
+      }
+
+      tokenPanelResult = {
+        ...tokenPanelResult,
+        entries: updatedEntries
+      };
+    } catch (error) {
+      console.debug(`Token panel hover refresh failed for "${token}"`, error);
+    }
+  }
+
   function getTokenPanelAnalysisKey(): string {
     const prefix = htmlContent.slice(0, 256);
     const suffix = htmlContent.slice(-256);
@@ -650,6 +976,12 @@
       $ankiWordFields$.join('|'),
       tokenPanelCacheVersion
     ].join('::');
+  }
+
+  function getTokenPanelTokenCountCacheKey(fullText: string): string {
+    const prefix = fullText.slice(0, 256);
+    const suffix = fullText.slice(-256);
+    return ['token-count-v1', fullText.length, prefix, suffix].join('::');
   }
 
   async function analyzeForTokenPanel(): Promise<void> {
@@ -682,6 +1014,7 @@
 
       const analysisChunkSize = 1000;
       const fullText = extractDocumentText(htmlContent);
+      const tokenCountCacheKey = getTokenPanelTokenCountCacheKey(fullText);
       tokenPanelResult = await service.analyzeDocumentText(fullText, {
         signal: abortController.signal,
         onProgress: (progress) => {
@@ -689,7 +1022,8 @@
         },
         chunkSize: analysisChunkSize,
         batchSize: 250,
-        scanLength: analysisChunkSize
+        scanLength: analysisChunkSize,
+        tokenCountCacheKey
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -710,6 +1044,9 @@
     tokenPanelAnalysisAbortController?.abort();
     tokenPanelLoading = false;
     tokenPanelProgress = undefined;
+    tokenPanelActiveToken = null;
+    tokenPanelSentenceLoadingToken = null;
+    tokenPanelLastHoverRefresh.clear();
   }
 
   $: if (showTokenPanel && coloringService && $ankiIntegrationEnabled$) {
@@ -728,7 +1065,11 @@
     The reader is currently blurred due to an external application (e. g. exstatic)
   </div>
 {/if}
-<div bind:this={$containerEl$} class="{pxReader} py-8">
+<div
+  bind:this={$containerEl$}
+  class="{pxReader} reader-shell py-8"
+  class:token-panel-open={showTokenPanel}
+>
   {#if viewMode === ViewMode.Continuous}
     <BookReaderContinuous
       {htmlContent}
@@ -822,9 +1163,29 @@
     totalTokens={tokenPanelResult?.totalTokens || 0}
     uniqueTokens={tokenPanelResult?.uniqueTokens || 0}
     error={tokenPanelError}
+    activeFilter={tokenPanelActiveFilter}
+    activeToken={tokenPanelActiveToken}
+    tokenSentences={tokenPanelSentenceMatches}
+    sentenceLoadingToken={tokenPanelSentenceLoadingToken}
     on:close={() => dispatch('tokenPanelClose')}
+    on:filterChange={onTokenPanelFilterChange}
+    on:tokenSelect={onTokenPanelTokenSelect}
+    on:tokenHover={onTokenPanelTokenHover}
+    on:sentenceSelect={onTokenPanelSentenceSelect}
   />
 {/if}
 {$blurListener$ ?? ''}
 {$reactiveElements$ ?? ''}
 <svelte:document bind:visibilityState />
+
+<style>
+  .reader-shell {
+    transition: padding-right 180ms ease;
+  }
+
+  @media (min-width: 1024px) {
+    .reader-shell.token-panel-open {
+      padding-right: calc(min(24rem, 100vw - 2rem) + 1.5rem);
+    }
+  }
+</style>

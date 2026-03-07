@@ -399,6 +399,7 @@ export class BookContentColoring {
       chunkSize?: number;
       batchSize?: number;
       scanLength?: number;
+      tokenCountCacheKey?: string;
     }
   ): Promise<DocumentTokenAnalysisResult> {
     const normalizedText = text.trim();
@@ -410,6 +411,7 @@ export class BookContentColoring {
     const batchSize = options?.batchSize ?? 250;
     const scanLength = options?.scanLength ?? 4096;
     const textChunks = this._chunkDocumentText(normalizedText, chunkSize);
+    const tokenCountCacheKey = options?.tokenCountCacheKey?.trim();
     const uniqueCounts = new Map<string, number>();
     let completedSteps = 0;
     let totalTokens = 0;
@@ -424,23 +426,57 @@ export class BookContentColoring {
     };
 
     let totalSteps = textChunks.length;
+    let loadedTokenCountsFromCache = false;
 
-    for (const chunk of textChunks) {
-      this._throwIfAborted(options?.signal);
-      const tokens = await this.yomitan.tokenize(chunk, undefined, scanLength);
+    if (tokenCountCacheKey && this.cacheService) {
+      const cachedTokenCounts = await this.cacheService.getDocumentTokenCounts(tokenCountCacheKey);
+      if (cachedTokenCounts && cachedTokenCounts.entries.length > 0) {
+        for (const entry of cachedTokenCounts.entries) {
+          const token = entry.token?.trim();
+          const count = Number.isFinite(entry.count) ? Math.trunc(entry.count) : 0;
 
-      for (const token of tokens) {
-        const trimmedToken = token.trim();
-        if (!HAS_LETTER_REGEX.test(trimmedToken)) {
-          continue;
+          if (!token || !HAS_LETTER_REGEX.test(token) || count <= 0) {
+            continue;
+          }
+
+          uniqueCounts.set(token, count);
+          totalTokens += count;
         }
 
-        uniqueCounts.set(trimmedToken, (uniqueCounts.get(trimmedToken) || 0) + 1);
-        totalTokens++;
+        if (uniqueCounts.size > 0) {
+          loadedTokenCountsFromCache = true;
+          completedSteps = textChunks.length;
+          reportProgress('tokenize', completedSteps, totalSteps);
+        }
+      }
+    }
+
+    if (!loadedTokenCountsFromCache) {
+      for (const chunk of textChunks) {
+        this._throwIfAborted(options?.signal);
+        const tokens = await this.yomitan.tokenize(chunk, undefined, scanLength);
+
+        for (const token of tokens) {
+          const trimmedToken = token.trim();
+          if (!HAS_LETTER_REGEX.test(trimmedToken)) {
+            continue;
+          }
+
+          uniqueCounts.set(trimmedToken, (uniqueCounts.get(trimmedToken) || 0) + 1);
+          totalTokens++;
+        }
+
+        completedSteps++;
+        reportProgress('tokenize', completedSteps, totalSteps);
       }
 
-      completedSteps++;
-      reportProgress('tokenize', completedSteps, totalSteps);
+      if (tokenCountCacheKey && this.cacheService && uniqueCounts.size > 0) {
+        const entries = Array.from(uniqueCounts.entries()).map(([token, count]) => ({
+          token,
+          count
+        }));
+        await this.cacheService.setDocumentTokenCounts(tokenCountCacheKey, entries, totalTokens);
+      }
     }
 
     const uniqueTokens = Array.from(uniqueCounts.keys());
@@ -481,6 +517,82 @@ export class BookContentColoring {
       entries: analysisEntries,
       totalTokens,
       uniqueTokens: analysisEntries.length
+    };
+  }
+
+  async refreshTokenAnalysisFromAnki(token: string): Promise<{
+    status: DocumentTokenStatus;
+    due: boolean;
+    cardIds: number[];
+  }> {
+    const trimmedToken = token.trim();
+    if (!HAS_LETTER_REGEX.test(trimmedToken)) {
+      return { status: 'uncollected', due: false, cardIds: [] };
+    }
+
+    const fetched = await this._fetchWordDataFromAnki(trimmedToken);
+    if (!fetched) {
+      const unknownWordData: CachedWordData = {
+        status: 'unknown',
+        analysisStatus: 'uncollected',
+        due: false,
+        cardIds: []
+      };
+
+      if (this.cacheService) {
+        await this.cacheService.setWordData(trimmedToken, unknownWordData);
+      }
+
+      return { status: 'uncollected', due: false, cardIds: [] };
+    }
+
+    const dedupedCardIds = Array.from(new Set((fetched.cardIds || []).filter(Number.isFinite)));
+    let analysisStatus = fetched.analysisStatus;
+    let due = fetched.due;
+
+    if (analysisStatus === undefined || due === undefined) {
+      const metricsMap = await this.anki.cardMetricsMap(dedupedCardIds, ['prop:r', 'prop:s']);
+      const newCardIds = await this._findNewCardIds(dedupedCardIds);
+
+      let bestStatus: DocumentTokenStatus = 'unknown';
+      let bestPriority = -1;
+      let computedDue = false;
+
+      for (const cardId of dedupedCardIds) {
+        const isNewCard = newCardIds.has(cardId);
+        const status = this._classifyLearningStatus(metricsMap.get(cardId), isNewCard);
+        const isDue = this._isCardDue(metricsMap.get(cardId), isNewCard);
+
+        if (isDue) {
+          computedDue = true;
+        }
+
+        const priority = this._documentStatusPriority(status);
+        if (priority > bestPriority) {
+          bestStatus = status;
+          bestPriority = priority;
+        }
+      }
+
+      analysisStatus = dedupedCardIds.length > 0 ? bestStatus : 'uncollected';
+      due = computedDue;
+    }
+
+    const enrichedWordData: CachedWordData = {
+      ...fetched,
+      analysisStatus: analysisStatus ?? 'unknown',
+      due: due ?? false,
+      cardIds: dedupedCardIds
+    };
+
+    if (this.cacheService) {
+      await this.cacheService.setWordData(trimmedToken, enrichedWordData);
+    }
+
+    return {
+      status: enrichedWordData.analysisStatus || 'unknown',
+      due: enrichedWordData.due || false,
+      cardIds: enrichedWordData.cardIds
     };
   }
 
