@@ -34,6 +34,14 @@ import { replicationProgress$ } from '$lib/functions/replication/replication-pro
 import { throwIfAborted } from '$lib/functions/replication/replication-error';
 
 export class FilesystemStorageHandler extends BaseStorageHandler {
+  private static readonly duplicateCleanupPrefixes = [
+    'bookdata_',
+    'progress_',
+    'statistics_',
+    FilePrefix.AUDIO_BOOK,
+    FilePrefix.SUBTITLE
+  ] as const;
+
   private rootDirectory: FileSystemDirectoryHandle | undefined;
 
   private titleToDirectory = new Map<string, FileSystemDirectoryHandle>();
@@ -844,7 +852,14 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
       }
     }
 
-    return this.titleToFiles.get(this.currentContext.title) || [];
+    const files = this.titleToFiles.get(this.currentContext.title) || [];
+    const directory = this.titleToDirectory.get(this.currentContext.title);
+
+    if (!directory || files.length < 2) {
+      return files;
+    }
+
+    return this.cleanupDuplicateFiles(directory, files);
   }
 
   private async setRootFiles(rootHandle: FileSystemDirectoryHandle) {
@@ -914,9 +929,84 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
       this.rootFileHandles.set(rootFilePrefix, savedFile);
     } else {
       this.titleToDirectory.set(this.currentContext.title, directory);
+      const titleFiles = this.titleToFiles.get(this.currentContext.title) || files;
+      await this.cleanupDuplicateFiles(directory, titleFiles);
     }
 
     BaseStorageHandler.reportProgress(progressPerStep);
+  }
+
+  private async cleanupDuplicateFiles(
+    directory: FileSystemDirectoryHandle,
+    files: FileSystemFileHandle[]
+  ): Promise<FileSystemFileHandle[]> {
+    let currentFiles = [...files];
+
+    for (const prefix of FilesystemStorageHandler.duplicateCleanupPrefixes) {
+      const candidates = currentFiles.filter(
+        (entry) =>
+          entry.name.startsWith(prefix) && this.isDuplicateCleanupCandidate(entry.name, prefix)
+      );
+
+      if (candidates.length <= 1) {
+        continue;
+      }
+
+      const preferred = BaseStorageHandler.getPreferredMatchingFile(candidates, prefix);
+
+      if (!preferred) {
+        continue;
+      }
+
+      const duplicateNames = new Set(
+        candidates.filter((entry) => entry.name !== preferred.name).map((entry) => entry.name)
+      );
+
+      if (!duplicateNames.size) {
+        continue;
+      }
+
+      for (const duplicateName of duplicateNames) {
+        await directory.removeEntry(duplicateName).catch(() => {
+          // Best-effort cleanup only. Keep the remaining files if deletion fails.
+        });
+      }
+
+      currentFiles = currentFiles.filter((entry) => !duplicateNames.has(entry.name));
+    }
+
+    this.titleToFiles.set(this.currentContext.title, currentFiles);
+
+    return currentFiles;
+  }
+
+  private isDuplicateCleanupCandidate(
+    filename: string,
+    prefix: (typeof FilesystemStorageHandler.duplicateCleanupPrefixes)[number]
+  ): boolean {
+    try {
+      switch (prefix) {
+        case 'bookdata_':
+          BaseStorageHandler.getBookMetadata(filename);
+          return true;
+        case 'progress_':
+          BaseStorageHandler.getProgressMetadata(filename);
+          return true;
+        case 'statistics_':
+          BaseStorageHandler.getStatisticsMetadata(filename);
+          return true;
+        case FilePrefix.AUDIO_BOOK:
+          BaseStorageHandler.getAudioBookMetadata(filename);
+          return true;
+        case FilePrefix.SUBTITLE:
+          BaseStorageHandler.getSubtitleDataMetadata(filename);
+          return true;
+        default:
+          return false;
+      }
+    } catch {
+      return false;
+    }
   }
 
   static readFileObject(file: File): Promise<string> {

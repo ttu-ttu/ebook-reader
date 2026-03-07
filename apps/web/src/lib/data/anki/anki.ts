@@ -493,6 +493,13 @@ export class Anki {
             noteFields: this.wordFields,
             retrievedInfoMode: 'FIELDS_ONLY'
           });
+
+          if (!this._hasUsableWarmCacheCards(cardInfos)) {
+            useRetrievedInfoMode = false;
+            console.warn(
+              'cardsInfo FIELDS_ONLY returned unusable warm-cache payload; trying legacy compact mode.'
+            );
+          }
         } catch (error) {
           if (!this._isUnsupportedRetrievedInfoModeError(error)) {
             throw error;
@@ -514,6 +521,13 @@ export class Anki {
               noteFields: this.wordFields,
               compact: true
             });
+
+            if (!this._hasUsableWarmCacheCards(cardInfos)) {
+              useLegacyCompactCardsInfo = false;
+              console.warn(
+                'cardsInfo compact payload unusable for warm cache; falling back to full cardsInfo payload.'
+              );
+            }
           } catch (error) {
             if (!this._isUnsupportedCardsInfoOptionsError(error)) {
               throw error;
@@ -548,6 +562,27 @@ export class Anki {
   private _isUnsupportedRetrievedInfoModeError(error: unknown): boolean {
     const message = error instanceof Error ? error.message : `${error}`;
     return /retrieved_info_mode|unexpected keyword|unknown parameter|unsupported/i.test(message);
+  }
+
+  private _hasUsableWarmCacheCards(cardInfos: CardInfo[]): boolean {
+    if (!Array.isArray(cardInfos) || cardInfos.length === 0) {
+      return false;
+    }
+
+    return cardInfos.some((cardInfo) => {
+      if (!Number.isFinite(cardInfo?.cardId)) {
+        return false;
+      }
+
+      if (!cardInfo.fields || typeof cardInfo.fields !== 'object') {
+        return false;
+      }
+
+      return this.wordFields.some((field) => {
+        const value = cardInfo.fields[field]?.value;
+        return typeof value === 'string' && value.trim().length > 0;
+      });
+    });
   }
 
   /**

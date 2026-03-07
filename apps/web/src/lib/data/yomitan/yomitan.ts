@@ -13,7 +13,6 @@ import type { AnkiCacheService } from '$lib/data/database/anki-cache-db';
 export class Yomitan {
   private readonly yomitanUrl: string;
   private readonly scanLength: number;
-  private termEntriesCache = new Map<string, any>();
   private cacheService?: AnkiCacheService;
 
   constructor(
@@ -89,25 +88,19 @@ export class Yomitan {
    * @returns Full dictionaryEntries array from Yomitan
    */
   async getTermEntries(token: string, yomitanUrl?: string): Promise<any[]> {
-    // Check in-memory cache
-    let dictionaryEntries = this.termEntriesCache.get(token);
-    if (dictionaryEntries) return dictionaryEntries;
-
     // Check IndexedDB cache
     if (this.cacheService) {
-      dictionaryEntries = await this.cacheService.getTermEntries(token);
+      const dictionaryEntries = await this.cacheService.getTermEntries(token);
       if (dictionaryEntries) {
-        this.termEntriesCache.set(token, dictionaryEntries);
         return dictionaryEntries;
       }
     }
 
     // Fetch from Yomitan API
     const response = await this._executeAction('termEntries', { term: token }, yomitanUrl);
-    dictionaryEntries = response['dictionaryEntries'] || [];
+    const dictionaryEntries = response['dictionaryEntries'] || [];
 
-    // Cache the full response
-    this.termEntriesCache.set(token, dictionaryEntries);
+    // Persist the full response
     if (this.cacheService) {
       await this.cacheService.setTermEntries(token, dictionaryEntries);
     }

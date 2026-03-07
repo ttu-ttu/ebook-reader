@@ -169,6 +169,7 @@
   let tokenPanelLoading = false;
   let tokenPanelAnalysisAbortController: AbortController | undefined;
   let tokenPanelAnalysisKey = '';
+  let tokenPanelCacheVersion = 0;
 
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
@@ -185,6 +186,7 @@
 
   // Anki word coloring - incremental viewport-based approach with priority queue
   let cacheLoadingPromise: Promise<void> | null = null;
+  let cacheRefreshPromise: Promise<void> | null = null;
 
   $: if ($ankiIntegrationEnabled$) {
     // Initialize coloring service with persistent cache
@@ -241,20 +243,33 @@
         // Step 3: Refresh cache in background (don't block colorization)
         if (cacheInfo.needsRefresh) {
           console.log('🔄 Refreshing cache from Anki in background...');
-          service
+          cacheRefreshPromise = service
             .warmCache()
             .then(async (stats) => {
               console.log(
                 `✅ Cache refreshed: ${stats.cachedWords} words from ${stats.totalCards} cards in ${stats.duration}ms`
               );
+              tokenPanelCacheVersion++;
+              tokenPanelResult = undefined;
+              tokenPanelError = '';
 
               // Re-colorize all elements to pick up updated cards
               console.log('🔄 Re-colorizing with updated cache...');
               await service.recolorizeProcessedElements();
               console.log('✅ Re-colorization complete');
+
+              if (showTokenPanel) {
+                console.log('🔄 Re-running token panel analysis with refreshed cache...');
+                tokenPanelResult = undefined;
+                tokenPanelError = '';
+                void analyzeForTokenPanel();
+              }
             })
             .catch((err) => {
               console.error('❌ Failed to refresh cache:', err);
+            })
+            .finally(() => {
+              cacheRefreshPromise = null;
             });
         }
 
@@ -303,6 +318,12 @@
         await service.setColorMode(currentMode);
         await service.warmCache();
         await service.recolorizeProcessedElements();
+        tokenPanelCacheVersion++;
+        tokenPanelResult = undefined;
+        tokenPanelError = '';
+        if (showTokenPanel) {
+          void analyzeForTokenPanel();
+        }
       })();
     }
     previousAnkiColorMode = currentMode;
@@ -330,6 +351,12 @@
         await service.setDesiredRetention(currentDesiredRetention);
         await service.warmCache();
         await service.recolorizeProcessedElements();
+        tokenPanelCacheVersion++;
+        tokenPanelResult = undefined;
+        tokenPanelError = '';
+        if (showTokenPanel) {
+          void analyzeForTokenPanel();
+        }
       })();
     }
 
@@ -349,6 +376,12 @@
         await service.setMatureThreshold(currentMatureThreshold);
         await service.warmCache();
         await service.recolorizeProcessedElements();
+        tokenPanelCacheVersion++;
+        tokenPanelResult = undefined;
+        tokenPanelError = '';
+        if (showTokenPanel) {
+          void analyzeForTokenPanel();
+        }
       })();
     }
     previousAnkiMatureThreshold = currentMatureThreshold;
@@ -614,7 +647,8 @@
       $ankiDesiredRetention$,
       $ankiMatureThreshold$,
       $ankiWordDeckNames$.join('|'),
-      $ankiWordFields$.join('|')
+      $ankiWordFields$.join('|'),
+      tokenPanelCacheVersion
     ].join('::');
   }
 
@@ -640,6 +674,10 @@
     try {
       if (cacheLoadingPromise) {
         await cacheLoadingPromise;
+      }
+
+      if (cacheRefreshPromise) {
+        await cacheRefreshPromise;
       }
 
       const analysisChunkSize = 1000;

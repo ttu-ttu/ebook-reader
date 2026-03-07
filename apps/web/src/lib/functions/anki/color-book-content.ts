@@ -78,11 +78,6 @@ type GradeDialogAction =
 export class BookContentColoring {
   private yomitan: Yomitan;
   private anki: Anki;
-  private tokenizeCache = new Map<string, string[]>();
-  private lemmatizeCache = new Map<string, string[]>();
-  private tokenColorCache = new Map<string, TokenColor>();
-  // Single cache: word -> {status, cardIds}
-  private wordDataCache = new Map<string, CachedWordData>();
   private cacheService?: AnkiCacheService;
   private options: ColoringOptions;
   // Rate limiting: track last refresh timestamp for each token
@@ -112,7 +107,6 @@ export class BookContentColoring {
     }
 
     this.options.colorPalette = colorPalette;
-    this.tokenColorCache.clear();
   }
 
   async setColorMode(colorMode: TokenColorMode): Promise<void> {
@@ -236,7 +230,7 @@ export class BookContentColoring {
     if (elements.length === 0) return;
 
     console.log(
-      `🎨 colorizeElementsBatch called with ${elements.length} elements, cache has ${this.wordDataCache.size} words`
+      `🎨 colorizeElementsBatch called with ${elements.length} elements (IndexedDB mode)`
     );
 
     try {
@@ -285,18 +279,7 @@ export class BookContentColoring {
 
       // Step 3: Batch fetch colors for ALL tokens from ALL elements at once
       const globalColorMap = new Map<string, TokenColor>();
-      const uncachedTokens: string[] = [];
-
-      for (const token of allTokens) {
-        // Check memory cache only (no persistent cache lookup)
-        const cached = this.tokenColorCache.get(token);
-
-        if (cached !== undefined) {
-          globalColorMap.set(token, cached);
-        } else {
-          uncachedTokens.push(token);
-        }
-      }
+      const uncachedTokens = Array.from(allTokens);
 
       // Batch fetch all uncached tokens in one go
       if (uncachedTokens.length > 0) {
@@ -464,6 +447,10 @@ export class BookContentColoring {
     const resolveBatches = this._chunkArray(uniqueTokens, batchSize);
     totalSteps = textChunks.length + Math.max(1, resolveBatches.length);
     const analysisEntries: DocumentTokenAnalysisEntry[] = [];
+
+    if (resolveBatches.length > 0) {
+      reportProgress('resolve', completedSteps, totalSteps);
+    }
 
     for (const batch of resolveBatches) {
       this._throwIfAborted(options?.signal);
@@ -1244,7 +1231,7 @@ export class BookContentColoring {
 
     // If not found directly, try lemmatizing to find the base form
     if (!existingData || existingData.cardIds.length === 0) {
-      const lemmas = await this.yomitan.lemmatize(token);
+      const lemmas = await this._getOrFetchLemmas(token);
 
       for (const lemma of lemmas) {
         const lemmaData = await this._getWordData(lemma);
@@ -1280,24 +1267,19 @@ export class BookContentColoring {
       // Update last refresh timestamp
       this.lastRefreshTime.set(token, now);
 
-      // Get existing card IDs from cache (memory + IndexedDB)
-      // Try direct lookup first, then lemmatization
+      // Get existing card IDs from IndexedDB cache.
+      // Try direct lookup first, then lemmatization.
       const existingData = await this._resolveWordDataForToken(token);
 
       if (!existingData || existingData.cardIds.length === 0) {
         console.log(`🔄 Token "${token}" has no cached card IDs, performing full refresh`);
-        // Clear caches and do full fetch
-        this.wordDataCache.delete(token);
-        this.tokenColorCache.delete(token);
+        // No in-memory cache path: fetch directly from Anki and persist to IndexedDB.
         const wordData = await this._fetchWordDataFromAnki(token);
 
         if (!wordData) {
           console.log(`🔄 Token "${token}" not found in Anki (unknown/uncollected)`);
           return;
         }
-
-        // Update caches
-        this.wordDataCache.set(token, wordData);
 
         // Update IndexedDB cache with fresh data
         if (this.cacheService) {
@@ -1307,8 +1289,6 @@ export class BookContentColoring {
 
         // Map status to color
         const color = this._statusToColor(wordData.status);
-
-        this.tokenColorCache.set(token, color);
 
         // Update span styling
         const style = this.options.tokenStyle;
@@ -1371,14 +1351,8 @@ export class BookContentColoring {
         console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
       }
 
-      // Update in-memory cache
-      this.wordDataCache.set(token, wordData);
-
       // Map status to color (same logic as in _checkTokenColors)
       const color = this._statusToColor(wordData.status);
-
-      // Update token color cache
-      this.tokenColorCache.set(token, color);
 
       // Update the span styling with new color
       const style = this.options.tokenStyle;
@@ -1462,7 +1436,7 @@ export class BookContentColoring {
    */
   private async _checkCardRetrievability(cardId: number): Promise<WordStatus> {
     try {
-      const isNewCard = await this.anki.isCardNew(cardId);
+      const isNewCard = (await this._findNewCardIds([cardId])).has(cardId);
       const metrics = await this.anki.cardMetricsMap([cardId], ['prop:r', 'prop:s']);
       return this._classifyCardMetrics(metrics.get(cardId), isNewCard);
     } catch (error) {
@@ -1484,17 +1458,7 @@ export class BookContentColoring {
     try {
       const metricsMap = await this.anki.cardMetricsMap(uniqueCardIds, ['prop:r', 'prop:s']);
       if (metricsMap.size > 0) {
-        const newCardIds = new Set<number>();
-        try {
-          const newCardsResponse = await this.anki['_executeAction']('findCards', {
-            query: `(${uniqueCardIds.map((id) => `cid:${id}`).join(' OR ')}) is:new`
-          });
-          for (const cardId of newCardsResponse.result || []) {
-            newCardIds.add(cardId);
-          }
-        } catch (error) {
-          console.debug('Failed to check new cards during batch status classification:', error);
-        }
+        const newCardIds = await this._findNewCardIds(uniqueCardIds);
 
         for (const cardId of uniqueCardIds) {
           result.set(
@@ -1548,14 +1512,6 @@ export class BookContentColoring {
         // Skip if already processed
         if (tokenColorMap.has(trimmedToken)) continue;
 
-        // Check memory cache only (no persistent cache lookup)
-        const cached = this.tokenColorCache.get(trimmedToken);
-        if (cached !== undefined) {
-          tokenColorMap.set(trimmedToken, cached);
-          continue;
-        }
-
-        // Mark as uncached
         uncachedTokens.push(trimmedToken);
       }
 
@@ -1585,22 +1541,14 @@ export class BookContentColoring {
    * @returns Array of tokens
    */
   private async _getOrFetchTokens(text: string): Promise<string[]> {
-    // Check memory cache
-    let tokens = this.tokenizeCache.get(text);
-    if (tokens) return tokens;
-
-    // Check persistent cache
+    // IndexedDB is the source of truth.
     if (this.cacheService) {
-      tokens = await this.cacheService.getTokens(text);
-      if (tokens) {
-        this.tokenizeCache.set(text, tokens);
-        return tokens;
-      }
+      const tokens = await this.cacheService.getTokens(text);
+      if (tokens) return tokens;
     }
 
     // Fetch from Yomitan API
-    tokens = await this.yomitan.tokenize(text);
-    this.tokenizeCache.set(text, tokens);
+    const tokens = await this.yomitan.tokenize(text);
 
     // Persist to cache
     if (this.cacheService) {
@@ -1610,34 +1558,42 @@ export class BookContentColoring {
     return tokens;
   }
 
+  private async _getOrFetchLemmas(token: string): Promise<string[]> {
+    // IndexedDB is the source of truth.
+    if (this.cacheService) {
+      const lemmas = await this.cacheService.getLemmas(token);
+      if (lemmas) return lemmas;
+    }
+
+    // Fetch from Yomitan API
+    const lemmas = await this.yomitan.lemmatize(token);
+    if (this.cacheService) {
+      await this.cacheService.setLemmas(token, lemmas);
+    }
+
+    return lemmas;
+  }
+
   /**
-   * Get word data for a token, checking memory cache first, then IndexedDB
-   * This makes IndexedDB the primary cache, with wordDataCache as a read-through cache
+   * Get word data for a token, using IndexedDB as the source of truth.
    * @param word - Word to lookup
    * @returns Word data if found, undefined otherwise
    */
   private async _getWordData(word: string): Promise<CachedWordData | undefined> {
-    // Check memory cache first (fast path)
-    let wordData = this.wordDataCache.get(word);
-    if (wordData) {
-      if (!Array.isArray(wordData.cardIds)) {
-        wordData = { ...wordData, cardIds: [] };
-        this.wordDataCache.set(word, wordData);
-      }
+    const candidates = this._buildWordLookupCandidates(word);
 
-      return wordData;
-    }
-
-    // Fall back to IndexedDB (primary cache)
+    // IndexedDB is the source of truth.
     if (this.cacheService) {
-      wordData = await this.cacheService.getWordData(word);
-      if (wordData) {
+      for (const candidate of candidates) {
+        let wordData = await this.cacheService.getWordData(candidate);
+        if (!wordData) {
+          continue;
+        }
+
         if (!Array.isArray(wordData.cardIds)) {
           wordData = { ...wordData, cardIds: [] };
         }
 
-        // Populate memory cache for future lookups
-        this.wordDataCache.set(word, wordData);
         return wordData;
       }
     }
@@ -1645,9 +1601,35 @@ export class BookContentColoring {
     return undefined;
   }
 
+  private _buildWordLookupCandidates(word: string): string[] {
+    const trimmed = word.trim();
+    if (!trimmed) {
+      return [];
+    }
+
+    const candidates = new Set<string>();
+    const addCandidate = (value: string) => {
+      const canonical = this._canonicalizeLookupValue(value);
+      if (canonical) {
+        candidates.add(canonical);
+      }
+    };
+
+    addCandidate(trimmed);
+    addCandidate(this._normalizeFieldValue(trimmed));
+
+    const edgeStripped = trimmed.replace(/^[^\p{L}\p{N}\p{M}]+|[^\p{L}\p{N}\p{M}]+$/gu, '');
+    if (edgeStripped && edgeStripped !== trimmed) {
+      addCandidate(edgeStripped);
+      addCandidate(this._normalizeFieldValue(edgeStripped));
+    }
+
+    return Array.from(candidates);
+  }
+
   /**
-   * Batch fetch token colors from Anki for multiple uncached tokens
-   * Uses pre-built wordDataCache for instant lookups (no API calls!)
+   * Batch fetch token colors for multiple uncached tokens
+   * Reads word data from IndexedDB and only falls back to live queries when needed.
    * @param tokens - Array of uncached tokens
    * @param colorMap - Map to populate with token -> color mappings
    */
@@ -1657,7 +1639,7 @@ export class BookContentColoring {
   ): Promise<void> {
     const uncollectedTokens: string[] = [];
 
-    // Look up tokens in pre-built wordDataCache (instant, no API calls!)
+    // Look up tokens in IndexedDB cache
     for (const token of tokens) {
       // Look up word data from cache
       let wordData = await this._getWordData(token);
@@ -1665,24 +1647,11 @@ export class BookContentColoring {
       // If no direct entry, try lemmas as a fallback (local cache -> persistent cache -> yomitan)
       if (!wordData || wordData.cardIds.length === 0) {
         try {
-          let lemmas = this.lemmatizeCache.get(token);
-
-          if (!lemmas && this.cacheService) {
-            lemmas = await this.cacheService.getLemmas(token);
-            if (lemmas) this.lemmatizeCache.set(token, lemmas);
-          }
-
-          if (!lemmas) {
-            lemmas = await this.yomitan.lemmatize(token);
-            this.lemmatizeCache.set(token, lemmas);
-            if (this.cacheService) {
-              await this.cacheService.setLemmas(token, lemmas);
-            }
-          }
+          const lemmas = await this._getOrFetchLemmas(token);
 
           if (lemmas && lemmas.length > 0) {
             console.debug(`🔍 Token "${token}" lemmatized to:`, lemmas);
-            // Try to find a lemma that exists in wordDataCache with cardIds
+            // Try to find a lemma that exists in IndexedDB wordData with cardIds
             for (const lemma of lemmas) {
               const lemmaData = await this._getWordData(lemma);
               console.debug(`🔍 Checking lemma "${lemma}":`, lemmaData);
@@ -1718,8 +1687,6 @@ export class BookContentColoring {
         continue;
       }
 
-      // Cache and store (cache mapping is for the original token)
-      this.tokenColorCache.set(token, color);
       colorMap.set(token, color);
     }
 
@@ -1741,36 +1708,16 @@ export class BookContentColoring {
   ): Promise<void> {
     // Parallelize lemmatization
     const lemmaPromises = tokens.map(async (token) => {
-      let lemmas = this.lemmatizeCache.get(token);
-
-      if (!lemmas && this.cacheService) {
-        lemmas = await this.cacheService.getLemmas(token);
-        if (lemmas) {
-          this.lemmatizeCache.set(token, lemmas);
-        }
-      }
-
-      if (!lemmas) {
-        lemmas = await this.yomitan.lemmatize(token);
-        this.lemmatizeCache.set(token, lemmas);
-
-        if (this.cacheService) {
-          await this.cacheService.setLemmas(token, lemmas);
-        }
-      }
-
+      const lemmas = await this._getOrFetchLemmas(token);
       return { token, lemmas };
     });
 
     const lemmaResults = await Promise.all(lemmaPromises);
 
-    // Collect all unique lemmas for batch query
-    const allLemmas = new Set<string>();
     const tokenToLemmas = new Map<string, string[]>();
 
     for (const { token, lemmas } of lemmaResults) {
       tokenToLemmas.set(token, lemmas);
-      lemmas.forEach((lemma) => allLemmas.add(lemma));
     }
 
     // Look up lemmas using IndexedDB as primary cache
@@ -1797,8 +1744,6 @@ export class BookContentColoring {
 
       const finalColor = finalStatus ? this._statusToColor(finalStatus) : TokenColor.UNCOLLECTED;
 
-      // Cache and store
-      this.tokenColorCache.set(token, finalColor);
       colorMap.set(token, finalColor);
     }
   }
@@ -1966,7 +1911,7 @@ export class BookContentColoring {
           query: `(${chunk.map((cardId) => `cid:${cardId}`).join(' OR ')}) is:new`
         });
 
-        for (const cardId of response.result || []) {
+        for (const cardId of (response.result || []).filter((id: number) => Number.isFinite(id))) {
           result.add(cardId);
         }
       } catch (error) {
@@ -2085,15 +2030,24 @@ export class BookContentColoring {
     return textNodes;
   }
 
+  private _unwrapTokenSpans(element: Element): void {
+    const tokenSpans = Array.from(element.querySelectorAll('[data-anki-token]')).reverse();
+
+    for (const tokenSpan of tokenSpans) {
+      const parent = tokenSpan.parentNode;
+
+      if (!parent) {
+        continue;
+      }
+
+      parent.replaceChild(document.createTextNode(tokenSpan.textContent || ''), tokenSpan);
+    }
+  }
+
   /**
-   * Clear all caches (both in-memory and persistent)
+   * Clear all persistent caches.
    */
   async clearCache(): Promise<void> {
-    this.tokenizeCache.clear();
-    this.lemmatizeCache.clear();
-    this.tokenColorCache.clear();
-    this.wordDataCache.clear();
-
     // Also clear persistent cache
     if (this.cacheService) {
       await this.cacheService.clearAllCaches();
@@ -2158,15 +2112,8 @@ export class BookContentColoring {
     // Small delay to ensure DOM is settled
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Clear token color cache to force fresh lookups from IndexedDB
-    // This ensures all tokens are recomputed with the latest data
-    this.tokenColorCache.clear();
-    console.log('🔄 Cleared token color cache to force fresh lookups from IndexedDB');
-
     console.log('🔄 Re-colorizing already processed elements with updated cache...');
-    console.log(
-      `📊 Cache stats: ${this.wordDataCache.size} words in memory, querying IndexedDB on miss`
-    );
+    console.log('📊 Cache stats: querying IndexedDB for all token status lookups');
 
     // Find all elements that were already colored
     const coloredElements = Array.from(document.querySelectorAll('[data-anki-colored="true"]'));
@@ -2179,6 +2126,7 @@ export class BookContentColoring {
     // Remove the marker and actually re-colorize them
     coloredElements.forEach((element) => {
       element.removeAttribute('data-anki-colored');
+      this._unwrapTokenSpans(element);
     });
 
     console.log(`🔄 Re-colorizing ${coloredElements.length} elements with cached data...`);
@@ -2343,9 +2291,6 @@ export class BookContentColoring {
           cardIds
         };
 
-        // Store in single combined cache
-        this.wordDataCache.set(word, wordData);
-
         // Store in persistent cache
         if (this.cacheService) {
           await this.cacheService.setWordData(word, wordData);
@@ -2358,10 +2303,7 @@ export class BookContentColoring {
         `Words by status: ${matureCount} mature, ${youngCount} young, ${newCount} new, ${lowCount} low, ${unknownCount} unknown`
       );
 
-      // Clear token color cache so all tokens are recomputed with updated wordDataCache
-      // This fixes the issue where tokens like "見て" were cached as UNCOLLECTED before their lemma "見る" was loaded.
-      this.tokenColorCache.clear();
-      console.log('🔄 Cleared token color cache to force recomputation with updated word data');
+      console.log('🔄 Cache warmed in IndexedDB; future lookups read directly from IndexedDB');
 
       const duration = Date.now() - startTime;
       console.log(`Cache warming complete: ${cachedWords} words cached in ${duration}ms`);
@@ -2376,10 +2318,19 @@ export class BookContentColoring {
   }
 
   private _normalizeFieldValue(value: string): string {
+    return this._canonicalizeLookupValue(
+      value
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
+  }
+
+  private _canonicalizeLookupValue(value: string): string {
     return value
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/&nbsp;/gi, ' ')
-      .replace(/\s+/g, ' ')
+      .normalize('NFC')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
       .trim();
   }
 
@@ -2448,68 +2399,55 @@ export class BookContentColoring {
     const allCardIds = new Set<number>();
 
     for (const token of tokens) {
-      const directData = await this._getWordData(token);
-      if (
-        directData &&
-        directData.cardIds.length > 0 &&
-        directData.analysisStatus !== undefined &&
-        directData.due !== undefined
-      ) {
-        resolved.set(token, {
-          status: directData.analysisStatus,
-          due: directData.due,
-          cardIds: Array.from(new Set(directData.cardIds))
-        });
-        continue;
-      }
-
-      if (directData && directData.cardIds.length > 0) {
-        const cardIds = Array.from(new Set(directData.cardIds));
-        tokenToCardIds.set(token, cardIds);
-        cardIds.forEach((cardId) => allCardIds.add(cardId));
-        continue;
-      }
-
       try {
-        let lemmas = this.lemmatizeCache.get(token);
-
-        if (!lemmas && this.cacheService) {
-          lemmas = await this.cacheService.getLemmas(token);
-          if (lemmas) {
-            this.lemmatizeCache.set(token, lemmas);
-          }
-        }
-
-        if (!lemmas) {
-          lemmas = await this.yomitan.lemmatize(token);
-          this.lemmatizeCache.set(token, lemmas);
-
-          if (this.cacheService) {
-            await this.cacheService.setLemmas(token, lemmas);
-          }
-        }
+        const lemmas = await this._getOrFetchLemmas(token);
+        const lookupWords = Array.from(
+          new Set(
+            [token, ...lemmas].map((candidate) => candidate.trim()).filter((candidate) => candidate)
+          )
+        );
 
         const cardIds = new Set<number>();
+        let bestCached:
+          | { status: DocumentTokenStatus; due: boolean; cardIds: number[]; priority: number }
+          | undefined;
 
-        for (const lemma of lemmas) {
-          const lemmaData = await this._getWordData(lemma);
-          if (!lemmaData || lemmaData.cardIds.length === 0) {
+        for (const lookupWord of lookupWords) {
+          const wordData = await this._getWordData(lookupWord);
+          if (!wordData || wordData.cardIds.length === 0) {
             continue;
           }
 
-          if (lemmaData.analysisStatus !== undefined && lemmaData.due !== undefined) {
-            resolved.set(token, {
-              status: lemmaData.analysisStatus,
-              due: lemmaData.due,
-              cardIds: Array.from(new Set(lemmaData.cardIds))
-            });
-            break;
+          const dedupedCardIds = Array.from(
+            new Set((wordData.cardIds || []).filter((cardId) => Number.isFinite(cardId)))
+          );
+
+          if (wordData.analysisStatus !== undefined && wordData.due !== undefined) {
+            const priority = this._documentStatusPriority(wordData.analysisStatus);
+            const shouldReplace =
+              !bestCached ||
+              priority > bestCached.priority ||
+              (priority === bestCached.priority && wordData.due && !bestCached.due);
+
+            if (shouldReplace) {
+              bestCached = {
+                status: wordData.analysisStatus,
+                due: wordData.due,
+                cardIds: dedupedCardIds,
+                priority
+              };
+            }
           }
 
-          lemmaData.cardIds.forEach((cardId) => cardIds.add(cardId));
+          dedupedCardIds.forEach((cardId) => cardIds.add(cardId));
         }
 
-        if (resolved.has(token)) {
+        if (bestCached) {
+          resolved.set(token, {
+            status: bestCached.status,
+            due: bestCached.due,
+            cardIds: bestCached.cardIds
+          });
           continue;
         }
 
@@ -2526,6 +2464,11 @@ export class BookContentColoring {
     const newCardIds = await this._findNewCardIds(Array.from(allCardIds));
 
     for (const token of tokens) {
+      // Already resolved from IndexedDB cached analysisStatus/due path.
+      if (resolved.has(token)) {
+        continue;
+      }
+
       const cardIds = tokenToCardIds.get(token) || [];
       if (cardIds.length === 0) {
         resolved.set(token, { status: 'uncollected', due: false, cardIds: [] });
@@ -2567,7 +2510,6 @@ export class BookContentColoring {
         cardIds
       };
 
-      this.wordDataCache.set(token, wordData);
       if (this.cacheService) {
         await this.cacheService.setWordData(token, wordData);
       }
