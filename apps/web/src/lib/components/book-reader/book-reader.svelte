@@ -30,6 +30,7 @@
   import BookReaderPaginated from './book-reader-paginated/book-reader-paginated.svelte';
   import {
     ankiConnectUrl$,
+    ankiColorPalette$,
     ankiIntegrationEnabled$,
     ankiMatureThreshold$,
     ankiTokenStyle$,
@@ -39,6 +40,7 @@
     enableTapEdgeToFlip$,
     yomitanUrl$
   } from '$lib/data/store';
+  import { TokenColorPalette } from '$lib/data/anki/token-color';
   import {
     BookContentColoring,
     ColoringPriorityQueue,
@@ -146,6 +148,7 @@
   let intersectionObserver: IntersectionObserver | undefined;
   let viewportObserver: IntersectionObserver | undefined;
   let nearObserver: IntersectionObserver | undefined;
+  let previousAnkiColorPalette: TokenColorPalette | undefined;
 
   const mutationObserver: MutationObserver = new MutationObserver(handleMutation);
 
@@ -176,7 +179,8 @@
           wordFields: $ankiWordFields$,
           wordDeckNames: $ankiWordDeckNames$,
           matureThreshold: $ankiMatureThreshold$,
-          tokenStyle: $ankiTokenStyle$
+          tokenStyle: $ankiTokenStyle$,
+          colorPalette: $ankiColorPalette$
         },
         ankiCacheService
       );
@@ -208,7 +212,7 @@
           console.log(`🎨 Starting colorization with IndexedDB as primary cache...`);
           // maxConcurrent: 1 batch at a time (avoid Anki freezing)
           // batchSize: 5 elements per batch (smaller batches, faster feedback)
-          // Tokens are chunked to 10 per Anki query for stability
+          // Tokens are chunked to 10 per Anki query for retrievability checks
           coloringQueue = new ColoringPriorityQueue(service, 1, 5);
         }
 
@@ -261,6 +265,16 @@
       nearObserver.disconnect();
       nearObserver = undefined;
     }
+    previousAnkiColorPalette = undefined;
+  }
+
+  $: if ($ankiIntegrationEnabled$ && coloringService) {
+    const currentPalette = $ankiColorPalette$;
+    if (previousAnkiColorPalette !== undefined && previousAnkiColorPalette !== currentPalette) {
+      coloringService.setColorPalette(currentPalette);
+      void coloringService.recolorizeProcessedElements();
+    }
+    previousAnkiColorPalette = currentPalette;
   }
 
   // Setup priority-based intersection observers when content element changes

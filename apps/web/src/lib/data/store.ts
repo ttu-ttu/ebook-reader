@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -58,7 +58,7 @@ import { ViewMode } from './view-mode';
 import type { WritingMode } from './writing-mode';
 import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
-import { TokenStyle } from './anki/token-color';
+import { TokenColorPalette, TokenStyle } from './anki/token-color';
 
 export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
@@ -517,6 +517,11 @@ export const ankiMatureThreshold$ = writableNumberLocalStorageSubject()('ankiMat
 export const ankiTokenStyle$ = writableStringLocalStorageSubject<TokenStyle>()(
   'ankiTokenStyle',
   TokenStyle.TEXT
+);
+
+export const ankiColorPalette$ = writableStringLocalStorageSubject<TokenColorPalette>()(
+  'ankiColorPalette',
+  TokenColorPalette.FULL
 );
 
 export const ankiDeckName$ = writableStringLocalStorageSubject()('ankiDeckName', '');

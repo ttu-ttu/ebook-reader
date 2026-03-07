@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -18,7 +18,7 @@ export class Yomitan {
 
   constructor(
     yomitanUrl = 'http://127.0.0.1:19633',
-    scanLength = 128,
+    scanLength = 500,
     cacheService?: AnkiCacheService
   ) {
     this.yomitanUrl = yomitanUrl;
@@ -40,9 +40,10 @@ export class Yomitan {
     );
 
     const tokens: string[] = [];
-    for (const res of response) {
-      for (const tokenParts of res['content']) {
-        // Flatten nested token parts: [[the], [c, a, r]] -> [the, car]
+    const selectedDict =
+      response.find((dict: any) => dict.id?.includes('mecab-unidic-csj-202302')) || response[0];
+    if (selectedDict) {
+      for (const tokenParts of selectedDict['content']) {
         tokens.push(tokenParts.map((p: any) => p['text']).join(''));
       }
     }

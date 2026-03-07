@@ -26,6 +26,7 @@
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { logger } from '$lib/data/logger';
   import { MergeMode } from '$lib/data/merge-mode';
+  import { TokenColorPalette } from '$lib/data/anki/token-color';
   import { isAppDefault } from '$lib/data/storage/storage-source-manager';
   import { defaultStorageSources } from '$lib/data/storage/storage-types';
   import { isStorageSourceAvailable } from '$lib/data/storage/storage-view';
@@ -175,6 +176,8 @@
   export let yomitanUrl: string;
 
   export let ankiConnectUrl: string;
+
+  export let ankiColorPalette: TokenColorPalette;
 
   export let ankiWordFields: string[];
 
@@ -329,6 +332,17 @@
     {
       id: MergeMode.REPLACE,
       text: 'Replace'
+    }
+  ];
+
+  const optionsForAnkiColorPalette: ToggleOption<TokenColorPalette>[] = [
+    {
+      id: TokenColorPalette.FULL,
+      text: 'R Palette'
+    },
+    {
+      id: TokenColorPalette.SIMPLE,
+      text: 'Simple'
     }
   ];
 
@@ -725,7 +739,7 @@
     </SettingsItemGroup>
     <SettingsItemGroup
       title="Enable Anki Word Coloring"
-      tooltip={'When enabled, words in the book are colored based on Anki card intervals. Requires Yomitan extension and Anki Connect to be running.'}
+      tooltip={'When enabled, words in the book are colored based on Anki card retrievability (R). Requires Yomitan extension and Anki Connect to be running.'}
     >
       <ButtonToggleGroup
         options={optionsForToggle}
@@ -733,6 +747,15 @@
       />
     </SettingsItemGroup>
     {#if ankiIntegrationEnabled}
+      <SettingsItemGroup
+        title="Color Palette"
+        tooltip={'Choose between retrievability gradient colors or simplified known/low/unmined colors'}
+      >
+        <ButtonToggleGroup
+          options={optionsForAnkiColorPalette}
+          bind:selectedOptionId={ankiColorPalette}
+        />
+      </SettingsItemGroup>
       <SettingsItemGroup
         title="Yomitan API URL"
         tooltip={'URL where Yomitan API server is running. Default: http://127.0.0.1:19633'}

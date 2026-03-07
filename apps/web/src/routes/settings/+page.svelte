@@ -9,6 +9,7 @@
     addCharactersOnCompletion$,
     adjustStatisticsAfterIdleTime$,
     ankiConnectUrl$,
+    ankiColorPalette$,
     ankiIntegrationEnabled$,
     ankiWordFields$,
     ankiWordDeckNames$,
@@ -204,6 +205,7 @@
       bind:ankiIntegrationEnabled={$ankiIntegrationEnabled$}
       bind:yomitanUrl={$yomitanUrl$}
       bind:ankiConnectUrl={$ankiConnectUrl$}
+      bind:ankiColorPalette={$ankiColorPalette$}
       bind:ankiWordFields={$ankiWordFields$}
       bind:ankiWordDeckNames={$ankiWordDeckNames$}
     />

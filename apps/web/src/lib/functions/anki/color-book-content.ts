@@ -1,12 +1,17 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
 import { Yomitan } from '$lib/data/yomitan';
-import { Anki } from '$lib/data/anki';
-import { TokenColor, TokenStyle } from '$lib/data/anki/token-color';
+import { Anki, type CardInfo } from '$lib/data/anki';
+import {
+  TokenColor,
+  TokenColorPalette,
+  TokenStyle,
+  type WordStatus
+} from '$lib/data/anki/token-color';
 import type { AnkiCacheService } from '$lib/data/database/anki-cache-db';
 
 /** Regex to check if text contains letters */
@@ -20,10 +25,27 @@ export interface ColoringOptions {
   wordDeckNames: string[];
   matureThreshold: number;
   tokenStyle: TokenStyle;
+  colorPalette: TokenColorPalette;
 }
 
+interface GradeDialogInfo {
+  cardId: number;
+  deckName: string;
+  fieldLabel: string;
+  fieldValue: string;
+  retrievability: string;
+  stability: string;
+  lastReviewed: string;
+  nextExpectedReview: string;
+}
+
+type GradeDialogAction =
+  | { type: 'cancel' }
+  | { type: 'open-browser' }
+  | { type: 'grade'; ease: 1 | 2 | 3 | 4 };
+
 /**
- * Service for coloring book content based on Anki card intervals
+ * Service for coloring book content based on Anki card retrievability
  * Based on asbplayer token coloring implementation
  */
 export class BookContentColoring {
@@ -33,10 +55,7 @@ export class BookContentColoring {
   private lemmatizeCache = new Map<string, string[]>();
   private tokenColorCache = new Map<string, TokenColor>();
   // Single cache: word -> {status, cardIds}
-  private wordDataCache = new Map<
-    string,
-    { status: 'mature' | 'young' | 'new' | 'unknown'; cardIds: number[] }
-  >();
+  private wordDataCache = new Map<string, { status: WordStatus; cardIds: number[] }>();
   private cacheService?: AnkiCacheService;
   private options: ColoringOptions;
   // Rate limiting: track last refresh timestamp for each token
@@ -60,8 +79,17 @@ export class BookContentColoring {
     // No-op, kept for compatibility
   }
 
+  setColorPalette(colorPalette: TokenColorPalette): void {
+    if (this.options.colorPalette === colorPalette) {
+      return;
+    }
+
+    this.options.colorPalette = colorPalette;
+    this.tokenColorCache.clear();
+  }
+
   /**
-   * Build stability cache for all cards in configured decks
+   * Build retrievability cache for all cards in configured decks
    * Should be called once on initialization for optimal performance
    * @returns Promise with cache statistics
    */
@@ -69,24 +97,24 @@ export class BookContentColoring {
     matureCards: number;
     youngCards: number;
     newCards: number;
+    lowCards: number;
   }> {
     try {
-      this.stabilityCache = await this.anki.buildStabilityCacheForDecks(
-        this.options.matureThreshold
-      );
+      const retrievabilityCache = await this.anki.buildRetrievabilityCacheForDecks();
 
-      const matureCards = Array.from(this.stabilityCache.values()).filter(
+      const matureCards = Array.from(retrievabilityCache.values()).filter(
         (c) => c === 'mature'
       ).length;
-      const youngCards = Array.from(this.stabilityCache.values()).filter(
+      const youngCards = Array.from(retrievabilityCache.values()).filter(
         (c) => c === 'young'
       ).length;
-      const newCards = Array.from(this.stabilityCache.values()).filter((c) => c === 'new').length;
+      const newCards = Array.from(retrievabilityCache.values()).filter((c) => c === 'new').length;
+      const lowCards = Array.from(retrievabilityCache.values()).filter((c) => c === 'low').length;
 
-      return { matureCards, youngCards, newCards };
+      return { matureCards, youngCards, newCards, lowCards };
     } catch (error) {
-      console.error('Error building stability cache:', error);
-      return { matureCards: 0, youngCards: 0, newCards: 0 };
+      console.error('Error building retrievability cache:', error);
+      return { matureCards: 0, youngCards: 0, newCards: 0, lowCards: 0 };
     }
   }
 
@@ -232,7 +260,7 @@ export class BookContentColoring {
               const trimmed = rawToken.trim();
               const color = HAS_LETTER_REGEX.test(trimmed)
                 ? globalColorMap.get(trimmed) || TokenColor.UNCOLLECTED
-                : TokenColor.MATURE;
+                : TokenColor.UNCOLLECTED;
 
               // Map each character position in this token to its color and token index
               for (let charIdx = 0; charIdx < rawToken.length; charIdx++) {
@@ -315,7 +343,7 @@ export class BookContentColoring {
   }
 
   /**
-   * Attach hover event listeners to token spans for on-demand refresh
+   * Attach interaction event listeners to token spans
    * @param element - Root element containing token spans
    */
   private _attachHoverListeners(element: Element): void {
@@ -329,7 +357,739 @@ export class BookContentColoring {
       span.addEventListener('mouseenter', async () => {
         await this._refreshToken(token, span as HTMLElement);
       });
+
+      // Add double-click listener to grade token in Anki
+      span.addEventListener('dblclick', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await this._gradeToken(token, span as HTMLElement);
+      });
     }
+  }
+
+  private _ensureGradeDialogStyle(): void {
+    if (document.getElementById('anki-grade-dialog-style')) {
+      return;
+    }
+
+    const style = document.createElement('style');
+    style.id = 'anki-grade-dialog-style';
+    style.textContent = `
+      .anki-grade-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(8, 10, 14, 0.6);
+        backdrop-filter: blur(4px);
+      }
+
+      .anki-grade-modal {
+        width: min(520px, 100%);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background:
+          radial-gradient(circle at top right, rgba(99, 102, 241, 0.25), transparent 55%),
+          linear-gradient(145deg, rgba(23, 27, 36, 0.98), rgba(13, 16, 24, 0.98));
+        color: #f8fafc;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        padding: 1rem;
+      }
+
+      .anki-grade-header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+      }
+
+      .anki-grade-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      .anki-grade-subtitle {
+        margin: 0.2rem 0 0;
+        color: rgba(226, 232, 240, 0.88);
+        font-size: 0.9rem;
+      }
+
+      .anki-grade-token {
+        margin: 0.9rem 0 1rem;
+        padding: 0.8rem 0.9rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(2, 6, 23, 0.5);
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        word-break: break-word;
+      }
+
+      .anki-grade-note {
+        margin: 0.85rem 0 1rem;
+        padding: 0.8rem 0.9rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: rgba(15, 23, 42, 0.55);
+        color: rgba(226, 232, 240, 0.96);
+        font-size: 0.9rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+      }
+
+      .anki-grade-info {
+        margin-bottom: 0.9rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.6);
+        overflow: hidden;
+      }
+
+      .anki-grade-info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        padding: 0.58rem 0.75rem;
+        font-size: 0.84rem;
+      }
+
+      .anki-grade-info-row + .anki-grade-info-row {
+        border-top: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .anki-grade-info-label {
+        color: rgba(148, 163, 184, 0.95);
+      }
+
+      .anki-grade-info-value {
+        color: rgba(248, 250, 252, 0.96);
+        font-weight: 600;
+        text-align: right;
+        overflow-wrap: anywhere;
+      }
+
+      .anki-grade-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .anki-grade-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        color: #f8fafc;
+        padding: 0.75rem 0.8rem;
+        font-size: 0.92rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 140ms ease, filter 140ms ease, border-color 140ms ease;
+      }
+
+      .anki-grade-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.06);
+      }
+
+      .anki-grade-btn:active {
+        transform: translateY(0);
+      }
+
+      .anki-grade-btn[data-ease="1"] {
+        background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+        border-color: rgba(254, 202, 202, 0.35);
+      }
+
+      .anki-grade-btn[data-ease="2"] {
+        background: linear-gradient(135deg, #92400e, #d97706);
+        border-color: rgba(254, 243, 199, 0.35);
+      }
+
+      .anki-grade-btn[data-ease="3"] {
+        background: linear-gradient(135deg, #065f46, #059669);
+        border-color: rgba(209, 250, 229, 0.35);
+      }
+
+      .anki-grade-btn[data-ease="4"] {
+        background: linear-gradient(135deg, #1e3a8a, #2563eb);
+        border-color: rgba(219, 234, 254, 0.35);
+      }
+
+      .anki-grade-key {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .anki-grade-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.6rem;
+      }
+
+      .anki-grade-cancel {
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.12);
+        color: #f1f5f9;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .anki-grade-browser {
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.18);
+        color: #dbeafe;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .anki-grade-close {
+        border: none;
+        background: transparent;
+        color: rgba(248, 250, 252, 0.9);
+        font-size: 1.1rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      @media (max-width: 480px) {
+        .anki-grade-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  private _showGradeDialog(token: string, info: GradeDialogInfo): Promise<GradeDialogAction> {
+    if (typeof document === 'undefined') {
+      return Promise.resolve({ type: 'cancel' });
+    }
+
+    this._ensureGradeDialogStyle();
+
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'anki-grade-overlay';
+      overlay.innerHTML = `
+        <div class="anki-grade-modal" role="dialog" aria-modal="true" aria-label="Grade card">
+          <div class="anki-grade-header">
+            <div>
+              <p class="anki-grade-title">Grade Card</p>
+              <p class="anki-grade-subtitle">Choose a rating to send to Anki</p>
+            </div>
+            <button type="button" class="anki-grade-close" aria-label="Close">✕</button>
+          </div>
+          <div class="anki-grade-token">${this._escapeHtml(token)}</div>
+          <div class="anki-grade-info">
+            <div class="anki-grade-info-row">
+              <span class="anki-grade-info-label">Card ID</span>
+              <span class="anki-grade-info-value">${info.cardId}</span>
+            </div>
+            <div class="anki-grade-info-row">
+              <span class="anki-grade-info-label">Deck</span>
+              <span class="anki-grade-info-value">${this._escapeHtml(info.deckName)}</span>
+            </div>
+            <div class="anki-grade-info-row">
+              <span class="anki-grade-info-label">${this._escapeHtml(info.fieldLabel)}</span>
+              <span class="anki-grade-info-value">${this._escapeHtml(info.fieldValue)}</span>
+            </div>
+            <div class="anki-grade-info-row">
+              <span class="anki-grade-info-label">Retrievability</span>
+              <span class="anki-grade-info-value">${this._escapeHtml(info.retrievability)}</span>
+            </div>
+            <div class="anki-grade-info-row">
+              <span class="anki-grade-info-label">Stability</span>
+              <span class="anki-grade-info-value">${this._escapeHtml(info.stability)}</span>
+            </div>
+            <div class="anki-grade-info-row">
+              <span class="anki-grade-info-label">Last Reviewed</span>
+              <span class="anki-grade-info-value">${this._escapeHtml(info.lastReviewed)}</span>
+            </div>
+            <div class="anki-grade-info-row">
+              <span class="anki-grade-info-label">Next Expected Review</span>
+              <span class="anki-grade-info-value">${this._escapeHtml(info.nextExpectedReview)}</span>
+            </div>
+          </div>
+          <div class="anki-grade-grid">
+            <button type="button" class="anki-grade-btn" data-ease="1"><span>Again</span><span class="anki-grade-key">1</span></button>
+            <button type="button" class="anki-grade-btn" data-ease="2"><span>Hard</span><span class="anki-grade-key">2</span></button>
+            <button type="button" class="anki-grade-btn" data-ease="3"><span>Good</span><span class="anki-grade-key">3</span></button>
+            <button type="button" class="anki-grade-btn" data-ease="4"><span>Easy</span><span class="anki-grade-key">4</span></button>
+          </div>
+          <div class="anki-grade-footer">
+            <button type="button" class="anki-grade-browser">Open in Anki Browser</button>
+            <button type="button" class="anki-grade-cancel">Cancel</button>
+          </div>
+        </div>
+      `;
+
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          cleanup({ type: 'cancel' });
+          return;
+        }
+
+        if (event.key >= '1' && event.key <= '4') {
+          cleanup({ type: 'grade', ease: Number.parseInt(event.key, 10) as 1 | 2 | 3 | 4 });
+        }
+      };
+
+      const cleanup = (value: GradeDialogAction) => {
+        window.removeEventListener('keydown', onKeyDown);
+        overlay.remove();
+        resolve(value);
+      };
+
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) {
+          cleanup({ type: 'cancel' });
+        }
+      });
+
+      overlay
+        .querySelector('.anki-grade-close')
+        ?.addEventListener('click', () => cleanup({ type: 'cancel' }));
+      overlay
+        .querySelector('.anki-grade-cancel')
+        ?.addEventListener('click', () => cleanup({ type: 'cancel' }));
+      overlay
+        .querySelector('.anki-grade-browser')
+        ?.addEventListener('click', () => cleanup({ type: 'open-browser' }));
+
+      overlay.querySelectorAll('.anki-grade-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+          const easeAttr = (button as HTMLElement).dataset.ease;
+          if (!easeAttr) {
+            cleanup({ type: 'cancel' });
+            return;
+          }
+
+          const parsedEase = Number.parseInt(easeAttr, 10);
+          if ([1, 2, 3, 4].includes(parsedEase)) {
+            cleanup({ type: 'grade', ease: parsedEase as 1 | 2 | 3 | 4 });
+          } else {
+            cleanup({ type: 'cancel' });
+          }
+        });
+      });
+
+      window.addEventListener('keydown', onKeyDown);
+      document.body.appendChild(overlay);
+    });
+  }
+
+  private _showNoticeDialog(title: string, message: string, subtitle = ''): Promise<void> {
+    if (typeof document === 'undefined') {
+      return Promise.resolve();
+    }
+
+    this._ensureGradeDialogStyle();
+
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'anki-grade-overlay';
+      overlay.innerHTML = `
+        <div class="anki-grade-modal" role="dialog" aria-modal="true" aria-label="${this._escapeHtml(title)}">
+          <div class="anki-grade-header">
+            <div>
+              <p class="anki-grade-title">${this._escapeHtml(title)}</p>
+              ${subtitle ? `<p class="anki-grade-subtitle">${this._escapeHtml(subtitle)}</p>` : ''}
+            </div>
+            <button type="button" class="anki-grade-close" aria-label="Close">✕</button>
+          </div>
+          <div class="anki-grade-note">${this._escapeHtml(message)}</div>
+          <div class="anki-grade-footer">
+            <span></span>
+            <button type="button" class="anki-grade-cancel">Close</button>
+          </div>
+        </div>
+      `;
+
+      const cleanup = () => {
+        window.removeEventListener('keydown', onKeyDown);
+        overlay.remove();
+        resolve();
+      };
+
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' || event.key === 'Enter') {
+          cleanup();
+        }
+      };
+
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) {
+          cleanup();
+        }
+      });
+
+      overlay.querySelector('.anki-grade-close')?.addEventListener('click', cleanup);
+      overlay.querySelector('.anki-grade-cancel')?.addEventListener('click', cleanup);
+      window.addEventListener('keydown', onKeyDown);
+      document.body.appendChild(overlay);
+    });
+  }
+
+  private async _buildGradeDialogInfo(
+    cardId: number,
+    status: WordStatus
+  ): Promise<GradeDialogInfo> {
+    let cardInfo: CardInfo | undefined;
+    try {
+      const cardInfos = await this.anki.cardsInfo([cardId], ['prop:r'], undefined, {
+        noteFields: this.options.wordFields,
+        retrievedInfoMode: 'COMPACT'
+      });
+      cardInfo = cardInfos[0];
+    } catch (error) {
+      console.debug(
+        `cardsInfo retrieved_info_mode not available for popup card ${cardId}, trying legacy compact:`,
+        error
+      );
+      try {
+        const legacyInfos = await this.anki.cardsInfo([cardId], ['prop:r'], undefined, {
+          noteFields: this.options.wordFields,
+          compact: true
+        });
+        cardInfo = legacyInfos[0];
+      } catch (legacyError) {
+        console.debug(
+          `cardsInfo compact/noteFields not available for popup card ${cardId}, falling back to full:`,
+          legacyError
+        );
+        const fallbackInfos = await this.anki.cardsInfo([cardId], ['prop:r']);
+        cardInfo = fallbackInfos[0];
+      }
+    }
+
+    const deckName = cardInfo?.deckName || 'Unknown Deck';
+    const preferredField = this._extractPreferredField(cardInfo);
+    const fieldLabel = preferredField?.name ? `Field (${preferredField.name})` : 'Field Value';
+    const fieldValue = preferredField?.value || 'Unavailable';
+    const rawPropR = cardInfo?.['prop:r'];
+    let exactRetrievability = typeof rawPropR === 'number' ? rawPropR : undefined;
+    let isNewCard = (cardInfo?.queue === 0 || cardInfo?.type === 0) && rawPropR === null;
+
+    // Backward compatibility fallback for older AnkiConnect without cardsInfo(fields).
+    if (!isNewCard && typeof exactRetrievability !== 'number') {
+      try {
+        exactRetrievability = await this.anki.cardRetrievability(cardId, 4, true);
+        isNewCard =
+          typeof exactRetrievability !== 'number' &&
+          (cardInfo?.queue === 0 || cardInfo?.type === 0);
+      } catch (error) {
+        console.debug(`Failed to fetch exact retrievability for card ${cardId}:`, error);
+      }
+    }
+
+    const retrievability = this._formatRetrievabilityText(exactRetrievability, status, isNewCard);
+    const stability =
+      typeof cardInfo?.interval === 'number'
+        ? `${cardInfo.interval} day${cardInfo.interval === 1 ? '' : 's'}`
+        : 'Unavailable';
+
+    let lastReviewed = 'Never reviewed';
+    let latestReviewMs: number | undefined;
+    try {
+      const reviewsByCard = await this.anki.getReviewsOfCards([cardId]);
+      const reviews = reviewsByCard[String(cardId)] || [];
+      if (reviews.length > 0) {
+        latestReviewMs = Math.max(...reviews.map((review) => review.id || 0));
+        if (latestReviewMs > 0) {
+          lastReviewed = this._formatTimestampMs(latestReviewMs);
+        }
+      }
+    } catch (error) {
+      console.debug(`Failed to fetch reviews for card ${cardId}:`, error);
+      lastReviewed = 'Unavailable';
+    }
+
+    const nextExpectedReview = this._formatNextExpectedReview(cardInfo, latestReviewMs, isNewCard);
+
+    return {
+      cardId,
+      deckName,
+      fieldLabel,
+      fieldValue,
+      retrievability,
+      stability,
+      lastReviewed,
+      nextExpectedReview
+    };
+  }
+
+  private _extractPreferredField(
+    cardInfo: { fields?: Record<string, { value: string }> } | undefined
+  ): { name: string; value: string } | undefined {
+    const fields = cardInfo?.fields;
+    if (!fields) {
+      return undefined;
+    }
+
+    // Prefer user-configured word fields first.
+    for (const fieldName of this.options.wordFields) {
+      const rawValue = fields[fieldName]?.value;
+      const normalizedValue = this._normalizeFieldValue(rawValue || '');
+      if (normalizedValue) {
+        return { name: fieldName, value: normalizedValue };
+      }
+    }
+
+    // Fallback to first non-empty field.
+    for (const [name, entry] of Object.entries(fields)) {
+      const normalizedValue = this._normalizeFieldValue(entry?.value || '');
+      if (normalizedValue) {
+        return { name, value: normalizedValue };
+      }
+    }
+
+    return undefined;
+  }
+
+  private _formatRetrievabilityText(
+    exactRetrievability: number | undefined,
+    status: WordStatus,
+    isNewCard: boolean
+  ): string {
+    if (isNewCard) {
+      return 'New card (not reviewed yet)';
+    }
+
+    const bucket = this._statusToRetrievabilityText(status);
+    if (typeof exactRetrievability === 'number') {
+      return `${(exactRetrievability * 100).toFixed(2)}% (${bucket})`;
+    }
+
+    return bucket;
+  }
+
+  private _statusToRetrievabilityText(status: WordStatus): string {
+    switch (status) {
+      case 'mature':
+        return '> 90%';
+      case 'young':
+        return '> 80%';
+      case 'new':
+        return '>= 60%';
+      case 'low':
+        return '< 60%';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  private _formatNextExpectedReview(
+    cardInfo: Pick<CardInfo, 'due' | 'queue' | 'type' | 'interval'> | undefined,
+    latestReviewMs: number | undefined,
+    isNewCard: boolean
+  ): string {
+    if (isNewCard) {
+      return 'After first review';
+    }
+
+    const queue = cardInfo?.queue;
+    if (queue === -1) {
+      return 'Suspended';
+    }
+    if (queue === -2 || queue === -3) {
+      return 'Buried';
+    }
+
+    const dueDate = this._dueValueToDate(cardInfo?.due, queue, cardInfo?.type);
+    if (dueDate) {
+      return this._formatTimestampMs(dueDate.getTime());
+    }
+
+    if (
+      typeof latestReviewMs === 'number' &&
+      typeof cardInfo?.interval === 'number' &&
+      Number.isFinite(cardInfo.interval) &&
+      cardInfo.interval > 0
+    ) {
+      return this._formatTimestampMs(latestReviewMs + cardInfo.interval * 24 * 60 * 60 * 1000);
+    }
+
+    return 'Unavailable';
+  }
+
+  private _dueValueToDate(
+    dueValue: number | undefined,
+    queue: number | undefined,
+    cardType: number | undefined
+  ): Date | undefined {
+    if (typeof dueValue !== 'number' || !Number.isFinite(dueValue) || dueValue <= 0) {
+      return undefined;
+    }
+
+    // Learning/relearning cards usually store due as unix seconds.
+    if (queue === 1 || cardType === 1) {
+      if (dueValue > 1_000_000_000) {
+        return new Date(dueValue * 1000);
+      }
+      return undefined;
+    }
+
+    // Review/day-learning cards often store due as day index since unix epoch.
+    if (queue === 2 || cardType === 2 || queue === 3 || cardType === 3) {
+      if (dueValue > 1_000 && dueValue < 1_000_000) {
+        return new Date(dueValue * 24 * 60 * 60 * 1000);
+      }
+      if (dueValue > 1_000_000_000) {
+        return new Date(dueValue * 1000);
+      }
+      return undefined;
+    }
+
+    // Generic fallback heuristics.
+    if (dueValue > 1_000_000_000) {
+      return new Date(dueValue * 1000);
+    }
+    if (dueValue > 1_000 && dueValue < 1_000_000) {
+      return new Date(dueValue * 24 * 60 * 60 * 1000);
+    }
+
+    return undefined;
+  }
+
+  private _formatTimestampMs(timestampMs: number): string {
+    try {
+      return new Date(timestampMs).toLocaleString();
+    } catch {
+      return `${timestampMs}`;
+    }
+  }
+
+  private async _gradeToken(token: string, span: HTMLElement): Promise<void> {
+    try {
+      const existingData = await this._resolveWordDataForToken(token);
+
+      if (!existingData || existingData.cardIds.length === 0) {
+        await this._showNoticeDialog(
+          'No Card Found',
+          `No mapped Anki card was found for "${token}".`,
+          'This token cannot be graded yet.'
+        );
+        return;
+      }
+
+      const cardId = existingData.cardIds[0];
+
+      if (!cardId) {
+        await this._showNoticeDialog(
+          'No Card Found',
+          `No gradeable card ID was found for "${token}".`,
+          'This token cannot be graded yet.'
+        );
+        return;
+      }
+
+      const dialogInfo = await this._buildGradeDialogInfo(cardId, existingData.status);
+      const dialogAction = await this._showGradeDialog(token, dialogInfo);
+      if (dialogAction.type === 'cancel') {
+        return;
+      }
+
+      if (dialogAction.type === 'open-browser') {
+        await this.anki.guiBrowse(`cid:${cardId}`);
+        return;
+      }
+
+      const ease = dialogAction.ease;
+
+      // Preferred path: custom AnkiConnect action exposed by your fork.
+      try {
+        const graded = await this.anki.gradeNow([cardId], ease);
+        if (graded) {
+          this.lastRefreshTime.delete(token);
+          await this._refreshToken(token, span);
+          return;
+        }
+
+        window.alert('Failed to submit grade via gradeNow.');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : `${error}`;
+        const unsupportedGradeNow = /unsupported action/i.test(errorMessage);
+
+        if (!unsupportedGradeNow) {
+          throw error;
+        }
+      }
+
+      // Fallback path for stock AnkiConnect (can only answer current reviewer card).
+      const currentCard = await this.anki.guiCurrentCard();
+      if (!currentCard) {
+        window.alert('No active reviewer card in Anki.');
+        return;
+      }
+
+      if (!existingData.cardIds.includes(currentCard.cardId)) {
+        await this.anki.guiBrowse(`cid:${cardId}`);
+        window.alert(
+          `Opened cid:${cardId} in Anki Browser.\nYour AnkiConnect does not expose gradeNow, so direct grading works only for the current reviewer card.`
+        );
+        return;
+      }
+
+      await this.anki.guiShowAnswer();
+      const answered = await this.anki.guiAnswerCard(ease);
+      if (!answered) {
+        window.alert('Failed to submit grade to Anki.');
+        return;
+      }
+
+      this.lastRefreshTime.delete(token);
+      await this._refreshToken(token, span);
+    } catch (error) {
+      console.error(`❌ Failed grading token "${token}":`, error);
+      window.alert('Failed to grade token in Anki. See console for details.');
+    }
+  }
+
+  private async _resolveWordDataForToken(
+    token: string
+  ): Promise<{ status: WordStatus; cardIds: number[] } | undefined> {
+    let existingData = await this._getWordData(token);
+
+    // If not found directly, try lemmatizing to find the base form
+    if (!existingData || existingData.cardIds.length === 0) {
+      const lemmas = await this.yomitan.lemmatize(token);
+
+      for (const lemma of lemmas) {
+        const lemmaData = await this._getWordData(lemma);
+        if (lemmaData && lemmaData.cardIds.length > 0) {
+          existingData = lemmaData;
+          break;
+        }
+      }
+    }
+
+    return existingData;
   }
 
   /**
@@ -354,24 +1114,9 @@ export class BookContentColoring {
       // Update last refresh timestamp
       this.lastRefreshTime.set(token, now);
 
-      // Get existing card IDs from cache (assume they haven't changed)
+      // Get existing card IDs from cache (memory + IndexedDB)
       // Try direct lookup first, then lemmatization
-      let existingData = this.wordDataCache.get(token);
-
-      // If not found directly, try lemmatizing to find the base form
-      if (!existingData || existingData.cardIds.length === 0) {
-        console.log(`🔍 Token "${token}" not in cache, trying lemmatization...`);
-        const lemmas = await this.yomitan.lemmatize(token);
-
-        for (const lemma of lemmas) {
-          const lemmaData = this.wordDataCache.get(lemma);
-          if (lemmaData && lemmaData.cardIds.length > 0) {
-            console.log(`✅ Found cached data via lemma "${lemma}"`);
-            existingData = lemmaData;
-            break;
-          }
-        }
-      }
+      const existingData = await this._resolveWordDataForToken(token);
 
       if (!existingData || existingData.cardIds.length === 0) {
         console.log(`🔄 Token "${token}" has no cached card IDs, performing full refresh`);
@@ -395,14 +1140,7 @@ export class BookContentColoring {
         }
 
         // Map status to color
-        const color =
-          wordData.status === 'mature'
-            ? TokenColor.MATURE
-            : wordData.status === 'young'
-              ? TokenColor.YOUNG
-              : wordData.status === 'new'
-                ? TokenColor.UNKNOWN
-                : TokenColor.UNCOLLECTED;
+        const color = this._statusToColor(wordData.status);
 
         this.tokenColorCache.set(token, color);
 
@@ -423,31 +1161,43 @@ export class BookContentColoring {
         return;
       }
 
-      // Fast path: reuse existing card IDs and only check stability
+      // Fast path: reuse existing card IDs and only check retrievability
       console.log(
         `⚡ Fast refresh for "${token}" using ${existingData.cardIds.length} cached card IDs`
       );
-      const stabilityCache = await this._batchCheckCardStability(existingData.cardIds);
+      const retrievabilityCache = await this._batchCheckCardRetrievability(existingData.cardIds);
 
       // Determine new status
-      let newStatus: 'mature' | 'young' | 'new' | 'unknown' = 'unknown';
+      let newStatus: WordStatus = 'unknown';
       for (const cardId of existingData.cardIds) {
-        const status = stabilityCache.get(cardId) || 'unknown';
+        const status = retrievabilityCache.get(cardId) || 'unknown';
 
         if (status === 'mature') {
           newStatus = 'mature';
           break;
-        } else if (status === 'young' && newStatus !== 'mature') {
+        } else if (status === 'young') {
           newStatus = 'young';
-        } else if (status === 'new' && newStatus === 'unknown') {
+        } else if (status === 'new' && (newStatus === 'unknown' || newStatus === 'low')) {
           newStatus = 'new';
+        } else if (status === 'low' && newStatus === 'unknown') {
+          newStatus = 'low';
         }
       }
 
-      const wordData = {
+      let wordData = {
         status: newStatus,
         cardIds: existingData.cardIds
       };
+
+      // Cached IDs can be stale or mismatched (e.g. legacy cache shape).
+      // If classification from IDs is inconclusive, re-fetch by token/candidates.
+      if (wordData.status === 'unknown') {
+        console.log(`🔄 Fast refresh inconclusive for "${token}", falling back to token lookup`);
+        const refreshedWordData = await this._fetchWordDataFromAnki(token);
+        if (refreshedWordData) {
+          wordData = refreshedWordData;
+        }
+      }
 
       // Update IndexedDB cache with fresh data
       if (this.cacheService) {
@@ -459,14 +1209,7 @@ export class BookContentColoring {
       this.wordDataCache.set(token, wordData);
 
       // Map status to color (same logic as in _checkTokenColors)
-      const color =
-        wordData.status === 'mature'
-          ? TokenColor.MATURE
-          : wordData.status === 'young'
-            ? TokenColor.YOUNG
-            : wordData.status === 'new'
-              ? TokenColor.UNKNOWN
-              : TokenColor.UNCOLLECTED;
+      const color = this._statusToColor(wordData.status);
 
       // Update token color cache
       this.tokenColorCache.set(token, color);
@@ -492,56 +1235,62 @@ export class BookContentColoring {
 
   /**
    * Fetch word data directly from Anki (bypassing all caches)
-   * Uses prop:s queries to check stability since it's not exposed by AnkiConnect API
+   * Uses prop:r queries to check retrievability categories
    * @param token - Token to look up
    * @returns Word data or undefined if not found
    */
   private async _fetchWordDataFromAnki(
     token: string
-  ): Promise<{ status: 'mature' | 'young' | 'new' | 'unknown'; cardIds: number[] } | undefined> {
+  ): Promise<{ status: WordStatus; cardIds: number[] } | undefined> {
     try {
       // Get lemmas for this token
       const lemmas = await this.yomitan.lemmatize(token);
+      // Always include the original token - some forms are not returned by lemmatization.
+      const candidateWords = Array.from(
+        new Set([token, ...lemmas].map((word) => word.trim()).filter((word) => word.length > 0))
+      );
 
-      // Check all lemmas against Anki
-      let bestStatus: 'mature' | 'young' | 'new' | 'unknown' = 'unknown';
-      const allCardIds: number[] = [];
+      // Check all candidates against Anki
+      let bestStatus: WordStatus = 'unknown';
+      const allCardIds = new Set<number>();
 
-      for (const lemma of lemmas) {
-        // Find cards with this lemma in configured word fields
-        const cardIds = await this.anki.findCardsWithWord(lemma, this.anki.getWordFields());
+      for (const candidateWord of candidateWords) {
+        // Find cards with this candidate in configured word fields
+        const cardIds = await this.anki.findCardsWithWord(candidateWord, this.anki.getWordFields());
 
         if (cardIds.length > 0) {
-          allCardIds.push(...cardIds);
+          cardIds.forEach((id) => allCardIds.add(id));
 
-          // Check stability category for each card using prop:s queries
+          // Check retrievability category for each card using prop:r queries
           for (const cardId of cardIds) {
-            const status = await this._checkCardStability(cardId);
+            const status = await this._checkCardRetrievability(cardId);
 
-            // Update best status (priority: mature > young > new > unknown)
+            // Update best status (priority: mature > young > new > low > unknown)
             if (status === 'mature') {
               bestStatus = 'mature';
               break; // Found mature, stop searching
-            } else if (status === 'young' && bestStatus !== 'mature') {
+            } else if (status === 'young') {
               bestStatus = 'young';
-            } else if (status === 'new' && bestStatus === 'unknown') {
+            } else if (status === 'new' && (bestStatus === 'unknown' || bestStatus === 'low')) {
               bestStatus = 'new';
+            } else if (status === 'low' && bestStatus === 'unknown') {
+              bestStatus = 'low';
             }
           }
 
-          // If we found a mature card, stop searching lemmas
+          // If we found a mature card, stop searching candidates
           if (bestStatus === 'mature') break;
         }
       }
 
       // If no cards found, return undefined
-      if (allCardIds.length === 0) {
+      if (allCardIds.size === 0) {
         return undefined;
       }
 
       return {
         status: bestStatus,
-        cardIds: allCardIds
+        cardIds: Array.from(allCardIds)
       };
     } catch (error) {
       console.error(`Error fetching word data from Anki for "${token}":`, error);
@@ -550,55 +1299,98 @@ export class BookContentColoring {
   }
 
   /**
-   * Check stability category for a single card using Anki search queries
+   * Check retrievability category for a single card using Anki search queries
    * @param cardId - Card ID to check
-   * @returns Card status: 'mature', 'young', 'new', or 'unknown'
+   * @returns Card status: 'mature', 'young', 'new', 'low', or 'unknown'
    */
-  private async _checkCardStability(
-    cardId: number
-  ): Promise<'mature' | 'young' | 'new' | 'unknown'> {
+  private async _checkCardRetrievability(cardId: number): Promise<WordStatus> {
     try {
-      // Check if card is new (never reviewed, stability=0)
-      const newQuery = `cid:${cardId} is:new`;
-      const newResponse = await this.anki['_executeAction']('findCards', { query: newQuery });
-      if (newResponse.result && newResponse.result.length > 0) {
+      const isNewCard = await this.anki.isCardNew(cardId);
+      if (isNewCard) {
         return 'new';
       }
 
-      // Check if card is mature (stability >= threshold)
-      const matureQuery = `cid:${cardId} prop:s>=${this.options.matureThreshold}`;
-      const matureResponse = await this.anki['_executeAction']('findCards', { query: matureQuery });
-      if (matureResponse.result && matureResponse.result.length > 0) {
+      const retrievability = await this.anki.cardRetrievability(cardId, 4, false);
+      if (typeof retrievability !== 'number') {
+        return 'unknown';
+      }
+
+      if (retrievability > 0.9) {
         return 'mature';
       }
 
-      // Otherwise it's young (reviewed but stability < threshold)
-      return 'young';
+      if (retrievability > 0.8) {
+        return 'young';
+      }
+
+      if (retrievability >= 0.6) {
+        return 'new';
+      }
+
+      return 'low';
     } catch (error) {
-      console.error(`Error checking card stability for card ${cardId}:`, error);
+      console.error(`Error checking card retrievability for card ${cardId}:`, error);
       return 'unknown';
     }
   }
 
   /**
-   * Batch check stability category for multiple cards using 2 queries total
-   * Cards that are neither mature nor new are young (by elimination)
+   * Batch check retrievability category for multiple cards
    * @param cardIds - Array of card IDs to check
    * @returns Map of card ID -> status
    */
-  private async _batchCheckCardStability(
-    cardIds: number[]
-  ): Promise<Map<number, 'mature' | 'young' | 'new'>> {
-    const result = new Map<number, 'mature' | 'young' | 'new'>();
-
-    if (cardIds.length === 0) return result;
-
-    // Build card ID filter: (cid:123 OR cid:456 OR cid:789)
-    const cidFilter = `(${cardIds.map((id) => `cid:${id}`).join(' OR ')})`;
+  private async _batchCheckCardRetrievability(cardIds: number[]): Promise<Map<number, WordStatus>> {
+    const result = new Map<number, WordStatus>();
+    const uniqueCardIds = Array.from(new Set(cardIds.filter((id) => Number.isFinite(id))));
+    if (uniqueCardIds.length === 0) return result;
 
     try {
-      // Query 1: Find mature cards (prop:s >= threshold)
-      const matureQuery = `${cidFilter} prop:s>=${this.options.matureThreshold}`;
+      // Fast path: one request via findCards(fields=["prop:r"]).
+      const retrievabilityMap = await this.anki.cardRetrievabilityMap(uniqueCardIds);
+      if (retrievabilityMap.size > 0) {
+        for (const cardId of uniqueCardIds) {
+          const retrievability = retrievabilityMap.get(cardId);
+
+          if (typeof retrievability === 'number') {
+            if (retrievability > 0.9) {
+              result.set(cardId, 'mature');
+            } else if (retrievability > 0.8) {
+              result.set(cardId, 'young');
+            } else if (retrievability >= 0.6) {
+              result.set(cardId, 'new');
+            } else {
+              result.set(cardId, 'low');
+            }
+          } else if (retrievability === null) {
+            // prop:r can be null for unreviewed cards.
+            result.set(cardId, 'new');
+          } else {
+            result.set(cardId, 'unknown');
+          }
+        }
+
+        return result;
+      }
+    } catch {
+      // Fallback to query-bucket approach below when prop fields are not supported.
+    }
+
+    // Build card ID filter: (cid:123 OR cid:456 OR cid:789)
+    const cidFilter = `(${uniqueCardIds.map((id) => `cid:${id}`).join(' OR ')})`;
+
+    try {
+      // Query 0: Find brand-new cards (never reviewed) and treat them as new.
+      const newCardsQuery = `${cidFilter} is:new`;
+      const newCardsResponse = await this.anki['_executeAction']('findCards', {
+        query: newCardsQuery
+      });
+      const newCardsFromIsNew: number[] = newCardsResponse.result || [];
+      for (const cardId of newCardsFromIsNew) {
+        result.set(cardId, 'new');
+      }
+
+      // Query 1: Find mature cards (>90%)
+      const matureQuery = `${cidFilter} prop:r>0.9`;
       const matureResponse = await this.anki['_executeAction']('findCards', { query: matureQuery });
       const matureCardIds: number[] = matureResponse.result || [];
 
@@ -606,8 +1398,17 @@ export class BookContentColoring {
         result.set(cardId, 'mature');
       }
 
-      // Query 2: Find new cards (never reviewed)
-      const newQuery = `${cidFilter} is:new`;
+      // Query 2: Find young cards (80%-90%)
+      const youngQuery = `${cidFilter} prop:r>0.8 -prop:r>0.9`;
+      const youngResponse = await this.anki['_executeAction']('findCards', { query: youngQuery });
+      const youngCardIds: number[] = youngResponse.result || [];
+
+      for (const cardId of youngCardIds) {
+        result.set(cardId, 'young');
+      }
+
+      // Query 3: Find medium cards (60%-80%)
+      const newQuery = `${cidFilter} prop:r>=0.6 -prop:r>0.8`;
       const newResponse = await this.anki['_executeAction']('findCards', { query: newQuery });
       const newCardIds: number[] = newResponse.result || [];
 
@@ -615,16 +1416,16 @@ export class BookContentColoring {
         result.set(cardId, 'new');
       }
 
-      // All remaining cards are young (not mature and not new)
-      for (const cardId of cardIds) {
+      // All remaining cards are low (<60%)
+      for (const cardId of uniqueCardIds) {
         if (!result.has(cardId)) {
-          result.set(cardId, 'young');
+          result.set(cardId, 'low');
         }
       }
 
       return result;
     } catch (error) {
-      console.error('Error batch checking card stability:', error);
+      console.error('Error batch checking card retrievability:', error);
       return result;
     }
   }
@@ -649,7 +1450,7 @@ export class BookContentColoring {
 
         // Skip non-letter tokens
         if (!HAS_LETTER_REGEX.test(trimmedToken)) {
-          tokenColorMap.set(trimmedToken, TokenColor.MATURE);
+          tokenColorMap.set(trimmedToken, TokenColor.UNCOLLECTED);
           continue;
         }
 
@@ -726,7 +1527,7 @@ export class BookContentColoring {
    */
   private async _getWordData(
     word: string
-  ): Promise<{ status: 'mature' | 'young' | 'new' | 'unknown'; cardIds: number[] } | undefined> {
+  ): Promise<{ status: WordStatus; cardIds: number[] } | undefined> {
     // Check memory cache first (fast path)
     let wordData = this.wordDataCache.get(word);
     if (wordData) return wordData;
@@ -808,14 +1609,7 @@ export class BookContentColoring {
       }
 
       // Map status to color
-      const color =
-        wordData.status === 'mature'
-          ? TokenColor.MATURE
-          : wordData.status === 'young'
-            ? TokenColor.YOUNG
-            : wordData.status === 'new'
-              ? TokenColor.UNKNOWN
-              : TokenColor.UNCOLLECTED;
+      const color = this._statusToColor(wordData.status);
 
       console.debug(`🎨 Token "${token}" -> status: ${wordData.status}, color: ${color}`);
 
@@ -837,7 +1631,7 @@ export class BookContentColoring {
 
   /**
    * Handle uncollected tokens by lemmatizing and checking lemmas
-   * Uses pre-built stability cache for instant lookups (no API calls!)
+   * Uses pre-built retrievability cache for instant lookups (no API calls!)
    * @param tokens - Array of uncollected tokens
    * @param colorMap - Map to populate with token -> color mappings
    */
@@ -883,39 +1677,74 @@ export class BookContentColoring {
     // Process each uncollected token
     for (const token of tokens) {
       const lemmas = tokenToLemmas.get(token) || [];
-      let finalColor = TokenColor.UNCOLLECTED;
+      let finalStatus: WordStatus | undefined;
+      let finalPriority = -1;
 
-      // Check each lemma - use the highest priority color found
+      // Check each lemma - use the highest priority status found
       for (const lemma of lemmas) {
         const wordData = await this._getWordData(lemma);
 
         if (wordData && wordData.cardIds.length > 0) {
-          // Map status to color
-          const color =
-            wordData.status === 'mature'
-              ? TokenColor.MATURE
-              : wordData.status === 'young'
-                ? TokenColor.YOUNG
-                : wordData.status === 'new'
-                  ? TokenColor.UNKNOWN
-                  : TokenColor.UNCOLLECTED;
-
-          if (color === TokenColor.MATURE) {
-            finalColor = TokenColor.MATURE;
-            break; // Mature is highest priority, stop here
-          } else if (color === TokenColor.YOUNG && finalColor === TokenColor.UNCOLLECTED) {
-            finalColor = TokenColor.YOUNG;
-          } else if (color === TokenColor.UNKNOWN && finalColor === TokenColor.UNCOLLECTED) {
-            finalColor = TokenColor.UNKNOWN;
+          const currentPriority = this._statusPriority(wordData.status);
+          if (currentPriority > finalPriority) {
+            finalStatus = wordData.status;
+            finalPriority = currentPriority;
           }
         }
 
-        if (finalColor === TokenColor.MATURE) break; // Already found mature, stop
+        if (finalStatus === 'mature') break; // Already found highest status, stop
       }
+
+      const finalColor = finalStatus ? this._statusToColor(finalStatus) : TokenColor.UNCOLLECTED;
 
       // Cache and store
       this.tokenColorCache.set(token, finalColor);
       colorMap.set(token, finalColor);
+    }
+  }
+
+  private _statusToColor(status: WordStatus): TokenColor {
+    if (this.options.colorPalette === TokenColorPalette.SIMPLE) {
+      switch (status) {
+        case 'low':
+          return TokenColor.LOW;
+        case 'unknown':
+          return TokenColor.UNKNOWN;
+        default:
+          return TokenColor.UNKNOWN;
+      }
+    }
+
+    switch (status) {
+      case 'mature':
+        return TokenColor.MATURE;
+      case 'young':
+        return TokenColor.YOUNG;
+      case 'new':
+        return TokenColor.NEW;
+      case 'low':
+        return TokenColor.LOW;
+      case 'unknown':
+        return TokenColor.UNKNOWN;
+      default:
+        return TokenColor.UNKNOWN;
+    }
+  }
+
+  private _statusPriority(status: WordStatus): number {
+    switch (status) {
+      case 'mature':
+        return 5;
+      case 'young':
+        return 4;
+      case 'new':
+        return 3;
+      case 'low':
+        return 2;
+      case 'unknown':
+        return 1;
+      default:
+        return 0;
     }
   }
 
@@ -935,7 +1764,7 @@ export class BookContentColoring {
 
     // Don't style uncollected tokens
     if (color === TokenColor.UNCOLLECTED) {
-      style = TokenStyle.UNDERLINE;
+      style = TokenStyle.TEXT;
     }
 
     // Preserve whitespace in the styled spans to maintain formatting
@@ -1116,7 +1945,7 @@ export class BookContentColoring {
 
   /**
    * Preemptively warm the cache with all cards from configured Anki decks
-   * Builds stability cache and word caches for faster future lookups
+   * Builds retrievability cache and word caches for faster future lookups
    * This should run in the background after loading cached data
    * @returns Promise with cache warming statistics
    */
@@ -1134,7 +1963,7 @@ export class BookContentColoring {
       const wordFields = this.anki.getWordFields();
       console.log('Deck names:', deckNames);
       console.log('Word fields:', wordFields);
-      console.log('Mature threshold:', this.options.matureThreshold);
+      console.log('Retrievability thresholds: >0.9, >0.8, >=0.6, <0.6');
 
       // Early validation
       if (!deckNames || deckNames.length === 0) {
@@ -1179,11 +2008,24 @@ export class BookContentColoring {
         for (const field of wordFields) {
           const fieldValue = card.fields[field]?.value;
           if (fieldValue) {
-            const word = fieldValue.trim();
-            if (word) {
-              const cardIds = wordToCardIds.get(word) || [];
-              cardIds.push(card.cardId);
-              wordToCardIds.set(word, cardIds);
+            const rawWord = fieldValue.trim();
+            const normalizedWord = this._normalizeFieldValue(fieldValue);
+
+            if (rawWord) {
+              const cardIds = wordToCardIds.get(rawWord) || [];
+              if (!cardIds.includes(card.cardId)) {
+                cardIds.push(card.cardId);
+                wordToCardIds.set(rawWord, cardIds);
+              }
+            }
+
+            // Add plain-text variant to support HTML-rich fields (e.g. wrapped Front content).
+            if (normalizedWord && normalizedWord !== rawWord) {
+              const cardIds = wordToCardIds.get(normalizedWord) || [];
+              if (!cardIds.includes(card.cardId)) {
+                cardIds.push(card.cardId);
+                wordToCardIds.set(normalizedWord, cardIds);
+              }
             }
           }
         }
@@ -1191,35 +2033,36 @@ export class BookContentColoring {
 
       console.log(`Extracted ${wordToCardIds.size} unique words from cards`);
 
-      // Step 2: Build stability cache using prop:s queries
-      console.log('Step 2: Building stability cache with 3 prop:s queries...');
-      const stabilityCache = await this.anki.buildStabilityCacheForDecks(
-        this.options.matureThreshold
-      );
-      console.log(`Stability cache has ${stabilityCache.size} card entries`);
+      // Step 2: Build retrievability cache using prop:r queries
+      console.log('Step 2: Building retrievability cache with prop:r queries...');
+      const retrievabilityCache = await this.anki.buildRetrievabilityCacheForDecks();
+      console.log(`Retrievability cache has ${retrievabilityCache.size} card entries`);
 
       // Step 3: Build single cache: word -> {status, cardIds}
       console.log('Step 3: Mapping words to status...');
       let matureCount = 0,
         youngCount = 0,
         newCount = 0,
+        lowCount = 0,
         unknownCount = 0;
 
       for (const [word, cardIds] of wordToCardIds.entries()) {
-        // Determine status from stability cache (prefer mature > young > new > unknown)
-        let status: 'mature' | 'young' | 'new' | 'unknown' = 'unknown';
+        // Determine status from retrievability cache (prefer mature > young > new > low > unknown)
+        let status: WordStatus = 'unknown';
 
-        // Check cards against stability categories from prop:s queries
+        // Check cards against retrievability categories from prop:r queries
         for (const cardId of cardIds) {
-          const category = stabilityCache.get(cardId);
+          const category = retrievabilityCache.get(cardId);
 
           if (category === 'mature') {
             status = 'mature';
             break; // Mature is highest priority
-          } else if (category === 'young' && status === 'unknown') {
+          } else if (category === 'young') {
             status = 'young';
-          } else if (category === 'new' && status === 'unknown') {
+          } else if (category === 'new' && (status === 'unknown' || status === 'low')) {
             status = 'new';
+          } else if (category === 'low' && status === 'unknown') {
+            status = 'low';
           }
         }
 
@@ -1227,6 +2070,7 @@ export class BookContentColoring {
         if (status === 'mature') matureCount++;
         else if (status === 'young') youngCount++;
         else if (status === 'new') newCount++;
+        else if (status === 'low') lowCount++;
         else unknownCount++;
 
         // Store in single combined cache
@@ -1241,7 +2085,7 @@ export class BookContentColoring {
       }
 
       console.log(
-        `Words by status: ${matureCount} mature, ${youngCount} young, ${newCount} new, ${unknownCount} unknown`
+        `Words by status: ${matureCount} mature, ${youngCount} young, ${newCount} new, ${lowCount} low, ${unknownCount} unknown`
       );
 
       // Clear token color cache so all tokens are recomputed with updated wordDataCache
@@ -1259,5 +2103,13 @@ export class BookContentColoring {
       const duration = Date.now() - startTime;
       return { totalCards: 0, cachedWords, duration };
     }
+  }
+
+  private _normalizeFieldValue(value: string): string {
+    return value
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 }
