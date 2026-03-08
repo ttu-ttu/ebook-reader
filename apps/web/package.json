@@ -38,7 +38,7 @@
     "@fortawesome/free-solid-svg-icons": "7.2.0",
     "@popperjs/core": "2.11.8",
     "@zip.js/zip.js": "2.4.26",
-    "balanced-match": "3.0.1",
+    "balanced-match": "4.0.4",
     "fake-indexeddb": "6.2.5",
     "fast-xml-parser": "5.4.2",
     "idb": "8.0.3",
