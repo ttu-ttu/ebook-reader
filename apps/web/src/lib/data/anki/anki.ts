@@ -114,10 +114,10 @@ export class Anki {
    * This should be called once on initialization to avoid repeated property queries.
    * Thresholds:
    * - `mature`: retrievability > 0.9
-   * - `young`: retrievability > 0.8
-   * - `new`: retrievability >= desiredRetention
-   * - `low`: retrievability < desiredRetention
-   * @param desiredRetention - Decimal retrievability threshold for low/new split
+   * - `young`: reviewed cards with retrievability >= desiredRetention and <= 0.9
+   * - `new`: brand-new cards (`is:new`)
+   * - `due`: retrievability < desiredRetention
+   * @param desiredRetention - Decimal retrievability threshold for due/new split
    * @param ankiConnectUrl - Optional override for Anki Connect URL
    * @returns Map of card ID -> category
    */
@@ -140,7 +140,7 @@ export class Anki {
     }
 
     console.log(
-      `Building retrievability cache with thresholds: >0.9, >0.8, >=${retention}, <${retention}`
+      `Building retrievability cache with thresholds: >0.9, >=${retention}, <${retention}`
     );
 
     // Query 1: Find all mature cards in decks (prop:r > 0.9)
@@ -154,8 +154,8 @@ export class Anki {
     const matureCardIds: number[] = matureResponse.result || [];
     console.log(`Found ${matureCardIds.length} mature cards`);
 
-    // Query 2: Find all young cards in decks (0.8 < prop:r <= 0.9)
-    const youngQuery = `(${deckQuery}) prop:r>0.8 -prop:r>0.9`;
+    // Query 2: Find all young reviewed cards in decks (desiredRetention <= prop:r <= 0.9)
+    const youngQuery = `(${deckQuery}) prop:r>=${retention} -prop:r>0.9 -is:new`;
     console.log('Querying young cards:', youngQuery);
     const youngResponse = await this._executeAction(
       'findCards',
@@ -165,19 +165,19 @@ export class Anki {
     const youngCardIds: number[] = youngResponse.result || [];
     console.log(`Found ${youngCardIds.length} young cards`);
 
-    // Query 3: Find all medium cards in decks (desiredRetention <= prop:r <= 0.8) plus brand-new cards.
-    const newQuery = `(${deckQuery}) (is:new OR (prop:r>=${retention} -prop:r>0.8))`;
+    // Query 3: Find brand-new cards in decks.
+    const newQuery = `(${deckQuery}) is:new`;
     console.log('Querying new cards:', newQuery);
     const newResponse = await this._executeAction('findCards', { query: newQuery }, ankiConnectUrl);
     const newCardIds: number[] = newResponse.result || [];
     console.log(`Found ${newCardIds.length} new cards`);
 
-    // Query 4: Find all low cards in decks (prop:r < desiredRetention), excluding brand-new cards
-    const lowQuery = `(${deckQuery}) prop:r<${retention} -is:new`;
-    console.log('Querying low cards:', lowQuery);
-    const lowResponse = await this._executeAction('findCards', { query: lowQuery }, ankiConnectUrl);
-    const lowCardIds: number[] = lowResponse.result || [];
-    console.log(`Found ${lowCardIds.length} low cards`);
+    // Query 4: Find all due cards in decks (prop:r < desiredRetention), excluding brand-new cards
+    const dueQuery = `(${deckQuery}) prop:r<${retention} -is:new`;
+    console.log('Querying due cards:', dueQuery);
+    const dueResponse = await this._executeAction('findCards', { query: dueQuery }, ankiConnectUrl);
+    const dueCardIds: number[] = dueResponse.result || [];
+    console.log(`Found ${dueCardIds.length} due cards`);
 
     // Build cache
     for (const cardId of matureCardIds) {
@@ -189,12 +189,12 @@ export class Anki {
     for (const cardId of newCardIds) {
       result.set(cardId, 'new');
     }
-    for (const cardId of lowCardIds) {
-      result.set(cardId, 'low');
+    for (const cardId of dueCardIds) {
+      result.set(cardId, 'due');
     }
 
     console.log(
-      `Retrievability cache built: ${matureCardIds.length} mature, ${youngCardIds.length} young, ${newCardIds.length} new, ${lowCardIds.length} low`
+      `Retrievability cache built: ${matureCardIds.length} mature, ${youngCardIds.length} young, ${newCardIds.length} new, ${dueCardIds.length} due`
     );
 
     return result;

@@ -13,9 +13,9 @@ export enum TokenColor {
   /** Secondary state bucket */
   YOUNG = '#ca8a04',
   /** Tertiary state bucket */
-  NEW = '#ea580c',
-  /** Lowest state bucket */
-  LOW = '#dc2626',
+  NEW = '#38bdf8',
+  /** Due state bucket */
+  DUE = '#dc2626',
   /** Known card but status could not be resolved - inherit current text color */
   UNKNOWN = 'currentColor',
   /** Not mined (no matching card found) - Purple */
@@ -24,7 +24,7 @@ export enum TokenColor {
   ERROR = '#9ca3af'
 }
 
-export type WordStatus = 'mature' | 'young' | 'new' | 'low' | 'unknown';
+export type WordStatus = 'mature' | 'young' | 'new' | 'due' | 'unknown';
 export type ResolvedWordStatus = Exclude<WordStatus, 'unknown'>;
 
 export enum TokenColorMode {

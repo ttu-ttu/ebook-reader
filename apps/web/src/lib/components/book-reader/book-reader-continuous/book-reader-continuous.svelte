@@ -709,7 +709,7 @@
 {#if bookmarkPos}
   {#if verticalMode}
     <div
-      class="pointer-events-none absolute text-xl opacity-25"
+      class="bookmark-indicator pointer-events-none absolute text-xl opacity-25"
       style:color={fontColor}
       style:right={`calc(${bookmarkPos.right} + 1rem)`}
       style:top={bookmarkAdjustment}
@@ -718,7 +718,7 @@
     </div>
   {:else}
     <div
-      class="pointer-events-none absolute text-sm opacity-25 sm:text-xl"
+      class="bookmark-indicator pointer-events-none absolute text-sm opacity-25 sm:text-xl"
       style:color={fontColor}
       style:left={bookmarkAdjustment}
       style:top={`calc(${bookmarkPos.top} + 1.5rem)`}

@@ -7,6 +7,8 @@
 import { openDB, type DBSchema } from 'idb';
 import type { TokenColor, WordStatus } from '$lib/data/anki/token-color';
 
+type PersistedWordStatus = WordStatus | 'low';
+
 type CachedDocumentTokenStatus = 'uncollected' | 'new' | 'young' | 'mature' | 'unknown';
 
 /**
@@ -19,7 +21,7 @@ export interface AnkiCacheDb extends DBSchema {
     key: string;
     value: {
       word: string;
-      status: WordStatus;
+      status: PersistedWordStatus;
       analysisStatus?: CachedDocumentTokenStatus;
       due?: boolean;
       cardIds: number[];
@@ -32,7 +34,7 @@ export interface AnkiCacheDb extends DBSchema {
     value: {
       token: string;
       color: TokenColor;
-      status?: WordStatus;
+      status?: PersistedWordStatus;
       timestamp: number;
     };
   };

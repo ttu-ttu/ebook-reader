@@ -44,8 +44,10 @@ export class AnkiCacheService {
       return undefined;
     }
 
+    const status = entry.status === 'low' ? 'due' : entry.status;
+
     return {
-      status: entry.status,
+      status,
       analysisStatus: entry.analysisStatus,
       due: entry.due,
       cardIds: Array.isArray(entry.cardIds) ? entry.cardIds : []
@@ -55,7 +57,7 @@ export class AnkiCacheService {
   /**
    * Store word data (status + cardIds) in IndexedDB cache
    * @param word - Word to cache
-   * @param status - Card status (mature/young/new/low/unknown)
+   * @param status - Card status (mature/young/new/due/unknown)
    * @param cardIds - Array of card IDs for this word
    */
   async setWordData(word: string, data: CachedWordData): Promise<void> {

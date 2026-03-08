@@ -187,6 +187,10 @@
   const tokenPanelHoverRefreshCooldownMs = 2500;
   let tokenPanelLastHoverRefresh = new Map<string, number>();
   const tokenPanelFilterStorageKey = 'book-reader-token-panel-filter-v1';
+  let tokenPanelBookmarkShift = 0;
+  let tokenPanelBookmarkShiftRaf: number | undefined;
+  let tokenPanelBaseAnchorLeft: number | undefined;
+  let tokenPanelBookmarkShiftTimeout: ReturnType<typeof setTimeout> | undefined;
 
   function isTokenPanelFilter(value: string): value is TokenPanelFilterId {
     return (
@@ -514,6 +518,14 @@
   onDestroy(() => {
     tokenPanelAnalysisAbortController?.abort();
     mutationObserver.disconnect();
+    if (typeof window !== 'undefined' && tokenPanelBookmarkShiftRaf !== undefined) {
+      window.cancelAnimationFrame(tokenPanelBookmarkShiftRaf);
+      tokenPanelBookmarkShiftRaf = undefined;
+    }
+    if (tokenPanelBookmarkShiftTimeout) {
+      clearTimeout(tokenPanelBookmarkShiftTimeout);
+      tokenPanelBookmarkShiftTimeout = undefined;
+    }
 
     releaseWakeLock();
 
@@ -1049,8 +1061,79 @@
     tokenPanelLastHoverRefresh.clear();
   }
 
+  $: {
+    $containerEl$;
+    showTokenPanel;
+    width;
+    height;
+    htmlContent;
+    scheduleTokenPanelBookmarkShiftUpdate();
+  }
+
   $: if (showTokenPanel && coloringService && $ankiIntegrationEnabled$) {
     void analyzeForTokenPanel();
+  }
+
+  function scheduleTokenPanelBookmarkShiftUpdate() {
+    if (typeof window === 'undefined') return;
+
+    if (tokenPanelBookmarkShiftRaf !== undefined) {
+      window.cancelAnimationFrame(tokenPanelBookmarkShiftRaf);
+    }
+
+    tokenPanelBookmarkShiftRaf = window.requestAnimationFrame(() => {
+      tokenPanelBookmarkShiftRaf = undefined;
+      updateTokenPanelBookmarkShift();
+    });
+
+    if (tokenPanelBookmarkShiftTimeout) {
+      clearTimeout(tokenPanelBookmarkShiftTimeout);
+    }
+    tokenPanelBookmarkShiftTimeout = window.setTimeout(() => {
+      tokenPanelBookmarkShiftTimeout = undefined;
+      updateTokenPanelBookmarkShift();
+    }, 220);
+  }
+
+  function updateTokenPanelBookmarkShift() {
+    if (typeof window === 'undefined') return;
+
+    const container = $containerEl$;
+    if (!container) {
+      tokenPanelBookmarkShift = 0;
+      return;
+    }
+
+    const anchor =
+      container.querySelector<HTMLElement>('[data-anki-token]') ??
+      container.querySelector<HTMLElement>('.book-content');
+    if (!anchor) {
+      tokenPanelBookmarkShift = 0;
+      return;
+    }
+
+    const currentAnchorLeft = anchor.getBoundingClientRect().left;
+
+    if (!showTokenPanel || window.innerWidth < 1024) {
+      tokenPanelBaseAnchorLeft = currentAnchorLeft;
+      tokenPanelBookmarkShift = 0;
+      return;
+    }
+
+    // If panel was opened before baseline was captured, best-effort estimate baseline.
+    if (tokenPanelBaseAnchorLeft === undefined) {
+      const tokenPanelMaxWidthPx = convertRemToPixels(24);
+      const tokenPanelMinViewportPaddingPx = convertRemToPixels(2);
+      const tokenPanelGapPx = convertRemToPixels(1.5);
+      const fallbackPanelOffset = Math.max(
+        Math.min(tokenPanelMaxWidthPx, window.innerWidth - tokenPanelMinViewportPaddingPx) +
+          tokenPanelGapPx,
+        0
+      );
+      tokenPanelBaseAnchorLeft = currentAnchorLeft + fallbackPanelOffset / 2;
+    }
+
+    tokenPanelBookmarkShift = currentAnchorLeft - tokenPanelBaseAnchorLeft;
   }
 </script>
 
@@ -1069,6 +1152,7 @@
   bind:this={$containerEl$}
   class="{pxReader} reader-shell py-8"
   class:token-panel-open={showTokenPanel}
+  style:--token-panel-bookmark-shift={`${tokenPanelBookmarkShift}px`}
 >
   {#if viewMode === ViewMode.Continuous}
     <BookReaderContinuous
@@ -1180,12 +1264,19 @@
 
 <style>
   .reader-shell {
+    --token-panel-offset: 0px;
+    --token-panel-bookmark-shift: 0px;
     transition: padding-right 180ms ease;
   }
 
   @media (min-width: 1024px) {
     .reader-shell.token-panel-open {
       padding-right: calc(min(24rem, 100vw - 2rem) + 1.5rem);
+      --token-panel-offset: calc(min(24rem, 100vw - 2rem) + 1.5rem);
+    }
+
+    .reader-shell.token-panel-open :global(.bookmark-indicator) {
+      transform: translateX(var(--token-panel-bookmark-shift));
     }
   }
 </style>

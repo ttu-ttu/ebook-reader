@@ -728,7 +728,7 @@
 
 {#if isBookmarkScreen}
   <div
-    class="fixed h-3 w-3 text-base opacity-25 sm:text-xl"
+    class="bookmark-indicator fixed h-3 w-3 text-base opacity-25 sm:text-xl"
     style:color={fontColor}
     style:top={bookmarkTopAdjustment}
     style:left={bookmarkLeftAdjustment}

@@ -155,7 +155,7 @@ export class BookContentColoring {
     matureCards: number;
     youngCards: number;
     newCards: number;
-    lowCards: number;
+    dueCards: number;
   }> {
     try {
       const retrievabilityCache = await this.anki.buildRetrievabilityCacheForDecks(
@@ -169,12 +169,12 @@ export class BookContentColoring {
         (c) => c === 'young'
       ).length;
       const newCards = Array.from(retrievabilityCache.values()).filter((c) => c === 'new').length;
-      const lowCards = Array.from(retrievabilityCache.values()).filter((c) => c === 'low').length;
+      const dueCards = Array.from(retrievabilityCache.values()).filter((c) => c === 'due').length;
 
-      return { matureCards, youngCards, newCards, lowCards };
+      return { matureCards, youngCards, newCards, dueCards };
     } catch (error) {
       console.error('Error building retrievability cache:', error);
-      return { matureCards: 0, youngCards: 0, newCards: 0, lowCards: 0 };
+      return { matureCards: 0, youngCards: 0, newCards: 0, dueCards: 0 };
     }
   }
 
@@ -1435,10 +1435,10 @@ export class BookContentColoring {
           break;
         } else if (status === 'young') {
           newStatus = 'young';
-        } else if (status === 'new' && (newStatus === 'unknown' || newStatus === 'low')) {
+        } else if (status === 'new' && (newStatus === 'unknown' || newStatus === 'due')) {
           newStatus = 'new';
-        } else if (status === 'low' && newStatus === 'unknown') {
-          newStatus = 'low';
+        } else if (status === 'due' && newStatus === 'unknown') {
+          newStatus = 'due';
         }
       }
 
@@ -1544,7 +1544,7 @@ export class BookContentColoring {
   /**
    * Check retrievability category for a single card using Anki search queries
    * @param cardId - Card ID to check
-   * @returns Card status: 'mature', 'young', 'new', 'low', or 'unknown'
+   * @returns Card status: 'mature', 'young', 'new', 'due', or 'unknown'
    */
   private async _checkCardRetrievability(cardId: number): Promise<WordStatus> {
     try {
@@ -1871,8 +1871,8 @@ export class BookContentColoring {
         return TokenColor.YOUNG;
       case 'new':
         return TokenColor.NEW;
-      case 'low':
-        return TokenColor.LOW;
+      case 'due':
+        return TokenColor.DUE;
       case 'unknown':
         return TokenColor.UNKNOWN;
       default:
@@ -1889,6 +1889,10 @@ export class BookContentColoring {
       | undefined,
     isNewCard: boolean
   ): WordStatus {
+    if (isNewCard) {
+      return 'new';
+    }
+
     const retrievability = metric?.['prop:r'];
     const stability = metric?.['prop:s'];
     const highRetrievability =
@@ -1898,30 +1902,27 @@ export class BookContentColoring {
     switch (this.options.colorMode) {
       case TokenColorMode.STABILITY:
         if (typeof stability !== 'number') {
-          return isNewCard ? 'low' : 'unknown';
+          return 'unknown';
         }
-        return highStability ? 'mature' : 'low';
+        return highStability ? 'mature' : 'due';
       case TokenColorMode.RETRIEVABILITY:
         if (typeof retrievability !== 'number') {
-          return isNewCard ? 'low' : 'unknown';
+          return 'unknown';
         }
-        return highRetrievability ? 'mature' : 'low';
+        return highRetrievability ? 'mature' : 'due';
       case TokenColorMode.COMBINED:
       default:
-        if ((typeof stability !== 'number' && typeof retrievability !== 'number') || isNewCard) {
-          return isNewCard ? 'low' : 'unknown';
+        if (typeof stability !== 'number' && typeof retrievability !== 'number') {
+          return 'unknown';
         }
 
         if (highStability && highRetrievability) {
           return 'mature';
         }
-        if (highStability && !highRetrievability) {
-          return 'young';
+        if (!highStability && !highRetrievability) {
+          return 'due';
         }
-        if (!highStability && highRetrievability) {
-          return 'new';
-        }
-        return 'low';
+        return 'young';
     }
   }
 
@@ -2042,7 +2043,7 @@ export class BookContentColoring {
         return 4;
       case 'new':
         return 3;
-      case 'low':
+      case 'due':
         return 2;
       case 'unknown':
         return 1;
@@ -2367,7 +2368,7 @@ export class BookContentColoring {
       let matureCount = 0,
         youngCount = 0,
         newCount = 0,
-        lowCount = 0,
+        dueCount = 0,
         unknownCount = 0;
 
       for (const [word, cardIds] of wordToCardIds.entries()) {
@@ -2391,7 +2392,7 @@ export class BookContentColoring {
         if (status === 'mature') matureCount++;
         else if (status === 'young') youngCount++;
         else if (status === 'new') newCount++;
-        else if (status === 'low') lowCount++;
+        else if (status === 'due') dueCount++;
         else unknownCount++;
 
         const wordData: CachedWordData = {
@@ -2412,7 +2413,7 @@ export class BookContentColoring {
       }
 
       console.log(
-        `Words by status: ${matureCount} mature, ${youngCount} young, ${newCount} new, ${lowCount} low, ${unknownCount} unknown`
+        `Words by status: ${matureCount} mature, ${youngCount} young, ${newCount} new, ${dueCount} due, ${unknownCount} unknown`
       );
 
       console.log('🔄 Cache warmed in IndexedDB; future lookups read directly from IndexedDB');

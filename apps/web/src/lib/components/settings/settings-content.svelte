@@ -808,7 +808,7 @@
       </SettingsItemGroup>
       <SettingsItemGroup
         title="Desired Retention"
-        tooltip={'Cards at or below this retrievability are treated as "To Review" (low R)'}
+        tooltip={'Cards at or below this retrievability are treated as "To Review" (due)'}
       >
         <input
           type="number"

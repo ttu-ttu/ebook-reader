@@ -61,7 +61,7 @@
       case 'young':
         return 'bg-orange-500/15 text-orange-100 border-orange-300/30';
       case 'new':
-        return 'bg-cyan-500/15 text-cyan-100 border-cyan-300/30';
+        return 'bg-sky-500/15 text-sky-100 border-sky-300/30';
       case 'uncollected':
         return 'bg-fuchsia-500/15 text-fuchsia-100 border-fuchsia-300/30';
       default:
@@ -114,7 +114,7 @@
       case 'young':
         return 'rounded bg-orange-500/25 px-0.5 text-orange-100';
       case 'new':
-        return 'rounded bg-cyan-500/25 px-0.5 text-cyan-100';
+        return 'rounded bg-sky-500/25 px-0.5 text-sky-100';
       case 'uncollected':
         return 'rounded bg-fuchsia-500/25 px-0.5 text-fuchsia-100';
       default:
