@@ -1686,6 +1686,65 @@ export class BookContentColoring {
     return lemmas;
   }
 
+  private async _getOrFetchLemmasBatch(tokens: string[]): Promise<Map<string, string[]>> {
+    const result = new Map<string, string[]>();
+    const uniqueTokens = Array.from(new Set(tokens.map((token) => token.trim()).filter(Boolean)));
+    if (uniqueTokens.length === 0) {
+      return result;
+    }
+
+    const missingTokens: string[] = [];
+    if (this.cacheService) {
+      const cached = await this.cacheService.getLemmasBatch(uniqueTokens);
+      for (const token of uniqueTokens) {
+        const lemmas = cached.get(token);
+        if (lemmas) {
+          result.set(token, lemmas);
+        } else {
+          missingTokens.push(token);
+        }
+      }
+    } else {
+      missingTokens.push(...uniqueTokens);
+    }
+
+    if (missingTokens.length === 0) {
+      return result;
+    }
+
+    for (const chunk of this._chunkArray(missingTokens, 10)) {
+      const fetched = await Promise.all(
+        chunk.map(async (token) => {
+          try {
+            const lemmas = await this.yomitan.lemmatize(token);
+            if (this.cacheService) {
+              await this.cacheService.setLemmas(token, lemmas);
+            }
+
+            return { token, lemmas };
+          } catch (error) {
+            console.debug('Lemmatization fallback failed for token', token, error);
+            return { token, lemmas: [] as string[] };
+          }
+        })
+      );
+
+      for (const { token, lemmas } of fetched) {
+        result.set(token, lemmas);
+      }
+    }
+
+    return result;
+  }
+
+  private async _getWordDataBatch(words: string[]): Promise<Map<string, CachedWordData>> {
+    if (!this.cacheService) {
+      return new Map();
+    }
+
+    return this.cacheService.getWordDataBatch(words);
+  }
+
   /**
    * Get word data for a token, using IndexedDB as the source of truth.
    * @param word - Word to lookup
@@ -2511,70 +2570,150 @@ export class BookContentColoring {
     const tokenToCardIds = new Map<string, number[]>();
     const allCardIds = new Set<number>();
 
-    for (const token of tokens) {
-      try {
-        const lemmas = await this._getOrFetchLemmas(token);
-        const lookupWords = Array.from(
-          new Set(
-            [token, ...lemmas].map((candidate) => candidate.trim()).filter((candidate) => candidate)
-          )
-        );
+    const addCachedCandidate = (
+      wordData: CachedWordData | undefined,
+      bestCached:
+        | { status: DocumentTokenStatus; due: boolean; cardIds: number[]; priority: number }
+        | undefined,
+      cardIds: Set<number>
+    ) => {
+      if (!wordData || !Array.isArray(wordData.cardIds) || wordData.cardIds.length === 0) {
+        return bestCached;
+      }
 
-        const cardIds = new Set<number>();
-        let bestCached:
+      const dedupedCardIds = Array.from(
+        new Set((wordData.cardIds || []).filter((cardId) => Number.isFinite(cardId)))
+      );
+      dedupedCardIds.forEach((cardId) => cardIds.add(cardId));
+
+      if (wordData.analysisStatus === undefined || wordData.due === undefined) {
+        return bestCached;
+      }
+
+      const priority = this._documentStatusPriority(wordData.analysisStatus);
+      const shouldReplace =
+        !bestCached ||
+        priority > bestCached.priority ||
+        (priority === bestCached.priority && wordData.due && !bestCached.due);
+
+      if (!shouldReplace) {
+        return bestCached;
+      }
+
+      return {
+        status: wordData.analysisStatus,
+        due: wordData.due,
+        cardIds: dedupedCardIds,
+        priority
+      };
+    };
+
+    const tokenLookupWords = new Map<string, string[]>();
+    const allLookupWords = new Set<string>();
+    for (const token of tokens) {
+      const lookupWords = this._buildWordLookupCandidates(token);
+      tokenLookupWords.set(token, lookupWords);
+      for (const lookupWord of lookupWords) {
+        allLookupWords.add(lookupWord);
+      }
+    }
+
+    const directWordData = await this._getWordDataBatch(Array.from(allLookupWords));
+    const tokenStates = new Map<
+      string,
+      {
+        cardIds: Set<number>;
+        bestCached?:
           | { status: DocumentTokenStatus; due: boolean; cardIds: number[]; priority: number }
           | undefined;
+      }
+    >();
 
+    for (const token of tokens) {
+      try {
+        const state = {
+          cardIds: new Set<number>(),
+          bestCached: undefined as
+            | { status: DocumentTokenStatus; due: boolean; cardIds: number[]; priority: number }
+            | undefined
+        };
+
+        const lookupWords = tokenLookupWords.get(token) || [];
         for (const lookupWord of lookupWords) {
-          const wordData = await this._getWordData(lookupWord);
-          if (!wordData || wordData.cardIds.length === 0) {
-            continue;
-          }
-
-          const dedupedCardIds = Array.from(
-            new Set((wordData.cardIds || []).filter((cardId) => Number.isFinite(cardId)))
+          state.bestCached = addCachedCandidate(
+            directWordData.get(lookupWord),
+            state.bestCached,
+            state.cardIds
           );
-
-          if (wordData.analysisStatus !== undefined && wordData.due !== undefined) {
-            const priority = this._documentStatusPriority(wordData.analysisStatus);
-            const shouldReplace =
-              !bestCached ||
-              priority > bestCached.priority ||
-              (priority === bestCached.priority && wordData.due && !bestCached.due);
-
-            if (shouldReplace) {
-              bestCached = {
-                status: wordData.analysisStatus,
-                due: wordData.due,
-                cardIds: dedupedCardIds,
-                priority
-              };
-            }
-          }
-
-          dedupedCardIds.forEach((cardId) => cardIds.add(cardId));
         }
 
-        if (bestCached) {
-          resolved.set(token, {
-            status: bestCached.status,
-            due: bestCached.due,
-            cardIds: bestCached.cardIds
-          });
-          continue;
-        }
-
-        const resolvedCardIds = Array.from(cardIds);
-        tokenToCardIds.set(token, resolvedCardIds);
-        resolvedCardIds.forEach((cardId) => allCardIds.add(cardId));
+        tokenStates.set(token, state);
       } catch (error) {
         console.debug(`Document token analysis failed for "${token}"`, error);
         tokenToCardIds.set(token, []);
       }
     }
 
-    const metricsMap = await this.anki.cardMetricsMap(Array.from(allCardIds), ['prop:r', 'prop:s']);
-    const newCardIds = await this._findNewCardIds(Array.from(allCardIds));
+    const lemmasByToken = await this._getOrFetchLemmasBatch(tokens);
+    const tokenToLemmaLookupWords = new Map<string, string[]>();
+    const allLemmaLookupWords = new Set<string>();
+
+    for (const token of tokens) {
+      const lemmas = lemmasByToken.get(token) || [];
+      const lemmaLookupWords = new Set<string>();
+
+      for (const lemma of lemmas) {
+        const trimmedLemma = lemma.trim();
+        if (!trimmedLemma || trimmedLemma === token) {
+          continue;
+        }
+
+        for (const candidate of this._buildWordLookupCandidates(trimmedLemma)) {
+          lemmaLookupWords.add(candidate);
+          allLemmaLookupWords.add(candidate);
+        }
+      }
+
+      tokenToLemmaLookupWords.set(token, Array.from(lemmaLookupWords));
+    }
+
+    const lemmaWordData = await this._getWordDataBatch(Array.from(allLemmaLookupWords));
+
+    for (const token of tokens) {
+      const state = tokenStates.get(token);
+      if (!state) {
+        continue;
+      }
+
+      for (const lookupWord of tokenToLemmaLookupWords.get(token) || []) {
+        state.bestCached = addCachedCandidate(
+          lemmaWordData.get(lookupWord),
+          state.bestCached,
+          state.cardIds
+        );
+      }
+
+      if (state.bestCached) {
+        resolved.set(token, {
+          status: state.bestCached.status,
+          due: state.bestCached.due,
+          cardIds: state.bestCached.cardIds
+        });
+        continue;
+      }
+
+      const resolvedCardIds = Array.from(state.cardIds);
+      tokenToCardIds.set(token, resolvedCardIds);
+      resolvedCardIds.forEach((cardId) => allCardIds.add(cardId));
+    }
+
+    const allResolvedCardIds = Array.from(allCardIds);
+    const metricsMap =
+      allResolvedCardIds.length > 0
+        ? await this.anki.cardMetricsMap(allResolvedCardIds, ['prop:r', 'prop:s'])
+        : new Map();
+    const newCardIds =
+      allResolvedCardIds.length > 0 ? await this._findNewCardIds(allResolvedCardIds) : new Set();
 
     for (const token of tokens) {
       // Already resolved from IndexedDB cached analysisStatus/due path.

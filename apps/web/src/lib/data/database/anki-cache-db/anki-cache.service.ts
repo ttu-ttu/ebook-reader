@@ -55,6 +55,51 @@ export class AnkiCacheService {
   }
 
   /**
+   * Get cached word data for multiple words in a single IndexedDB transaction
+   * @param words - Words to lookup
+   * @returns Map of word -> word data
+   */
+  async getWordDataBatch(words: string[]): Promise<Map<string, CachedWordData>> {
+    const result = new Map<string, CachedWordData>();
+    const uniqueWords = Array.from(new Set(words.map((word) => word.trim()).filter(Boolean)));
+    if (uniqueWords.length === 0) {
+      return result;
+    }
+
+    const database = await this.db;
+    const tx = database.transaction('wordData', 'readwrite');
+    const store = tx.objectStore('wordData');
+    const entries = await Promise.all(
+      uniqueWords.map(async (word) => ({
+        word,
+        entry: await store.get(word)
+      }))
+    );
+
+    for (const { word, entry } of entries) {
+      if (!entry) {
+        continue;
+      }
+
+      if (this._isExpired(entry.timestamp)) {
+        await store.delete(word);
+        continue;
+      }
+
+      const status = entry.status === 'low' ? 'due' : entry.status;
+      result.set(word, {
+        status,
+        analysisStatus: entry.analysisStatus,
+        due: entry.due,
+        cardIds: Array.isArray(entry.cardIds) ? entry.cardIds : []
+      });
+    }
+
+    await tx.done;
+    return result;
+  }
+
+  /**
    * Store word data (status + cardIds) in IndexedDB cache
    * @param word - Word to cache
    * @param status - Card status (mature/young/new/due/unknown)
@@ -136,6 +181,45 @@ export class AnkiCacheService {
     }
 
     return entry.lemmas;
+  }
+
+  /**
+   * Get cached lemmatization for multiple tokens in a single IndexedDB transaction
+   * @param tokens - Tokens to lookup
+   * @returns Map of token -> lemmas
+   */
+  async getLemmasBatch(tokens: string[]): Promise<Map<string, string[]>> {
+    const result = new Map<string, string[]>();
+    const uniqueTokens = Array.from(new Set(tokens.map((token) => token.trim()).filter(Boolean)));
+    if (uniqueTokens.length === 0) {
+      return result;
+    }
+
+    const database = await this.db;
+    const tx = database.transaction('lemmatize', 'readwrite');
+    const store = tx.objectStore('lemmatize');
+    const entries = await Promise.all(
+      uniqueTokens.map(async (token) => ({
+        token,
+        entry: await store.get(token)
+      }))
+    );
+
+    for (const { token, entry } of entries) {
+      if (!entry) {
+        continue;
+      }
+
+      if (this._isExpired(entry.timestamp)) {
+        await store.delete(token);
+        continue;
+      }
+
+      result.set(token, Array.isArray(entry.lemmas) ? entry.lemmas : []);
+    }
+
+    await tx.done;
+    return result;
   }
 
   /**
