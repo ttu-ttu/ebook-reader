@@ -60,6 +60,14 @@ export interface CardMetricInfo {
   'prop:d': number | null;
 }
 
+export interface GetAllCardsProgress {
+  phase: 'query-detailed' | 'find-card-ids' | 'fetch-card-info';
+  percentage: number;
+  completed: number;
+  total: number;
+  detail: string;
+}
+
 export class Anki {
   private readonly ankiConnectUrl: string;
   private readonly wordFields: string[];
@@ -446,8 +454,16 @@ export class Anki {
    * @param ankiConnectUrl - Optional override for Anki Connect URL
    * @returns Array of card information with word fields
    */
-  async getAllCardsFromDecks(ankiConnectUrl?: string): Promise<CardInfo[]> {
+  async getAllCardsFromDecks(
+    ankiConnectUrl?: string,
+    metricFields: CardMetricField[] = ['prop:r', 'prop:s'],
+    onProgress?: (progress: GetAllCardsProgress) => void
+  ): Promise<CardInfo[]> {
     console.log('getAllCardsFromDecks: Starting...');
+
+    const reportProgress = (progress: GetAllCardsProgress) => {
+      onProgress?.(progress);
+    };
 
     // Build deck query
     let deckQuery = '';
@@ -462,18 +478,57 @@ export class Anki {
       return [];
     }
 
+    const requestedMetricFields = metricFields.length > 0 ? metricFields : undefined;
+
+    // Fast path: query-based detailed findCards (no card-id round-trip).
+    reportProgress({
+      phase: 'query-detailed',
+      percentage: 0,
+      completed: 0,
+      total: 1,
+      detail: 'Trying query-based detailed fetch'
+    });
+    const queryBasedCards = await this._findCardsDetailedByQuery(
+      deckQuery,
+      requestedMetricFields,
+      ankiConnectUrl
+    );
+    if (queryBasedCards !== null) {
+      reportProgress({
+        phase: 'query-detailed',
+        percentage: 100,
+        completed: 1,
+        total: 1,
+        detail: `Fetched ${queryBasedCards.length} cards via query`
+      });
+      console.log(
+        `getAllCardsFromDecks: Query-based findCards path returned ${queryBasedCards.length} cards`
+      );
+      return queryBasedCards;
+    }
+
     // Find all cards in the configured decks
     console.log('getAllCardsFromDecks: Finding all cards in decks...');
     const response = await this._executeAction('findCards', { query: deckQuery }, ankiConnectUrl);
     const cardIds: number[] = response.result || [];
     console.log(`getAllCardsFromDecks: Found ${cardIds.length} card IDs`);
 
+    const CHUNK_SIZE = 2500;
+    const totalChunks = cardIds.length > 0 ? Math.ceil(cardIds.length / CHUNK_SIZE) : 0;
+    const totalSteps = 1 + totalChunks;
+    reportProgress({
+      phase: 'find-card-ids',
+      percentage: totalSteps > 0 ? Math.round((1 / totalSteps) * 100) : 100,
+      completed: 1,
+      total: totalSteps,
+      detail: `Found ${cardIds.length} card IDs`
+    });
+
     if (cardIds.length === 0) {
       return [];
     }
 
     // Get card info for all cards (in chunks to avoid overwhelming Anki)
-    const CHUNK_SIZE = 1000;
     const allCardInfos: CardInfo[] = [];
     let useRetrievedInfoMode = true;
     let useLegacyCompactCardsInfo = true;
@@ -489,7 +544,7 @@ export class Anki {
 
       if (useRetrievedInfoMode) {
         try {
-          cardInfos = await this.cardsInfo(chunk, undefined, ankiConnectUrl, {
+          cardInfos = await this.cardsInfo(chunk, requestedMetricFields, ankiConnectUrl, {
             noteFields: this.wordFields,
             retrievedInfoMode: 'FIELDS_ONLY'
           });
@@ -517,7 +572,7 @@ export class Anki {
       if (!useRetrievedInfoMode) {
         if (useLegacyCompactCardsInfo) {
           try {
-            cardInfos = await this.cardsInfo(chunk, undefined, ankiConnectUrl, {
+            cardInfos = await this.cardsInfo(chunk, requestedMetricFields, ankiConnectUrl, {
               noteFields: this.wordFields,
               compact: true
             });
@@ -541,15 +596,158 @@ export class Anki {
         }
 
         if (!useLegacyCompactCardsInfo) {
-          cardInfos = await this.cardsInfo(chunk, undefined, ankiConnectUrl);
+          cardInfos = await this.cardsInfo(chunk, requestedMetricFields, ankiConnectUrl);
         }
       }
 
       allCardInfos.push(...cardInfos);
+
+      const completedChunks = Math.floor(i / CHUNK_SIZE) + 1;
+      const completedSteps = 1 + completedChunks;
+      reportProgress({
+        phase: 'fetch-card-info',
+        percentage: Math.round((completedSteps / totalSteps) * 100),
+        completed: completedSteps,
+        total: totalSteps,
+        detail: `Fetching card info chunk ${completedChunks}/${totalChunks}`
+      });
     }
 
     console.log(`getAllCardsFromDecks: Completed, got ${allCardInfos.length} cards`);
     return allCardInfos;
+  }
+
+  private async _findCardsDetailedByQuery(
+    query: string,
+    metricFields: CardMetricField[] | undefined,
+    ankiConnectUrl?: string
+  ): Promise<CardInfo[] | null> {
+    try {
+      const params: {
+        query: string;
+        fields?: CardMetricField[];
+        noteFields?: string[];
+      } = {
+        query
+      };
+
+      if (metricFields && metricFields.length > 0) {
+        params.fields = metricFields;
+      }
+
+      if (this.wordFields.length > 0) {
+        params.noteFields = this.wordFields;
+      }
+
+      const response = await this._executeAction('findCards', params, ankiConnectUrl);
+      if (!Array.isArray(response.result)) {
+        return null;
+      }
+
+      if (response.result.length === 0) {
+        return [];
+      }
+
+      // Legacy findCards returns number[]; detailed mode returns object[].
+      if (typeof response.result[0] !== 'object' || response.result[0] === null) {
+        return null;
+      }
+
+      const cards: CardInfo[] = [];
+      for (const entry of response.result) {
+        if (!entry || typeof entry !== 'object') {
+          return null;
+        }
+
+        const values = entry as Record<string, unknown>;
+        const cardId = Number(values.cardId);
+        if (!Number.isFinite(cardId)) {
+          continue;
+        }
+
+        const card: CardInfo = {
+          cardId,
+          fields: this._extractNoteFieldsFromFindCardsEntry(values),
+          'prop:r': typeof values['prop:r'] === 'number' ? (values['prop:r'] as number) : null,
+          'prop:s': typeof values['prop:s'] === 'number' ? (values['prop:s'] as number) : null,
+          'prop:d': typeof values['prop:d'] === 'number' ? (values['prop:d'] as number) : null,
+          queue: typeof values.queue === 'number' ? (values.queue as number) : undefined,
+          type: typeof values.type === 'number' ? (values.type as number) : undefined,
+          reps: typeof values.reps === 'number' ? (values.reps as number) : undefined
+        };
+
+        cards.push(card);
+      }
+
+      if (cards.length === 0) {
+        return [];
+      }
+
+      // If noteFields were requested but not returned in usable form, fall back.
+      if (this.wordFields.length > 0 && !this._hasUsableWarmCacheCards(cards)) {
+        console.warn(
+          'findCards(query, fields, noteFields) returned unusable noteFields for warm cache; falling back to cardsInfo.'
+        );
+        return null;
+      }
+
+      return cards;
+    } catch (error) {
+      if (this._isUnsupportedFindCardsDetailsError(error)) {
+        console.warn(
+          'findCards(query, fields, noteFields) not supported by AnkiConnect; falling back to cardsInfo.'
+        );
+        return null;
+      }
+
+      // If query-based detailed mode fails for size/serialization reasons, fallback to chunked cardsInfo.
+      console.warn(
+        'findCards(query, fields, noteFields) failed; falling back to chunked cardsInfo.',
+        error
+      );
+      return null;
+    }
+  }
+
+  private _extractNoteFieldsFromFindCardsEntry(
+    values: Record<string, unknown>
+  ): CardInfo['fields'] {
+    const result: CardInfo['fields'] = {};
+
+    const nestedFields = values.fields;
+    if (nestedFields && typeof nestedFields === 'object') {
+      for (const [name, raw] of Object.entries(nestedFields as Record<string, unknown>)) {
+        if (raw && typeof raw === 'object' && 'value' in (raw as Record<string, unknown>)) {
+          const value = (raw as Record<string, unknown>).value;
+          result[name] = { value: typeof value === 'string' ? value : '' };
+        } else if (typeof raw === 'string') {
+          result[name] = { value: raw };
+        }
+      }
+    }
+
+    for (const fieldName of this.wordFields) {
+      const directValue = values[fieldName];
+      if (typeof directValue === 'string') {
+        result[fieldName] = { value: directValue };
+      } else if (
+        directValue &&
+        typeof directValue === 'object' &&
+        'value' in (directValue as Record<string, unknown>)
+      ) {
+        const rawValue = (directValue as Record<string, unknown>).value;
+        result[fieldName] = { value: typeof rawValue === 'string' ? rawValue : '' };
+      }
+    }
+
+    return result;
+  }
+
+  private _isUnsupportedFindCardsDetailsError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : `${error}`;
+    return /noteFields|fields|unexpected keyword|unknown parameter|unsupported|Unexpected findCards\(fields\) response payload/i.test(
+      message
+    );
   }
 
   private _isUnsupportedCardsInfoOptionsError(error: unknown): boolean {

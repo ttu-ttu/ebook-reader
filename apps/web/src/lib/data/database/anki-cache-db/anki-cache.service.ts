@@ -118,6 +118,41 @@ export class AnkiCacheService {
   }
 
   /**
+   * Store multiple wordData entries in a single IndexedDB transaction
+   * @param entries - Array of word -> data entries
+   */
+  async setWordDataBatch(entries: Array<{ word: string; data: CachedWordData }>): Promise<void> {
+    if (entries.length === 0) {
+      return;
+    }
+
+    const database = await this.db;
+    const tx = database.transaction('wordData', 'readwrite');
+    const store = tx.objectStore('wordData');
+    const timestamp = Date.now();
+
+    await Promise.all(
+      entries.map(async ({ word, data }) => {
+        const normalizedWord = word.trim();
+        if (!normalizedWord) {
+          return;
+        }
+
+        await store.put({
+          word: normalizedWord,
+          status: data.status,
+          analysisStatus: data.analysisStatus,
+          due: data.due,
+          cardIds: data.cardIds,
+          timestamp
+        });
+      })
+    );
+
+    await tx.done;
+  }
+
+  /**
    * Store token color in IndexedDB cache
    * @param token - Token to cache
    * @param color - Token color
@@ -180,7 +215,15 @@ export class AnkiCacheService {
       return undefined;
     }
 
-    return entry.lemmas;
+    const lemmas = Array.isArray(entry.lemmas)
+      ? Array.from(new Set(entry.lemmas.map((lemma) => lemma.trim()).filter(Boolean)))
+      : [];
+    if (lemmas.length === 0) {
+      await database.delete('lemmatize', token);
+      return undefined;
+    }
+
+    return lemmas;
   }
 
   /**
@@ -215,7 +258,15 @@ export class AnkiCacheService {
         continue;
       }
 
-      result.set(token, Array.isArray(entry.lemmas) ? entry.lemmas : []);
+      const lemmas = Array.isArray(entry.lemmas)
+        ? Array.from(new Set(entry.lemmas.map((lemma) => lemma.trim()).filter(Boolean)))
+        : [];
+      if (lemmas.length === 0) {
+        await store.delete(token);
+        continue;
+      }
+
+      result.set(token, lemmas);
     }
 
     await tx.done;
@@ -229,9 +280,22 @@ export class AnkiCacheService {
    */
   async setLemmas(token: string, lemmas: string[]): Promise<void> {
     const database = await this.db;
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      return;
+    }
+
+    const normalizedLemmas = Array.from(
+      new Set(lemmas.map((lemma) => lemma.trim()).filter(Boolean))
+    );
+    if (normalizedLemmas.length === 0) {
+      await database.delete('lemmatize', normalizedToken);
+      return;
+    }
+
     await database.put('lemmatize', {
-      token,
-      lemmas,
+      token: normalizedToken,
+      lemmas: normalizedLemmas,
       timestamp: Date.now()
     });
   }

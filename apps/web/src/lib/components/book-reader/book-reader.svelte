@@ -49,7 +49,9 @@
     ColoringPriorityQueue,
     type DocumentTokenAnalysisProgress,
     type DocumentTokenAnalysisResult,
+    type DocumentTokenizeProgress,
     type DocumentTokenStatus,
+    type WarmCacheProgress,
     ProcessingPriority
   } from '$lib/functions/anki';
   import { createAnkiCacheDb, AnkiCacheService } from '$lib/data/database/anki-cache-db';
@@ -194,6 +196,116 @@
   let tokenPanelBookmarkShiftRaf: number | undefined;
   let tokenPanelBaseAnchorLeft: number | undefined;
   let tokenPanelBookmarkShiftTimeout: ReturnType<typeof setTimeout> | undefined;
+  let initialTokenizeProgress: DocumentTokenizeProgress | undefined;
+  let initialTokenizeLoading = false;
+  let initialTokenizeAbortController: AbortController | undefined;
+  let initialTokenizePromise: Promise<void> | null = null;
+  const initialTokenizeCompletedKeys = new Set<string>();
+  let initialTokenizeActiveKey = '';
+  let initialStatusColoringLoading = false;
+  let initialStatusColoringSeenWork = false;
+  let initialStatusColoringCompleted = false;
+  let initialStatusColoringMaxWork = 0;
+  let initialStatusColoringProgress = 0;
+  let initialStatusColoringQueueTotal = 0;
+  let initialStatusColoringMonitor: ReturnType<typeof setInterval> | undefined;
+  let initialStatusColoringDocKey = '';
+  let warmCacheLoading = false;
+  let warmCacheProgress: WarmCacheProgress | undefined;
+  let readerPreparationLoading = false;
+  let readerPreparationLabel = 'Preparing token index';
+  let readerPreparationPercentage = 0;
+  let readerPreparationDetail = 'Step 0 / 0';
+
+  function getColoringDocKey(html: string): string {
+    return [html.length, html.slice(0, 256), html.slice(-256)].join('::');
+  }
+
+  function resetInitialStatusColoringState(): void {
+    initialStatusColoringLoading = false;
+    initialStatusColoringSeenWork = false;
+    initialStatusColoringCompleted = false;
+    initialStatusColoringMaxWork = 0;
+    initialStatusColoringProgress = 0;
+    initialStatusColoringQueueTotal = 0;
+  }
+
+  function stopInitialStatusColoringMonitor(): void {
+    if (initialStatusColoringMonitor) {
+      clearInterval(initialStatusColoringMonitor);
+      initialStatusColoringMonitor = undefined;
+    }
+  }
+
+  function startInitialStatusColoringMonitor(): void {
+    if (initialStatusColoringMonitor) {
+      return;
+    }
+
+    initialStatusColoringMonitor = setInterval(() => {
+      if (!$ankiIntegrationEnabled$ || initialStatusColoringCompleted || !coloringQueue) {
+        return;
+      }
+
+      const stats = coloringQueue.getStats();
+      const totalWork = stats.queued + stats.processing;
+      initialStatusColoringQueueTotal = totalWork;
+
+      if (totalWork > 0) {
+        initialStatusColoringSeenWork = true;
+        initialStatusColoringLoading = true;
+        initialStatusColoringMaxWork = Math.max(initialStatusColoringMaxWork, totalWork);
+
+        if (initialStatusColoringMaxWork > 0) {
+          const rawProgress =
+            ((initialStatusColoringMaxWork - totalWork) / initialStatusColoringMaxWork) * 100;
+          initialStatusColoringProgress = Math.min(99, Math.max(0, Math.round(rawProgress)));
+        }
+
+        return;
+      }
+
+      if (initialStatusColoringSeenWork && !initialTokenizeLoading) {
+        initialStatusColoringProgress = 100;
+        initialStatusColoringLoading = false;
+        initialStatusColoringCompleted = true;
+        stopInitialStatusColoringMonitor();
+      }
+    }, 120);
+  }
+
+  async function runWarmCacheWithProgress(service: BookContentColoring): Promise<{
+    totalCards: number;
+    cachedWords: number;
+    duration: number;
+  }> {
+    warmCacheLoading = true;
+    warmCacheProgress = {
+      phase: 'fetch-cards',
+      percentage: 0,
+      completed: 0,
+      total: 1,
+      detail: 'Starting cache refresh'
+    };
+
+    try {
+      const stats = await service.warmCache({
+        onProgress: (progress) => {
+          warmCacheProgress = progress;
+        }
+      });
+      warmCacheProgress = {
+        phase: 'process-words',
+        percentage: 100,
+        completed: warmCacheProgress?.completed ?? 1,
+        total: warmCacheProgress?.total ?? 1,
+        detail: 'Cache refresh complete'
+      };
+      return stats;
+    } finally {
+      warmCacheLoading = false;
+    }
+  }
 
   function isTokenPanelFilter(value: string): value is TokenPanelFilterId {
     return (
@@ -292,13 +404,13 @@
           // batchSize: 5 elements per batch (smaller batches, faster feedback)
           // Tokens are chunked to 10 per Anki query for retrievability checks
           coloringQueue = new ColoringPriorityQueue(service, 1, 5);
+          startInitialStatusColoringMonitor();
         }
 
         // Step 3: Refresh cache in background (don't block colorization)
         if (cacheInfo.needsRefresh) {
           console.log('🔄 Refreshing cache from Anki in background...');
-          cacheRefreshPromise = service
-            .warmCache()
+          cacheRefreshPromise = runWarmCacheWithProgress(service)
             .then(async (stats) => {
               console.log(
                 `✅ Cache refreshed: ${stats.cachedWords} words from ${stats.totalCards} cards in ${stats.duration}ms`
@@ -336,6 +448,16 @@
     }
   } else {
     // Clean up when disabled
+    initialTokenizeAbortController?.abort();
+    initialTokenizePromise = null;
+    initialTokenizeLoading = false;
+    initialTokenizeProgress = undefined;
+    initialTokenizeActiveKey = '';
+    stopInitialStatusColoringMonitor();
+    resetInitialStatusColoringState();
+    warmCacheLoading = false;
+    warmCacheProgress = undefined;
+
     if (coloringQueue) {
       coloringQueue.clear();
       coloringQueue = undefined;
@@ -370,7 +492,7 @@
         if (!service) return;
 
         await service.setColorMode(currentMode);
-        await service.warmCache();
+        await runWarmCacheWithProgress(service);
         await service.recolorizeProcessedElements();
         tokenPanelCacheVersion++;
         tokenPanelResult = undefined;
@@ -403,7 +525,7 @@
         if (!service) return;
 
         await service.setDesiredRetention(currentDesiredRetention);
-        await service.warmCache();
+        await runWarmCacheWithProgress(service);
         await service.recolorizeProcessedElements();
         tokenPanelCacheVersion++;
         tokenPanelResult = undefined;
@@ -428,7 +550,7 @@
         if (!service) return;
 
         await service.setMatureThreshold(currentMatureThreshold);
-        await service.warmCache();
+        await runWarmCacheWithProgress(service);
         await service.recolorizeProcessedElements();
         tokenPanelCacheVersion++;
         tokenPanelResult = undefined;
@@ -531,6 +653,12 @@
 
   onDestroy(() => {
     tokenPanelAnalysisAbortController?.abort();
+    initialTokenizeAbortController?.abort();
+    initialTokenizePromise = null;
+    initialTokenizeActiveKey = '';
+    stopInitialStatusColoringMonitor();
+    warmCacheLoading = false;
+    warmCacheProgress = undefined;
     mutationObserver.disconnect();
     if (typeof window !== 'undefined' && tokenPanelBookmarkShiftRaf !== undefined) {
       window.cancelAnimationFrame(tokenPanelBookmarkShiftRaf);
@@ -1022,6 +1150,95 @@
     return ['token-count-v1', fullText.length, prefix, suffix].join('::');
   }
 
+  function getInitialTokenizeKey(fullText: string): string {
+    const prefix = fullText.slice(0, 256);
+    const suffix = fullText.slice(-256);
+    return ['tokenize-bootstrap-v1', fullText.length, prefix, suffix].join('::');
+  }
+
+  async function ensureInitialTokenizeBootstrap(): Promise<void> {
+    const service = coloringService;
+    if (!service || !$ankiIntegrationEnabled$) {
+      return;
+    }
+
+    const fullText = extractDocumentText(htmlContent);
+    const trimmedText = fullText.trim();
+    if (!trimmedText) {
+      initialTokenizeLoading = false;
+      initialTokenizeProgress = undefined;
+      return;
+    }
+
+    const initialTokenizeKey = getInitialTokenizeKey(trimmedText);
+    if (initialTokenizeCompletedKeys.has(initialTokenizeKey)) {
+      return;
+    }
+
+    const tokenizeChunkSize = 2500;
+    const tokenCountCacheKey = getTokenPanelTokenCountCacheKey(trimmedText);
+    const cachedTokenCounts = await ankiCacheService.getDocumentTokenCounts(tokenCountCacheKey);
+    if (cachedTokenCounts && cachedTokenCounts.entries.length > 0) {
+      initialTokenizeCompletedKeys.add(initialTokenizeKey);
+      initialTokenizeLoading = false;
+      initialTokenizeProgress = undefined;
+      return;
+    }
+
+    if (initialTokenizeLoading) {
+      if (initialTokenizeActiveKey === initialTokenizeKey) {
+        return;
+      }
+
+      initialTokenizeAbortController?.abort();
+    }
+
+    const abortController = new AbortController();
+    initialTokenizeAbortController = abortController;
+    initialTokenizeActiveKey = initialTokenizeKey;
+    initialTokenizeLoading = true;
+    initialTokenizeProgress = {
+      completedSteps: 0,
+      totalSteps: 0,
+      percentage: 0
+    };
+
+    const promise = (async () => {
+      await service.preTokenizeDocument(trimmedText, {
+        signal: abortController.signal,
+        onProgress: (progress) => {
+          initialTokenizeProgress = progress;
+        },
+        chunkSize: tokenizeChunkSize,
+        scanLength: tokenizeChunkSize,
+        tokenCountCacheKey
+      });
+      initialTokenizeCompletedKeys.add(initialTokenizeKey);
+    })();
+
+    initialTokenizePromise = promise;
+
+    try {
+      await promise;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
+      console.error('Initial tokenization bootstrap failed:', error);
+    } finally {
+      if (initialTokenizeAbortController === abortController) {
+        initialTokenizeLoading = false;
+        initialTokenizeAbortController = undefined;
+        initialTokenizeActiveKey = '';
+      }
+
+      if (initialTokenizePromise === promise) {
+        initialTokenizePromise = null;
+      }
+    }
+  }
+
   async function analyzeForTokenPanel(): Promise<void> {
     const service = coloringService;
     if (!service || !showTokenPanel || !$ankiIntegrationEnabled$) {
@@ -1050,7 +1267,11 @@
         await cacheRefreshPromise;
       }
 
-      const analysisChunkSize = 1000;
+      if (initialTokenizePromise) {
+        await initialTokenizePromise;
+      }
+
+      const analysisChunkSize = 2500;
       const fullText = extractDocumentText(htmlContent);
       const tokenCountCacheKey = getTokenPanelTokenCountCacheKey(fullText);
       tokenPanelResult = await service.analyzeDocumentText(fullText, {
@@ -1096,9 +1317,47 @@
     scheduleTokenPanelBookmarkShiftUpdate();
   }
 
+  $: {
+    const nextDocKey = getColoringDocKey(htmlContent);
+    if (nextDocKey !== initialStatusColoringDocKey) {
+      initialStatusColoringDocKey = nextDocKey;
+      stopInitialStatusColoringMonitor();
+      resetInitialStatusColoringState();
+
+      if ($ankiIntegrationEnabled$ && coloringQueue) {
+        startInitialStatusColoringMonitor();
+      }
+    }
+  }
+
+  $: if ($ankiIntegrationEnabled$ && coloringService && htmlContent) {
+    void ensureInitialTokenizeBootstrap();
+  }
+
   $: if (showTokenPanel && coloringService && $ankiIntegrationEnabled$) {
     void analyzeForTokenPanel();
   }
+
+  $: readerPreparationLoading =
+    initialTokenizeLoading || warmCacheLoading || initialStatusColoringLoading;
+
+  $: readerPreparationLabel = initialTokenizeLoading
+    ? 'Preparing token index'
+    : warmCacheLoading
+      ? 'Syncing Anki cache'
+      : 'Applying token colors';
+
+  $: readerPreparationPercentage = initialTokenizeLoading
+    ? (initialTokenizeProgress?.percentage ?? 0)
+    : warmCacheLoading
+      ? (warmCacheProgress?.percentage ?? 0)
+      : initialStatusColoringProgress;
+
+  $: readerPreparationDetail = initialTokenizeLoading
+    ? `Step ${initialTokenizeProgress?.completedSteps ?? 0} / ${initialTokenizeProgress?.totalSteps ?? 0}`
+    : warmCacheLoading
+      ? (warmCacheProgress?.detail ?? 'Refreshing Anki cache')
+      : `Queue ${initialStatusColoringQueueTotal}`;
 
   function scheduleTokenPanelBookmarkShiftUpdate() {
     if (typeof window === 'undefined') return;
@@ -1172,6 +1431,24 @@
     style:border-color={fontColor}
   >
     The reader is currently blurred due to an external application (e. g. exstatic)
+  </div>
+{/if}
+{#if readerPreparationLoading}
+  <div
+    class="fixed left-1/2 top-12 z-[25] w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-cyan-400/30 bg-slate-950/90 px-3 py-2 shadow-xl backdrop-blur"
+    style:writing-mode="horizontal-tb"
+  >
+    <div class="mb-1 flex items-center justify-between text-xs text-cyan-100">
+      <span>{readerPreparationLabel}</span>
+      <span>{readerPreparationPercentage}%</span>
+    </div>
+    <div class="h-1.5 overflow-hidden rounded-full bg-slate-800">
+      <div
+        class="h-full bg-cyan-400 transition-all duration-150"
+        style={`width: ${readerPreparationPercentage}%`}
+      />
+    </div>
+    <div class="mt-1 text-[11px] text-slate-300">{readerPreparationDetail}</div>
   </div>
 {/if}
 <div

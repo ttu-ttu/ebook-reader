@@ -5,7 +5,7 @@
  */
 
 import { Yomitan } from '$lib/data/yomitan';
-import { Anki, type CardInfo } from '$lib/data/anki';
+import { Anki, type CardInfo, type GetAllCardsProgress } from '$lib/data/anki';
 import {
   TokenColor,
   TokenColorMode,
@@ -53,6 +53,20 @@ export interface DocumentTokenAnalysisResult {
   entries: DocumentTokenAnalysisEntry[];
   totalTokens: number;
   uniqueTokens: number;
+}
+
+export interface DocumentTokenizeProgress {
+  completedSteps: number;
+  totalSteps: number;
+  percentage: number;
+}
+
+export interface WarmCacheProgress {
+  phase: 'fetch-cards' | 'process-words';
+  percentage: number;
+  completed: number;
+  total: number;
+  detail: string;
 }
 
 interface GradeDialogInfo {
@@ -308,8 +322,8 @@ export class BookContentColoring {
               const rawToken = tokens[tokenIdx];
               const trimmed = rawToken.trim();
               const color = HAS_LETTER_REGEX.test(trimmed)
-                ? globalColorMap.get(trimmed) || TokenColor.UNCOLLECTED
-                : TokenColor.UNCOLLECTED;
+                ? globalColorMap.get(trimmed) || TokenColor.UNKNOWN
+                : TokenColor.UNKNOWN;
 
               // Map each character position in this token to its color and token index
               for (let charIdx = 0; charIdx < rawToken.length; charIdx++) {
@@ -445,8 +459,6 @@ export class BookContentColoring {
 
         if (uniqueCounts.size > 0) {
           loadedTokenCountsFromCache = true;
-          completedSteps = textChunks.length;
-          reportProgress('tokenize', completedSteps, totalSteps);
         }
       }
     }
@@ -477,6 +489,9 @@ export class BookContentColoring {
         }));
         await this.cacheService.setDocumentTokenCounts(tokenCountCacheKey, entries, totalTokens);
       }
+    } else {
+      completedSteps = textChunks.length;
+      reportProgress('tokenize', completedSteps, totalSteps);
     }
 
     const uniqueTokens = Array.from(uniqueCounts.keys());
@@ -520,6 +535,80 @@ export class BookContentColoring {
     };
   }
 
+  async preTokenizeDocument(
+    text: string,
+    options?: {
+      signal?: AbortSignal;
+      onProgress?: (progress: DocumentTokenizeProgress) => void;
+      chunkSize?: number;
+      scanLength?: number;
+      tokenCountCacheKey?: string;
+    }
+  ): Promise<{ totalTokens: number; uniqueTokens: number }> {
+    const normalizedText = text.trim();
+    if (!normalizedText) {
+      options?.onProgress?.({
+        completedSteps: 0,
+        totalSteps: 0,
+        percentage: 100
+      });
+      return {
+        totalTokens: 0,
+        uniqueTokens: 0
+      };
+    }
+
+    const chunkSize = options?.chunkSize ?? 12000;
+    const scanLength = options?.scanLength ?? 4096;
+    const textChunks = this._chunkDocumentText(normalizedText, chunkSize);
+    const totalSteps = Math.max(1, textChunks.length);
+    const uniqueCounts = new Map<string, number>();
+    let totalTokens = 0;
+    let completedSteps = 0;
+
+    const reportProgress = () => {
+      options?.onProgress?.({
+        completedSteps,
+        totalSteps,
+        percentage: Math.round((completedSteps / totalSteps) * 100)
+      });
+    };
+
+    reportProgress();
+
+    for (const chunk of textChunks) {
+      this._throwIfAborted(options?.signal);
+      const tokens = await this.yomitan.tokenize(chunk, undefined, scanLength);
+
+      for (const token of tokens) {
+        const trimmedToken = token.trim();
+        if (!HAS_LETTER_REGEX.test(trimmedToken)) {
+          continue;
+        }
+
+        uniqueCounts.set(trimmedToken, (uniqueCounts.get(trimmedToken) || 0) + 1);
+        totalTokens++;
+      }
+
+      completedSteps++;
+      reportProgress();
+    }
+
+    const tokenCountCacheKey = options?.tokenCountCacheKey?.trim();
+    if (tokenCountCacheKey && this.cacheService && uniqueCounts.size > 0) {
+      const entries = Array.from(uniqueCounts.entries()).map(([token, count]) => ({
+        token,
+        count
+      }));
+      await this.cacheService.setDocumentTokenCounts(tokenCountCacheKey, entries, totalTokens);
+    }
+
+    return {
+      totalTokens,
+      uniqueTokens: uniqueCounts.size
+    };
+  }
+
   async refreshTokenAnalysisFromAnki(token: string): Promise<{
     status: DocumentTokenStatus;
     due: boolean;
@@ -552,7 +641,7 @@ export class BookContentColoring {
 
     if (analysisStatus === undefined || due === undefined) {
       const metricsMap = await this.anki.cardMetricsMap(dedupedCardIds, ['prop:r', 'prop:s']);
-      const newCardIds = await this._findNewCardIds(dedupedCardIds);
+      const newCardIds = await this._resolveNewCardIdsFromMetrics(dedupedCardIds, metricsMap);
 
       let bestStatus: DocumentTokenStatus = 'unknown';
       let bestPriority = -1;
@@ -1519,7 +1608,7 @@ export class BookContentColoring {
       const resolvedCardIds = Array.from(allCardIds);
       const statusMap = await this._batchCheckCardRetrievability(resolvedCardIds);
       const metricsMap = await this.anki.cardMetricsMap(resolvedCardIds, ['prop:r', 'prop:s']);
-      const newCardIds = await this._findNewCardIds(resolvedCardIds);
+      const newCardIds = await this._resolveNewCardIdsFromMetrics(resolvedCardIds, metricsMap);
       const documentStatusMap = new Map(
         resolvedCardIds.map((cardId) => [
           cardId,
@@ -1548,8 +1637,8 @@ export class BookContentColoring {
    */
   private async _checkCardRetrievability(cardId: number): Promise<WordStatus> {
     try {
-      const isNewCard = (await this._findNewCardIds([cardId])).has(cardId);
       const metrics = await this.anki.cardMetricsMap([cardId], ['prop:r', 'prop:s']);
+      const isNewCard = (await this._resolveNewCardIdsFromMetrics([cardId], metrics)).has(cardId);
       return this._classifyCardMetrics(metrics.get(cardId), isNewCard);
     } catch (error) {
       console.error(`Error checking card retrievability for card ${cardId}:`, error);
@@ -1570,7 +1659,7 @@ export class BookContentColoring {
     try {
       const metricsMap = await this.anki.cardMetricsMap(uniqueCardIds, ['prop:r', 'prop:s']);
       if (metricsMap.size > 0) {
-        const newCardIds = await this._findNewCardIds(uniqueCardIds);
+        const newCardIds = await this._resolveNewCardIdsFromMetrics(uniqueCardIds, metricsMap);
 
         for (const cardId of uniqueCardIds) {
           result.set(
@@ -1617,7 +1706,7 @@ export class BookContentColoring {
 
         // Skip non-letter tokens
         if (!HAS_LETTER_REGEX.test(trimmedToken)) {
-          tokenColorMap.set(trimmedToken, TokenColor.UNCOLLECTED);
+          tokenColorMap.set(trimmedToken, TokenColor.UNKNOWN);
           continue;
         }
 
@@ -1636,7 +1725,7 @@ export class BookContentColoring {
       let coloredHtml = '';
       for (const rawToken of tokens) {
         const trimmedToken = rawToken.trim();
-        const color = tokenColorMap.get(trimmedToken) || TokenColor.UNCOLLECTED;
+        const color = tokenColorMap.get(trimmedToken) || TokenColor.UNKNOWN;
         coloredHtml += this._applyTokenStyle(rawToken, color);
       }
 
@@ -1808,7 +1897,7 @@ export class BookContentColoring {
     tokens: string[],
     colorMap: Map<string, TokenColor>
   ): Promise<void> {
-    const uncollectedTokens: string[] = [];
+    const unresolvedTokens: string[] = [];
 
     // Look up tokens in IndexedDB cache
     for (const token of tokens) {
@@ -1843,8 +1932,8 @@ export class BookContentColoring {
       }
 
       if (!wordData || wordData.cardIds.length === 0) {
-        // Still no data found -> will need further handling (e.g. batch lemmatize)
-        uncollectedTokens.push(token);
+        // Still no data found -> keep default text color until status is resolved.
+        unresolvedTokens.push(token);
         continue;
       }
 
@@ -1854,26 +1943,26 @@ export class BookContentColoring {
       console.debug(`🎨 Token "${token}" -> status: ${wordData.status}, color: ${color}`);
 
       if (color === TokenColor.UNCOLLECTED) {
-        uncollectedTokens.push(token);
+        unresolvedTokens.push(token);
         continue;
       }
 
       colorMap.set(token, color);
     }
 
-    // Handle uncollected tokens with lemmatization
-    if (uncollectedTokens.length > 0) {
-      await this._handleUncollectedTokensBatch(uncollectedTokens, colorMap);
+    // Handle unresolved tokens with lemmatization.
+    if (unresolvedTokens.length > 0) {
+      await this._handleUnresolvedTokensBatch(unresolvedTokens, colorMap);
     }
   }
 
   /**
-   * Handle uncollected tokens by lemmatizing and checking lemmas
+   * Handle unresolved tokens by lemmatizing and checking lemmas
    * Uses pre-built retrievability cache for instant lookups (no API calls!)
-   * @param tokens - Array of uncollected tokens
+   * @param tokens - Array of unresolved tokens
    * @param colorMap - Map to populate with token -> color mappings
    */
-  private async _handleUncollectedTokensBatch(
+  private async _handleUnresolvedTokensBatch(
     tokens: string[],
     colorMap: Map<string, TokenColor>
   ): Promise<void> {
@@ -1892,7 +1981,7 @@ export class BookContentColoring {
     }
 
     // Look up lemmas using IndexedDB as primary cache
-    // Process each uncollected token
+    // Process each unresolved token
     for (const token of tokens) {
       const lemmas = tokenToLemmas.get(token) || [];
       let finalStatus: WordStatus | undefined;
@@ -1913,7 +2002,7 @@ export class BookContentColoring {
         if (finalStatus === 'mature') break; // Already found highest status, stop
       }
 
-      const finalColor = finalStatus ? this._statusToColor(finalStatus) : TokenColor.UNCOLLECTED;
+      const finalColor = finalStatus ? this._statusToColor(finalStatus) : TokenColor.UNKNOWN;
 
       colorMap.set(token, finalColor);
     }
@@ -2004,6 +2093,92 @@ export class BookContentColoring {
     }
 
     return stability >= this.getMatureThreshold() ? 'mature' : 'young';
+  }
+
+  private _inferIsNewFromMetrics(
+    metric:
+      | {
+          'prop:r'?: number | null;
+          'prop:s'?: number | null;
+        }
+      | undefined
+  ): boolean | undefined {
+    if (!metric) {
+      return undefined;
+    }
+
+    const retrievability = metric['prop:r'];
+    if (typeof retrievability === 'number') {
+      return false;
+    }
+    if (retrievability === null) {
+      return true;
+    }
+
+    const stability = metric['prop:s'];
+    if (typeof stability === 'number') {
+      return false;
+    }
+    if (stability === null) {
+      return true;
+    }
+
+    return undefined;
+  }
+
+  private async _resolveNewCardIdsFromMetrics(
+    cardIds: number[],
+    metricsMap: Map<number, { 'prop:r'?: number | null; 'prop:s'?: number | null }>
+  ): Promise<Set<number>> {
+    const newCardIds = new Set<number>();
+    const unresolvedCardIds: number[] = [];
+
+    for (const cardId of cardIds) {
+      const inferred = this._inferIsNewFromMetrics(metricsMap.get(cardId));
+      if (inferred === true) {
+        newCardIds.add(cardId);
+      } else if (inferred === undefined) {
+        unresolvedCardIds.push(cardId);
+      }
+    }
+
+    if (unresolvedCardIds.length > 0) {
+      const fallbackNewCardIds = await this._findNewCardIds(unresolvedCardIds);
+      for (const cardId of fallbackNewCardIds) {
+        newCardIds.add(cardId);
+      }
+    }
+
+    return newCardIds;
+  }
+
+  private _inferIsNewFromCardInfo(card: CardInfo): boolean | undefined {
+    if (typeof card.reps === 'number') {
+      return card.reps <= 0;
+    }
+
+    if (typeof card.queue === 'number') {
+      if (card.queue === 0) {
+        return true;
+      }
+      if ([1, 2, 3, -1, -2, -3].includes(card.queue)) {
+        return false;
+      }
+    }
+
+    if (typeof card.type === 'number') {
+      if (card.type === 0) {
+        return true;
+      }
+      if ([1, 2, 3].includes(card.type)) {
+        return false;
+      }
+    }
+
+    return this._inferIsNewFromMetrics({
+      'prop:r': card['prop:r'],
+      'prop:s': card['prop:s']
+    });
   }
 
   private _isCardDue(
@@ -2315,13 +2490,16 @@ export class BookContentColoring {
    * This should run in the background after loading cached data
    * @returns Promise with cache warming statistics
    */
-  async warmCache(): Promise<{
+  async warmCache(options?: { onProgress?: (progress: WarmCacheProgress) => void }): Promise<{
     totalCards: number;
     cachedWords: number;
     duration: number;
   }> {
     const startTime = Date.now();
     let cachedWords = 0;
+    const reportProgress = (progress: WarmCacheProgress) => {
+      options?.onProgress?.(progress);
+    };
 
     try {
       console.log('Starting Anki cache warming...');
@@ -2357,9 +2535,23 @@ export class BookContentColoring {
         throw new Error(`Anki Connect connection failed: ${error}`);
       }
 
-      // Step 1: Get all cards from configured decks (for field values)
-      console.log('✅ Configuration valid. Step 1: Fetching all cards from decks...');
-      const allCards = await this.anki.getAllCardsFromDecks();
+      // Step 1: Get all cards from configured decks with required metrics.
+      console.log(
+        '✅ Configuration valid. Step 1: Fetching all cards from decks (with prop:r/s)...'
+      );
+      const allCards = await this.anki.getAllCardsFromDecks(
+        undefined,
+        ['prop:r', 'prop:s'],
+        (progress: GetAllCardsProgress) => {
+          reportProgress({
+            phase: 'fetch-cards',
+            percentage: Math.min(55, Math.round(progress.percentage * 0.55)),
+            completed: progress.completed,
+            total: progress.total,
+            detail: progress.detail
+          });
+        }
+      );
       console.log(`Got ${allCards.length} cards from getAllCardsFromDecks`);
 
       if (allCards.length === 0) {
@@ -2401,26 +2593,63 @@ export class BookContentColoring {
 
       console.log(`Extracted ${wordToCardIds.size} unique words from cards`);
 
-      // Step 2: Fetch card metrics used by the active coloring mode
-      console.log('Step 2: Fetching card metrics (prop:r, prop:s)...');
-      const cardIds = allCards.map((card) => card.cardId);
-      const metricsByCardId = await this.anki.cardMetricsMap(cardIds, ['prop:r', 'prop:s']);
+      // Step 2: Reuse metrics returned by cardsInfo and infer "new" state locally.
+      console.log('Step 2: Building metrics/new-card map from fetched cards...');
+      const metricsByCardId = new Map<
+        number,
+        { 'prop:r'?: number | null; 'prop:s'?: number | null }
+      >();
       const newCardIds = new Set<number>();
-      try {
-        const query = this.anki
-          .getWordDecks()
-          .map((deckName) => `"deck:${deckName}"`)
-          .join(' OR ');
-        const newCardsResponse = await this.anki['_executeAction']('findCards', {
-          query: `(${query}) is:new`
-        });
-        for (const cardId of newCardsResponse.result || []) {
+      const unresolvedNewCardIds = new Set<number>();
+      const missingMetricCardIds = new Set<number>();
+
+      for (const card of allCards) {
+        const retrievability = card['prop:r'];
+        const stability = card['prop:s'];
+        const hasRetrievability = typeof retrievability === 'number' || retrievability === null;
+        const hasStability = typeof stability === 'number' || stability === null;
+
+        if (hasRetrievability || hasStability) {
+          metricsByCardId.set(card.cardId, {
+            'prop:r': hasRetrievability ? retrievability : null,
+            'prop:s': hasStability ? stability : null
+          });
+        } else {
+          missingMetricCardIds.add(card.cardId);
+        }
+
+        const inferredIsNew = this._inferIsNewFromCardInfo(card);
+        if (inferredIsNew === true) {
+          newCardIds.add(card.cardId);
+        } else if (inferredIsNew === undefined) {
+          unresolvedNewCardIds.add(card.cardId);
+        }
+      }
+
+      if (missingMetricCardIds.size > 0) {
+        console.log(`Step 2a: Fetching missing metrics for ${missingMetricCardIds.size} cards...`);
+        const fetchedMetrics = await this.anki.cardMetricsMap(Array.from(missingMetricCardIds), [
+          'prop:r',
+          'prop:s'
+        ]);
+        for (const [cardId, metric] of fetchedMetrics.entries()) {
+          metricsByCardId.set(cardId, metric);
+        }
+      }
+
+      if (unresolvedNewCardIds.size > 0) {
+        const resolvedNewCardIds = await this._resolveNewCardIdsFromMetrics(
+          Array.from(unresolvedNewCardIds),
+          metricsByCardId
+        );
+        for (const cardId of resolvedNewCardIds) {
           newCardIds.add(cardId);
         }
-      } catch (error) {
-        console.debug('Failed to fetch new cards during warm cache:', error);
       }
-      console.log(`Fetched metrics for ${metricsByCardId.size} cards`);
+
+      console.log(
+        `Prepared metrics for ${metricsByCardId.size} cards and inferred ${newCardIds.size} new cards`
+      );
 
       // Step 3: Build single cache: word -> {status, cardIds}
       console.log('Step 3: Mapping words to status...');
@@ -2429,46 +2658,74 @@ export class BookContentColoring {
         newCount = 0,
         dueCount = 0,
         unknownCount = 0;
+      const CACHE_WRITE_BATCH_SIZE = 250;
+      const wordEntries = Array.from(wordToCardIds.entries());
+      const wordEntryBatches = this._chunkArray(wordEntries, CACHE_WRITE_BATCH_SIZE);
+      reportProgress({
+        phase: 'process-words',
+        percentage: 55,
+        completed: 0,
+        total: wordEntryBatches.length,
+        detail: `Processing 0/${wordEntryBatches.length} batches`
+      });
 
-      for (const [word, cardIds] of wordToCardIds.entries()) {
-        const documentStatusMap = new Map(
-          cardIds.map((cardId) => [
-            cardId,
-            this._classifyLearningStatus(metricsByCardId.get(cardId), newCardIds.has(cardId))
-          ])
-        );
-        const status = this._pickBestStatus(
-          cardIds,
-          new Map(
+      for (let batchIndex = 0; batchIndex < wordEntryBatches.length; batchIndex++) {
+        const batch = wordEntryBatches[batchIndex];
+        const wordDataBatch: Array<{ word: string; data: CachedWordData }> = [];
+
+        for (const [word, cardIds] of batch) {
+          const documentStatusMap = new Map(
             cardIds.map((cardId) => [
               cardId,
-              this._classifyCardMetrics(metricsByCardId.get(cardId), newCardIds.has(cardId))
+              this._classifyLearningStatus(metricsByCardId.get(cardId), newCardIds.has(cardId))
             ])
-          )
-        );
+          );
+          const status = this._pickBestStatus(
+            cardIds,
+            new Map(
+              cardIds.map((cardId) => [
+                cardId,
+                this._classifyCardMetrics(metricsByCardId.get(cardId), newCardIds.has(cardId))
+              ])
+            )
+          );
 
-        // Count by status
-        if (status === 'mature') matureCount++;
-        else if (status === 'young') youngCount++;
-        else if (status === 'new') newCount++;
-        else if (status === 'due') dueCount++;
-        else unknownCount++;
+          // Count by status
+          if (status === 'mature') matureCount++;
+          else if (status === 'young') youngCount++;
+          else if (status === 'new') newCount++;
+          else if (status === 'due') dueCount++;
+          else unknownCount++;
 
-        const wordData: CachedWordData = {
-          status,
-          analysisStatus: this._pickBestDocumentStatus(cardIds, documentStatusMap),
-          due: cardIds.some((cardId) =>
-            this._isCardDue(metricsByCardId.get(cardId), newCardIds.has(cardId))
-          ),
-          cardIds
-        };
+          const wordData: CachedWordData = {
+            status,
+            analysisStatus: this._pickBestDocumentStatus(cardIds, documentStatusMap),
+            due: cardIds.some((cardId) =>
+              this._isCardDue(metricsByCardId.get(cardId), newCardIds.has(cardId))
+            ),
+            cardIds
+          };
 
-        // Store in persistent cache
-        if (this.cacheService) {
-          await this.cacheService.setWordData(word, wordData);
+          wordDataBatch.push({ word, data: wordData });
+          cachedWords++;
         }
 
-        cachedWords++;
+        if (this.cacheService) {
+          await this.cacheService.setWordDataBatch(wordDataBatch);
+        }
+
+        const completedBatches = batchIndex + 1;
+        reportProgress({
+          phase: 'process-words',
+          percentage:
+            55 + Math.round((completedBatches / Math.max(1, wordEntryBatches.length)) * 45),
+          completed: completedBatches,
+          total: wordEntryBatches.length,
+          detail: `Processing ${completedBatches}/${wordEntryBatches.length} batches`
+        });
+
+        // Yield between chunks so main thread remains responsive.
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
       console.log(
@@ -2479,6 +2736,13 @@ export class BookContentColoring {
 
       const duration = Date.now() - startTime;
       console.log(`Cache warming complete: ${cachedWords} words cached in ${duration}ms`);
+      reportProgress({
+        phase: 'process-words',
+        percentage: 100,
+        completed: wordEntryBatches.length,
+        total: wordEntryBatches.length,
+        detail: `Processed ${wordEntryBatches.length}/${wordEntryBatches.length} batches`
+      });
 
       return { totalCards: allCards.length, cachedWords, duration };
     } catch (error) {
@@ -2713,7 +2977,9 @@ export class BookContentColoring {
         ? await this.anki.cardMetricsMap(allResolvedCardIds, ['prop:r', 'prop:s'])
         : new Map();
     const newCardIds =
-      allResolvedCardIds.length > 0 ? await this._findNewCardIds(allResolvedCardIds) : new Set();
+      allResolvedCardIds.length > 0
+        ? await this._resolveNewCardIdsFromMetrics(allResolvedCardIds, metricsMap)
+        : new Set();
 
     for (const token of tokens) {
       // Already resolved from IndexedDB cached analysisStatus/due path.
