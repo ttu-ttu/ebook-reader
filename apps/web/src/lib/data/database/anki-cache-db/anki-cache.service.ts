@@ -237,6 +237,45 @@ export class AnkiCacheService {
   }
 
   /**
+   * Store multiple lemmatization results in a single IndexedDB transaction
+   * @param entries - Token -> lemmas entries
+   */
+  async setLemmasBatch(entries: Array<{ token: string; lemmas: string[] }>): Promise<void> {
+    if (entries.length === 0) {
+      return;
+    }
+
+    const database = await this.db;
+    const tx = database.transaction('lemmatize', 'readwrite');
+    const store = tx.objectStore('lemmatize');
+    const timestamp = Date.now();
+
+    await Promise.all(
+      entries.map(async ({ token, lemmas }) => {
+        const normalizedToken = token.trim();
+        if (!normalizedToken) {
+          return;
+        }
+
+        const normalizedLemmas = Array.from(
+          new Set(lemmas.map((lemma) => lemma.trim()).filter(Boolean))
+        );
+        if (normalizedLemmas.length === 0) {
+          return;
+        }
+
+        await store.put({
+          token: normalizedToken,
+          lemmas: normalizedLemmas,
+          timestamp
+        });
+      })
+    );
+
+    await tx.done;
+  }
+
+  /**
    * Store card IDs for a token
    * @param token - Token
    * @param cardIds - Array of card IDs

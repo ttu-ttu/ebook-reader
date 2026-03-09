@@ -151,6 +151,7 @@
   }
 
   type TokenPanelFilterId = 'all' | 'due' | DocumentTokenStatus;
+  type TokenPanelOrthographyFilterId = 'all-scripts' | 'has-kanji';
 
   let showBlurMessage = false;
 
@@ -179,6 +180,7 @@
   let tokenPanelAnalysisKey = '';
   let tokenPanelCacheVersion = 0;
   let tokenPanelActiveFilter: TokenPanelFilterId = 'all';
+  let tokenPanelActiveOrthographyFilter: TokenPanelOrthographyFilterId = 'all-scripts';
   let tokenPanelActiveToken: string | null = null;
   let tokenPanelSentenceMatches: Record<string, TokenPanelSentenceMatch[]> = {};
   let tokenPanelSentenceLoadingToken: string | null = null;
@@ -187,6 +189,7 @@
   const tokenPanelHoverRefreshCooldownMs = 2500;
   let tokenPanelLastHoverRefresh = new Map<string, number>();
   const tokenPanelFilterStorageKey = 'book-reader-token-panel-filter-v1';
+  const tokenPanelOrthographyFilterStorageKey = 'book-reader-token-panel-orthography-filter-v1';
   let tokenPanelBookmarkShift = 0;
   let tokenPanelBookmarkShiftRaf: number | undefined;
   let tokenPanelBaseAnchorLeft: number | undefined;
@@ -204,10 +207,21 @@
     );
   }
 
+  function isTokenPanelOrthographyFilter(value: string): value is TokenPanelOrthographyFilterId {
+    return value === 'all-scripts' || value === 'has-kanji';
+  }
+
   if (typeof window !== 'undefined') {
     const savedFilter = window.localStorage.getItem(tokenPanelFilterStorageKey);
     if (savedFilter && isTokenPanelFilter(savedFilter)) {
       tokenPanelActiveFilter = savedFilter;
+    }
+
+    const savedOrthographyFilter = window.localStorage.getItem(
+      tokenPanelOrthographyFilterStorageKey
+    );
+    if (savedOrthographyFilter && isTokenPanelOrthographyFilter(savedOrthographyFilter)) {
+      tokenPanelActiveOrthographyFilter = savedOrthographyFilter;
     }
   }
 
@@ -924,6 +938,18 @@
     }
   }
 
+  function onTokenPanelOrthographyFilterChange(
+    event: CustomEvent<{ filter: TokenPanelOrthographyFilterId }>
+  ): void {
+    tokenPanelActiveOrthographyFilter = event.detail.filter;
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(
+        tokenPanelOrthographyFilterStorageKey,
+        tokenPanelActiveOrthographyFilter
+      );
+    }
+  }
+
   async function onTokenPanelTokenHover(event: CustomEvent<{ token: string }>): Promise<void> {
     const token = event.detail.token;
     const service = coloringService;
@@ -1248,11 +1274,13 @@
     uniqueTokens={tokenPanelResult?.uniqueTokens || 0}
     error={tokenPanelError}
     activeFilter={tokenPanelActiveFilter}
+    activeOrthographyFilter={tokenPanelActiveOrthographyFilter}
     activeToken={tokenPanelActiveToken}
     tokenSentences={tokenPanelSentenceMatches}
     sentenceLoadingToken={tokenPanelSentenceLoadingToken}
     on:close={() => dispatch('tokenPanelClose')}
     on:filterChange={onTokenPanelFilterChange}
+    on:orthographyFilterChange={onTokenPanelOrthographyFilterChange}
     on:tokenSelect={onTokenPanelTokenSelect}
     on:tokenHover={onTokenPanelTokenHover}
     on:sentenceSelect={onTokenPanelSentenceSelect}

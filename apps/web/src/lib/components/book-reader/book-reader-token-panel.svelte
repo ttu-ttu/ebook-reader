@@ -7,6 +7,7 @@
   import { createEventDispatcher } from 'svelte';
 
   type FilterId = 'all' | 'due' | DocumentTokenStatus;
+  type OrthographyFilterId = 'all-scripts' | 'has-kanji';
 
   export let loading = false;
   export let progress: DocumentTokenAnalysisProgress | undefined;
@@ -15,6 +16,7 @@
   export let uniqueTokens = 0;
   export let error = '';
   export let activeFilter: FilterId = 'all';
+  export let activeOrthographyFilter: OrthographyFilterId = 'all-scripts';
   export let activeToken: string | null = null;
   export let tokenSentences: Record<string, { sentence: string; page: number | null }[]> = {};
   export let sentenceLoadingToken: string | null = null;
@@ -22,6 +24,7 @@
   const dispatch = createEventDispatcher<{
     close: void;
     filterChange: { filter: FilterId };
+    orthographyFilterChange: { filter: OrthographyFilterId };
     tokenSelect: { token: string };
     tokenHover: { token: string };
     sentenceSelect: { token: string; sentence: string };
@@ -37,12 +40,28 @@
     { id: 'unknown', label: 'Unknown' }
   ];
 
-  $: filteredEntries =
+  const orthographyFilters: { id: OrthographyFilterId; label: string }[] = [
+    { id: 'all-scripts', label: 'All Scripts' },
+    { id: 'has-kanji', label: 'Has Kanji' }
+  ];
+
+  const kanjiPattern = /[\p{Script=Han}々]/u;
+
+  function hasKanji(value: string): boolean {
+    return kanjiPattern.test(value);
+  }
+
+  $: statusFilteredEntries =
     activeFilter === 'all'
       ? entries
       : activeFilter === 'due'
         ? entries.filter((entry) => entry.due)
         : entries.filter((entry) => entry.status === activeFilter);
+
+  $: filteredEntries =
+    activeOrthographyFilter === 'all-scripts'
+      ? statusFilteredEntries
+      : statusFilteredEntries.filter((entry) => hasKanji(entry.token));
 
   $: counts = {
     all: entries.length,
@@ -52,6 +71,11 @@
     young: entries.filter((entry) => entry.status === 'young').length,
     mature: entries.filter((entry) => entry.status === 'mature').length,
     unknown: entries.filter((entry) => entry.status === 'unknown').length
+  };
+
+  $: orthographyCounts = {
+    'all-scripts': statusFilteredEntries.length,
+    'has-kanji': statusFilteredEntries.filter((entry) => hasKanji(entry.token)).length
   };
 
   function badgeClass(status: DocumentTokenStatus): string {
@@ -88,6 +112,15 @@
 
     activeFilter = filter;
     dispatch('filterChange', { filter });
+  }
+
+  function onOrthographyFilterSelect(filter: OrthographyFilterId): void {
+    if (activeOrthographyFilter === filter) {
+      return;
+    }
+
+    activeOrthographyFilter = filter;
+    dispatch('orthographyFilterChange', { filter });
   }
 
   function escapeHtml(value: string): string {
@@ -227,6 +260,24 @@
         {filter.label} ({counts[filter.id]})
       </button>
     {/each}
+  </div>
+
+  <div class="border-b border-slate-800 px-4 py-3">
+    <div class="mb-2 text-[11px] uppercase tracking-wide text-slate-400">Orthography</div>
+    <div class="flex flex-wrap gap-2">
+      {#each orthographyFilters as filter}
+        <button
+          class={`rounded-full border px-3 py-1 text-xs ${
+            activeOrthographyFilter === filter.id
+              ? 'border-cyan-400 bg-cyan-400/15 text-cyan-100'
+              : 'border-slate-700 text-slate-300 hover:border-slate-500'
+          }`}
+          on:click={() => onOrthographyFilterSelect(filter.id)}
+        >
+          {filter.label} ({orthographyCounts[filter.id]})
+        </button>
+      {/each}
+    </div>
   </div>
 
   <div class="min-h-0 flex-1 overflow-y-auto">

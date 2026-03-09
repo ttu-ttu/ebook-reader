@@ -43,12 +43,47 @@ export class Yomitan {
     );
 
     const tokens: string[] = [];
-    const selectedDict =
-      response.find((dict: any) => dict.id?.includes('mecab-unidic-csj-202302')) || response[0];
+    const lemmaMap = new Map<string, Set<string>>();
+    const selectedDict = this._selectTokenizeDictionary(response);
     if (selectedDict) {
+      const canExtractLemma = !selectedDict.id?.includes('ipadic');
       for (const tokenParts of selectedDict['content']) {
-        tokens.push(tokenParts.map((p: any) => p['text']).join(''));
+        const token = tokenParts.map((part: any) => part?.text ?? '').join('');
+        tokens.push(token);
+
+        if (!canExtractLemma || !token || tokenParts.length === 0) {
+          continue;
+        }
+
+        const firstPart = tokenParts[0];
+        const lemma = typeof firstPart?.lemma === 'string' ? firstPart.lemma.trim() : '';
+        const lemmaReading =
+          typeof firstPart?.lemmaReading === 'string'
+            ? firstPart.lemmaReading.trim()
+            : typeof firstPart?.lemma_reading === 'string'
+              ? firstPart.lemma_reading.trim()
+              : '';
+        if (!lemma && !lemmaReading) {
+          continue;
+        }
+
+        if (!lemma) {
+          continue;
+        }
+
+        const lemmas = lemmaMap.get(token) || new Set<string>();
+        lemmas.add(lemma);
+        lemmaMap.set(token, lemmas);
       }
+    }
+
+    if (this.cacheService && lemmaMap.size > 0) {
+      await this.cacheService.setLemmasBatch(
+        Array.from(lemmaMap.entries()).map(([token, lemmas]) => ({
+          token,
+          lemmas: Array.from(lemmas)
+        }))
+      );
     }
 
     return tokens;
@@ -154,5 +189,16 @@ export class Yomitan {
     }
 
     return json;
+  }
+
+  private _selectTokenizeDictionary(response: any[]): any | undefined {
+    return (
+      response.find((dict: any) => dict.id?.includes('mecab-unidic-csj-202302')) ||
+      response.find((dict: any) => dict.id?.includes('mecab-unidic-mecab-translate')) ||
+      response.find(
+        (dict: any) => dict.id?.includes('mecab-') && !dict.id?.includes('mecab-ipadic')
+      ) ||
+      response[0]
+    );
   }
 }
