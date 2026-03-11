@@ -8,6 +8,8 @@
   import { fontFamilyGroupOne$, isOnline$, userFonts$ } from '$lib/data/store';
   import { dummyFn, isMobile, isMobile$ } from '$lib/functions/utils';
   import { MetaTags } from 'svelte-meta-tags';
+  import { theme$, customThemes$ } from '$lib/data/store';
+  import { availableThemes } from '$lib/data/theme-option';
   import '../app.scss';
 
   let path = '';
@@ -67,6 +69,15 @@
       styleElement.appendChild(textNode);
       document.head.append(styleElement);
     }
+  }
+
+  $: currentThemeData = availableThemes.get($theme$) || $customThemes$[$theme$];
+
+  $: if (browser && currentThemeData) {
+    const root = document.documentElement;
+    // Apply the colors as CSS variables
+    root.style.setProperty('--global-bg', currentThemeData.backgroundColor);
+    root.style.setProperty('--global-text', currentThemeData.fontColor);
   }
 
   function closeAllDialogs() {
@@ -135,3 +146,74 @@
 <span style={`font-family: ${$fontFamilyGroupOne$ || 'Noto Serif JP'}`} />
 
 <DomainHint />
+
+<style>
+  /* apply selected theme globally */
+  :global(body) {
+    background-color: var(--global-bg);
+    color: var(--global-text);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+  :global(#app),
+  :global(.bg-white),
+  :global(.bg-gray-100) {
+    background-color: var(--global-bg);
+    color: var(--global-text);
+  }
+
+  /* reset the color of buttons so the theme options are unaffected */
+  :global(.toggle-option-button) {
+    background-color: initial;
+    color: initial;
+  }
+  :global(.toggle-option-button *) {
+    background-color: transparent !important;
+    color: inherit !important;
+  }
+
+  /* text input fields, making the box background a little darker or lighter for visibility
+  depending on light or dark theme */
+  :global(input),
+  :global(select),
+  :global(textarea) {
+    background-color: var(--global-bg) !important;
+    color: var(--global-text);
+
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.07)),
+      linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.15));
+
+    /* border for text input */
+    border: 1px solid var(--global-text) !important;
+    border-radius: 4px;
+    padding: 4px;
+  }
+
+  /* heatmap sidebar */
+  :global(.sticky.left-0),
+  :global(.text-xs.md\:text-sm) {
+    background-color: var(--global-bg);
+    color: var(--global-text);
+  }
+
+  :global(div[style*='--background-color']) {
+    --background-color: var(--global-bg);
+    background-color: var(--global-bg);
+    color: var(--global-text);
+  }
+
+  /* Blank tiles in heatmap inherit theme text color at low opacity */
+  :global(.bg-slate-200),
+  :global(.bg-slate-300) {
+    background-color: var(--global-text);
+    opacity: 0.15;
+    border: 1px solid var(--global-bg) !important;
+  }
+
+  /* Active data tiles show actual color */
+  :global(div[data-date][style*='background-color']) {
+    opacity: 1;
+  }
+</style>
