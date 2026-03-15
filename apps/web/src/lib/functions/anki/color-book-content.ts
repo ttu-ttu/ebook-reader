@@ -1582,8 +1582,8 @@ export class BookContentColoring {
    */
   private async _fetchWordDataFromAnki(token: string): Promise<CachedWordData | undefined> {
     try {
-      // Get lemmas for this token
-      const lemmas = await this.yomitan.lemmatize(token);
+      // Shared lemma path: IndexedDB cache + conditional enrichment.
+      const lemmas = await this._getOrFetchLemmas(token);
       // Always include the original token - some forms are not returned by lemmatization.
       const candidateWords = Array.from(
         new Set([token, ...lemmas].map((word) => word.trim()).filter((word) => word.length > 0))
@@ -1759,35 +1759,56 @@ export class BookContentColoring {
     return tokens;
   }
 
-  private async _getOrFetchLemmas(token: string): Promise<string[]> {
-    // IndexedDB is the source of truth.
+  private async _getOrFetchLemmas(
+    token: string,
+    options?: { allowTermEntriesEnrichment?: boolean }
+  ): Promise<string[]> {
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      return [];
+    }
+
+    const allowTermEntriesEnrichment = options?.allowTermEntriesEnrichment ?? true;
+
+    // IndexedDB is the source of truth, but weak cached lemmas are enriched.
     if (this.cacheService) {
-      const lemmas = await this.cacheService.getLemmas(token);
-      if (lemmas) return lemmas;
+      const cachedLemmas = await this.cacheService.getLemmas(normalizedToken);
+      if (cachedLemmas && cachedLemmas.length > 0) {
+        return cachedLemmas;
+      }
+    }
+
+    if (!allowTermEntriesEnrichment) {
+      return [];
     }
 
     // Fetch from Yomitan API
-    const lemmas = await this.yomitan.lemmatize(token);
+    const lemmas = await this.yomitan.lemmatize(normalizedToken);
     if (this.cacheService) {
-      await this.cacheService.setLemmas(token, lemmas);
+      await this.cacheService.setLemmas(normalizedToken, lemmas);
     }
 
     return lemmas;
   }
 
-  private async _getOrFetchLemmasBatch(tokens: string[]): Promise<Map<string, string[]>> {
+  private async _getOrFetchLemmasBatch(
+    tokens: string[],
+    options?: { useApiFallback?: boolean; allowTermEntriesEnrichment?: boolean }
+  ): Promise<Map<string, string[]>> {
     const result = new Map<string, string[]>();
     const uniqueTokens = Array.from(new Set(tokens.map((token) => token.trim()).filter(Boolean)));
     if (uniqueTokens.length === 0) {
       return result;
     }
 
+    const allowTermEntriesEnrichment = options?.allowTermEntriesEnrichment ?? true;
+
     const missingTokens: string[] = [];
     if (this.cacheService) {
       const cached = await this.cacheService.getLemmasBatch(uniqueTokens);
       for (const token of uniqueTokens) {
         const lemmas = cached.get(token);
-        if (lemmas) {
+        if (lemmas && lemmas.length > 0) {
           result.set(token, lemmas);
         } else {
           missingTokens.push(token);
@@ -1798,6 +1819,10 @@ export class BookContentColoring {
     }
 
     if (missingTokens.length === 0) {
+      return result;
+    }
+
+    if (!allowTermEntriesEnrichment || options?.useApiFallback === false) {
       return result;
     }
 
@@ -1819,11 +1844,27 @@ export class BookContentColoring {
       );
 
       for (const { token, lemmas } of fetched) {
-        result.set(token, lemmas);
+        const mergedLemmas = this._mergeUniqueLemmas(result.get(token) || [], lemmas);
+        if (this.cacheService) {
+          await this.cacheService.setLemmas(token, mergedLemmas);
+        }
+        result.set(token, mergedLemmas);
       }
     }
 
     return result;
+  }
+
+  private _mergeUniqueLemmas(existing: string[], incoming: string[]): string[] {
+    const merged = new Set<string>();
+    for (const lemma of [...existing, ...incoming]) {
+      const normalizedLemma = lemma.trim();
+      if (normalizedLemma) {
+        merged.add(normalizedLemma);
+      }
+    }
+
+    return Array.from(merged);
   }
 
   private async _getWordDataBatch(words: string[]): Promise<Map<string, CachedWordData>> {
@@ -1859,6 +1900,123 @@ export class BookContentColoring {
     }
 
     return undefined;
+  }
+
+  private _normalizeResolvedWordData(
+    wordData: CachedWordData | undefined
+  ): CachedWordData | undefined {
+    if (!wordData || !Array.isArray(wordData.cardIds)) {
+      return undefined;
+    }
+
+    const cardIds = Array.from(
+      new Set((wordData.cardIds || []).filter((cardId) => Number.isFinite(cardId)))
+    );
+    if (!cardIds.length) {
+      return undefined;
+    }
+
+    return {
+      status: wordData.status,
+      analysisStatus: wordData.analysisStatus,
+      due: wordData.due,
+      cardIds
+    };
+  }
+
+  private _pickBetterResolvedWordData(
+    current: CachedWordData | undefined,
+    candidate: CachedWordData | undefined
+  ): CachedWordData | undefined {
+    const normalizedCandidate = this._normalizeResolvedWordData(candidate);
+    if (!normalizedCandidate) {
+      return current;
+    }
+
+    const normalizedCurrent = this._normalizeResolvedWordData(current);
+    if (!normalizedCurrent) {
+      return normalizedCandidate;
+    }
+
+    const currentPriority = this._statusPriority(normalizedCurrent.status);
+    const candidatePriority = this._statusPriority(normalizedCandidate.status);
+    if (candidatePriority > currentPriority) {
+      return normalizedCandidate;
+    }
+    if (candidatePriority < currentPriority) {
+      return normalizedCurrent;
+    }
+
+    const currentHasAnalysis =
+      normalizedCurrent.analysisStatus !== undefined && normalizedCurrent.due !== undefined;
+    const candidateHasAnalysis =
+      normalizedCandidate.analysisStatus !== undefined && normalizedCandidate.due !== undefined;
+
+    if (candidateHasAnalysis && !currentHasAnalysis) {
+      return normalizedCandidate;
+    }
+
+    return normalizedCurrent;
+  }
+
+  private async _resolveTokenWordData(
+    token: string,
+    options?: { allowTermEntriesEnrichment?: boolean }
+  ): Promise<CachedWordData | undefined> {
+    let resolvedWordData = this._pickBetterResolvedWordData(
+      undefined,
+      await this._getWordData(token)
+    );
+
+    if (resolvedWordData) {
+      return resolvedWordData;
+    }
+
+    const lemmas = await this._getOrFetchLemmas(token, options);
+    for (const lemma of lemmas) {
+      resolvedWordData = this._pickBetterResolvedWordData(
+        resolvedWordData,
+        await this._getWordData(lemma)
+      );
+      if (resolvedWordData && resolvedWordData.status === 'mature') {
+        break;
+      }
+    }
+
+    return resolvedWordData;
+  }
+
+  private async _resolveTokenWordDataBatch(
+    tokens: string[],
+    options?: { allowTermEntriesEnrichment?: boolean }
+  ): Promise<Map<string, CachedWordData>> {
+    const resolved = new Map<string, CachedWordData>();
+    const uniqueTokens = Array.from(new Set(tokens.map((token) => token.trim()).filter(Boolean)));
+    if (!uniqueTokens.length) {
+      return resolved;
+    }
+
+    for (const chunk of this._chunkArray(uniqueTokens, 25)) {
+      const chunkResolved = await Promise.all(
+        chunk.map(async (token) => {
+          try {
+            return { token, wordData: await this._resolveTokenWordData(token, options) };
+          } catch (error) {
+            console.debug('Token word-data resolution failed for token', token, error);
+            return { token, wordData: undefined as CachedWordData | undefined };
+          }
+        })
+      );
+
+      for (const { token, wordData } of chunkResolved) {
+        const normalizedWordData = this._normalizeResolvedWordData(wordData);
+        if (normalizedWordData) {
+          resolved.set(token, normalizedWordData);
+        }
+      }
+    }
+
+    return resolved;
   }
 
   private _buildWordLookupCandidates(word: string): string[] {
@@ -1897,114 +2055,19 @@ export class BookContentColoring {
     tokens: string[],
     colorMap: Map<string, TokenColor>
   ): Promise<void> {
-    const unresolvedTokens: string[] = [];
-
-    // Look up tokens in IndexedDB cache
-    for (const token of tokens) {
-      // Look up word data from cache
-      let wordData = await this._getWordData(token);
-
-      // If no direct entry, try lemmas as a fallback (local cache -> persistent cache -> yomitan)
-      if (!wordData || wordData.cardIds.length === 0) {
-        try {
-          const lemmas = await this._getOrFetchLemmas(token);
-
-          if (lemmas && lemmas.length > 0) {
-            console.debug(`🔍 Token "${token}" lemmatized to:`, lemmas);
-            // Try to find a lemma that exists in IndexedDB wordData with cardIds
-            for (const lemma of lemmas) {
-              const lemmaData = await this._getWordData(lemma);
-              console.debug(`🔍 Checking lemma "${lemma}":`, lemmaData);
-              if (lemmaData && lemmaData.cardIds && lemmaData.cardIds.length > 0) {
-                console.debug(`✅ Found data for lemma "${lemma}":`, lemmaData);
-                wordData = lemmaData;
-                break;
-              }
-            }
-            if (!wordData || wordData.cardIds.length === 0) {
-              console.debug(`❌ No lemma data found for token "${token}"`);
-            }
-          }
-        } catch (err) {
-          // Non-fatal; if lemmatization fails we'll treat token as uncollected below
-          console.debug('Lemmatization fallback failed for token', token, err);
-        }
-      }
-
-      if (!wordData || wordData.cardIds.length === 0) {
-        // Still no data found -> keep default text color until status is resolved.
-        unresolvedTokens.push(token);
-        continue;
-      }
-
-      // Map status to color
-      const color = this._statusToColor(wordData.status);
-
-      console.debug(`🎨 Token "${token}" -> status: ${wordData.status}, color: ${color}`);
-
-      if (color === TokenColor.UNCOLLECTED) {
-        unresolvedTokens.push(token);
-        continue;
-      }
-
-      colorMap.set(token, color);
-    }
-
-    // Handle unresolved tokens with lemmatization.
-    if (unresolvedTokens.length > 0) {
-      await this._handleUnresolvedTokensBatch(unresolvedTokens, colorMap);
-    }
-  }
-
-  /**
-   * Handle unresolved tokens by lemmatizing and checking lemmas
-   * Uses pre-built retrievability cache for instant lookups (no API calls!)
-   * @param tokens - Array of unresolved tokens
-   * @param colorMap - Map to populate with token -> color mappings
-   */
-  private async _handleUnresolvedTokensBatch(
-    tokens: string[],
-    colorMap: Map<string, TokenColor>
-  ): Promise<void> {
-    // Parallelize lemmatization
-    const lemmaPromises = tokens.map(async (token) => {
-      const lemmas = await this._getOrFetchLemmas(token);
-      return { token, lemmas };
+    const resolvedWordDataByToken = await this._resolveTokenWordDataBatch(tokens, {
+      allowTermEntriesEnrichment: false
     });
 
-    const lemmaResults = await Promise.all(lemmaPromises);
-
-    const tokenToLemmas = new Map<string, string[]>();
-
-    for (const { token, lemmas } of lemmaResults) {
-      tokenToLemmas.set(token, lemmas);
-    }
-
-    // Look up lemmas using IndexedDB as primary cache
-    // Process each unresolved token
     for (const token of tokens) {
-      const lemmas = tokenToLemmas.get(token) || [];
-      let finalStatus: WordStatus | undefined;
-      let finalPriority = -1;
-
-      // Check each lemma - use the highest priority status found
-      for (const lemma of lemmas) {
-        const wordData = await this._getWordData(lemma);
-
-        if (wordData && wordData.cardIds.length > 0) {
-          const currentPriority = this._statusPriority(wordData.status);
-          if (currentPriority > finalPriority) {
-            finalStatus = wordData.status;
-            finalPriority = currentPriority;
-          }
-        }
-
-        if (finalStatus === 'mature') break; // Already found highest status, stop
+      const wordData = resolvedWordDataByToken.get(token);
+      if (!wordData || !wordData.cardIds.length) {
+        colorMap.set(token, TokenColor.UNCOLLECTED);
+        continue;
       }
 
-      const finalColor = finalStatus ? this._statusToColor(finalStatus) : TokenColor.UNKNOWN;
-
-      colorMap.set(token, finalColor);
+      const color = this._statusToColor(wordData.status);
+      colorMap.set(token, color);
     }
   }
 
@@ -2831,165 +2894,50 @@ export class BookContentColoring {
       { status: DocumentTokenStatus; due: boolean; cardIds: number[] }
     >();
 
+    const tokenWordData = await this._resolveTokenWordDataBatch(tokens, {
+      allowTermEntriesEnrichment: false
+    });
     const tokenToCardIds = new Map<string, number[]>();
     const allCardIds = new Set<number>();
 
-    const addCachedCandidate = (
-      wordData: CachedWordData | undefined,
-      bestCached:
-        | { status: DocumentTokenStatus; due: boolean; cardIds: number[]; priority: number }
-        | undefined,
-      cardIds: Set<number>
-    ) => {
-      if (!wordData || !Array.isArray(wordData.cardIds) || wordData.cardIds.length === 0) {
-        return bestCached;
-      }
-
-      const dedupedCardIds = Array.from(
-        new Set((wordData.cardIds || []).filter((cardId) => Number.isFinite(cardId)))
-      );
-      dedupedCardIds.forEach((cardId) => cardIds.add(cardId));
-
-      if (wordData.analysisStatus === undefined || wordData.due === undefined) {
-        return bestCached;
-      }
-
-      const priority = this._documentStatusPriority(wordData.analysisStatus);
-      const shouldReplace =
-        !bestCached ||
-        priority > bestCached.priority ||
-        (priority === bestCached.priority && wordData.due && !bestCached.due);
-
-      if (!shouldReplace) {
-        return bestCached;
-      }
-
-      return {
-        status: wordData.analysisStatus,
-        due: wordData.due,
-        cardIds: dedupedCardIds,
-        priority
-      };
-    };
-
-    const tokenLookupWords = new Map<string, string[]>();
-    const allLookupWords = new Set<string>();
     for (const token of tokens) {
-      const lookupWords = this._buildWordLookupCandidates(token);
-      tokenLookupWords.set(token, lookupWords);
-      for (const lookupWord of lookupWords) {
-        allLookupWords.add(lookupWord);
-      }
-    }
-
-    const directWordData = await this._getWordDataBatch(Array.from(allLookupWords));
-    const tokenStates = new Map<
-      string,
-      {
-        cardIds: Set<number>;
-        bestCached?:
-          | { status: DocumentTokenStatus; due: boolean; cardIds: number[]; priority: number }
-          | undefined;
-      }
-    >();
-
-    for (const token of tokens) {
-      try {
-        const state = {
-          cardIds: new Set<number>(),
-          bestCached: undefined as
-            | { status: DocumentTokenStatus; due: boolean; cardIds: number[]; priority: number }
-            | undefined
-        };
-
-        const lookupWords = tokenLookupWords.get(token) || [];
-        for (const lookupWord of lookupWords) {
-          state.bestCached = addCachedCandidate(
-            directWordData.get(lookupWord),
-            state.bestCached,
-            state.cardIds
-          );
-        }
-
-        tokenStates.set(token, state);
-      } catch (error) {
-        console.debug(`Document token analysis failed for "${token}"`, error);
-        tokenToCardIds.set(token, []);
-      }
-    }
-
-    const lemmasByToken = await this._getOrFetchLemmasBatch(tokens);
-    const tokenToLemmaLookupWords = new Map<string, string[]>();
-    const allLemmaLookupWords = new Set<string>();
-
-    for (const token of tokens) {
-      const lemmas = lemmasByToken.get(token) || [];
-      const lemmaLookupWords = new Set<string>();
-
-      for (const lemma of lemmas) {
-        const trimmedLemma = lemma.trim();
-        if (!trimmedLemma || trimmedLemma === token) {
-          continue;
-        }
-
-        for (const candidate of this._buildWordLookupCandidates(trimmedLemma)) {
-          lemmaLookupWords.add(candidate);
-          allLemmaLookupWords.add(candidate);
-        }
-      }
-
-      tokenToLemmaLookupWords.set(token, Array.from(lemmaLookupWords));
-    }
-
-    const lemmaWordData = await this._getWordDataBatch(Array.from(allLemmaLookupWords));
-
-    for (const token of tokens) {
-      const state = tokenStates.get(token);
-      if (!state) {
+      const wordData = tokenWordData.get(token);
+      if (!wordData || !wordData.cardIds.length) {
+        resolved.set(token, { status: 'uncollected', due: false, cardIds: [] });
         continue;
       }
 
-      for (const lookupWord of tokenToLemmaLookupWords.get(token) || []) {
-        state.bestCached = addCachedCandidate(
-          lemmaWordData.get(lookupWord),
-          state.bestCached,
-          state.cardIds
-        );
-      }
-
-      if (state.bestCached) {
+      const cardIds = wordData.cardIds;
+      if (wordData.analysisStatus !== undefined && wordData.due !== undefined) {
         resolved.set(token, {
-          status: state.bestCached.status,
-          due: state.bestCached.due,
-          cardIds: state.bestCached.cardIds
+          status: wordData.analysisStatus,
+          due: wordData.due,
+          cardIds
         });
         continue;
       }
 
-      const resolvedCardIds = Array.from(state.cardIds);
-      tokenToCardIds.set(token, resolvedCardIds);
-      resolvedCardIds.forEach((cardId) => allCardIds.add(cardId));
+      tokenToCardIds.set(token, cardIds);
+      cardIds.forEach((cardId) => allCardIds.add(cardId));
     }
 
-    const allResolvedCardIds = Array.from(allCardIds);
+    const unresolvedCardIds = Array.from(allCardIds);
     const metricsMap =
-      allResolvedCardIds.length > 0
-        ? await this.anki.cardMetricsMap(allResolvedCardIds, ['prop:r', 'prop:s'])
+      unresolvedCardIds.length > 0
+        ? await this.anki.cardMetricsMap(unresolvedCardIds, ['prop:r', 'prop:s'])
         : new Map();
     const newCardIds =
-      allResolvedCardIds.length > 0
-        ? await this._resolveNewCardIdsFromMetrics(allResolvedCardIds, metricsMap)
+      unresolvedCardIds.length > 0
+        ? await this._resolveNewCardIdsFromMetrics(unresolvedCardIds, metricsMap)
         : new Set();
 
     for (const token of tokens) {
-      // Already resolved from IndexedDB cached analysisStatus/due path.
-      if (resolved.has(token)) {
+      if (resolved.has(token) && resolved.get(token)?.status !== 'uncollected') {
         continue;
       }
 
-      const cardIds = tokenToCardIds.get(token) || [];
-      if (cardIds.length === 0) {
-        resolved.set(token, { status: 'uncollected', due: false, cardIds: [] });
+      const cardIds = tokenToCardIds.get(token);
+      if (!cardIds || !cardIds.length) {
         continue;
       }
 

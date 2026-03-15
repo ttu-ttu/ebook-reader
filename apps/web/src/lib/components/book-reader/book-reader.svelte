@@ -307,6 +307,73 @@
     }
   }
 
+  function invalidateTokenPanelForCacheRefresh(): void {
+    tokenPanelCacheVersion++;
+    tokenPanelResult = undefined;
+    tokenPanelError = '';
+  }
+
+  async function runPostWarmCacheRefresh(service: BookContentColoring): Promise<void> {
+    console.log('🔄 Re-colorizing with updated cache...');
+    await service.recolorizeProcessedElements();
+    console.log('✅ Re-colorization complete');
+
+    invalidateTokenPanelForCacheRefresh();
+    if (showTokenPanel) {
+      console.log('🔄 Re-running token panel analysis with refreshed cache...');
+      void analyzeForTokenPanel();
+    }
+  }
+
+  async function runWarmCacheRefreshFlow(service: BookContentColoring): Promise<void> {
+    if (cacheRefreshPromise) {
+      await cacheRefreshPromise;
+      return;
+    }
+
+    cacheRefreshPromise = (async () => {
+      try {
+        const stats = await runWarmCacheWithProgress(service);
+        console.log(
+          `✅ Cache refreshed: ${stats.cachedWords} words from ${stats.totalCards} cards in ${stats.duration}ms`
+        );
+        await runPostWarmCacheRefresh(service);
+      } catch (err) {
+        console.error('❌ Failed to refresh cache:', err);
+      } finally {
+        cacheRefreshPromise = null;
+      }
+    })();
+
+    await cacheRefreshPromise;
+  }
+
+  async function applyServiceSettingAndRefresh(
+    apply: (service: BookContentColoring) => Promise<void> | void
+  ): Promise<void> {
+    const service = coloringService;
+    if (!service) {
+      return;
+    }
+
+    await apply(service);
+    await runWarmCacheRefreshFlow(service);
+  }
+
+  async function waitForRefreshPrerequisites(): Promise<void> {
+    if (cacheLoadingPromise) {
+      await cacheLoadingPromise;
+    }
+
+    if (cacheRefreshPromise) {
+      await cacheRefreshPromise;
+    }
+
+    if (initialTokenizePromise) {
+      await initialTokenizePromise;
+    }
+  }
+
   function isTokenPanelFilter(value: string): value is TokenPanelFilterId {
     return (
       value === 'all' ||
@@ -410,33 +477,7 @@
         // Step 3: Refresh cache in background (don't block colorization)
         if (cacheInfo.needsRefresh) {
           console.log('🔄 Refreshing cache from Anki in background...');
-          cacheRefreshPromise = runWarmCacheWithProgress(service)
-            .then(async (stats) => {
-              console.log(
-                `✅ Cache refreshed: ${stats.cachedWords} words from ${stats.totalCards} cards in ${stats.duration}ms`
-              );
-              tokenPanelCacheVersion++;
-              tokenPanelResult = undefined;
-              tokenPanelError = '';
-
-              // Re-colorize all elements to pick up updated cards
-              console.log('🔄 Re-colorizing with updated cache...');
-              await service.recolorizeProcessedElements();
-              console.log('✅ Re-colorization complete');
-
-              if (showTokenPanel) {
-                console.log('🔄 Re-running token panel analysis with refreshed cache...');
-                tokenPanelResult = undefined;
-                tokenPanelError = '';
-                void analyzeForTokenPanel();
-              }
-            })
-            .catch((err) => {
-              console.error('❌ Failed to refresh cache:', err);
-            })
-            .finally(() => {
-              cacheRefreshPromise = null;
-            });
+          void runWarmCacheRefreshFlow(service);
         }
 
         cacheLoadingPromise = null;
@@ -457,6 +498,8 @@
     resetInitialStatusColoringState();
     warmCacheLoading = false;
     warmCacheProgress = undefined;
+    cacheLoadingPromise = null;
+    cacheRefreshPromise = null;
 
     if (coloringQueue) {
       coloringQueue.clear();
@@ -488,18 +531,7 @@
     const currentMode = $ankiColorMode$;
     if (previousAnkiColorMode !== undefined && previousAnkiColorMode !== currentMode) {
       void (async () => {
-        const service = coloringService;
-        if (!service) return;
-
-        await service.setColorMode(currentMode);
-        await runWarmCacheWithProgress(service);
-        await service.recolorizeProcessedElements();
-        tokenPanelCacheVersion++;
-        tokenPanelResult = undefined;
-        tokenPanelError = '';
-        if (showTokenPanel) {
-          void analyzeForTokenPanel();
-        }
+        await applyServiceSettingAndRefresh((service) => service.setColorMode(currentMode));
       })();
     }
     previousAnkiColorMode = currentMode;
@@ -521,18 +553,9 @@
       previousAnkiDesiredRetention !== currentDesiredRetention
     ) {
       void (async () => {
-        const service = coloringService;
-        if (!service) return;
-
-        await service.setDesiredRetention(currentDesiredRetention);
-        await runWarmCacheWithProgress(service);
-        await service.recolorizeProcessedElements();
-        tokenPanelCacheVersion++;
-        tokenPanelResult = undefined;
-        tokenPanelError = '';
-        if (showTokenPanel) {
-          void analyzeForTokenPanel();
-        }
+        await applyServiceSettingAndRefresh((service) =>
+          service.setDesiredRetention(currentDesiredRetention)
+        );
       })();
     }
 
@@ -546,18 +569,9 @@
       previousAnkiMatureThreshold !== currentMatureThreshold
     ) {
       void (async () => {
-        const service = coloringService;
-        if (!service) return;
-
-        await service.setMatureThreshold(currentMatureThreshold);
-        await runWarmCacheWithProgress(service);
-        await service.recolorizeProcessedElements();
-        tokenPanelCacheVersion++;
-        tokenPanelResult = undefined;
-        tokenPanelError = '';
-        if (showTokenPanel) {
-          void analyzeForTokenPanel();
-        }
+        await applyServiceSettingAndRefresh((service) =>
+          service.setMatureThreshold(currentMatureThreshold)
+        );
       })();
     }
     previousAnkiMatureThreshold = currentMatureThreshold;
@@ -931,20 +945,61 @@
     });
   }
 
+  interface ReaderFlashState {
+    previousBackground: string;
+    previousOutline: string;
+    previousTransition: string;
+    timeoutId?: ReturnType<typeof setTimeout>;
+  }
+
+  const readerFlashStateByTarget = new WeakMap<HTMLElement, ReaderFlashState>();
+
   function flashReaderTarget(target: HTMLElement, durationMs = 1700): void {
-    const previousBackground = target.style.backgroundColor;
-    const previousOutline = target.style.outline;
-    const previousTransition = target.style.transition;
+    let flashState = readerFlashStateByTarget.get(target);
+    if (!flashState) {
+      flashState = {
+        previousBackground: target.style.backgroundColor,
+        previousOutline: target.style.outline,
+        previousTransition: target.style.transition
+      };
+      readerFlashStateByTarget.set(target, flashState);
+    }
+
+    if (flashState.timeoutId) {
+      clearTimeout(flashState.timeoutId);
+    }
 
     target.style.transition = 'background-color 180ms ease, outline-color 180ms ease';
     target.style.backgroundColor = 'rgba(34, 211, 238, 0.20)';
     target.style.outline = '2px solid rgba(34, 211, 238, 0.55)';
 
-    setTimeout(() => {
-      target.style.backgroundColor = previousBackground;
-      target.style.outline = previousOutline;
-      target.style.transition = previousTransition;
+    flashState.timeoutId = setTimeout(() => {
+      const latestState = readerFlashStateByTarget.get(target);
+      if (!latestState) {
+        return;
+      }
+
+      target.style.backgroundColor = latestState.previousBackground;
+      target.style.outline = latestState.previousOutline;
+      target.style.transition = latestState.previousTransition;
+      readerFlashStateByTarget.delete(target);
     }, durationMs);
+  }
+
+  function findSentenceLineHost(target: HTMLElement): HTMLElement {
+    return (target.closest('p,li,section,article,div,td') as HTMLElement | null) || target;
+  }
+
+  function findTokenTargetsInSentenceHost(sentenceHost: HTMLElement, token: string): HTMLElement[] {
+    const tokenTargets = Array.from(
+      sentenceHost.querySelectorAll<HTMLElement>('[data-anki-token]')
+    ).filter((element) => element.getAttribute('data-anki-token') === token);
+
+    if (sentenceHost.getAttribute('data-anki-token') === token) {
+      tokenTargets.unshift(sentenceHost);
+    }
+
+    return Array.from(new Set(tokenTargets));
   }
 
   async function waitForScrollToSettle(target: HTMLElement, timeoutMs = 1600): Promise<void> {
@@ -1020,7 +1075,18 @@
 
     target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     await waitForScrollToSettle(target);
-    flashReaderTarget(target);
+
+    const sentenceLineHost = findSentenceLineHost(target);
+    flashReaderTarget(sentenceLineHost, 1200);
+
+    const tokenTargets = findTokenTargetsInSentenceHost(sentenceLineHost, token);
+    const targetsToFlash = tokenTargets.length > 0 ? tokenTargets : [target];
+
+    window.setTimeout(() => {
+      for (const tokenTarget of targetsToFlash) {
+        flashReaderTarget(tokenTarget, 1200);
+      }
+    }, 240);
   }
 
   async function onTokenPanelTokenSelect(event: CustomEvent<{ token: string }>): Promise<void> {
@@ -1147,7 +1213,7 @@
   function getTokenPanelTokenCountCacheKey(fullText: string): string {
     const prefix = fullText.slice(0, 256);
     const suffix = fullText.slice(-256);
-    return ['token-count-v1', fullText.length, prefix, suffix].join('::');
+    return ['token-count-v2', fullText.length, prefix, suffix].join('::');
   }
 
   function getInitialTokenizeKey(fullText: string): string {
@@ -1259,17 +1325,7 @@
     tokenPanelError = '';
 
     try {
-      if (cacheLoadingPromise) {
-        await cacheLoadingPromise;
-      }
-
-      if (cacheRefreshPromise) {
-        await cacheRefreshPromise;
-      }
-
-      if (initialTokenizePromise) {
-        await initialTokenizePromise;
-      }
+      await waitForRefreshPrerequisites();
 
       const analysisChunkSize = 2500;
       const fullText = extractDocumentText(htmlContent);

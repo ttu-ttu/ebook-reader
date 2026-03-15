@@ -67,12 +67,13 @@ export class Yomitan {
           continue;
         }
 
-        if (!lemma) {
-          continue;
-        }
-
         const lemmas = lemmaMap.get(token) || new Set<string>();
-        lemmas.add(lemma);
+        if (lemma) {
+          lemmas.add(lemma);
+        }
+        if (lemmaReading) {
+          lemmas.add(lemmaReading);
+        }
         lemmaMap.set(token, lemmas);
       }
     }
@@ -100,19 +101,25 @@ export class Yomitan {
     // Get full termEntries (from cache or API)
     const dictionaryEntries = await this.getTermEntries(token, yomitanUrl);
 
-    // Extract lemmas from the cached response
-    const lemmas: string[] = [];
+    // Extract lemmas and readings from the cached response
+    const lemmas = new Set<string>();
     for (const entry of dictionaryEntries) {
       for (const headword of entry['headwords']) {
         for (const source of headword['sources']) {
           if (source.originalText !== token) continue; // OK, avoid きれる matching き
           if (source.matchType !== 'exact') continue;
-          lemmas.push(headword.term);
+
+          if (typeof headword.term === 'string' && headword.term.trim().length > 0) {
+            lemmas.add(headword.term.trim());
+          }
+          if (typeof headword.reading === 'string' && headword.reading.trim().length > 0) {
+            lemmas.add(headword.reading.trim());
+          }
         }
       }
     }
 
-    return lemmas;
+    return Array.from(lemmas);
   }
 
   /**
@@ -192,13 +199,16 @@ export class Yomitan {
   }
 
   private _selectTokenizeDictionary(response: any[]): any | undefined {
+    const dictionaries = Array.isArray(response) ? response : [];
+
     return (
-      response.find((dict: any) => dict.id?.includes('mecab-unidic-csj-202302')) ||
-      response.find((dict: any) => dict.id?.includes('mecab-unidic-mecab-translate')) ||
-      response.find(
+      dictionaries.find((dict: any) => dict.id?.includes('mecab-unidic-csj')) ||
+      dictionaries.find((dict: any) => dict.id?.includes('unidic-csj')) ||
+      dictionaries.find((dict: any) => dict.id?.includes('mecab-unidic-mecab-translate')) ||
+      dictionaries.find(
         (dict: any) => dict.id?.includes('mecab-') && !dict.id?.includes('mecab-ipadic')
       ) ||
-      response[0]
+      dictionaries[0]
     );
   }
 }
