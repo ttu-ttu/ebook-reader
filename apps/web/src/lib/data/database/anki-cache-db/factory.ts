@@ -26,6 +26,7 @@ export interface AnkiCacheDb extends DBSchema {
       due?: boolean;
       cardIds: number[];
       timestamp: number;
+      expiresAtMs?: number;
     };
   };
   /** @deprecated Legacy cache - use wordData instead */

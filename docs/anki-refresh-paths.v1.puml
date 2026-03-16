@@ -1,0 +1,179 @@
+@startuml
+title Ebook Reader - Refresh Paths
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor white
+  BorderColor #334155
+  FontColor #0f172a
+  DiamondBackgroundColor #f8fafc
+  DiamondBorderColor #334155
+  StartColor #0ea5e9
+  EndColor #0ea5e9
+  BarColor #64748b
+}
+skinparam note {
+  BackgroundColor #fefce8
+  BorderColor #ca8a04
+  FontColor #713f12
+}
+
+legend right
+  Passive paths
+  - Use IndexedDB wordData + tokenize-derived lemmas
+  - Do not call Yomitan termEntries
+
+  Live refresh paths
+  - May call Yomitan termEntries
+  - Used to repair stale or incomplete data
+endlegend
+
+start
+
+if ("Trigger?") then ("Initial book load")
+  partition "Bootstrap tokenize cache" {
+    :book-reader.svelte\nensureInitialTokenizeBootstrap();
+    if ("Document token counts already cached?") then ("yes")
+      :Skip bootstrap;
+    else ("no")
+      :service.preTokenizeDocument(fullText);
+      :color-book-content.ts\npreTokenizeDocument();
+      repeat
+        :yomitan.tokenize(chunk,\nparser=mecab);
+        :Persist lemma/lemmaReading\nwith setLemmasBatch();
+        :Accumulate token counts;
+      repeat while ("More chunks?")
+      :Persist document token counts\nin IndexedDB;
+    endif
+  }
+
+elseif ("Visible content coloring")
+  partition "Reader coloring / recoloring" {
+    :Initial render, scroll/intersection,\nor post-warm-cache recolor;
+    :colorizeElementsBatch();
+    :_batchFetchTokenColors(tokens);
+    :_resolveTokenWordDataBatch(\nallowTermEntriesEnrichment=false);
+    :Lookup token in IndexedDB wordData;
+    if ("Direct wordData found?") then ("yes")
+      :Apply token status color;
+    else ("no")
+      :Lookup tokenize-derived lemmas\nfrom IndexedDB only;
+      if ("Lemma wordData found?") then ("yes")
+        :Apply token status color;
+      else ("no")
+        :Mark token as UNCOLLECTED\n(purple in reader);
+      endif
+    endif
+  }
+  note right
+    Passive path only.
+    No termEntries.
+  end note
+
+elseif ("Anki cache refresh")
+  partition "Warm cache + recolor" {
+    :book-reader.svelte\nrunWarmCacheWithProgress();
+    :color-book-content.ts\nwarmCache();
+    :anki.getAllCardsFromDecks(\nmetrics: prop:r, prop:s);
+    :Extract configured word fields;
+    :Write wordData records\ninto IndexedDB;
+    :recolorizeProcessedElements();
+    :colorizeElementsBatch() for visible DOM;
+    if ("Token panel currently open?") then ("yes")
+      :analyzeForTokenPanel();
+    else ("no")
+      :Done;
+    endif
+  }
+  note right
+    warmCache itself does not call Yomitan.
+    Follow-up recolor uses the passive path above.
+  end note
+
+elseif ("Token panel open / reload")
+  partition "Token panel analysis" {
+    :book-reader.svelte\nanalyzeForTokenPanel();
+    :Wait for cacheLoadingPromise,\ncacheRefreshPromise,\ninitialTokenizePromise;
+    :service.analyzeDocumentText(fullText);
+    if ("Document token counts cached?") then ("yes")
+      :Load token counts from IndexedDB;
+    else ("no")
+      repeat
+        :yomitan.tokenize(chunk);
+        :Persist token counts;
+      repeat while ("More chunks?")
+    endif
+    :_resolveTokenAnalysisData(batch);
+    :_resolveTokenWordDataBatch(\nallowTermEntriesEnrichment=false);
+    :Resolve from IndexedDB wordData\nor tokenize-derived lemmas only;
+    if ("cardIds present but analysisStatus/due missing?") then ("yes")
+      :anki.cardMetricsMap(cardIds,\nprop:r, prop:s);
+      :Compute panel status\nmature/young/new/due/uncollected;
+      :Persist enriched wordData;
+    else ("no")
+      :Use cached analysis data;
+    endif
+    :Render token panel rows;
+  }
+  note right
+    Passive path only.
+    No termEntries.
+  end note
+
+elseif ("Hover token in reader")
+  partition "Live token refresh - reader" {
+    :_refreshToken(token, span);
+    :Resolve cached wordData/cardIds\nfrom IndexedDB;
+    if ("Cached cardIds available?") then ("yes")
+      :Fast refresh via anki.cardMetricsMap();
+      if ("Classification conclusive?") then ("yes")
+        :Update IndexedDB wordData;
+        :Update token color in DOM;
+      else ("no")
+        :Fall back to _fetchWordDataFromAnki(token);
+      endif
+    else ("no")
+      :_fetchWordDataFromAnki(token);
+    endif
+    :Candidate words = token + lemmas;
+    if ("Lemma cache missing/weak?") then ("yes")
+      :yomitan.lemmatize(token);
+      :getTermEntries(token);
+      :Merge lemma + reading\nback into IndexedDB;
+    else ("no")
+      :Use cached lemmas;
+    endif
+    :anki.findCardsWithWord(candidateWord);
+    :anki.cardMetricsMap(cardIds,\nprop:r, prop:s);
+    :Persist fresh wordData;
+    :Update hovered token color;
+  }
+  note right
+    Live path.
+    May call termEntries.
+  end note
+
+else ("Hover token in side panel")
+  partition "Live token refresh - token panel" {
+    :refreshTokenAnalysisFromAnki(token);
+    :_fetchWordDataFromAnki(token);
+    :Candidate words = token + lemmas;
+    if ("Lemma cache missing/weak?") then ("yes")
+      :yomitan.lemmatize(token);
+      :getTermEntries(token);
+      :Merge lemma + reading\nback into IndexedDB;
+    else ("no")
+      :Use cached lemmas;
+    endif
+    :anki.findCardsWithWord(candidateWord);
+    :anki.cardMetricsMap(cardIds,\nprop:r, prop:s);
+    :Persist fresh wordData;
+    :Update token panel row;
+  }
+  note right
+    Same live resolution path as reader hover.
+  end note
+endif
+
+stop
+@enduml

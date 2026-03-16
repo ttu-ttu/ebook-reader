@@ -1341,6 +1341,43 @@ export class BookContentColoring {
     }
   }
 
+  private _computeWordDataExpiryFromNextDue(
+    cardIds: number[],
+    cardScheduleById: Map<number, Pick<CardInfo, 'due' | 'queue' | 'type'>>
+  ): number | undefined {
+    const now = Date.now();
+    let earliestDueAtMs: number | undefined;
+
+    for (const cardId of cardIds) {
+      const schedule = cardScheduleById.get(cardId);
+      if (!schedule) {
+        continue;
+      }
+
+      const dueDate = this._dueValueToDate(schedule.due, schedule.queue, schedule.type);
+      if (!dueDate) {
+        continue;
+      }
+
+      const dueAtMs = dueDate.getTime();
+      if (!Number.isFinite(dueAtMs)) {
+        continue;
+      }
+
+      if (earliestDueAtMs === undefined || dueAtMs < earliestDueAtMs) {
+        earliestDueAtMs = dueAtMs;
+      }
+    }
+
+    if (earliestDueAtMs === undefined) {
+      return undefined;
+    }
+
+    // Avoid immediate expiry loops for currently due cards.
+    const MIN_EXPIRY_MS = 5 * 60 * 1000;
+    return Math.max(now + MIN_EXPIRY_MS, earliestDueAtMs);
+  }
+
   private async _gradeToken(token: string, span: HTMLElement): Promise<void> {
     try {
       const existingData = await this._resolveWordDataForToken(token);
@@ -2626,8 +2663,15 @@ export class BookContentColoring {
 
       // Extract unique words from configured word fields
       const wordToCardIds = new Map<string, number[]>();
+      const cardScheduleById = new Map<number, Pick<CardInfo, 'due' | 'queue' | 'type'>>();
 
       for (const card of allCards) {
+        cardScheduleById.set(card.cardId, {
+          due: card.due,
+          queue: card.queue,
+          type: card.type
+        });
+
         for (const field of wordFields) {
           const fieldValue = card.fields[field]?.value;
           if (fieldValue) {
@@ -2665,6 +2709,7 @@ export class BookContentColoring {
       const newCardIds = new Set<number>();
       const unresolvedNewCardIds = new Set<number>();
       const missingMetricCardIds = new Set<number>();
+      const missingScheduleCardIds = new Set<number>();
 
       for (const card of allCards) {
         const retrievability = card['prop:r'];
@@ -2687,6 +2732,10 @@ export class BookContentColoring {
         } else if (inferredIsNew === undefined) {
           unresolvedNewCardIds.add(card.cardId);
         }
+
+        if (typeof card.due !== 'number' || !Number.isFinite(card.due)) {
+          missingScheduleCardIds.add(card.cardId);
+        }
       }
 
       if (missingMetricCardIds.size > 0) {
@@ -2707,6 +2756,25 @@ export class BookContentColoring {
         );
         for (const cardId of resolvedNewCardIds) {
           newCardIds.add(cardId);
+        }
+      }
+
+      if (missingScheduleCardIds.size > 0) {
+        console.log(
+          `Step 2b: Fetching schedule data (due/queue/type) for ${missingScheduleCardIds.size} cards...`
+        );
+        const SCHEDULE_CHUNK_SIZE = 250;
+        const scheduleCardIdList = Array.from(missingScheduleCardIds);
+        for (let index = 0; index < scheduleCardIdList.length; index += SCHEDULE_CHUNK_SIZE) {
+          const chunk = scheduleCardIdList.slice(index, index + SCHEDULE_CHUNK_SIZE);
+          const scheduleMap = await this.anki.cardScheduleMap(chunk);
+          for (const scheduleCard of scheduleMap.values()) {
+            cardScheduleById.set(scheduleCard.cardId, {
+              due: scheduleCard.due,
+              queue: scheduleCard.queue,
+              type: scheduleCard.type
+            });
+          }
         }
       }
 
@@ -2766,7 +2834,8 @@ export class BookContentColoring {
             due: cardIds.some((cardId) =>
               this._isCardDue(metricsByCardId.get(cardId), newCardIds.has(cardId))
             ),
-            cardIds
+            cardIds,
+            expiresAtMs: this._computeWordDataExpiryFromNextDue(cardIds, cardScheduleById)
           };
 
           wordDataBatch.push({ word, data: wordData });

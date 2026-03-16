@@ -1,0 +1,167 @@
+@startuml
+title Old Refresh Flow (Diff Overlay)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor white
+  BorderColor #334155
+  FontColor #0f172a
+  DiamondBackgroundColor #f8fafc
+  DiamondBorderColor #334155
+  StartColor #0ea5e9
+  EndColor #0ea5e9
+  BarColor #64748b
+}
+skinparam note {
+  BackgroundColor #fefce8
+  BorderColor #ca8a04
+  FontColor #713f12
+}
+
+legend right
+  |= Color |= Meaning |
+  |<#d9f2d9> Green | Shared (still present in v2) |
+  |<#ffe0e0> Red | Removed from old orchestration |
+  |<#fff6bf> Yellow | New in v2 |
+endlegend
+
+start
+
+if ("Trigger?") then ("Initial book load")
+  partition "Bootstrap tokenize cache" {
+    #d9f2d9:book-reader.svelte\nensureInitialTokenizeBootstrap();
+    if ("Document token counts already cached?") then ("yes")
+      #d9f2d9:Skip bootstrap;
+    else ("no")
+      #d9f2d9:service.preTokenizeDocument(fullText);
+      #d9f2d9:color-book-content.ts\npreTokenizeDocument();
+      repeat
+        #d9f2d9:yomitan.tokenize(chunk,\nparser=mecab);
+        #d9f2d9:Persist lemma/lemmaReading\nwith setLemmasBatch();
+        #d9f2d9:Accumulate token counts;
+      repeat while ("More chunks?")
+      #d9f2d9:Persist document token counts\nin IndexedDB;
+    endif
+  }
+
+elseif ("Visible content coloring")
+  partition "Reader coloring / recoloring" {
+    #d9f2d9:Initial render, scroll/intersection,\nor post-warm-cache recolor;
+    #d9f2d9:colorizeElementsBatch();
+    #d9f2d9:_batchFetchTokenColors(tokens);
+    #d9f2d9:_resolveTokenWordDataBatch(\nallowTermEntriesEnrichment=false);
+    #d9f2d9:Lookup token in IndexedDB wordData;
+    if ("Direct wordData found?") then ("yes")
+      #d9f2d9:Apply token status color;
+    else ("no")
+      #d9f2d9:Lookup tokenize-derived lemmas\nfrom IndexedDB only;
+      if ("Lemma wordData found?") then ("yes")
+        #d9f2d9:Apply token status color;
+      else ("no")
+        #d9f2d9:Mark token as UNCOLLECTED\n(purple in reader);
+      endif
+    endif
+  }
+
+elseif ("Anki cache refresh")
+  partition "Warm cache + recolor" {
+    #d9f2d9:book-reader.svelte\nrunWarmCacheWithProgress();
+    #d9f2d9:color-book-content.ts\nwarmCache();
+    #d9f2d9:anki.getAllCardsFromDecks(\nmetrics: prop:r, prop:s);
+    #d9f2d9:Extract configured word fields;
+    #d9f2d9:Write wordData records\ninto IndexedDB;
+    #ffe0e0:Inline post-refresh orchestration\nspread across startup and settings blocks;
+    #d9f2d9:recolorizeProcessedElements();
+    #d9f2d9:colorizeElementsBatch() for visible DOM;
+    if ("Token panel currently open?") then ("yes")
+      #d9f2d9:analyzeForTokenPanel();
+    else ("no")
+      #d9f2d9:Done;
+    endif
+    #fff6bf:NEW: runWarmCacheRefreshFlow(service)\ncentralizes warm -> recolor -> panel invalidation;
+  }
+
+elseif ("Token panel open / reload")
+  partition "Token panel analysis" {
+    #d9f2d9:book-reader.svelte\nanalyzeForTokenPanel();
+    #ffe0e0:Inline prerequisite awaits\n(cacheLoading/cacheRefresh/initialTokenize);
+    #fff6bf:NEW: waitForRefreshPrerequisites();
+    #d9f2d9:service.analyzeDocumentText(fullText);
+    if ("Document token counts cached?") then ("yes")
+      #d9f2d9:Load token counts from IndexedDB;
+    else ("no")
+      repeat
+        #d9f2d9:yomitan.tokenize(chunk);
+        #d9f2d9:Persist token counts;
+      repeat while ("More chunks?")
+    endif
+    #d9f2d9:_resolveTokenAnalysisData(batch);
+    #d9f2d9:_resolveTokenWordDataBatch(\nallowTermEntriesEnrichment=false);
+    #d9f2d9:Resolve from IndexedDB wordData\nor tokenize-derived lemmas only;
+    if ("cardIds present but analysisStatus/due missing?") then ("yes")
+      #d9f2d9:anki.cardMetricsMap(cardIds,\nprop:r, prop:s);
+      #d9f2d9:Compute panel status\nmature/young/new/due/uncollected;
+      #d9f2d9:Persist enriched wordData;
+    else ("no")
+      #d9f2d9:Use cached analysis data;
+    endif
+    #d9f2d9:Render token panel rows;
+  }
+
+elseif ("Settings changed\n(mode/retention/threshold)")
+  partition "Reactive settings blocks" {
+    #d9f2d9:setColorMode / setDesiredRetention / setMatureThreshold;
+    #ffe0e0:Three duplicated inline blocks:\nwarm -> recolor -> invalidate panel -> optional analyze;
+    #fff6bf:NEW: applyServiceSettingAndRefresh(apply)\nreuses centralized refresh flow;
+  }
+
+elseif ("Hover token in reader")
+  partition "Live token refresh - reader" {
+    #d9f2d9:_refreshToken(token, span);
+    #d9f2d9:Resolve cached wordData/cardIds\nfrom IndexedDB;
+    if ("Cached cardIds available?") then ("yes")
+      #d9f2d9:Fast refresh via anki.cardMetricsMap();
+      if ("Classification conclusive?") then ("yes")
+        #d9f2d9:Update IndexedDB wordData;
+        #d9f2d9:Update token color in DOM;
+      else ("no")
+        #d9f2d9:Fall back to _fetchWordDataFromAnki(token);
+      endif
+    else ("no")
+      #d9f2d9:_fetchWordDataFromAnki(token);
+    endif
+    #d9f2d9:Candidate words = token + lemmas;
+    if ("Lemma cache missing/weak?") then ("yes")
+      #d9f2d9:yomitan.lemmatize(token);
+      #d9f2d9:getTermEntries(token);
+      #d9f2d9:Merge lemma + reading\nback into IndexedDB;
+    else ("no")
+      #d9f2d9:Use cached lemmas;
+    endif
+    #d9f2d9:anki.findCardsWithWord(candidateWord);
+    #d9f2d9:anki.cardMetricsMap(cardIds,\nprop:r, prop:s);
+    #d9f2d9:Persist fresh wordData;
+    #d9f2d9:Update hovered token color;
+  }
+
+else ("Hover token in side panel")
+  partition "Live token refresh - token panel" {
+    #d9f2d9:refreshTokenAnalysisFromAnki(token);
+    #d9f2d9:_fetchWordDataFromAnki(token);
+    #d9f2d9:Candidate words = token + lemmas;
+    if ("Lemma cache missing/weak?") then ("yes")
+      #d9f2d9:yomitan.lemmatize(token);
+      #d9f2d9:getTermEntries(token);
+      #d9f2d9:Merge lemma + reading\nback into IndexedDB;
+    else ("no")
+      #d9f2d9:Use cached lemmas;
+    endif
+    #d9f2d9:anki.findCardsWithWord(candidateWord);
+    #d9f2d9:anki.cardMetricsMap(cardIds,\nprop:r, prop:s);
+    #d9f2d9:Persist fresh wordData;
+    #d9f2d9:Update token panel row;
+  }
+endif
+
+stop
+@enduml

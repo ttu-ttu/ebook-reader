@@ -1,0 +1,130 @@
+@startuml
+title Ebook Reader - Refresh Paths (Current)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor white
+  BorderColor #334155
+  FontColor #0f172a
+  DiamondBackgroundColor #f8fafc
+  DiamondBorderColor #334155
+  StartColor #0ea5e9
+  EndColor #0ea5e9
+  BarColor #64748b
+}
+skinparam note {
+  BackgroundColor #fefce8
+  BorderColor #ca8a04
+  FontColor #713f12
+}
+
+legend right
+  Main orchestrators in book-reader.svelte
+  - runWarmCacheRefreshFlow()
+  - applyServiceSettingAndRefresh()
+  - waitForRefreshPrerequisites()
+
+  Passive resolution (reader + panel)
+  - IndexedDB wordData + tokenize-derived lemmas
+  - no termEntries
+
+  Highlight
+  - Orange nodes: points that can trigger Yomitan dictionary lookups
+    (what appears as searchTerms activity externally)
+endlegend
+
+start
+
+if ("Trigger?") then ("Initial book load")
+  partition "Bootstrap + startup refresh" {
+    :Create BookContentColoring service;
+    :loadCacheFromIndexedDB();
+    :Start ColoringPriorityQueue;
+    if ("Cache needs refresh?") then ("yes")
+      :runWarmCacheRefreshFlow(service);
+      if ("cacheRefreshPromise exists?") then ("yes")
+        :await in-flight refresh;
+      else ("no")
+        :runWarmCacheWithProgress();
+        :service.warmCache();
+        :runPostWarmCacheRefresh();
+        :service.recolorizeProcessedElements();
+        :invalidateTokenPanelForCacheRefresh();
+        if ("showTokenPanel?") then ("yes")
+          :analyzeForTokenPanel();
+        else ("no")
+          :done;
+        endif
+      endif
+    else ("no")
+      :Skip background refresh;
+    endif
+  }
+
+elseif ("Setting changed")
+  partition "Mode/Retention/Threshold changes" {
+    :applyServiceSettingAndRefresh(apply);
+    :apply setting on service;
+    :runWarmCacheRefreshFlow(service);
+  }
+  note right
+    Color palette is still a local recolor only
+    (no warm cache refresh).
+  end note
+
+elseif ("Token panel open/reload")
+  partition "Panel analysis path" {
+    :analyzeForTokenPanel();
+    :waitForRefreshPrerequisites();
+    note right
+      waits for:
+      - cacheLoadingPromise
+      - cacheRefreshPromise
+      - initialTokenizePromise
+    end note
+    :service.analyzeDocumentText(fullText);
+    if ("Token counts cached?") then ("yes")
+      :Load token counts from IndexedDB;
+    else ("no")
+      :Tokenize chunks + persist counts;
+    endif
+    :_resolveTokenAnalysisData(batch);
+    :_resolveTokenWordDataBatch(\nallowTermEntriesEnrichment=false);
+    :Render token panel rows;
+  }
+
+elseif ("Initial tokenize bootstrap")
+  partition "Document token index" {
+    :ensureInitialTokenizeBootstrap();
+    if ("Token count cache exists?") then ("yes")
+      :Mark bootstrap complete;
+    else ("no")
+      :service.preTokenizeDocument();
+      :yomitan.tokenize(chunk);
+      :Persist lemmas + token counts to IndexedDB;
+    endif
+  }
+
+else ("Hover refresh")
+  partition "Live refresh (reader/panel hover)" {
+    :refreshTokenAnalysisFromAnki() or _refreshToken();
+    :_fetchWordDataFromAnki(token);
+    :Candidate words = token + lemmas;
+    if ("Lemma cache missing?") then ("yes")
+      #ffd59e:yomitan.lemmatize();
+      #ffd59e:getTermEntries();
+      :Merge back into IndexedDB;
+    else ("no")
+      :Use cached lemmas;
+    endif
+    :Find cards + cardMetricsMap;
+    :Persist fresh wordData;
+    :Update UI status/color;
+  }
+  note right
+    Live path may call termEntries.
+  end note
+endif
+
+stop
+@enduml

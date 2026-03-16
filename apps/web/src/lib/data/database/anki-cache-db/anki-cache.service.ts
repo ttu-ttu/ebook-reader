@@ -15,6 +15,7 @@ export interface CachedWordData {
   analysisStatus?: CachedDocumentTokenStatus;
   due?: boolean;
   cardIds: number[];
+  expiresAtMs?: number;
 }
 
 /** Cache TTL: 6 hours in milliseconds */
@@ -39,7 +40,7 @@ export class AnkiCacheService {
     const entry = await database.get('wordData', word);
 
     if (!entry) return undefined;
-    if (this._isExpired(entry.timestamp)) {
+    if (this._isWordDataExpired(entry)) {
       await database.delete('wordData', word);
       return undefined;
     }
@@ -50,7 +51,11 @@ export class AnkiCacheService {
       status,
       analysisStatus: entry.analysisStatus,
       due: entry.due,
-      cardIds: Array.isArray(entry.cardIds) ? entry.cardIds : []
+      cardIds: Array.isArray(entry.cardIds) ? entry.cardIds : [],
+      expiresAtMs:
+        typeof entry.expiresAtMs === 'number' && Number.isFinite(entry.expiresAtMs)
+          ? entry.expiresAtMs
+          : undefined
     };
   }
 
@@ -81,7 +86,7 @@ export class AnkiCacheService {
         continue;
       }
 
-      if (this._isExpired(entry.timestamp)) {
+      if (this._isWordDataExpired(entry)) {
         await store.delete(word);
         continue;
       }
@@ -91,7 +96,11 @@ export class AnkiCacheService {
         status,
         analysisStatus: entry.analysisStatus,
         due: entry.due,
-        cardIds: Array.isArray(entry.cardIds) ? entry.cardIds : []
+        cardIds: Array.isArray(entry.cardIds) ? entry.cardIds : [],
+        expiresAtMs:
+          typeof entry.expiresAtMs === 'number' && Number.isFinite(entry.expiresAtMs)
+            ? entry.expiresAtMs
+            : undefined
       });
     }
 
@@ -113,7 +122,11 @@ export class AnkiCacheService {
       analysisStatus: data.analysisStatus,
       due: data.due,
       cardIds: data.cardIds,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      expiresAtMs:
+        typeof data.expiresAtMs === 'number' && Number.isFinite(data.expiresAtMs)
+          ? data.expiresAtMs
+          : undefined
     });
   }
 
@@ -144,7 +157,11 @@ export class AnkiCacheService {
           analysisStatus: data.analysisStatus,
           due: data.due,
           cardIds: data.cardIds,
-          timestamp
+          timestamp,
+          expiresAtMs:
+            typeof data.expiresAtMs === 'number' && Number.isFinite(data.expiresAtMs)
+              ? data.expiresAtMs
+              : undefined
         });
       })
     );
@@ -509,5 +526,13 @@ export class AnkiCacheService {
    */
   private _isExpired(timestamp: number): boolean {
     return Date.now() - timestamp > CACHE_TTL_MS;
+  }
+
+  private _isWordDataExpired(entry: { timestamp: number; expiresAtMs?: number }): boolean {
+    if (typeof entry.expiresAtMs === 'number' && Number.isFinite(entry.expiresAtMs)) {
+      return Date.now() >= entry.expiresAtMs;
+    }
+
+    return this._isExpired(entry.timestamp);
   }
 }
