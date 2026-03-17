@@ -44,20 +44,6 @@
       text-indent: var(--book-content-text-intendation, 0rem);
     }
 
-    &.book-content--writing-vertical-rl {
-      :global(p) {
-        margin-right: var(--book-content-text-margin, 0rem);
-        margin-left: var(--book-content-text-margin, 0rem);
-      }
-    }
-
-    &.book-content--writing-horizontal-rl {
-      :global(p) {
-        margin-top: var(--book-content-text-margin, 0rem);
-        margin-bottom: var(--book-content-text-margin, 0rem);
-      }
-    }
-
     &.ttu-apply-justification {
       text-align: justify;
       hyphens: auto;
@@ -180,6 +166,24 @@
         }
       }
     }
+  }
+}
+
+// Use :where() so EPUB class-specific margins (e.g. for section breaks) aren't
+// overridden. The :global() bypasses Svelte scoping so :where() can actually
+// zero out the specificity of the parent selectors. See
+// https://github.com/ttu-ttu/ebook-reader/issues/486 for a repro.
+:global(:where(.book-content:not(.ttu-apply-important).book-content--writing-vertical-rl)) {
+  :global(p) {
+    margin-right: var(--book-content-text-margin, 0rem);
+    margin-left: var(--book-content-text-margin, 0rem);
+  }
+}
+
+:global(:where(.book-content:not(.ttu-apply-important).book-content--writing-horizontal-rl)) {
+  :global(p) {
+    margin-top: var(--book-content-text-margin, 0rem);
+    margin-bottom: var(--book-content-text-margin, 0rem);
   }
 }
 
