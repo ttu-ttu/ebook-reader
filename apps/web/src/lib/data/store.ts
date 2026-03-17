@@ -510,4 +510,6 @@ export const isOnline$ = writableSubject<boolean>(true);
 
 export const skipKeyDownListener$ = writableSubject<boolean>(false);
 
+export const showHeaderLabels$ = writableBooleanLocalStorageSubject()('showHeaderLabels', false);
+
 export const userFonts$ = writableArrayLocalStorageSubject<UserFont>()('userfonts', []);

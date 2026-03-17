@@ -186,6 +186,8 @@
 
   export let adjustStatisticsAfterIdleTime: boolean;
 
+  export let showHeaderLabels: boolean;
+
   $: availableThemes = (
     browser
       ? [...Array.from(availableThemesMap.entries()), ...Object.entries($customThemes$)]
@@ -804,6 +806,9 @@
         options={optionsForToggle}
         bind:selectedOptionId={showFooterChapterPercentage}
       />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Show Header Button Labels">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showHeaderLabels} />
     </SettingsItemGroup>
     <SettingsItemGroup title="Disable Wheel Navigation">
       <ButtonToggleGroup

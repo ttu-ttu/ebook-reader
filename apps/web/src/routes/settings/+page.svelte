@@ -67,7 +67,8 @@
     viewMode$,
     writingMode$,
     readingGoalsMergeMode$,
-    hideSpoilerImageMode$
+    hideSpoilerImageMode$,
+    showHeaderLabels$
   } from '$lib/data/store';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { pagePath } from '$lib/data/env';
@@ -210,6 +211,7 @@
       bind:trackerSkipThresholdAction={$trackerSkipThresholdAction$}
       bind:trackerPopupDetection={$trackerPopupDetection$}
       bind:adjustStatisticsAfterIdleTime={$adjustStatisticsAfterIdleTime$}
+      bind:showHeaderLabels={$showHeaderLabels$}
     />
   </div>
 </div>

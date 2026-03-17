@@ -17,10 +17,11 @@
   import {
     baseHeaderClasses,
     baseIconClasses,
+    labelIconClasses,
     nTranslateXHeaderFa,
     translateXHeaderFa
   } from '$lib/css-classes';
-  import { customReadingPointEnabled$, viewMode$ } from '$lib/data/store';
+  import { customReadingPointEnabled$, showHeaderLabels$, viewMode$ } from '$lib/data/store';
   import { ViewMode } from '$lib/data/view-mode';
   import { dummyFn, isMobile$, isOnOldUrl } from '$lib/functions/utils';
   import { createEventDispatcher } from 'svelte';
@@ -93,6 +94,8 @@
     menuItems = items;
   }
 
+  $: iconClasses = $showHeaderLabels$ ? labelIconClasses : baseIconClasses;
+
   function dispatchCustomReadingPointAction(action: any) {
     dispatch(action);
     customReadingPointMenuElm.toggleOpen();
@@ -106,33 +109,39 @@
         tabindex="0"
         role="button"
         title="Open Table of Contents"
-        class={baseIconClasses}
+        class={iconClasses}
         on:click={() => dispatch('tocClick')}
         on:keyup={dummyFn}
       >
-        <Fa icon={faList} />
+        <Fa icon={faList} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+        {#if $showHeaderLabels$}<span>TOC</span>{/if}
       </div>
     {/if}
     <div
       tabindex="0"
       role="button"
       title="Create Bookmark"
-      class={baseIconClasses}
+      class={iconClasses}
       on:click={() => dispatch('bookmarkClick')}
       on:keyup={dummyFn}
     >
-      <Fa icon={isBookmarkScreen ? fasBookmark : farBookmark} />
+      <Fa
+        icon={isBookmarkScreen ? fasBookmark : farBookmark}
+        class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''}
+      />
+      {#if $showHeaderLabels$}<span>Bookmark</span>{/if}
     </div>
     {#if hasBookmarkData}
       <div
         tabindex="0"
         role="button"
         title="Return to Bookmark"
-        class={baseIconClasses}
+        class={iconClasses}
         on:click={() => dispatch('scrollToBookmarkClick')}
         on:keyup={dummyFn}
       >
-        <Fa icon={faRotateLeft} />
+        <Fa icon={faRotateLeft} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+        {#if $showHeaderLabels$}<span>Return to Bookmark</span>{/if}
       </div>
     {/if}
     {#if $viewMode$ === ViewMode.Continuous && !$isMobile$}
@@ -150,11 +159,12 @@
       tabindex="0"
       role="button"
       title="Complete Book"
-      class={baseIconClasses}
+      class={iconClasses}
       on:click={() => dispatch('completeBook')}
       on:keyup={dummyFn}
     >
-      <Fa icon={faFlag} />
+      <Fa icon={faFlag} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+      {#if $showHeaderLabels$}<span>Complete Book</span>{/if}
     </div>
     {#if $customReadingPointEnabled$ || $viewMode$ === ViewMode.Paginated}
       <div class="flex">
@@ -164,8 +174,9 @@
           yOffset={0}
           bind:this={customReadingPointMenuElm}
         >
-          <div slot="icon" title="Open Custom Point Actions" class={baseIconClasses}>
-            <Fa icon={faCrosshairs} />
+          <div slot="icon" title="Open Custom Point Actions" class={iconClasses}>
+            <Fa icon={faCrosshairs} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+            {#if $showHeaderLabels$}<span>Point</span>{/if}
           </div>
           <div class="w-40 bg-gray-700 md:w-32" slot="content">
             {#each customReadingPointMenuItems as actionItem (actionItem.label)}
@@ -188,11 +199,12 @@
         tabindex="0"
         role="button"
         title="Toggle Fullscreen"
-        class={baseIconClasses}
+        class={iconClasses}
         on:click={() => dispatch('fullscreenClick')}
         on:keyup={dummyFn}
       >
-        <Fa icon={faExpand} />
+        <Fa icon={faExpand} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+        {#if $showHeaderLabels$}<span>Fullscreen</span>{/if}
       </div>
     {/if}
     <MergedHeaderIcon

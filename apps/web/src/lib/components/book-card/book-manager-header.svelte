@@ -7,6 +7,7 @@
   import {
     baseHeaderClasses,
     baseIconClasses,
+    labelIconClasses,
     nTranslateXHeaderFa,
     pHeaderFa,
     pxScreen,
@@ -28,7 +29,8 @@
     fsStorageSource$,
     gDriveStorageSource$,
     isOnline$,
-    oneDriveStorageSource$
+    oneDriveStorageSource$,
+    showHeaderLabels$
   } from '$lib/data/store';
   import { inputAllowDirectory } from '$lib/functions/file-dom/input-allow-directory';
   import { inputFile } from '$lib/functions/file-dom/input-file';
@@ -97,6 +99,8 @@
   let countImportElm: HTMLInputElement;
   let storageSourceElm: Popover;
   let sortOptionsElm: Popover;
+  $: iconClasses = $showHeaderLabels$ ? labelIconClasses : baseIconClasses;
+
   let isOldUrl = false;
   let showLoadCount = false;
 
@@ -245,22 +249,27 @@
           in:scale={inAnimationParams}
           out:scale={outAnimationParams}
         >
-          <svg
+          <div
             tabindex="0"
             role="button"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+            class={iconClasses}
             class:opacity-100={selectMode}
             class:opacity-60={!selectMode}
-            class={baseIconClasses}
             on:click={() => (selectMode = hasBooks && !selectMode)}
             on:keyup={dummyFn}
           >
-            <path
-              class="fill-current"
-              d="M20,4v12H8V4H20 M20,2H8C6.9,2,6,2.9,6,4v12c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V4C22,2.9,21.1,2,20,2L20,2z M12.47,14 L9,10.5l1.4-1.41l2.07,2.08L17.6,6L19,7.41L12.47,14z M4,6H2v14c0,1.1,0.9,2,2,2h14v-2H4V6z"
-            />
-          </svg>
+            <svg
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              class={$showHeaderLabels$ ? 'h-3.5 w-3.5 xl:h-3 xl:w-3' : 'h-full w-full'}
+            >
+              <path
+                class="fill-current"
+                d="M20,4v12H8V4H20 M20,2H8C6.9,2,6,2.9,6,4v12c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V4C22,2.9,21.1,2,20,2L20,2z M12.47,14 L9,10.5l1.4-1.41l2.07,2.08L17.6,6L19,7.41L12.47,14z M4,6H2v14c0,1.1,0.9,2,2,2h14v-2H4V6z"
+              />
+            </svg>
+            {#if $showHeaderLabels$}<span>Select</span>{/if}
+          </div>
         </div>
       {:else}
         <div
@@ -289,43 +298,51 @@
       <div class="absolute left-1/2 h-full -translate-x-1/2 transform-gpu">
         {#if !selectMode}
           {#if hasBookOpened}
-            <div title="Back to Book">
+            <div
+              tabindex="0"
+              role="button"
+              title="Back to Book"
+              class={iconClasses}
+              in:scale={inAnimationParams}
+              out:scale={outAnimationParams}
+              on:click={() => dispatch('backToBookClick')}
+              on:keyup={dummyFn}
+            >
               <svg
-                tabindex="0"
-                role="button"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
-                class={baseIconClasses}
-                in:scale={inAnimationParams}
-                out:scale={outAnimationParams}
-                on:click={() => dispatch('backToBookClick')}
-                on:keyup={dummyFn}
+                class={$showHeaderLabels$ ? 'h-3.5 w-3.5 xl:h-3 xl:w-3' : 'h-full w-full'}
               >
                 <path
                   class="fill-current"
                   d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5zm-3.5-8c.88 0 1.73.09 2.5.26V9.24c-.79-.15-1.64-.24-2.5-.24-1.7 0-3.24.29-4.5.83v1.66c1.13-.64 2.7-.99 4.5-.99zM13 12.49v1.66c1.13-.64 2.7-.99 4.5-.99.88 0 1.73.09 2.5.26V11.9c-.79-.15-1.64-.24-2.5-.24-1.7 0-3.24.3-4.5.83zm4.5 1.84c-1.7 0-3.24.29-4.5.83v1.66c1.13-.64 2.7-.99 4.5-.99.88 0 1.73.09 2.5.26v-1.52c-.79-.16-1.64-.24-2.5-.24z"
                 />
               </svg>
+              {#if $showHeaderLabels$}<span>Book</span>{/if}
             </div>
           {/if}
         {:else}
-          <div title="Select all Books">
+          <div
+            tabindex="0"
+            role="button"
+            title="Select all Books"
+            class={iconClasses}
+            in:scale={inAnimationParams}
+            out:scale={outAnimationParams}
+            on:click={() => dispatch('selectAllClick')}
+            on:keyup={dummyFn}
+          >
             <svg
-              tabindex="0"
-              role="button"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
-              class={baseIconClasses}
-              in:scale={inAnimationParams}
-              out:scale={outAnimationParams}
-              on:click={() => dispatch('selectAllClick')}
-              on:keyup={dummyFn}
+              class={$showHeaderLabels$ ? 'h-3.5 w-3.5 xl:h-3 xl:w-3' : 'h-full w-full'}
             >
               <path
                 class="fill-current"
                 d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"
               />
             </svg>
+            {#if $showHeaderLabels$}<span>All</span>{/if}
           </div>
         {/if}
       </div>
@@ -357,13 +374,16 @@
             >
               <div slot="icon">
                 {#key $storageIcon$}
-                  <svg
-                    class={baseIconClasses}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox={$storageIcon$.viewBox}
-                  >
-                    <path class="fill-current" d={$storageIcon$.d} />
-                  </svg>
+                  <div class={iconClasses}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox={$storageIcon$.viewBox}
+                      class={$showHeaderLabels$ ? 'h-3.5 w-3.5 xl:h-3 xl:w-3' : 'h-full w-full'}
+                    >
+                      <path class="fill-current" d={$storageIcon$.d} />
+                    </svg>
+                    {#if $showHeaderLabels$}<span>Storage Source</span>{/if}
+                  </div>
                 {/key}
               </div>
               <div class="w-28 bg-gray-700" slot="content">
@@ -410,12 +430,19 @@
               yOffset={0}
               bind:this={sortOptionsElm}
             >
-              <div slot="icon" class={baseIconClasses} title="Select Sort Options">
+              <div slot="icon" class={iconClasses} title="Select Sort Options">
                 {#if $booklistSortOptions$[$storageSource$].direction === SortDirection.ASC}
-                  <Fa icon={faArrowDownShortWide} />
+                  <Fa
+                    icon={faArrowDownShortWide}
+                    class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''}
+                  />
                 {:else}
-                  <Fa icon={faArrowDownWideShort} />
+                  <Fa
+                    icon={faArrowDownWideShort}
+                    class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''}
+                  />
                 {/if}
+                {#if $showHeaderLabels$}<span>Sort</span>{/if}
               </div>
               <div class="w-44 bg-gray-700" slot="content">
                 {#each sortMenuItems as sortMenuItem (sortMenuItem.property)}
@@ -508,51 +535,55 @@
             tabindex="0"
             role="button"
             title="Open Export Menu"
-            class="transform-gpu {baseIconClasses}"
+            class="transform-gpu {iconClasses}"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
             on:click={() => dispatch('replicateData')}
             on:keyup={dummyFn}
           >
-            <Fa icon={faCloudArrowUp} />
+            <Fa icon={faCloudArrowUp} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+            {#if $showHeaderLabels$}<span>Export</span>{/if}
           </div>
           {#if $storageSource$ === StorageKey.BROWSER}
             <div
               tabindex="0"
               role="button"
               title="Go to Statistics"
-              class="transform-gpu {baseIconClasses}"
+              class="transform-gpu {iconClasses}"
               in:scale={inAnimationParams}
               out:scale={outAnimationParams}
               on:click={() => dispatch('selectionToStatistics')}
               on:keyup={dummyFn}
             >
-              <Fa icon={faChartLine} />
+              <Fa icon={faChartLine} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+              {#if $showHeaderLabels$}<span>Statistics</span>{/if}
             </div>
             <div
               tabindex="0"
               role="button"
               title="Delete Statistics for selected Books"
-              class="transform-gpu {baseIconClasses}"
+              class="transform-gpu {iconClasses}"
               in:scale={inAnimationParams}
               out:scale={outAnimationParams}
               on:click={() => dispatch('deleteStatistics')}
               on:keyup={dummyFn}
             >
-              <Fa icon={faCalendarXmark} />
+              <Fa icon={faCalendarXmark} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+              {#if $showHeaderLabels$}<span>Delete Statistics</span>{/if}
             </div>
           {/if}
           <div
             tabindex="0"
             role="button"
             title="Delete selected Books"
-            class="transform-gpu {baseIconClasses}"
+            class="transform-gpu {iconClasses}"
             in:scale={inAnimationParams}
             out:scale={outAnimationParams}
             on:click={() => dispatch('removeClick')}
             on:keyup={dummyFn}
           >
-            <Fa icon={faTrash} />
+            <Fa icon={faTrash} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+            {#if $showHeaderLabels$}<span>Delete Book</span>{/if}
           </div>
         {/if}
       </div>

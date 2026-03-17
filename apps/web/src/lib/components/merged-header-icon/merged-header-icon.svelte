@@ -5,8 +5,9 @@
   import { page } from '$app/stores';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import Popover from '$lib/components/popover/popover.svelte';
-  import { baseIconClasses } from '$lib/css-classes';
+  import { baseIconClasses, labelIconClasses } from '$lib/css-classes';
   import { pagePath } from '$lib/data/env';
+  import { showHeaderLabels$ } from '$lib/data/store';
   import { dummyFn } from '$lib/functions/utils';
 
   export let leavePageLink = '';
@@ -38,6 +39,8 @@
     }
   }
 
+  $: iconClasses = $showHeaderLabels$ ? labelIconClasses : baseIconClasses;
+
   if (actionItems.length === 1 && actionItems[0].routeId) {
     leavePageLink = actionItems[0].routeId;
   }
@@ -45,8 +48,9 @@
 
 {#if leavePageLink}
   <a href={leavePageLink}>
-    <div class={baseIconClasses}>
-      <Fa icon={mergeTo.icon} />
+    <div class={iconClasses}>
+      <Fa icon={mergeTo.icon} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+      {#if $showHeaderLabels$}<span>{mergeTo.label}</span>{/if}
     </div>
   </a>
 {:else}
@@ -56,11 +60,12 @@
         tabindex="0"
         role="button"
         title={actionItem.title}
-        class={baseIconClasses}
+        class={iconClasses}
         on:click={() => handleActionMenuItem(actionItem.label)}
         on:keyup={dummyFn}
       >
-        <Fa icon={actionItem.icon} />
+        <Fa icon={actionItem.icon} class={$showHeaderLabels$ ? 'text-sm xl:text-xs' : ''} />
+        {#if $showHeaderLabels$}<span>{actionItem.label}</span>{/if}
       </div>
     {/each}
   </div>
