@@ -5,7 +5,12 @@
  */
 
 import { Yomitan } from '$lib/data/yomitan';
-import { Anki, type CardInfo, type GetAllCardsProgress } from '$lib/data/anki';
+import {
+  Anki,
+  type CardInfo,
+  type GetAllCardsProgress,
+  type RepositionNewCardsResult
+} from '$lib/data/anki';
 import {
   TokenColor,
   TokenColorMode,
@@ -14,10 +19,16 @@ import {
   type WordStatus
 } from '$lib/data/anki/token-color';
 import type { AnkiCacheService } from '$lib/data/database/anki-cache-db';
-import type { CachedWordData } from '$lib/data/database/anki-cache-db/anki-cache.service';
+import type {
+  CachedLemmas,
+  CachedWordData
+} from '$lib/data/database/anki-cache-db/anki-cache.service';
 
 /** Regex to check if text contains letters */
 const HAS_LETTER_REGEX = /\p{L}/u;
+const HAS_KANJI_REGEX = /[\p{Script=Han}々]/u;
+const HAS_KANA_REGEX = /[\p{Script=Hiragana}\p{Script=Katakana}]/u;
+const SHARED_TOKEN_RESOLUTION_OPTIONS = { allowTermEntriesEnrichment: true } as const;
 
 export interface ColoringOptions {
   enabled: boolean;
@@ -37,6 +48,7 @@ export type DocumentTokenStatus = 'uncollected' | 'new' | 'young' | 'mature' | '
 export interface DocumentTokenAnalysisEntry {
   token: string;
   count: number;
+  firstOccurrence: number;
   status: DocumentTokenStatus;
   due: boolean;
   cardIds: number[];
@@ -69,6 +81,23 @@ export interface WarmCacheProgress {
   detail: string;
 }
 
+export interface BuildRepositionOrderOptions {
+  signal?: AbortSignal;
+  chunkSize?: number;
+  scanLength?: number;
+  maxTokens?: number;
+  maxChars?: number;
+  orderMode?: 'book-order' | 'occurrences';
+  minOccurrences?: number;
+}
+
+export interface BuildRepositionOrderResult {
+  orderedCardIds: number[];
+  processedTokens: number;
+  processedChars: number;
+  uniqueTokens: number;
+}
+
 interface GradeDialogInfo {
   cardId: number;
   deckName: string;
@@ -94,9 +123,14 @@ export class BookContentColoring {
   private anki: Anki;
   private cacheService?: AnkiCacheService;
   private options: ColoringOptions;
+  private readonly warmCacheVersion = 'word-cache-v3';
+  private readonly warmCacheVersionStorageKey = 'anki-warm-cache-version';
+  private readonly warmCacheUpdatedAtStorageKey = 'anki-warm-cache-updated-at';
   // Rate limiting: track last refresh timestamp for each token
   private lastRefreshTime = new Map<string, number>();
   private readonly REFRESH_COOLDOWN_MS = 5000; // 5 seconds
+  private readonly LEMMA_WORDDATA_MISS_LOG_COOLDOWN_MS = 30000; // 30 seconds
+  private lemmaWordDataMissLogTime = new Map<string, number>();
 
   constructor(options: ColoringOptions, cacheService?: AnkiCacheService) {
     this.options = options;
@@ -109,10 +143,6 @@ export class BookContentColoring {
 
     // Initialize ready promise as already resolved
     this.readyPromise = Promise.resolve();
-  }
-
-  private markReady(): void {
-    // No-op, kept for compatibility
   }
 
   setColorPalette(colorPalette: TokenColorPalette): void {
@@ -495,6 +525,9 @@ export class BookContentColoring {
     }
 
     const uniqueTokens = Array.from(uniqueCounts.keys());
+    const tokenFirstOccurrence = new Map<string, number>(
+      uniqueTokens.map((token, index) => [token, index])
+    );
     const resolveBatches = this._chunkArray(uniqueTokens, batchSize);
     totalSteps = textChunks.length + Math.max(1, resolveBatches.length);
     const analysisEntries: DocumentTokenAnalysisEntry[] = [];
@@ -516,6 +549,7 @@ export class BookContentColoring {
         analysisEntries.push({
           token,
           count: uniqueCounts.get(token) || 0,
+          firstOccurrence: tokenFirstOccurrence.get(token) ?? Number.MAX_SAFE_INTEGER,
           status: resolved.status,
           due: resolved.due,
           cardIds: resolved.cardIds
@@ -609,6 +643,140 @@ export class BookContentColoring {
     };
   }
 
+  async buildRepositionOrderForNewCards(
+    text: string,
+    options?: BuildRepositionOrderOptions
+  ): Promise<BuildRepositionOrderResult> {
+    if (!text.trim()) {
+      return {
+        orderedCardIds: [],
+        processedTokens: 0,
+        processedChars: 0,
+        uniqueTokens: 0
+      };
+    }
+
+    const maxChars =
+      typeof options?.maxChars === 'number' &&
+      Number.isFinite(options.maxChars) &&
+      options.maxChars > 0
+        ? Math.max(1, Math.trunc(options.maxChars))
+        : undefined;
+    const maxTokens =
+      typeof options?.maxTokens === 'number' &&
+      Number.isFinite(options.maxTokens) &&
+      options.maxTokens > 0
+        ? Math.max(1, Math.trunc(options.maxTokens))
+        : undefined;
+
+    const scanText = maxChars ? text.slice(0, maxChars) : text;
+    const chunkSize = options?.chunkSize ?? 12000;
+    const scanLength = options?.scanLength ?? 4096;
+    const orderMode = options?.orderMode === 'occurrences' ? 'occurrences' : 'book-order';
+    const minOccurrences =
+      typeof options?.minOccurrences === 'number' &&
+      Number.isFinite(options.minOccurrences) &&
+      options.minOccurrences > 0
+        ? Math.max(1, Math.trunc(options.minOccurrences))
+        : 2;
+    const textChunks = this._chunkDocumentText(scanText, chunkSize);
+
+    const tokenStream: string[] = [];
+    const tokenCounts = new Map<string, number>();
+    const tokenFirstOccurrence = new Map<string, number>();
+    let processedChars = 0;
+    let reachedTokenLimit = false;
+
+    for (const chunk of textChunks) {
+      this._throwIfAborted(options?.signal);
+      const tokens = await this.yomitan.tokenize(chunk, undefined, scanLength);
+      let chunkCharsConsumed = 0;
+
+      for (const token of tokens) {
+        chunkCharsConsumed += token.length;
+        const trimmedToken = token.trim();
+        if (!HAS_LETTER_REGEX.test(trimmedToken)) {
+          continue;
+        }
+
+        tokenStream.push(trimmedToken);
+        tokenCounts.set(trimmedToken, (tokenCounts.get(trimmedToken) || 0) + 1);
+        if (!tokenFirstOccurrence.has(trimmedToken)) {
+          tokenFirstOccurrence.set(trimmedToken, tokenStream.length - 1);
+        }
+
+        if (maxTokens && tokenStream.length >= maxTokens) {
+          reachedTokenLimit = true;
+          break;
+        }
+      }
+
+      processedChars += Math.min(chunk.length, Math.max(0, chunkCharsConsumed));
+      if (reachedTokenLimit) {
+        break;
+      }
+    }
+
+    const uniqueTokens = Array.from(new Set(tokenStream));
+    const tokenResolution = await this._resolveTokenAnalysisData(uniqueTokens);
+    const filteredTokens = uniqueTokens.filter(
+      (token) => (tokenCounts.get(token) || 0) >= minOccurrences
+    );
+    const sortedTokens = filteredTokens.sort((left, right) => {
+      if (orderMode === 'occurrences') {
+        const countDiff = (tokenCounts.get(right) || 0) - (tokenCounts.get(left) || 0);
+        if (countDiff !== 0) {
+          return countDiff;
+        }
+      }
+
+      const leftPos = tokenFirstOccurrence.get(left) ?? Number.MAX_SAFE_INTEGER;
+      const rightPos = tokenFirstOccurrence.get(right) ?? Number.MAX_SAFE_INTEGER;
+      return leftPos - rightPos;
+    });
+
+    const orderedCardIds: number[] = [];
+    const seenCardIds = new Set<number>();
+
+    for (const token of sortedTokens) {
+      const resolved = tokenResolution.get(token);
+      if (!resolved || !Array.isArray(resolved.cardIds) || resolved.cardIds.length === 0) {
+        continue;
+      }
+
+      for (const cardId of resolved.cardIds) {
+        if (!Number.isFinite(cardId) || seenCardIds.has(cardId)) {
+          continue;
+        }
+        seenCardIds.add(cardId);
+        orderedCardIds.push(cardId);
+      }
+    }
+
+    return {
+      orderedCardIds,
+      processedTokens: tokenStream.length,
+      processedChars: Math.min(scanText.length, processedChars),
+      uniqueTokens: uniqueTokens.length
+    };
+  }
+
+  async repositionNewCardsByOrder(
+    orderedCardIds: number[],
+    options?: {
+      startPosition?: number;
+      step?: number;
+      shift?: boolean;
+    }
+  ): Promise<RepositionNewCardsResult> {
+    return this.anki.repositionNewCards({
+      orderedCardIds,
+      startPosition: Math.max(1, Math.trunc(options?.startPosition ?? 1)),
+      step: Math.max(1, Math.trunc(options?.step ?? 1)),
+      shift: options?.shift ?? true
+    });
+  }
+
   async refreshTokenAnalysisFromAnki(token: string): Promise<{
     status: DocumentTokenStatus;
     due: boolean;
@@ -619,70 +787,9 @@ export class BookContentColoring {
       return { status: 'uncollected', due: false, cardIds: [] };
     }
 
-    const fetched = await this._fetchWordDataFromAnki(trimmedToken);
-    if (!fetched) {
-      const unknownWordData: CachedWordData = {
-        status: 'unknown',
-        analysisStatus: 'uncollected',
-        due: false,
-        cardIds: []
-      };
-
-      if (this.cacheService) {
-        await this.cacheService.setWordData(trimmedToken, unknownWordData);
-      }
-
-      return { status: 'uncollected', due: false, cardIds: [] };
-    }
-
-    const dedupedCardIds = Array.from(new Set((fetched.cardIds || []).filter(Number.isFinite)));
-    let analysisStatus = fetched.analysisStatus;
-    let due = fetched.due;
-
-    if (analysisStatus === undefined || due === undefined) {
-      const metricsMap = await this.anki.cardMetricsMap(dedupedCardIds, ['prop:r', 'prop:s']);
-      const newCardIds = await this._resolveNewCardIdsFromMetrics(dedupedCardIds, metricsMap);
-
-      let bestStatus: DocumentTokenStatus = 'unknown';
-      let bestPriority = -1;
-      let computedDue = false;
-
-      for (const cardId of dedupedCardIds) {
-        const isNewCard = newCardIds.has(cardId);
-        const status = this._classifyLearningStatus(metricsMap.get(cardId), isNewCard);
-        const isDue = this._isCardDue(metricsMap.get(cardId), isNewCard);
-
-        if (isDue) {
-          computedDue = true;
-        }
-
-        const priority = this._documentStatusPriority(status);
-        if (priority > bestPriority) {
-          bestStatus = status;
-          bestPriority = priority;
-        }
-      }
-
-      analysisStatus = dedupedCardIds.length > 0 ? bestStatus : 'uncollected';
-      due = computedDue;
-    }
-
-    const enrichedWordData: CachedWordData = {
-      ...fetched,
-      analysisStatus: analysisStatus ?? 'unknown',
-      due: due ?? false,
-      cardIds: dedupedCardIds
-    };
-
-    if (this.cacheService) {
-      await this.cacheService.setWordData(trimmedToken, enrichedWordData);
-    }
-
-    return {
-      status: enrichedWordData.analysisStatus || 'unknown',
-      due: enrichedWordData.due || false,
-      cardIds: enrichedWordData.cardIds
-    };
+    await this._refreshTokenWordDataFromAnki(trimmedToken);
+    const resolved = await this._resolveTokenAnalysisData([trimmedToken]);
+    return resolved.get(trimmedToken) || { status: 'uncollected', due: false, cardIds: [] };
   }
 
   /**
@@ -695,6 +802,7 @@ export class BookContentColoring {
     for (const span of tokenSpans) {
       const token = span.getAttribute('data-anki-token');
       if (!token) continue;
+      if (!HAS_LETTER_REGEX.test(token.trim())) continue;
 
       // Add mouseenter listener to refresh token on hover
       span.addEventListener('mouseenter', async () => {
@@ -1103,33 +1211,11 @@ export class BookContentColoring {
     cardId: number,
     _status: WordStatus
   ): Promise<GradeDialogInfo> {
-    let cardInfo: CardInfo | undefined;
-    try {
-      const cardInfos = await this.anki.cardsInfo([cardId], ['prop:r', 'prop:s'], undefined, {
-        noteFields: this.options.wordFields,
-        retrievedInfoMode: 'COMPACT'
-      });
-      cardInfo = cardInfos[0];
-    } catch (error) {
-      console.debug(
-        `cardsInfo retrieved_info_mode not available for popup card ${cardId}, trying legacy compact:`,
-        error
-      );
-      try {
-        const legacyInfos = await this.anki.cardsInfo([cardId], ['prop:r', 'prop:s'], undefined, {
-          noteFields: this.options.wordFields,
-          compact: true
-        });
-        cardInfo = legacyInfos[0];
-      } catch (legacyError) {
-        console.debug(
-          `cardsInfo compact/noteFields not available for popup card ${cardId}, falling back to full:`,
-          legacyError
-        );
-        const fallbackInfos = await this.anki.cardsInfo([cardId], ['prop:r', 'prop:s']);
-        cardInfo = fallbackInfos[0];
-      }
-    }
+    const cardInfos = await this.anki.cardsInfo([cardId], ['prop:r', 'prop:s'], undefined, {
+      noteFields: this.options.wordFields,
+      retrievedInfoMode: 'COMPACT'
+    });
+    const cardInfo = cardInfos[0];
 
     const deckName = cardInfo?.deckName || 'Unknown Deck';
     const preferredField = this._extractPreferredField(cardInfo);
@@ -1137,20 +1223,8 @@ export class BookContentColoring {
     const fieldValue = preferredField?.value || 'Unavailable';
     const rawPropR = cardInfo?.['prop:r'];
     const rawPropS = cardInfo?.['prop:s'];
-    let exactRetrievability = typeof rawPropR === 'number' ? rawPropR : undefined;
-    let isNewCard = (cardInfo?.queue === 0 || cardInfo?.type === 0) && rawPropR === null;
-
-    // Backward compatibility fallback for older AnkiConnect without cardsInfo(fields).
-    if (!isNewCard && typeof exactRetrievability !== 'number') {
-      try {
-        exactRetrievability = await this.anki.cardRetrievability(cardId, 4, true);
-        isNewCard =
-          typeof exactRetrievability !== 'number' &&
-          (cardInfo?.queue === 0 || cardInfo?.type === 0);
-      } catch (error) {
-        console.debug(`Failed to fetch exact retrievability for card ${cardId}:`, error);
-      }
-    }
+    const exactRetrievability = typeof rawPropR === 'number' ? rawPropR : undefined;
+    const isNewCard = (cardInfo?.queue === 0 || cardInfo?.type === 0) && rawPropR === null;
 
     const retrievability = this._formatRetrievabilityText(exactRetrievability, isNewCard);
     const stability = this._formatStabilityText(
@@ -1380,7 +1454,7 @@ export class BookContentColoring {
 
   private async _gradeToken(token: string, span: HTMLElement): Promise<void> {
     try {
-      const existingData = await this._resolveWordDataForToken(token);
+      const existingData = await this._resolveTokenWordData(token, SHARED_TOKEN_RESOLUTION_OPTIONS);
 
       if (!existingData || existingData.cardIds.length === 0) {
         await this._showNoticeDialog(
@@ -1464,23 +1538,95 @@ export class BookContentColoring {
     }
   }
 
-  private async _resolveWordDataForToken(token: string): Promise<CachedWordData | undefined> {
-    let existingData = await this._getWordData(token);
+  private _resolveTokenColorFromWordData(wordData: CachedWordData | undefined): TokenColor {
+    if (!wordData || !Array.isArray(wordData.cardIds) || wordData.cardIds.length === 0) {
+      return TokenColor.UNCOLLECTED;
+    }
 
-    // If not found directly, try lemmatizing to find the base form
+    return this._statusToColor(wordData.status);
+  }
+
+  private _applyColorToTokenSpan(span: HTMLElement, color: TokenColor): void {
+    const style = this.options.tokenStyle;
+    const whiteSpaceStyle = 'white-space: pre-wrap;';
+
+    if (style === TokenStyle.TEXT) {
+      span.style.cssText = `color: ${color}; ${whiteSpaceStyle}`;
+      return;
+    }
+
+    const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
+    span.style.cssText = `text-decoration: underline ${color} ${decoration}; ${whiteSpaceStyle}`;
+  }
+
+  private async _refreshTokenWordDataFromAnki(token: string): Promise<void> {
+    const existingData = await this._resolveTokenWordData(token, SHARED_TOKEN_RESOLUTION_OPTIONS);
+
     if (!existingData || existingData.cardIds.length === 0) {
-      const lemmas = await this._getOrFetchLemmas(token);
+      console.log(`🔄 Token "${token}" has no cached wordData card IDs, performing full refresh`);
+      const fetchedWordData = await this._fetchWordDataFromAnki(token);
+      const wordData: CachedWordData = fetchedWordData || {
+        status: 'unknown',
+        analysisStatus: 'uncollected',
+        due: false,
+        cardIds: []
+      };
 
-      for (const lemma of lemmas) {
-        const lemmaData = await this._getWordData(lemma);
-        if (lemmaData && lemmaData.cardIds.length > 0) {
-          existingData = lemmaData;
-          break;
-        }
+      if (this.cacheService) {
+        await this.cacheService.setWordData(token, wordData);
+        console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
+      }
+
+      return;
+    }
+
+    const dedupedCardIds = Array.from(
+      new Set((existingData.cardIds || []).filter((cardId) => Number.isFinite(cardId)))
+    );
+
+    if (dedupedCardIds.length === 0) {
+      return;
+    }
+
+    console.log(`⚡ Fast refresh for "${token}" using ${dedupedCardIds.length} cached card IDs`);
+
+    const metricsMap = await this.anki.cardMetricsMap(dedupedCardIds, ['prop:r', 'prop:s']);
+    const newCardIds = await this._resolveNewCardIdsFromMetrics(dedupedCardIds, metricsMap);
+    const statusMap = new Map(
+      dedupedCardIds.map((cardId) => [
+        cardId,
+        this._classifyCardMetrics(metricsMap.get(cardId), newCardIds.has(cardId))
+      ])
+    );
+    const documentStatusMap = new Map(
+      dedupedCardIds.map((cardId) => [
+        cardId,
+        this._classifyLearningStatus(metricsMap.get(cardId), newCardIds.has(cardId))
+      ])
+    );
+
+    let wordData: CachedWordData = {
+      status: this._pickBestStatus(dedupedCardIds, statusMap),
+      analysisStatus: this._pickBestDocumentStatus(dedupedCardIds, documentStatusMap),
+      due: dedupedCardIds.some((cardId) =>
+        this._isCardDue(metricsMap.get(cardId), newCardIds.has(cardId))
+      ),
+      cardIds: dedupedCardIds
+    };
+
+    // Cached IDs can be stale or mismatched. Re-fetch by token when refresh from IDs is inconclusive.
+    if (wordData.status === 'unknown') {
+      console.log(`🔄 Fast refresh inconclusive for "${token}", falling back to token lookup`);
+      const refreshedWordData = await this._fetchWordDataFromAnki(token);
+      if (refreshedWordData) {
+        wordData = refreshedWordData;
       }
     }
 
-    return existingData;
+    if (this.cacheService) {
+      await this.cacheService.setWordData(token, wordData);
+      console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
+    }
   }
 
   /**
@@ -1491,120 +1637,43 @@ export class BookContentColoring {
    */
   private async _refreshToken(token: string, span: HTMLElement): Promise<void> {
     try {
+      const trimmedToken = token.trim();
+      if (!HAS_LETTER_REGEX.test(trimmedToken)) {
+        this._applyColorToTokenSpan(span, TokenColor.UNKNOWN);
+        return;
+      }
+
       // Rate limiting: check if token was refreshed recently
       const now = Date.now();
-      const lastRefresh = this.lastRefreshTime.get(token);
+      const lastRefresh = this.lastRefreshTime.get(trimmedToken);
 
       if (lastRefresh && now - lastRefresh < this.REFRESH_COOLDOWN_MS) {
         console.log(
-          `⏱️ Token "${token}" was refreshed ${Math.round((now - lastRefresh) / 1000)}s ago, skipping (cooldown: ${this.REFRESH_COOLDOWN_MS / 1000}s)`
+          `⏱️ Token "${trimmedToken}" was refreshed ${Math.round((now - lastRefresh) / 1000)}s ago, skipping (cooldown: ${this.REFRESH_COOLDOWN_MS / 1000}s)`
         );
         return;
       }
 
       // Update last refresh timestamp
-      this.lastRefreshTime.set(token, now);
+      this.lastRefreshTime.set(trimmedToken, now);
 
-      // Get existing card IDs from IndexedDB cache.
-      // Try direct lookup first, then lemmatization.
-      const existingData = await this._resolveWordDataForToken(token);
+      // Hover refresh only updates IndexedDB from Anki.
+      await this._refreshTokenWordDataFromAnki(trimmedToken);
 
-      if (!existingData || existingData.cardIds.length === 0) {
-        console.log(`🔄 Token "${token}" has no cached card IDs, performing full refresh`);
-        // No in-memory cache path: fetch directly from Anki and persist to IndexedDB.
-        const wordData = await this._fetchWordDataFromAnki(token);
-
-        if (!wordData) {
-          console.log(`🔄 Token "${token}" not found in Anki (unknown/uncollected)`);
-          return;
-        }
-
-        // Update IndexedDB cache with fresh data
-        if (this.cacheService) {
-          await this.cacheService.setWordData(token, wordData);
-          console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
-        }
-
-        // Map status to color
-        const color = this._statusToColor(wordData.status);
-
-        // Update span styling
-        const style = this.options.tokenStyle;
-        const whiteSpaceStyle = 'white-space: pre-wrap;';
-
-        if (style === TokenStyle.TEXT) {
-          span.style.cssText = `color: ${color}; ${whiteSpaceStyle}`;
-        } else {
-          const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
-          span.style.cssText = `text-decoration: underline ${color} ${decoration}; ${whiteSpaceStyle}`;
-        }
-
-        console.log(
-          `🔄 Refreshed token on hover: "${token}" -> status: ${wordData.status}, color: ${color}`
-        );
-        return;
-      }
-
-      // Fast path: reuse existing card IDs and only check retrievability
-      console.log(
-        `⚡ Fast refresh for "${token}" using ${existingData.cardIds.length} cached card IDs`
+      // Rendering always uses the same IndexedDB resolver path as initial coloring.
+      const resolvedWordData = await this._resolveTokenWordData(
+        trimmedToken,
+        SHARED_TOKEN_RESOLUTION_OPTIONS
       );
-      const retrievabilityCache = await this._batchCheckCardRetrievability(existingData.cardIds);
-
-      // Determine new status
-      let newStatus: WordStatus = 'unknown';
-      for (const cardId of existingData.cardIds) {
-        const status = retrievabilityCache.get(cardId) || 'unknown';
-
-        if (status === 'mature') {
-          newStatus = 'mature';
-          break;
-        } else if (status === 'young') {
-          newStatus = 'young';
-        } else if (status === 'new' && (newStatus === 'unknown' || newStatus === 'due')) {
-          newStatus = 'new';
-        } else if (status === 'due' && newStatus === 'unknown') {
-          newStatus = 'due';
-        }
-      }
-
-      let wordData = {
-        status: newStatus,
-        cardIds: existingData.cardIds
-      };
-
-      // Cached IDs can be stale or mismatched (e.g. legacy cache shape).
-      // If classification from IDs is inconclusive, re-fetch by token/candidates.
-      if (wordData.status === 'unknown') {
-        console.log(`🔄 Fast refresh inconclusive for "${token}", falling back to token lookup`);
-        const refreshedWordData = await this._fetchWordDataFromAnki(token);
-        if (refreshedWordData) {
-          wordData = refreshedWordData;
-        }
-      }
-
-      // Update IndexedDB cache with fresh data
-      if (this.cacheService) {
-        await this.cacheService.setWordData(token, wordData);
-        console.log(`💾 Updated cache for "${token}": ${wordData.status}`);
-      }
-
-      // Map status to color (same logic as in _checkTokenColors)
-      const color = this._statusToColor(wordData.status);
-
-      // Update the span styling with new color
-      const style = this.options.tokenStyle;
-      const whiteSpaceStyle = 'white-space: pre-wrap;';
-
-      if (style === TokenStyle.TEXT) {
-        span.style.cssText = `color: ${color}; ${whiteSpaceStyle}`;
-      } else {
-        const decoration = color === TokenColor.ERROR ? 'double' : 'solid';
-        span.style.cssText = `text-decoration: underline ${color} ${decoration}; ${whiteSpaceStyle}`;
-      }
+      const color = this._resolveTokenColorFromWordData(resolvedWordData);
+      this._applyColorToTokenSpan(span, color);
+      const resolvedStatus =
+        resolvedWordData && resolvedWordData.cardIds.length > 0
+          ? resolvedWordData.status
+          : 'uncollected';
 
       console.log(
-        `🔄 Refreshed token on hover: "${token}" -> status: ${wordData.status}, color: ${color}`
+        `🔄 Refreshed token on hover: "${trimmedToken}" -> status: ${resolvedStatus}, color: ${color}`
       );
     } catch (error) {
       console.error(`❌ Failed to refresh token "${token}":`, error);
@@ -1619,12 +1688,7 @@ export class BookContentColoring {
    */
   private async _fetchWordDataFromAnki(token: string): Promise<CachedWordData | undefined> {
     try {
-      // Shared lemma path: IndexedDB cache + conditional enrichment.
-      const lemmas = await this._getOrFetchLemmas(token);
-      // Always include the original token - some forms are not returned by lemmatization.
-      const candidateWords = Array.from(
-        new Set([token, ...lemmas].map((word) => word.trim()).filter((word) => word.length > 0))
-      );
+      const candidateWords = await this._buildTokenCandidateWords(token);
 
       const allCardIds = new Set<number>();
 
@@ -1665,6 +1729,20 @@ export class BookContentColoring {
       console.error(`Error fetching word data from Anki for "${token}":`, error);
       return undefined;
     }
+  }
+
+  private async _buildTokenCandidateWords(
+    token: string,
+    options?: { allowTermEntriesEnrichment?: boolean }
+  ): Promise<string[]> {
+    const lemmaData = await this._getOrFetchLemmas(token, options);
+    return Array.from(
+      new Set(
+        [token, ...this._selectLemmaCandidatesForToken(token, lemmaData)]
+          .map((word) => word.trim())
+          .filter((word) => word.length > 0)
+      )
+    );
   }
 
   /**
@@ -1799,10 +1877,10 @@ export class BookContentColoring {
   private async _getOrFetchLemmas(
     token: string,
     options?: { allowTermEntriesEnrichment?: boolean }
-  ): Promise<string[]> {
+  ): Promise<CachedLemmas> {
     const normalizedToken = token.trim();
     if (!normalizedToken) {
-      return [];
+      return { lemmas: [], lemmaReadings: [] };
     }
 
     const allowTermEntriesEnrichment = options?.allowTermEntriesEnrichment ?? true;
@@ -1810,13 +1888,16 @@ export class BookContentColoring {
     // IndexedDB is the source of truth, but weak cached lemmas are enriched.
     if (this.cacheService) {
       const cachedLemmas = await this.cacheService.getLemmas(normalizedToken);
-      if (cachedLemmas && cachedLemmas.length > 0) {
+      if (
+        cachedLemmas &&
+        (cachedLemmas.lemmas.length > 0 || cachedLemmas.lemmaReadings.length > 0)
+      ) {
         return cachedLemmas;
       }
     }
 
     if (!allowTermEntriesEnrichment) {
-      return [];
+      return { lemmas: [], lemmaReadings: [] };
     }
 
     // Fetch from Yomitan API
@@ -1826,70 +1907,6 @@ export class BookContentColoring {
     }
 
     return lemmas;
-  }
-
-  private async _getOrFetchLemmasBatch(
-    tokens: string[],
-    options?: { useApiFallback?: boolean; allowTermEntriesEnrichment?: boolean }
-  ): Promise<Map<string, string[]>> {
-    const result = new Map<string, string[]>();
-    const uniqueTokens = Array.from(new Set(tokens.map((token) => token.trim()).filter(Boolean)));
-    if (uniqueTokens.length === 0) {
-      return result;
-    }
-
-    const allowTermEntriesEnrichment = options?.allowTermEntriesEnrichment ?? true;
-
-    const missingTokens: string[] = [];
-    if (this.cacheService) {
-      const cached = await this.cacheService.getLemmasBatch(uniqueTokens);
-      for (const token of uniqueTokens) {
-        const lemmas = cached.get(token);
-        if (lemmas && lemmas.length > 0) {
-          result.set(token, lemmas);
-        } else {
-          missingTokens.push(token);
-        }
-      }
-    } else {
-      missingTokens.push(...uniqueTokens);
-    }
-
-    if (missingTokens.length === 0) {
-      return result;
-    }
-
-    if (!allowTermEntriesEnrichment || options?.useApiFallback === false) {
-      return result;
-    }
-
-    for (const chunk of this._chunkArray(missingTokens, 10)) {
-      const fetched = await Promise.all(
-        chunk.map(async (token) => {
-          try {
-            const lemmas = await this.yomitan.lemmatize(token);
-            if (this.cacheService) {
-              await this.cacheService.setLemmas(token, lemmas);
-            }
-
-            return { token, lemmas };
-          } catch (error) {
-            console.debug('Lemmatization fallback failed for token', token, error);
-            return { token, lemmas: [] as string[] };
-          }
-        })
-      );
-
-      for (const { token, lemmas } of fetched) {
-        const mergedLemmas = this._mergeUniqueLemmas(result.get(token) || [], lemmas);
-        if (this.cacheService) {
-          await this.cacheService.setLemmas(token, mergedLemmas);
-        }
-        result.set(token, mergedLemmas);
-      }
-    }
-
-    return result;
   }
 
   private _mergeUniqueLemmas(existing: string[], incoming: string[]): string[] {
@@ -1904,12 +1921,22 @@ export class BookContentColoring {
     return Array.from(merged);
   }
 
-  private async _getWordDataBatch(words: string[]): Promise<Map<string, CachedWordData>> {
-    if (!this.cacheService) {
-      return new Map();
+  private _selectLemmaCandidatesForToken(token: string, lemmaData: CachedLemmas): string[] {
+    const normalizedToken = token.trim();
+    const hasKanji = HAS_KANJI_REGEX.test(normalizedToken);
+    const isReadingToken = !hasKanji && HAS_KANA_REGEX.test(normalizedToken);
+
+    const baseLemmas = hasKanji
+      ? lemmaData.lemmas.filter((lemma) => HAS_KANJI_REGEX.test(lemma))
+      : lemmaData.lemmas;
+    const lemmaCandidates = this._expandLemmaLookupCandidates(baseLemmas);
+
+    if (!isReadingToken) {
+      return lemmaCandidates;
     }
 
-    return this.cacheService.getWordDataBatch(words);
+    const readingCandidates = this._expandLemmaLookupCandidates(lemmaData.lemmaReadings);
+    return this._mergeUniqueLemmas(lemmaCandidates, readingCandidates);
   }
 
   /**
@@ -1947,7 +1974,22 @@ export class BookContentColoring {
     }
 
     const cardIds = Array.from(
-      new Set((wordData.cardIds || []).filter((cardId) => Number.isFinite(cardId)))
+      new Set(
+        (wordData.cardIds || [])
+          .map((cardId) => {
+            if (typeof cardId === 'number') {
+              return cardId;
+            }
+
+            if (typeof cardId === 'string') {
+              const parsed = Number.parseInt(cardId, 10);
+              return Number.isFinite(parsed) ? parsed : Number.NaN;
+            }
+
+            return Number.NaN;
+          })
+          .filter((cardId) => Number.isFinite(cardId))
+      )
     );
     if (!cardIds.length) {
       return undefined;
@@ -2004,23 +2046,121 @@ export class BookContentColoring {
       undefined,
       await this._getWordData(token)
     );
-
-    if (resolvedWordData) {
+    if (resolvedWordData && resolvedWordData.status === 'mature') {
       return resolvedWordData;
     }
 
-    const lemmas = await this._getOrFetchLemmas(token, options);
-    for (const lemma of lemmas) {
+    const allowTermEntriesEnrichment = options?.allowTermEntriesEnrichment ?? true;
+    // If a direct token match already exists, only use cached lemmas to avoid unnecessary
+    // termEntries calls; still allow lemma candidates to upgrade status (e.g. young -> mature).
+    const lemmaData = await this._getOrFetchLemmas(token, {
+      allowTermEntriesEnrichment: resolvedWordData ? false : allowTermEntriesEnrichment
+    });
+    const lemmaCandidates = this._selectLemmaCandidatesForToken(token, lemmaData);
+    let finalLemmas = lemmaCandidates;
+    let finalLemmaCandidates = lemmaCandidates;
+    for (const lemmaCandidate of lemmaCandidates) {
       resolvedWordData = this._pickBetterResolvedWordData(
         resolvedWordData,
-        await this._getWordData(lemma)
+        await this._getWordData(lemmaCandidate)
       );
       if (resolvedWordData && resolvedWordData.status === 'mature') {
         break;
       }
     }
 
+    // If cached lemmas did not resolve to any wordData row, enrich once via termEntries
+    // and retry lookup with merged lemmas.
+    if (!resolvedWordData && allowTermEntriesEnrichment) {
+      const enrichedLemmas = await this.yomitan.lemmatize(token);
+      const mergedLemmaData: CachedLemmas = {
+        lemmas: this._mergeUniqueLemmas(lemmaData.lemmas, enrichedLemmas.lemmas),
+        lemmaReadings: this._mergeUniqueLemmas(
+          lemmaData.lemmaReadings,
+          enrichedLemmas.lemmaReadings
+        )
+      };
+      finalLemmas = this._selectLemmaCandidatesForToken(token, mergedLemmaData);
+
+      if (
+        (mergedLemmaData.lemmas.length > 0 || mergedLemmaData.lemmaReadings.length > 0) &&
+        this.cacheService
+      ) {
+        await this.cacheService.setLemmas(token, mergedLemmaData);
+      }
+
+      const mergedCandidates = finalLemmas;
+      finalLemmaCandidates = mergedCandidates;
+      for (const lemmaCandidate of mergedCandidates) {
+        resolvedWordData = this._pickBetterResolvedWordData(
+          resolvedWordData,
+          await this._getWordData(lemmaCandidate)
+        );
+        if (resolvedWordData && resolvedWordData.status === 'mature') {
+          break;
+        }
+      }
+    }
+
+    if (!resolvedWordData && finalLemmas.length > 0) {
+      this._logLemmaWordDataMiss(token, finalLemmas, finalLemmaCandidates);
+    }
+
+    if (resolvedWordData && this.cacheService) {
+      // Persist token-level alias so token lookups don't depend on resolving through lemmas each time.
+      await this.cacheService.setWordData(token, resolvedWordData);
+    }
+
     return resolvedWordData;
+  }
+
+  private _logLemmaWordDataMiss(token: string, lemmas: string[], candidates: string[]): void {
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      return;
+    }
+
+    const now = Date.now();
+    const lastLog = this.lemmaWordDataMissLogTime.get(normalizedToken) || 0;
+    if (now - lastLog < this.LEMMA_WORDDATA_MISS_LOG_COOLDOWN_MS) {
+      return;
+    }
+
+    this.lemmaWordDataMissLogTime.set(normalizedToken, now);
+    console.warn('[AnkiCache] Lemma mapped token has no matching wordData row', {
+      token: normalizedToken,
+      lemmas,
+      candidates
+    });
+  }
+
+  private _expandLemmaLookupCandidates(lemmas: string[]): string[] {
+    const candidates = new Set<string>();
+
+    const addCandidate = (value: string) => {
+      const canonical = this._canonicalizeLookupValue(value);
+      if (canonical) {
+        candidates.add(canonical);
+      }
+    };
+
+    for (const lemma of lemmas) {
+      const trimmedLemma = lemma.trim();
+      if (!trimmedLemma) {
+        continue;
+      }
+
+      addCandidate(trimmedLemma);
+
+      // Some dictionaries append POS tags to lemmas (e.g. "僕-代名詞").
+      // Use the lexical part as an additional lookup candidate.
+      const lexicalPart = trimmedLemma.split(/[-‐‑‒–—―]/u)[0]?.trim();
+      if (lexicalPart && lexicalPart !== trimmedLemma) {
+        addCandidate(lexicalPart);
+      }
+    }
+
+    return Array.from(candidates);
   }
 
   private async _resolveTokenWordDataBatch(
@@ -2092,19 +2232,14 @@ export class BookContentColoring {
     tokens: string[],
     colorMap: Map<string, TokenColor>
   ): Promise<void> {
-    const resolvedWordDataByToken = await this._resolveTokenWordDataBatch(tokens, {
-      allowTermEntriesEnrichment: false
-    });
+    const resolvedWordDataByToken = await this._resolveTokenWordDataBatch(
+      tokens,
+      SHARED_TOKEN_RESOLUTION_OPTIONS
+    );
 
     for (const token of tokens) {
       const wordData = resolvedWordDataByToken.get(token);
-      if (!wordData || !wordData.cardIds.length) {
-        colorMap.set(token, TokenColor.UNCOLLECTED);
-        continue;
-      }
-
-      const color = this._statusToColor(wordData.status);
-      colorMap.set(token, color);
+      colorMap.set(token, this._resolveTokenColorFromWordData(wordData));
     }
   }
 
@@ -2231,20 +2366,10 @@ export class BookContentColoring {
     metricsMap: Map<number, { 'prop:r'?: number | null; 'prop:s'?: number | null }>
   ): Promise<Set<number>> {
     const newCardIds = new Set<number>();
-    const unresolvedCardIds: number[] = [];
 
     for (const cardId of cardIds) {
       const inferred = this._inferIsNewFromMetrics(metricsMap.get(cardId));
       if (inferred === true) {
-        newCardIds.add(cardId);
-      } else if (inferred === undefined) {
-        unresolvedCardIds.push(cardId);
-      }
-    }
-
-    if (unresolvedCardIds.length > 0) {
-      const fallbackNewCardIds = await this._findNewCardIds(unresolvedCardIds);
-      for (const cardId of fallbackNewCardIds) {
         newCardIds.add(cardId);
       }
     }
@@ -2344,29 +2469,6 @@ export class BookContentColoring {
     }
 
     return bestStatus;
-  }
-
-  private async _findNewCardIds(cardIds: number[]): Promise<Set<number>> {
-    const result = new Set<number>();
-    const uniqueCardIds = Array.from(new Set(cardIds.filter((cardId) => Number.isFinite(cardId))));
-    const chunkSize = 250;
-
-    for (let index = 0; index < uniqueCardIds.length; index += chunkSize) {
-      const chunk = uniqueCardIds.slice(index, index + chunkSize);
-      try {
-        const response = await this.anki['_executeAction']('findCards', {
-          query: `(${chunk.map((cardId) => `cid:${cardId}`).join(' OR ')}) is:new`
-        });
-
-        for (const cardId of (response.result || []).filter((id: number) => Number.isFinite(id))) {
-          result.add(cardId);
-        }
-      } catch (error) {
-        console.debug('Failed to fetch new card IDs:', error);
-      }
-    }
-
-    return result;
   }
 
   private _statusPriority(status: WordStatus): number {
@@ -2524,27 +2626,39 @@ export class BookContentColoring {
 
     try {
       const db = await this.cacheService['db'];
-      const tx = db.transaction('wordData', 'readonly');
-      const store = tx.objectStore('wordData');
-      const cursor = await store.openCursor();
-
-      if (!cursor) {
+      const wordDataCount = await db.count('wordData');
+      if (wordDataCount === 0) {
         console.log('📦 No cache found in IndexedDB');
         return { loadedWords: 0, needsRefresh: true, cacheAge: Number.MAX_SAFE_INTEGER };
       }
 
-      // Just check age, don't preload
-      const oldestTimestamp = cursor.value.timestamp;
-      const cacheAge = Date.now() - oldestTimestamp;
+      const tx = db.transaction('wordData', 'readonly');
+      const store = tx.objectStore('wordData');
+      const cursor = await store.openCursor();
+
+      // Prefer warm-cache timestamp when present, fallback to an entry timestamp.
+      const hasWindow = typeof window !== 'undefined' && !!window.localStorage;
+      const storedWarmCacheUpdatedAt = hasWindow
+        ? Number.parseInt(window.localStorage.getItem(this.warmCacheUpdatedAtStorageKey) || '', 10)
+        : NaN;
+      const referenceTimestamp = Number.isFinite(storedWarmCacheUpdatedAt)
+        ? storedWarmCacheUpdatedAt
+        : cursor?.value?.timestamp;
+      const cacheAge = Number.isFinite(referenceTimestamp)
+        ? Date.now() - referenceTimestamp
+        : Number.MAX_SAFE_INTEGER;
       const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
-      const needsRefresh = cacheAge > CACHE_TTL_MS;
+      const storedWarmCacheVersion = hasWindow
+        ? window.localStorage.getItem(this.warmCacheVersionStorageKey)
+        : this.warmCacheVersion;
+      const versionMismatch = storedWarmCacheVersion !== this.warmCacheVersion;
+      const needsRefresh = cacheAge > CACHE_TTL_MS || versionMismatch;
 
       console.log(
-        `📦 Cache exists (age: ${Math.round(cacheAge / 60000)} min, TTL: ${Math.round(CACHE_TTL_MS / 60000)} min) - needsRefresh: ${needsRefresh}`
+        `📦 Cache exists (age: ${Math.round(cacheAge / 60000)} min, TTL: ${Math.round(CACHE_TTL_MS / 60000)} min, versionMismatch: ${versionMismatch}) - needsRefresh: ${needsRefresh}`
       );
 
-      // Return 0 loaded words since we're not preloading anymore
-      return { loadedWords: 0, needsRefresh, cacheAge };
+      return { loadedWords: wordDataCount, needsRefresh, cacheAge };
     } catch (error) {
       console.error('❌ Failed to check cache status:', error);
       return { loadedWords: 0, needsRefresh: true, cacheAge: Number.MAX_SAFE_INTEGER };
@@ -2675,23 +2789,12 @@ export class BookContentColoring {
         for (const field of wordFields) {
           const fieldValue = card.fields[field]?.value;
           if (fieldValue) {
-            const rawWord = fieldValue.trim();
-            const normalizedWord = this._normalizeFieldValue(fieldValue);
-
-            if (rawWord) {
-              const cardIds = wordToCardIds.get(rawWord) || [];
+            const lookupCandidates = this._extractWordFieldCandidates(fieldValue);
+            for (const candidate of lookupCandidates) {
+              const cardIds = wordToCardIds.get(candidate) || [];
               if (!cardIds.includes(card.cardId)) {
                 cardIds.push(card.cardId);
-                wordToCardIds.set(rawWord, cardIds);
-              }
-            }
-
-            // Add plain-text variant to support HTML-rich fields (e.g. wrapped Front content).
-            if (normalizedWord && normalizedWord !== rawWord) {
-              const cardIds = wordToCardIds.get(normalizedWord) || [];
-              if (!cardIds.includes(card.cardId)) {
-                cardIds.push(card.cardId);
-                wordToCardIds.set(normalizedWord, cardIds);
+                wordToCardIds.set(candidate, cardIds);
               }
             }
           }
@@ -2866,6 +2969,11 @@ export class BookContentColoring {
 
       console.log('🔄 Cache warmed in IndexedDB; future lookups read directly from IndexedDB');
 
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(this.warmCacheVersionStorageKey, this.warmCacheVersion);
+        window.localStorage.setItem(this.warmCacheUpdatedAtStorageKey, `${Date.now()}`);
+      }
+
       const duration = Date.now() - startTime;
       console.log(`Cache warming complete: ${cachedWords} words cached in ${duration}ms`);
       reportProgress({
@@ -2893,6 +3001,67 @@ export class BookContentColoring {
         .replace(/\s+/g, ' ')
         .trim()
     );
+  }
+
+  private _extractWordFieldCandidates(fieldValue: string): string[] {
+    const candidates = new Set<string>();
+
+    const addCandidate = (value: string) => {
+      const canonical = this._canonicalizeLookupValue(value);
+      if (canonical) {
+        candidates.add(canonical);
+      }
+    };
+
+    const rawWord = fieldValue.trim();
+    if (rawWord) {
+      addCandidate(rawWord);
+    }
+
+    const normalizedWord = this._normalizeFieldValue(fieldValue);
+    if (normalizedWord) {
+      addCandidate(normalizedWord);
+    }
+
+    // For HTML-rich word fields (e.g. ruby markup), derive explicit plain-text variants.
+    if (fieldValue.includes('<') && typeof document !== 'undefined') {
+      const template = document.createElement('template');
+      template.innerHTML = fieldValue;
+      template.content.querySelectorAll('rt, rp').forEach((node) => node.remove());
+      const plainText = (template.content.textContent || '').trim();
+
+      if (plainText) {
+        const compactPlainText = plainText.replace(/\s+/g, '');
+        addCandidate(plainText);
+        addCandidate(compactPlainText);
+      }
+    }
+
+    // Add de-annotated variants (e.g. 歌う【うたう】 -> 歌う).
+    const annotationStrippedVariants = Array.from(candidates).map((candidate) =>
+      candidate.replace(/[（(【[][^）)】\]]*[）)】\]]/g, '').trim()
+    );
+    for (const variant of annotationStrippedVariants) {
+      if (!variant) {
+        continue;
+      }
+      addCandidate(variant);
+      addCandidate(variant.replace(/\s+/g, ''));
+    }
+
+    // Add segment variants for multi-entry fields (comma/slash separated).
+    const segmentedVariants = Array.from(candidates).flatMap((candidate) =>
+      candidate
+        .split(/[、,;/／・|]/g)
+        .map((segment) => segment.trim())
+        .filter(Boolean)
+    );
+    for (const segment of segmentedVariants) {
+      addCandidate(segment);
+      addCandidate(segment.replace(/\s+/g, ''));
+    }
+
+    return Array.from(candidates);
   }
 
   private _canonicalizeLookupValue(value: string): string {
@@ -2963,9 +3132,10 @@ export class BookContentColoring {
       { status: DocumentTokenStatus; due: boolean; cardIds: number[] }
     >();
 
-    const tokenWordData = await this._resolveTokenWordDataBatch(tokens, {
-      allowTermEntriesEnrichment: false
-    });
+    const tokenWordData = await this._resolveTokenWordDataBatch(
+      tokens,
+      SHARED_TOKEN_RESOLUTION_OPTIONS
+    );
     const tokenToCardIds = new Map<string, number[]>();
     const allCardIds = new Set<number>();
 

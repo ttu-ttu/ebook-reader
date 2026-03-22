@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -147,8 +147,29 @@ export class CharacterStatsCalculator {
   }
 
   getCharCountToPoint(customReadingPoint: Range) {
-    const index = Math.max(0, binarySearchNodeInRange(this.paragraphs, customReadingPoint));
-    return this.accumulatedCharCount[index - 1] || 0;
+    if (!this.isRangeInsideContainer(customReadingPoint)) {
+      return this.calcExploredCharCount();
+    }
+
+    const liveParagraphs = getParagraphNodes(this.containerEl);
+    if (!liveParagraphs.length) {
+      return this.calcExploredCharCount();
+    }
+
+    const liveAccumulatedCharCount: number[] = [];
+    let exploredCharCount = 0;
+    for (const node of liveParagraphs) {
+      exploredCharCount += getCharacterCount(node);
+      liveAccumulatedCharCount.push(exploredCharCount);
+    }
+
+    try {
+      const index = Math.max(0, binarySearchNodeInRange(liveParagraphs, customReadingPoint));
+      return liveAccumulatedCharCount[index - 1] || 0;
+    } catch (error) {
+      console.warn('Failed to resolve selected range in current container tree:', error);
+      return this.calcExploredCharCount();
+    }
   }
 
   private processSectionBookmarkIteration(index: number, startCount: number, charCount: number) {
@@ -177,5 +198,24 @@ export class CharacterStatsCalculator {
 
   private get scrollPosProp() {
     return this.verticalMode ? 'scrollLeft' : 'scrollTop';
+  }
+
+  private isRangeInsideContainer(range: Range): boolean {
+    return (
+      this.isNodeInsideContainer(range.startContainer) &&
+      this.isNodeInsideContainer(range.endContainer)
+    );
+  }
+
+  private isNodeInsideContainer(node: Node): boolean {
+    if (node === this.containerEl) {
+      return true;
+    }
+
+    if (node instanceof Element) {
+      return this.containerEl.contains(node);
+    }
+
+    return !!node.parentElement && this.containerEl.contains(node.parentElement);
   }
 }

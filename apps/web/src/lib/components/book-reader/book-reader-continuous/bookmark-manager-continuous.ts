@@ -1,15 +1,18 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
 import type { BookmarkManager } from '../types';
 import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
 import type { CharacterStatsCalculator } from './character-stats-calculator';
-import { formatPos } from '$lib/functions/format-pos';
 
 export class BookmarkManagerContinuous implements BookmarkManager {
+  private readonly maxScrollToBookmarkAttempts = 20;
+
+  private readonly scrollToBookmarkRetryDelayMs = 25;
+
   constructor(
     private calculator: CharacterStatsCalculator,
     private window: Window,
@@ -17,19 +20,8 @@ export class BookmarkManagerContinuous implements BookmarkManager {
   ) {}
 
   scrollToBookmark(bookmarkData: BooksDbBookmarkData, customReadingPointScrollOffset = 0) {
-    const targetScroll = this.getBookmarkPosition(bookmarkData);
-    if (!targetScroll) return;
-
-    const { scrollToData } = resolveTargetScroll(targetScroll, this.firstDimensionMargin);
-    const scrollProperty = this.calculator.verticalMode ? 'left' : 'top';
-
-    if (scrollToData.left !== undefined && scrollProperty === 'left') {
-      scrollToData.left += customReadingPointScrollOffset;
-    } else if (scrollToData.top !== undefined && scrollProperty === 'top') {
-      scrollToData.top -= customReadingPointScrollOffset;
-    }
-
-    this.window.scrollTo(scrollToData);
+    void customReadingPointScrollOffset;
+    this.scrollToBookmarkByAnchorPath(bookmarkData.anchorPath, 0);
   }
 
   formatBookmarkData(bookId: number, customReadingPointScrollOffset = 0): BooksDbBookmarkData {
@@ -43,89 +35,305 @@ export class BookmarkManagerContinuous implements BookmarkManager {
       dataId: bookId,
       exploredCharCount,
       progress: exploredCharCount / bookCharCount,
+      anchorPath: this.captureBookmarkAnchorPath(customReadingPointScrollOffset),
       [scrollAxis]: this.window[scrollAxis],
       lastBookmarkModified: new Date().getTime()
     };
   }
 
-  formatBookmarkDataByRange(bookId: number): BooksDbBookmarkData {
-    return this.formatBookmarkData(bookId);
+  formatBookmarkDataByRange(
+    bookId: number,
+    customReadingPointRange: Range | undefined
+  ): BooksDbBookmarkData {
+    if (!customReadingPointRange) {
+      return this.formatBookmarkData(bookId);
+    }
+
+    const bookCharCount = this.calculator.charCount;
+    const exploredCharCount = this.calculator.getCharCountToPoint(customReadingPointRange);
+    const { verticalMode } = this.calculator;
+    const scrollAxis = verticalMode ? 'scrollX' : 'scrollY';
+
+    return {
+      dataId: bookId,
+      exploredCharCount,
+      progress: exploredCharCount / bookCharCount,
+      anchorPath: this.captureBookmarkAnchorPathFromRange(customReadingPointRange),
+      [scrollAxis]: this.window[scrollAxis],
+      lastBookmarkModified: new Date().getTime()
+    };
   }
 
   getBookmarkBarPosition(bookmarkData: BooksDbBookmarkData): BookmarkPosData | undefined {
-    const targetScroll = this.getBookmarkPosition(bookmarkData);
-    if (!targetScroll) return undefined;
+    const anchorElement = this.resolveBookmarkAnchor(bookmarkData.anchorPath);
+    if (!anchorElement) {
+      return undefined;
+    }
 
-    return resolveTargetScroll(targetScroll, this.firstDimensionMargin).bookmarkPosData;
-  }
-
-  private getBookmarkPosition(bookmark: BooksDbBookmarkData): TargetScroll | undefined {
-    if (!bookmark.exploredCharCount) return undefined;
-
-    const { verticalMode } = this.calculator;
-
-    const targetScrollByScrollPos = this.getBookmarkTargetPosByScrollValue(bookmark);
-    if (targetScrollByScrollPos) return targetScrollByScrollPos;
-
-    const scrollPos = this.calculator.getScrollPosByCharCount(bookmark.exploredCharCount);
-    if (verticalMode) {
+    const rect = anchorElement.getBoundingClientRect();
+    if (this.calculator.verticalMode) {
+      const absoluteRight = rect.right + this.window.scrollX;
+      const right = this.window.innerWidth - absoluteRight + this.firstDimensionMargin;
       return {
-        scrollX: scrollPos
+        right: `${Math.max(0, right)}px`
       };
     }
+
+    const absoluteTop = rect.top + this.window.scrollY;
     return {
-      scrollY: scrollPos
+      top: `${Math.max(0, absoluteTop + this.firstDimensionMargin)}px`
     };
   }
 
-  private getBookmarkTargetPosByScrollValue(bookmarkData: BooksDbBookmarkData) {
-    const { exploredCharCount } = bookmarkData;
+  private captureBookmarkAnchorPath(customReadingPointScrollOffset: number): string | undefined {
+    const container = this.calculator.containerEl;
+    const containerRect = container.getBoundingClientRect();
+    const { verticalMode } = this.calculator;
+    const preferredAnchorX = verticalMode
+      ? clampPoint(
+          this.window.innerWidth - this.firstDimensionMargin - customReadingPointScrollOffset - 2,
+          this.window.innerWidth
+        )
+      : clampPoint(this.window.innerWidth / 2, this.window.innerWidth);
+    const preferredAnchorY = verticalMode
+      ? clampPoint(this.window.innerHeight / 2, this.window.innerHeight)
+      : clampPoint(
+          this.firstDimensionMargin + customReadingPointScrollOffset + 2,
+          this.window.innerHeight
+        );
 
-    const getTargetPos = (scrollAxis: 'scrollX' | 'scrollY') => {
-      const scrollPos = bookmarkData[scrollAxis];
-      if (!scrollPos) return undefined;
+    const visibleLeft = Math.max(0, containerRect.left);
+    const visibleRight = Math.min(this.window.innerWidth - 1, containerRect.right);
+    const visibleTop = Math.max(0, containerRect.top);
+    const visibleBottom = Math.min(this.window.innerHeight - 1, containerRect.bottom);
+    const fallbackAnchorX = clampPoint(
+      visibleRight >= visibleLeft ? (visibleLeft + visibleRight) / 2 : this.window.innerWidth / 2,
+      this.window.innerWidth
+    );
+    const fallbackAnchorY = clampPoint(
+      visibleBottom >= visibleTop ? (visibleTop + visibleBottom) / 2 : this.window.innerHeight / 2,
+      this.window.innerHeight
+    );
 
-      const formattedScrollPos = formatPos(scrollPos, this.calculator.direction);
-      if (this.calculator.getCharCountByScrollPos(formattedScrollPos) === exploredCharCount) {
-        return {
-          [scrollAxis]: scrollPos
-        } as TargetScroll;
-      }
+    const target =
+      this.getContainerElementFromPoint(container, preferredAnchorX, preferredAnchorY) ||
+      this.getContainerElementFromPoint(container, fallbackAnchorX, fallbackAnchorY);
+    const fallbackVisibleAnchor = this.findVisibleAnchor(container);
+    if (!target && !fallbackVisibleAnchor) {
       return undefined;
-    };
-
-    return this.calculator.verticalMode ? getTargetPos('scrollX') : getTargetPos('scrollY');
-  }
-}
-
-function resolveTargetScroll(
-  targetScroll: TargetScroll,
-  dimensionAdjustment: number
-): {
-  bookmarkPosData: BookmarkPosData;
-  scrollToData: ScrollToOptions;
-} {
-  if ('scrollX' in targetScroll) {
-    return {
-      scrollToData: {
-        left: targetScroll.scrollX
-      },
-      bookmarkPosData: {
-        right: `${-targetScroll.scrollX + dimensionAdjustment}px`
-      }
-    };
-  }
-  return {
-    scrollToData: {
-      top: targetScroll.scrollY
-    },
-    bookmarkPosData: {
-      top: `${targetScroll.scrollY + dimensionAdjustment}px`
     }
-  };
+
+    const anchorElement = this.pickAnchorElement(container, target || fallbackVisibleAnchor);
+    if (!container.contains(anchorElement)) {
+      return undefined;
+    }
+
+    return this.getAnchorPath(anchorElement);
+  }
+
+  private captureBookmarkAnchorPathFromRange(range: Range): string | undefined {
+    const container = this.calculator.containerEl;
+    const startNode = range.startContainer;
+    const startElement =
+      startNode instanceof HTMLElement
+        ? startNode
+        : (startNode.parentElement as HTMLElement | null);
+
+    if (!startElement || !container.contains(startElement)) {
+      return undefined;
+    }
+
+    const anchorElement = this.pickAnchorElement(container, startElement);
+    if (!container.contains(anchorElement)) {
+      return undefined;
+    }
+
+    return this.getAnchorPath(anchorElement);
+  }
+
+  private getContainerElementFromPoint(
+    container: HTMLElement,
+    x: number,
+    y: number
+  ): HTMLElement | undefined {
+    // Prefer deepest rendered element at point, excluding the root container itself.
+    const pointElements = this.window.document.elementsFromPoint(x, y);
+    const pointMatch = pointElements.find(
+      (element) =>
+        element instanceof HTMLElement && element !== container && container.contains(element)
+    );
+    if (pointMatch && pointMatch instanceof HTMLElement) {
+      return pointMatch;
+    }
+
+    // Fallback to caret position APIs when point lookup lands on overlays/background.
+    const caretMatch = this.getCaretElementFromPoint(x, y);
+    if (caretMatch && caretMatch !== container && container.contains(caretMatch)) {
+      return caretMatch;
+    }
+
+    return undefined;
+  }
+
+  private getCaretElementFromPoint(x: number, y: number): HTMLElement | undefined {
+    const documentWithCaretPosition = this.window.document as Document & {
+      caretPositionFromPoint?: (px: number, py: number) => { offsetNode: Node | null } | null;
+      caretRangeFromPoint?: (px: number, py: number) => Range | null;
+    };
+
+    const caretPosition = documentWithCaretPosition.caretPositionFromPoint?.(x, y);
+    const caretNode =
+      caretPosition?.offsetNode ||
+      documentWithCaretPosition.caretRangeFromPoint?.(x, y)?.startContainer;
+    if (!caretNode) {
+      return undefined;
+    }
+
+    if (caretNode instanceof HTMLElement) {
+      return caretNode;
+    }
+
+    return caretNode.parentElement || undefined;
+  }
+
+  private pickAnchorElement(container: HTMLElement, target: HTMLElement): HTMLElement {
+    const semanticAnchor = target.closest<HTMLElement>(
+      'p, section, article, li, blockquote, h1, h2, h3, h4, h5, h6'
+    );
+    if (semanticAnchor && semanticAnchor !== container && container.contains(semanticAnchor)) {
+      return semanticAnchor;
+    }
+
+    let current: HTMLElement | null = target;
+    while (current && current !== container) {
+      if ((current.textContent || '').trim().length > 0) {
+        return current;
+      }
+      current = current.parentElement;
+    }
+
+    return target;
+  }
+
+  private findVisibleAnchor(container: HTMLElement): HTMLElement | undefined {
+    const candidates = container.querySelectorAll<HTMLElement>(
+      'p, section, article, li, blockquote, h1, h2, h3, h4, h5, h6, div'
+    );
+    const viewportCenterX = this.window.innerWidth / 2;
+    const viewportCenterY = this.window.innerHeight / 2;
+    let bestCandidate: HTMLElement | undefined;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    for (const candidate of candidates) {
+      const text = (candidate.textContent || '').trim();
+      if (!text) {
+        continue;
+      }
+
+      const rect = candidate.getBoundingClientRect();
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        rect.bottom < 0 ||
+        rect.top > this.window.innerHeight ||
+        rect.right < 0 ||
+        rect.left > this.window.innerWidth
+      ) {
+        continue;
+      }
+
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const score = Math.abs(centerX - viewportCenterX) + Math.abs(centerY - viewportCenterY);
+      if (score < bestScore) {
+        bestScore = score;
+        bestCandidate = candidate;
+      }
+    }
+
+    return bestCandidate;
+  }
+
+  private resolveBookmarkAnchor(anchorPath: string | undefined): HTMLElement | undefined {
+    if (!anchorPath) {
+      return undefined;
+    }
+
+    const indices = anchorPath
+      .split('.')
+      .map((segment) => Number(segment))
+      .filter((segment) => Number.isInteger(segment) && segment >= 0);
+    if (!indices.length) {
+      return undefined;
+    }
+
+    let current: Element = this.calculator.containerEl;
+    for (const index of indices) {
+      const next = current.children.item(index);
+      if (!next) {
+        return undefined;
+      }
+      current = next;
+    }
+
+    return current instanceof HTMLElement ? current : undefined;
+  }
+
+  private scrollToBookmarkByAnchorPath(anchorPath: string | undefined, attempt: number): void {
+    const anchorElement = this.resolveBookmarkAnchor(anchorPath);
+    if (anchorElement) {
+      anchorElement.scrollIntoView({
+        behavior: 'auto',
+        block: 'start',
+        inline: 'start'
+      });
+      return;
+    }
+
+    if (!anchorPath || attempt >= this.maxScrollToBookmarkAttempts - 1) {
+      return;
+    }
+
+    this.window.setTimeout(() => {
+      this.scrollToBookmarkByAnchorPath(anchorPath, attempt + 1);
+    }, this.scrollToBookmarkRetryDelayMs);
+  }
+
+  private getAnchorPath(anchorElement: HTMLElement): string | undefined {
+    const root = this.calculator.containerEl;
+    const segments: number[] = [];
+
+    let current: Element | null = anchorElement;
+    while (current && current !== root) {
+      const parent = current.parentElement;
+      if (!parent) {
+        return undefined;
+      }
+
+      const index = Array.from(parent.children).indexOf(current);
+      if (index < 0) {
+        return undefined;
+      }
+
+      segments.push(index);
+      current = parent;
+    }
+
+    if (current !== root || !segments.length) {
+      return undefined;
+    }
+
+    return segments.reverse().join('.');
+  }
 }
 
-type TargetScroll = { scrollX: number } | { scrollY: number };
+function clampPoint(value: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(Math.floor(value), 0), Math.max(max - 1, 0));
+}
 
 export interface BookmarkPosData {
   top?: string;

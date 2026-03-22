@@ -4,10 +4,11 @@
     DocumentTokenAnalysisProgress,
     DocumentTokenStatus
   } from '$lib/functions/anki';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
 
   type FilterId = 'all' | 'due' | DocumentTokenStatus;
   type OrthographyFilterId = 'all-scripts' | 'has-kanji';
+  type SortId = 'frequency' | 'book-order';
 
   export let loading = false;
   export let progress: DocumentTokenAnalysisProgress | undefined;
@@ -15,16 +16,22 @@
   export let totalTokens = 0;
   export let uniqueTokens = 0;
   export let error = '';
+  export let refreshing = false;
   export let activeFilter: FilterId = 'all';
   export let activeOrthographyFilter: OrthographyFilterId = 'all-scripts';
+  export let activeSort: SortId = 'frequency';
   export let activeToken: string | null = null;
   export let tokenSentences: Record<string, { sentence: string; page: number | null }[]> = {};
   export let sentenceLoadingToken: string | null = null;
 
   const dispatch = createEventDispatcher<{
     close: void;
+    repositionNewCards: void;
+    refreshStatuses: void;
     filterChange: { filter: FilterId };
     orthographyFilterChange: { filter: OrthographyFilterId };
+    sortChange: { sort: SortId };
+    jumpToCurrentLocation: void;
     tokenSelect: { token: string };
     tokenHover: { token: string };
     sentenceSelect: { token: string; sentence: string };
@@ -44,6 +51,12 @@
     { id: 'all-scripts', label: 'All Scripts' },
     { id: 'has-kanji', label: 'Has Kanji' }
   ];
+  const sortFilters: { id: SortId; label: string }[] = [
+    { id: 'frequency', label: 'Frequency' },
+    { id: 'book-order', label: 'Book Order' }
+  ];
+  let listContainerEl: HTMLDivElement | undefined;
+  let lastAutoScrollKey = '';
 
   const kanjiPattern = /[\p{Script=Han}々]/u;
 
@@ -62,6 +75,34 @@
     activeOrthographyFilter === 'all-scripts'
       ? statusFilteredEntries
       : statusFilteredEntries.filter((entry) => hasKanji(entry.token));
+
+  $: sortedEntries = [...filteredEntries].sort((a, b) => {
+    if (activeSort === 'book-order') {
+      const appearanceDiff = a.firstOccurrence - b.firstOccurrence;
+      if (appearanceDiff !== 0) {
+        return appearanceDiff;
+      }
+
+      return b.count - a.count || a.token.localeCompare(b.token, 'ja');
+    }
+
+    return b.count - a.count || a.firstOccurrence - b.firstOccurrence;
+  });
+
+  $: {
+    const hasActiveEntry =
+      !!activeToken && sortedEntries.some((entry) => entry.token === activeToken);
+    const nextAutoScrollKey = hasActiveEntry
+      ? `${activeToken}:${activeSort}:${activeFilter}:${activeOrthographyFilter}:${sortedEntries.length}`
+      : '';
+
+    if (!hasActiveEntry) {
+      lastAutoScrollKey = '';
+    } else if (nextAutoScrollKey !== lastAutoScrollKey) {
+      lastAutoScrollKey = nextAutoScrollKey;
+      void scrollTokenRowIntoView(activeToken as string);
+    }
+  }
 
   $: counts = {
     all: entries.length,
@@ -121,6 +162,43 @@
 
     activeOrthographyFilter = filter;
     dispatch('orthographyFilterChange', { filter });
+  }
+
+  function onSortSelect(sort: SortId): void {
+    if (activeSort === sort) {
+      return;
+    }
+
+    activeSort = sort;
+    dispatch('sortChange', { sort });
+  }
+
+  async function scrollTokenRowIntoView(token: string): Promise<void> {
+    await tick();
+
+    if (!listContainerEl) {
+      return;
+    }
+
+    const row = Array.from(listContainerEl.querySelectorAll<HTMLElement>('[data-token-row]')).find(
+      (element) => element.getAttribute('data-token-row') === token
+    );
+    if (!row) {
+      return;
+    }
+
+    const container = listContainerEl;
+    const rowRect = row.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const rowTopWithinContainer = rowRect.top - containerRect.top + container.scrollTop;
+    const targetTop = Math.max(
+      0,
+      rowTopWithinContainer - container.clientHeight / 2 + rowRect.height / 2
+    );
+    container.scrollTo({
+      top: targetTop,
+      behavior: 'smooth'
+    });
   }
 
   function escapeHtml(value: string): string {
@@ -214,12 +292,27 @@
         </div>
       {/if}
     </div>
-    <button
-      class="rounded-md border border-slate-600 px-2 py-1 text-sm text-slate-200 hover:border-slate-400"
-      on:click={() => dispatch('close')}
-    >
-      Close
-    </button>
+    <div class="flex items-center gap-2">
+      <button
+        class="rounded-md border border-emerald-500/50 bg-emerald-500/10 px-2 py-1 text-sm text-emerald-100 hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+        on:click={() => dispatch('refreshStatuses')}
+        disabled={refreshing}
+      >
+        {refreshing ? 'Refreshing…' : 'Refresh Status'}
+      </button>
+      <button
+        class="rounded-md border border-cyan-500/50 bg-cyan-500/10 px-2 py-1 text-sm text-cyan-100 hover:border-cyan-300"
+        on:click={() => dispatch('repositionNewCards')}
+      >
+        Reposition New
+      </button>
+      <button
+        class="rounded-md border border-slate-600 px-2 py-1 text-sm text-slate-200 hover:border-slate-400"
+        on:click={() => dispatch('close')}
+      >
+        Close
+      </button>
+    </div>
   </div>
 
   {#if loading}
@@ -280,13 +373,42 @@
     </div>
   </div>
 
-  <div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="border-b border-slate-800 px-4 py-3">
+    <div class="mb-2 text-[11px] uppercase tracking-wide text-slate-400">Sort</div>
+    <div class="flex flex-wrap gap-2">
+      {#each sortFilters as filter}
+        <div class="inline-flex items-center gap-1">
+          <button
+            class={`rounded-full border px-3 py-1 text-xs ${
+              activeSort === filter.id
+                ? 'border-cyan-400 bg-cyan-400/15 text-cyan-100'
+                : 'border-slate-700 text-slate-300 hover:border-slate-500'
+            }`}
+            on:click={() => onSortSelect(filter.id)}
+          >
+            {filter.label}
+          </button>
+          {#if filter.id === 'book-order' && activeSort === 'book-order'}
+            <button
+              class="rounded-full border border-cyan-500/50 bg-cyan-500/10 px-2 py-1 text-xs text-cyan-100 hover:border-cyan-300"
+              on:click={() => dispatch('jumpToCurrentLocation')}
+              disabled={loading || filteredEntries.length === 0}
+            >
+              Current
+            </button>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  </div>
+
+  <div class="min-h-0 flex-1 overflow-y-auto" bind:this={listContainerEl}>
     {#if !loading && !error && filteredEntries.length === 0}
       <div class="px-4 py-6 text-sm text-slate-400">No tokens for this filter.</div>
     {:else}
       <ul class="divide-y divide-slate-800">
-        {#each filteredEntries as entry (entry.token)}
-          <li class="px-4 py-3">
+        {#each sortedEntries as entry (entry.token)}
+          <li class="px-4 py-3" data-token-row={entry.token}>
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <button

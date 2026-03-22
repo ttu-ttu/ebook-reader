@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -52,6 +52,7 @@ interface BooksDbV6BookmarkData {
   scrollX?: number;
   scrollY?: number;
   exploredCharCount?: number;
+  anchorPath?: string;
   progress: number | string | undefined;
   lastBookmarkModified: number;
 }

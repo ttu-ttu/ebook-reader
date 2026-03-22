@@ -63,7 +63,6 @@
     verticalMode$,
     writingMode$,
     viewMode$,
-    selectionToBookmarkEnabled$,
     lineHeight$,
     syncTarget$,
     autoReplication$,
@@ -164,7 +163,8 @@
   import {
     clearRange,
     getParagraphToPoint,
-    getRangeForUserSelection,
+    getRangeForUserSelectionInContainer,
+    isRangeInsideContainer,
     getReferencePoints,
     pulseElement
   } from '$lib/functions/range-util';
@@ -313,6 +313,10 @@
         );
       }
 
+      // Assign bookmark promise as part of the primary load pipeline so the reader
+      // doesn't mount with the placeholder undefined promise on refresh.
+      bookmarkData = database.getBookmark(bookData.id);
+
       return bookData;
     }),
     share()
@@ -323,14 +327,6 @@
       if (!data) {
         goto(`${pagePath}${mergeEntries.MANAGE.routeId}`);
       }
-    }),
-    reduceToEmptyString()
-  );
-
-  const initBookmarkData$ = rawBookData$.pipe(
-    tap((rawBookData) => {
-      if (!rawBookData) return;
-      bookmarkData = database.getBookmark(rawBookData.id);
     }),
     reduceToEmptyString()
   );
@@ -440,13 +436,22 @@
     debounceTime(200),
     tap(() => {
       const currentSelected = window.getSelection()?.toString() || '';
+      const currentRange = currentSelected ? window.getSelection()?.getRangeAt(0) : undefined;
+      const bookContentElement = document.querySelector('.book-content');
 
       if (!currentSelected && lastSelectedRangeWasEmpty) {
         lastSelectedRange = undefined;
-      } else if (currentSelected) {
-        lastSelectedRange = window.getSelection()?.getRangeAt(0);
+      } else if (
+        currentRange &&
+        bookContentElement instanceof HTMLElement &&
+        isRangeInsideContainer(currentRange, bookContentElement)
+      ) {
+        lastSelectedRange = currentRange;
         lastSelectedRangeWasEmpty = false;
       } else {
+        if (currentSelected) {
+          lastSelectedRange = undefined;
+        }
         lastSelectedRangeWasEmpty = true;
       }
     }),
@@ -1079,24 +1084,29 @@
     if (!bookId || !bookmarkManager) return;
 
     let data: BooksDbBookmarkData;
+    const userSelectedRange = getRangeForUserSelectionInContainer(
+      window,
+      lastSelectedRange,
+      document.querySelector('.book-content') || undefined
+    );
 
     showHeader = false;
 
     if (isPaginated) {
-      const userSelectedRange = $selectionToBookmarkEnabled$
-        ? getRangeForUserSelection(window, lastSelectedRange)
-        : undefined;
       const bookmarkRange = userSelectedRange || customReadingPointRange;
 
       pulseElement(bookmarkRange?.endContainer?.parentElement, 'add', 0.5, 500);
 
       data = bookmarkManager.formatBookmarkDataByRange(bookId, bookmarkRange);
-
-      if (userSelectedRange) {
-        clearRange(window);
-      }
+    } else if (userSelectedRange) {
+      pulseElement(userSelectedRange.endContainer?.parentElement, 'add', 0.5, 500);
+      data = bookmarkManager.formatBookmarkDataByRange(bookId, userSelectedRange);
     } else {
       data = bookmarkManager.formatBookmarkData(bookId, customReadingPointScrollOffset);
+    }
+
+    if (userSelectedRange) {
+      clearRange(window);
     }
 
     await database.putBookmark(data);
@@ -1682,7 +1692,6 @@
     on:trackerPause={() => pauseTracker(true)}
     on:tokenPanelClose={() => (showTokenPanel = false)}
   />
-  {$initBookmarkData$ ?? ''}
   {$setBackgroundColor$ ?? ''}
   {$setWritingMode$ ?? ''}
   {$textSelector$ ?? ''}

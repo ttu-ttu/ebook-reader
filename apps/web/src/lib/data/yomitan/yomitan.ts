@@ -6,6 +6,11 @@
 
 import type { AnkiCacheService } from '$lib/data/database/anki-cache-db';
 
+export interface YomitanLemmas {
+  lemmas: string[];
+  lemmaReadings: string[];
+}
+
 /**
  * Yomitan API client for Japanese text tokenization and lemmatization
  * Based on asbplayer implementation: https://github.com/ShanaryS/asbplayer/tree/yomitan-anki
@@ -44,6 +49,7 @@ export class Yomitan {
 
     const tokens: string[] = [];
     const lemmaMap = new Map<string, Set<string>>();
+    const lemmaReadingMap = new Map<string, Set<string>>();
     const selectedDict = this._selectTokenizeDictionary(response);
     if (selectedDict) {
       const canExtractLemma = !selectedDict.id?.includes('ipadic');
@@ -68,13 +74,15 @@ export class Yomitan {
         }
 
         const lemmas = lemmaMap.get(token) || new Set<string>();
+        const lemmaReadings = lemmaReadingMap.get(token) || new Set<string>();
         if (lemma) {
           lemmas.add(lemma);
         }
         if (lemmaReading) {
-          lemmas.add(lemmaReading);
+          lemmaReadings.add(lemmaReading);
         }
         lemmaMap.set(token, lemmas);
+        lemmaReadingMap.set(token, lemmaReadings);
       }
     }
 
@@ -82,7 +90,8 @@ export class Yomitan {
       await this.cacheService.setLemmasBatch(
         Array.from(lemmaMap.entries()).map(([token, lemmas]) => ({
           token,
-          lemmas: Array.from(lemmas)
+          lemmas: Array.from(lemmas),
+          lemmaReadings: Array.from(lemmaReadingMap.get(token) || [])
         }))
       );
     }
@@ -95,14 +104,15 @@ export class Yomitan {
    * Example: 食べた (tabeta) -> [食べる (taberu)]
    * @param token - Token to lemmatize
    * @param yomitanUrl - Optional override for Yomitan URL
-   * @returns Array of lemmatized forms
+   * @returns Lemma arrays split by writing form
    */
-  async lemmatize(token: string, yomitanUrl?: string): Promise<string[]> {
+  async lemmatize(token: string, yomitanUrl?: string): Promise<YomitanLemmas> {
     // Get full termEntries (from cache or API)
     const dictionaryEntries = await this.getTermEntries(token, yomitanUrl);
 
     // Extract lemmas and readings from the cached response
     const lemmas = new Set<string>();
+    const lemmaReadings = new Set<string>();
     for (const entry of dictionaryEntries) {
       for (const headword of entry['headwords']) {
         for (const source of headword['sources']) {
@@ -113,13 +123,13 @@ export class Yomitan {
             lemmas.add(headword.term.trim());
           }
           if (typeof headword.reading === 'string' && headword.reading.trim().length > 0) {
-            lemmas.add(headword.reading.trim());
+            lemmaReadings.add(headword.reading.trim());
           }
         }
       }
     }
 
-    return Array.from(lemmas);
+    return { lemmas: Array.from(lemmas), lemmaReadings: Array.from(lemmaReadings) };
   }
 
   /**

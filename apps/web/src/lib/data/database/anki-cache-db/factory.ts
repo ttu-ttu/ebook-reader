@@ -5,7 +5,7 @@
  */
 
 import { openDB, type DBSchema } from 'idb';
-import type { TokenColor, WordStatus } from '$lib/data/anki/token-color';
+import type { WordStatus } from '$lib/data/anki/token-color';
 
 type PersistedWordStatus = WordStatus | 'low';
 
@@ -29,25 +29,6 @@ export interface AnkiCacheDb extends DBSchema {
       expiresAtMs?: number;
     };
   };
-  /** @deprecated Legacy cache - use wordData instead */
-  tokenColor: {
-    key: string;
-    value: {
-      token: string;
-      color: TokenColor;
-      status?: PersistedWordStatus;
-      timestamp: number;
-    };
-  };
-  /** @deprecated Legacy cache - use wordData instead */
-  tokenCardIds: {
-    key: string;
-    value: {
-      token: string;
-      cardIds: number[];
-      timestamp: number;
-    };
-  };
   /** Cache for Yomitan tokenization results */
   tokenize: {
     key: string;
@@ -63,6 +44,7 @@ export interface AnkiCacheDb extends DBSchema {
     value: {
       token: string;
       lemmas: string[];
+      lemmaReadings: string[];
       timestamp: number;
     };
   };
@@ -93,18 +75,12 @@ export interface AnkiCacheDb extends DBSchema {
  * @returns Promise resolving to database instance
  */
 export function createAnkiCacheDb(name = 'anki-cache') {
-  return openDB<AnkiCacheDb>(name, 5, {
+  return openDB<AnkiCacheDb>(name, 6, {
     upgrade(db, oldVersion) {
       // Version 1: Initial stores
       if (oldVersion < 1) {
-        db.createObjectStore('tokenColor', { keyPath: 'token' });
         db.createObjectStore('tokenize', { keyPath: 'text' });
         db.createObjectStore('lemmatize', { keyPath: 'token' });
-      }
-
-      // Version 2: Add tokenCardIds store
-      if (oldVersion < 2) {
-        db.createObjectStore('tokenCardIds', { keyPath: 'token' });
       }
 
       // Version 3: Add termEntries store
@@ -120,6 +96,16 @@ export function createAnkiCacheDb(name = 'anki-cache') {
       // Version 5: Add documentTokenCounts store (token panel frequency snapshots)
       if (oldVersion < 5) {
         db.createObjectStore('documentTokenCounts', { keyPath: 'key' });
+      }
+
+      // Version 6: Drop unused legacy stores
+      if (oldVersion < 6) {
+        if (db.objectStoreNames.contains('tokenColor')) {
+          db.deleteObjectStore('tokenColor');
+        }
+        if (db.objectStoreNames.contains('tokenCardIds')) {
+          db.deleteObjectStore('tokenCardIds');
+        }
       }
     }
   });

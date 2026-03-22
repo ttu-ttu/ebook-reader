@@ -47,6 +47,7 @@
   import {
     BookContentColoring,
     ColoringPriorityQueue,
+    type DocumentTokenAnalysisEntry,
     type DocumentTokenAnalysisProgress,
     type DocumentTokenAnalysisResult,
     type DocumentTokenizeProgress,
@@ -55,7 +56,7 @@
     ProcessingPriority
   } from '$lib/functions/anki';
   import { createAnkiCacheDb, AnkiCacheService } from '$lib/data/database/anki-cache-db';
-  import { createEventDispatcher, onDestroy } from 'svelte';
+  import { createEventDispatcher, onDestroy, tick } from 'svelte';
 
   export let htmlContent: string;
 
@@ -152,8 +153,30 @@
     page: number | null;
   }
 
+  type RepositionStartMode = 'bookmark' | 'start';
+  type RepositionRangeMode = 'to-end' | 'tokens' | 'chars' | 'percent';
+  type RepositionOrderMode = 'book-order' | 'occurrences';
+
+  interface RepositionSummary {
+    requested: number;
+    deduped: number;
+    eligibleNew: number;
+    repositioned: number;
+    skippedNotFound: number[];
+    skippedNotNew: number[];
+    processedTokens: number;
+    uniqueTokens: number;
+    processedChars: number;
+    startOffset: number;
+    effectiveMaxChars: number;
+    effectiveMaxTokens: number | null;
+    orderMode: RepositionOrderMode;
+    minOccurrences: number;
+  }
+
   type TokenPanelFilterId = 'all' | 'due' | DocumentTokenStatus;
   type TokenPanelOrthographyFilterId = 'all-scripts' | 'has-kanji';
+  type TokenPanelSortId = 'frequency' | 'book-order';
 
   let showBlurMessage = false;
 
@@ -183,19 +206,38 @@
   let tokenPanelCacheVersion = 0;
   let tokenPanelActiveFilter: TokenPanelFilterId = 'all';
   let tokenPanelActiveOrthographyFilter: TokenPanelOrthographyFilterId = 'all-scripts';
+  let tokenPanelActiveSort: TokenPanelSortId = 'frequency';
   let tokenPanelActiveToken: string | null = null;
   let tokenPanelSentenceMatches: Record<string, TokenPanelSentenceMatch[]> = {};
   let tokenPanelSentenceLoadingToken: string | null = null;
   let tokenPanelSentenceSourceKey = '';
   let tokenPanelDocumentSentences: string[] = [];
   const tokenPanelHoverRefreshCooldownMs = 2500;
+  const tokenPanelJumpHasLetterRegex = /\p{L}/u;
+  const tokenPanelJumpHasKanjiRegex = /[\p{Script=Han}々]/u;
+  let tokenPanelHoverRefreshSuppressedUntilMs = 0;
   let tokenPanelLastHoverRefresh = new Map<string, number>();
   const tokenPanelFilterStorageKey = 'book-reader-token-panel-filter-v1';
   const tokenPanelOrthographyFilterStorageKey = 'book-reader-token-panel-orthography-filter-v1';
+  const tokenPanelSortStorageKey = 'book-reader-token-panel-sort-v1';
   let tokenPanelBookmarkShift = 0;
   let tokenPanelBookmarkShiftRaf: number | undefined;
   let tokenPanelBaseAnchorLeft: number | undefined;
   let tokenPanelBookmarkShiftTimeout: ReturnType<typeof setTimeout> | undefined;
+  let repositionDialogOpen = false;
+  let repositionLoading = false;
+  let repositionError = '';
+  let repositionSummary: RepositionSummary | undefined;
+  let repositionStartMode: RepositionStartMode = 'bookmark';
+  let repositionRangeMode: RepositionRangeMode = 'to-end';
+  let repositionOrderMode: RepositionOrderMode = 'book-order';
+  let repositionMinOccurrences = 2;
+  let repositionTokenLimit = 1200;
+  let repositionCharLimit = 40000;
+  let repositionCharPercent = 20;
+  let repositionStartPosition = 1;
+  let repositionStep = 1;
+  let repositionShift = true;
   let initialTokenizeProgress: DocumentTokenizeProgress | undefined;
   let initialTokenizeLoading = false;
   let initialTokenizeAbortController: AbortController | undefined;
@@ -212,6 +254,8 @@
   let initialStatusColoringDocKey = '';
   let warmCacheLoading = false;
   let warmCacheProgress: WarmCacheProgress | undefined;
+  let tokenPanelWordDataPrimed = false;
+  let tokenPanelWordDataPrimingPromise: Promise<void> | null = null;
   let readerPreparationLoading = false;
   let readerPreparationLabel = 'Preparing token index';
   let readerPreparationPercentage = 0;
@@ -338,6 +382,7 @@
           `✅ Cache refreshed: ${stats.cachedWords} words from ${stats.totalCards} cards in ${stats.duration}ms`
         );
         await runPostWarmCacheRefresh(service);
+        tokenPanelWordDataPrimed = true;
       } catch (err) {
         console.error('❌ Failed to refresh cache:', err);
       } finally {
@@ -374,6 +419,25 @@
     }
   }
 
+  async function ensureTokenPanelWordDataPrimed(service: BookContentColoring): Promise<void> {
+    if (tokenPanelWordDataPrimed) {
+      return;
+    }
+
+    if (!tokenPanelWordDataPrimingPromise) {
+      tokenPanelWordDataPrimingPromise = (async () => {
+        await runWarmCacheRefreshFlow(service);
+        if (!tokenPanelWordDataPrimed) {
+          throw new Error('Word data priming did not complete');
+        }
+      })().finally(() => {
+        tokenPanelWordDataPrimingPromise = null;
+      });
+    }
+
+    await tokenPanelWordDataPrimingPromise;
+  }
+
   function isTokenPanelFilter(value: string): value is TokenPanelFilterId {
     return (
       value === 'all' ||
@@ -390,6 +454,10 @@
     return value === 'all-scripts' || value === 'has-kanji';
   }
 
+  function isTokenPanelSort(value: string): value is TokenPanelSortId {
+    return value === 'frequency' || value === 'book-order';
+  }
+
   if (typeof window !== 'undefined') {
     const savedFilter = window.localStorage.getItem(tokenPanelFilterStorageKey);
     if (savedFilter && isTokenPanelFilter(savedFilter)) {
@@ -401,6 +469,11 @@
     );
     if (savedOrthographyFilter && isTokenPanelOrthographyFilter(savedOrthographyFilter)) {
       tokenPanelActiveOrthographyFilter = savedOrthographyFilter;
+    }
+
+    const savedSort = window.localStorage.getItem(tokenPanelSortStorageKey);
+    if (savedSort && isTokenPanelSort(savedSort)) {
+      tokenPanelActiveSort = savedSort;
     }
   }
 
@@ -441,6 +514,8 @@
         },
         ankiCacheService
       );
+      tokenPanelWordDataPrimed = false;
+      tokenPanelWordDataPrimingPromise = null;
 
       // Step 1: Check if IndexedDB cache exists (no preloading)
       console.log('⚡ Checking IndexedDB cache status...');
@@ -455,12 +530,12 @@
         const cacheInfo = await service.loadCacheFromIndexedDB();
         console.log(`⚡ loadCacheFromIndexedDB returned:`, cacheInfo);
 
-        if (cacheInfo.loadedWords === 0) {
+        if (cacheInfo.loadedWords > 0) {
           console.log(
-            `⚡ Cache exists (age: ${Math.round(cacheInfo.cacheAge / 60000)} min) - queries will use IndexedDB on-demand`
+            `⚡ IndexedDB cache ready (${cacheInfo.loadedWords} words, age: ${Math.round(cacheInfo.cacheAge / 60000)} min) - queries will use IndexedDB on-demand`
           );
         } else {
-          console.log('⚠️ No cache found - will query Anki after warming');
+          console.log('⚠️ No IndexedDB word cache rows found yet');
         }
 
         // Step 2: Start colorization immediately
@@ -500,6 +575,8 @@
     warmCacheProgress = undefined;
     cacheLoadingPromise = null;
     cacheRefreshPromise = null;
+    tokenPanelWordDataPrimed = false;
+    tokenPanelWordDataPrimingPromise = null;
 
     if (coloringQueue) {
       coloringQueue.clear();
@@ -840,6 +917,33 @@
     return container.textContent?.replace(/\n{3,}/g, '\n\n').trim() || '';
   }
 
+  const bookCharacterRegex =
+    /[0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]/iu;
+
+  function mapExploredCharCountToTextOffset(text: string, exploredCount: number): number {
+    if (!text || exploredCount <= 0) {
+      return 0;
+    }
+
+    let currentCount = 0;
+    let offset = 0;
+
+    for (const character of Array.from(text)) {
+      offset += character.length;
+
+      if (!bookCharacterRegex.test(character)) {
+        continue;
+      }
+
+      currentCount += 1;
+      if (currentCount >= exploredCount) {
+        return offset;
+      }
+    }
+
+    return text.length;
+  }
+
   function getDocumentSentenceSourceKey(): string {
     const prefix = htmlContent.slice(0, 256);
     const suffix = htmlContent.slice(-256);
@@ -1089,13 +1193,19 @@
     }, 240);
   }
 
-  async function onTokenPanelTokenSelect(event: CustomEvent<{ token: string }>): Promise<void> {
-    const token = event.detail.token;
-
-    if (tokenPanelActiveToken === token) {
+  async function activateTokenPanelToken(
+    token: string,
+    options: { toggleIfActive: boolean } = { toggleIfActive: true }
+  ): Promise<void> {
+    if (options.toggleIfActive && tokenPanelActiveToken === token) {
       tokenPanelActiveToken = null;
       tokenPanelSentenceLoadingToken = null;
       return;
+    }
+
+    if (!options.toggleIfActive && tokenPanelActiveToken === token) {
+      tokenPanelActiveToken = null;
+      await tick();
     }
 
     tokenPanelActiveToken = token;
@@ -1118,11 +1228,323 @@
     }
   }
 
+  async function onTokenPanelTokenSelect(event: CustomEvent<{ token: string }>): Promise<void> {
+    await activateTokenPanelToken(event.detail.token, { toggleIfActive: true });
+  }
+
+  function getTokenFromElement(element: Element | null | undefined): string | null {
+    if (!element) {
+      return null;
+    }
+
+    const tokenElement =
+      (element.closest('[data-anki-token]') as HTMLElement | null) ||
+      (element instanceof HTMLElement ? element : null);
+    const token = tokenElement?.getAttribute('data-anki-token')?.trim();
+    if (!token || !tokenPanelJumpHasLetterRegex.test(token)) {
+      return null;
+    }
+
+    return token;
+  }
+
+  function entryMatchesActivePanelFilters(entry: DocumentTokenAnalysisEntry): boolean {
+    if (tokenPanelActiveFilter === 'due') {
+      if (!entry.due) {
+        return false;
+      }
+    } else if (tokenPanelActiveFilter !== 'all' && entry.status !== tokenPanelActiveFilter) {
+      return false;
+    }
+
+    if (
+      tokenPanelActiveOrthographyFilter === 'has-kanji' &&
+      !tokenPanelJumpHasKanjiRegex.test(entry.token)
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function getTokenElementsInDocumentOrder(): HTMLElement[] {
+    const container = $containerEl$;
+    if (!container) {
+      return [];
+    }
+
+    return Array.from(container.querySelectorAll<HTMLElement>('[data-anki-token]'));
+  }
+
+  function getTokenElementIndexNearCurrentPosition(tokenElements: HTMLElement[]): number {
+    if (typeof window === 'undefined' || tokenElements.length === 0) {
+      return 0;
+    }
+
+    const anchorX = verticalMode
+      ? Math.max(0, Math.min(window.innerWidth - 1, window.innerWidth - firstDimensionMargin - 6))
+      : Math.max(0, Math.min(window.innerWidth - 1, window.innerWidth / 2));
+    const anchorY = verticalMode
+      ? Math.max(0, Math.min(window.innerHeight - 1, window.innerHeight / 2))
+      : Math.max(0, Math.min(window.innerHeight - 1, firstDimensionMargin + 6));
+    let nearestIndex = 0;
+    let nearestScore = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < tokenElements.length; index += 1) {
+      const element = tokenElements[index];
+      const rect = element.getBoundingClientRect();
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        rect.bottom < 0 ||
+        rect.top > window.innerHeight ||
+        rect.right < 0 ||
+        rect.left > window.innerWidth
+      ) {
+        continue;
+      }
+
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const score = Math.abs(centerX - anchorX) + Math.abs(centerY - anchorY);
+      if (score < nearestScore) {
+        nearestScore = score;
+        nearestIndex = index;
+      }
+    }
+
+    return nearestIndex;
+  }
+
+  function getFilteredTokenEntriesInBookOrder(): DocumentTokenAnalysisEntry[] {
+    if (!tokenPanelResult) {
+      return [];
+    }
+
+    return [...tokenPanelResult.entries]
+      .filter((entry) => entryMatchesActivePanelFilters(entry))
+      .sort(
+        (a, b) =>
+          a.firstOccurrence - b.firstOccurrence ||
+          b.count - a.count ||
+          a.token.localeCompare(b.token, 'ja')
+      );
+  }
+
+  function findNextFilteredTokenFromCurrentPosition(): string | null {
+    const filteredEntries = getFilteredTokenEntriesInBookOrder();
+    if (filteredEntries.length === 0) {
+      return null;
+    }
+
+    const tokensByBookOrder = getTokenElementsInDocumentOrder();
+    if (tokensByBookOrder.length === 0) {
+      return filteredEntries[0].token;
+    }
+
+    const filteredTokenSet = new Set(filteredEntries.map((entry) => entry.token));
+    const startIndex = getTokenElementIndexNearCurrentPosition(tokensByBookOrder);
+
+    for (let i = startIndex; i < tokensByBookOrder.length; i += 1) {
+      const token = getTokenFromElement(tokensByBookOrder[i]);
+      if (token && filteredTokenSet.has(token)) {
+        return token;
+      }
+    }
+
+    for (let i = 0; i < startIndex; i += 1) {
+      const token = getTokenFromElement(tokensByBookOrder[i]);
+      if (token && filteredTokenSet.has(token)) {
+        return token;
+      }
+    }
+
+    return filteredEntries[0].token;
+  }
+
+  async function resolveNextFilteredTokenWithRetry(
+    options: { preferDifferentFrom?: string | null; attempts?: number; delayMs?: number } = {}
+  ): Promise<string | null> {
+    const preferDifferentFrom = options.preferDifferentFrom ?? null;
+    const attempts = Math.max(1, options.attempts ?? 5);
+    const delayMs = Math.max(0, options.delayMs ?? 80);
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const token = findNextFilteredTokenFromCurrentPosition();
+      if (token && (!preferDifferentFrom || token !== preferDifferentFrom)) {
+        return token;
+      }
+
+      if (attempt < attempts - 1) {
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, delayMs);
+        });
+      }
+    }
+
+    return findNextFilteredTokenFromCurrentPosition();
+  }
+
+  async function onTokenPanelJumpToCurrentLocation(): Promise<void> {
+    const token = await resolveNextFilteredTokenWithRetry({
+      preferDifferentFrom: tokenPanelActiveToken
+    });
+    if (!token) {
+      tokenPanelActiveToken = null;
+      tokenPanelSentenceLoadingToken = null;
+      return;
+    }
+
+    if (tokenPanelActiveSort !== 'book-order') {
+      tokenPanelActiveSort = 'book-order';
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(tokenPanelSortStorageKey, tokenPanelActiveSort);
+      }
+    }
+
+    await activateTokenPanelToken(token, { toggleIfActive: false });
+  }
+
   function onTokenPanelSentenceSelect(
     event: CustomEvent<{ token: string; sentence: string }>
   ): void {
     const { token, sentence } = event.detail;
     void scrollToSentence(token, sentence);
+  }
+
+  function openRepositionDialog(): void {
+    repositionDialogOpen = true;
+    repositionError = '';
+    repositionSummary = undefined;
+  }
+
+  function closeRepositionDialog(): void {
+    if (repositionLoading) {
+      return;
+    }
+    repositionDialogOpen = false;
+  }
+
+  function clampPercent(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    return Math.min(100, Math.max(0, value));
+  }
+
+  function normalizePositiveInt(value: number, fallback = 1): number {
+    if (!Number.isFinite(value)) {
+      return fallback;
+    }
+    return Math.max(1, Math.trunc(value));
+  }
+
+  function resolveRepositionRange(
+    mode: RepositionRangeMode,
+    fullTextLength: number,
+    anchoredTextLength: number
+  ): { maxTokens: number | undefined; maxChars: number | undefined } {
+    let maxTokens: number | undefined;
+    let maxChars: number | undefined;
+
+    if (mode === 'tokens') {
+      maxTokens = normalizePositiveInt(repositionTokenLimit);
+    } else if (mode === 'chars') {
+      maxChars = normalizePositiveInt(repositionCharLimit);
+    } else if (mode === 'percent') {
+      const percentage = clampPercent(repositionCharPercent);
+      maxChars = normalizePositiveInt((fullTextLength * percentage) / 100);
+    }
+
+    if (typeof maxChars === 'number') {
+      maxChars = Math.min(maxChars, anchoredTextLength);
+    }
+
+    return { maxTokens, maxChars };
+  }
+
+  async function runRepositionNewCards(): Promise<void> {
+    const service = coloringService;
+    if (!service) {
+      repositionError = 'Anki service is not ready.';
+      return;
+    }
+    if (!$ankiIntegrationEnabled$) {
+      repositionError = 'Enable Anki integration first.';
+      return;
+    }
+
+    const fullText = extractDocumentText(htmlContent);
+    if (!fullText.trim()) {
+      repositionError = 'Could not extract readable text from this book.';
+      return;
+    }
+
+    const startOffset =
+      repositionStartMode === 'bookmark'
+        ? mapExploredCharCountToTextOffset(
+            fullText,
+            Math.max(0, Math.trunc(exploredCharCount || 0))
+          )
+        : 0;
+    const textFromAnchor = fullText.slice(startOffset);
+    if (!textFromAnchor.trim()) {
+      repositionError = 'No text remaining from the selected start point.';
+      return;
+    }
+
+    const { maxTokens, maxChars } = resolveRepositionRange(
+      repositionRangeMode,
+      fullText.length,
+      textFromAnchor.length
+    );
+    const minOccurrences = normalizePositiveInt(repositionMinOccurrences);
+
+    repositionLoading = true;
+    repositionError = '';
+    repositionSummary = undefined;
+
+    try {
+      const order = await service.buildRepositionOrderForNewCards(textFromAnchor, {
+        maxTokens,
+        maxChars,
+        chunkSize: 2500,
+        scanLength: 2500,
+        orderMode: repositionOrderMode,
+        minOccurrences
+      });
+
+      if (order.orderedCardIds.length === 0) {
+        repositionError = 'No candidate cards were found in the selected range.';
+        return;
+      }
+
+      const result = await service.repositionNewCardsByOrder(order.orderedCardIds, {
+        startPosition: normalizePositiveInt(repositionStartPosition),
+        step: normalizePositiveInt(repositionStep),
+        shift: repositionShift
+      });
+
+      repositionSummary = {
+        requested: result.requested,
+        deduped: result.deduped,
+        eligibleNew: result.eligibleNew,
+        repositioned: result.repositioned,
+        skippedNotFound: result.skippedNotFound,
+        skippedNotNew: result.skippedNotNew,
+        processedTokens: order.processedTokens,
+        uniqueTokens: order.uniqueTokens,
+        processedChars: order.processedChars,
+        startOffset,
+        effectiveMaxChars: maxChars ?? textFromAnchor.length,
+        effectiveMaxTokens: maxTokens ?? null,
+        orderMode: repositionOrderMode,
+        minOccurrences
+      };
+    } catch (error) {
+      repositionError = error instanceof Error ? error.message : `${error}`;
+    } finally {
+      repositionLoading = false;
+    }
   }
 
   function onTokenPanelFilterChange(event: CustomEvent<{ filter: TokenPanelFilterId }>): void {
@@ -1144,11 +1566,41 @@
     }
   }
 
+  function onTokenPanelSortChange(event: CustomEvent<{ sort: TokenPanelSortId }>): void {
+    tokenPanelActiveSort = event.detail.sort;
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(tokenPanelSortStorageKey, tokenPanelActiveSort);
+    }
+  }
+
+  async function onTokenPanelRefreshStatuses(): Promise<void> {
+    const service = coloringService;
+    if (!service || !$ankiIntegrationEnabled$) {
+      return;
+    }
+
+    // Keep this action bulk-only: disable per-token hover refreshes while full refresh runs.
+    tokenPanelHoverRefreshSuppressedUntilMs = Date.now() + 15_000;
+
+    try {
+      await runWarmCacheRefreshFlow(service);
+    } finally {
+      tokenPanelHoverRefreshSuppressedUntilMs = Date.now() + 5_000;
+    }
+  }
+
   async function onTokenPanelTokenHover(event: CustomEvent<{ token: string }>): Promise<void> {
     const token = event.detail.token;
     const service = coloringService;
 
-    if (!service || !tokenPanelResult || tokenPanelLoading) {
+    if (
+      !service ||
+      !tokenPanelResult ||
+      tokenPanelLoading ||
+      warmCacheLoading ||
+      !!cacheRefreshPromise ||
+      Date.now() < tokenPanelHoverRefreshSuppressedUntilMs
+    ) {
       return;
     }
 
@@ -1222,6 +1674,9 @@
     return ['tokenize-bootstrap-v1', fullText.length, prefix, suffix].join('::');
   }
 
+  const lemmaCoverageSampleSize = 200;
+  const minimumLemmaCoverage = 0.9;
+
   async function ensureInitialTokenizeBootstrap(): Promise<void> {
     const service = coloringService;
     if (!service || !$ankiIntegrationEnabled$) {
@@ -1245,10 +1700,29 @@
     const tokenCountCacheKey = getTokenPanelTokenCountCacheKey(trimmedText);
     const cachedTokenCounts = await ankiCacheService.getDocumentTokenCounts(tokenCountCacheKey);
     if (cachedTokenCounts && cachedTokenCounts.entries.length > 0) {
-      initialTokenizeCompletedKeys.add(initialTokenizeKey);
-      initialTokenizeLoading = false;
-      initialTokenizeProgress = undefined;
-      return;
+      const sampleTokens = Array.from(
+        new Set(
+          cachedTokenCounts.entries
+            .map((entry) => entry.token.trim())
+            .filter(Boolean)
+            .slice(0, lemmaCoverageSampleSize)
+        )
+      );
+      const cachedLemmas =
+        sampleTokens.length > 0 ? await ankiCacheService.getLemmasBatch(sampleTokens) : new Map();
+      const lemmaCoverage =
+        sampleTokens.length === 0 ? 1 : cachedLemmas.size / Math.max(1, sampleTokens.length);
+
+      if (lemmaCoverage >= minimumLemmaCoverage) {
+        initialTokenizeCompletedKeys.add(initialTokenizeKey);
+        initialTokenizeLoading = false;
+        initialTokenizeProgress = undefined;
+        return;
+      }
+
+      console.log(
+        `⚠️ Lemma coverage is low (${Math.round(lemmaCoverage * 100)}%), rebuilding token index cache...`
+      );
     }
 
     if (initialTokenizeLoading) {
@@ -1286,6 +1760,9 @@
 
     try {
       await promise;
+      if (!abortController.signal.aborted) {
+        await service.recolorizeProcessedElements();
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return;
@@ -1326,6 +1803,7 @@
 
     try {
       await waitForRefreshPrerequisites();
+      await ensureTokenPanelWordDataPrimed(service);
 
       const analysisChunkSize = 2500;
       const fullText = extractDocumentText(htmlContent);
@@ -1606,18 +2084,304 @@
     totalTokens={tokenPanelResult?.totalTokens || 0}
     uniqueTokens={tokenPanelResult?.uniqueTokens || 0}
     error={tokenPanelError}
+    refreshing={warmCacheLoading}
     activeFilter={tokenPanelActiveFilter}
     activeOrthographyFilter={tokenPanelActiveOrthographyFilter}
+    activeSort={tokenPanelActiveSort}
     activeToken={tokenPanelActiveToken}
     tokenSentences={tokenPanelSentenceMatches}
     sentenceLoadingToken={tokenPanelSentenceLoadingToken}
     on:close={() => dispatch('tokenPanelClose')}
+    on:refreshStatuses={onTokenPanelRefreshStatuses}
+    on:repositionNewCards={openRepositionDialog}
     on:filterChange={onTokenPanelFilterChange}
     on:orthographyFilterChange={onTokenPanelOrthographyFilterChange}
+    on:sortChange={onTokenPanelSortChange}
+    on:jumpToCurrentLocation={onTokenPanelJumpToCurrentLocation}
     on:tokenSelect={onTokenPanelTokenSelect}
     on:tokenHover={onTokenPanelTokenHover}
     on:sentenceSelect={onTokenPanelSentenceSelect}
   />
+{/if}
+{#if repositionDialogOpen}
+  <div
+    class="fixed inset-0 z-30 bg-black/50"
+    style:writing-mode="'horizontal-tb'"
+    on:click={closeRepositionDialog}
+  />
+  <div
+    class="fixed left-1/2 top-1/2 z-[31] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-950 p-4 text-slate-100 shadow-2xl"
+    style:writing-mode="'horizontal-tb'"
+    on:click|stopPropagation
+  >
+    <div class="mb-3 flex items-center justify-between">
+      <h3 class="text-sm font-semibold">Reposition New Cards</h3>
+      <button
+        class="rounded border border-slate-600 px-2 py-1 text-xs text-slate-200 hover:border-slate-400"
+        on:click={closeRepositionDialog}
+        disabled={repositionLoading}
+      >
+        Close
+      </button>
+    </div>
+
+    <div class="space-y-4 text-sm">
+      <div>
+        <div class="mb-1 text-xs uppercase tracking-wide text-slate-400">Start From</div>
+        <div class="flex flex-wrap gap-3">
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-start"
+              value="bookmark"
+              bind:group={repositionStartMode}
+            />
+            <span>Current bookmark</span>
+          </label>
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-start"
+              value="start"
+              bind:group={repositionStartMode}
+            />
+            <span>Start of book</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-1 text-xs uppercase tracking-wide text-slate-400">Range</div>
+        <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-range"
+              value="to-end"
+              bind:group={repositionRangeMode}
+            />
+            <span>Until end of book</span>
+          </label>
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-range"
+              value="tokens"
+              bind:group={repositionRangeMode}
+            />
+            <span>First N tokens</span>
+          </label>
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-range"
+              value="chars"
+              bind:group={repositionRangeMode}
+            />
+            <span>First N chars</span>
+          </label>
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-range"
+              value="percent"
+              bind:group={repositionRangeMode}
+            />
+            <span>First % of full-book chars</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-1 text-xs uppercase tracking-wide text-slate-400">Ordering</div>
+        <div class="flex flex-wrap gap-3">
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-order"
+              value="book-order"
+              bind:group={repositionOrderMode}
+            />
+            <span>Book order</span>
+          </label>
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="reposition-order"
+              value="occurrences"
+              bind:group={repositionOrderMode}
+            />
+            <span>Occurrences</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <label
+          class="w-36 text-xs uppercase tracking-wide text-slate-400"
+          for="reposition-min-occurrences"
+        >
+          Min occurrences
+        </label>
+        <input
+          id="reposition-min-occurrences"
+          class="w-32 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm"
+          type="number"
+          min="1"
+          step="1"
+          bind:value={repositionMinOccurrences}
+        />
+      </div>
+
+      {#if repositionRangeMode === 'tokens'}
+        <div class="flex items-center gap-3">
+          <label
+            class="w-36 text-xs uppercase tracking-wide text-slate-400"
+            for="reposition-token-limit"
+          >
+            Token limit
+          </label>
+          <input
+            id="reposition-token-limit"
+            class="w-32 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm"
+            type="number"
+            min="1"
+            step="1"
+            bind:value={repositionTokenLimit}
+          />
+        </div>
+      {/if}
+
+      {#if repositionRangeMode === 'chars'}
+        <div class="flex items-center gap-3">
+          <label
+            class="w-36 text-xs uppercase tracking-wide text-slate-400"
+            for="reposition-char-limit"
+          >
+            Char limit
+          </label>
+          <input
+            id="reposition-char-limit"
+            class="w-32 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm"
+            type="number"
+            min="1"
+            step="1"
+            bind:value={repositionCharLimit}
+          />
+        </div>
+      {/if}
+
+      {#if repositionRangeMode === 'percent'}
+        <div class="flex items-center gap-3">
+          <label
+            class="w-36 text-xs uppercase tracking-wide text-slate-400"
+            for="reposition-char-percent"
+          >
+            Char percent
+          </label>
+          <input
+            id="reposition-char-percent"
+            class="w-32 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm"
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            bind:value={repositionCharPercent}
+          />
+          <span class="text-xs text-slate-400">%</span>
+        </div>
+      {/if}
+
+      <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div class="flex items-center gap-3">
+          <label
+            class="w-28 text-xs uppercase tracking-wide text-slate-400"
+            for="reposition-start-position"
+          >
+            Start position
+          </label>
+          <input
+            id="reposition-start-position"
+            class="w-28 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm"
+            type="number"
+            min="1"
+            step="1"
+            bind:value={repositionStartPosition}
+          />
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="w-28 text-xs uppercase tracking-wide text-slate-400" for="reposition-step">
+            Step
+          </label>
+          <input
+            id="reposition-step"
+            class="w-28 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm"
+            type="number"
+            min="1"
+            step="1"
+            bind:value={repositionStep}
+          />
+        </div>
+      </div>
+
+      <label class="inline-flex items-center gap-2 text-sm">
+        <input type="checkbox" bind:checked={repositionShift} />
+        <span>Shift existing cards to preserve untouched order</span>
+      </label>
+
+      {#if repositionError}
+        <div class="rounded border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+          {repositionError}
+        </div>
+      {/if}
+
+      {#if repositionSummary}
+        <div
+          class="rounded border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100"
+        >
+          <div>Requested: {repositionSummary.requested}</div>
+          <div>Deduped: {repositionSummary.deduped}</div>
+          <div>Eligible new: {repositionSummary.eligibleNew}</div>
+          <div>Repositioned: {repositionSummary.repositioned}</div>
+          <div>
+            Processed text: {repositionSummary.processedChars} chars, {repositionSummary.processedTokens}
+            tokens ({repositionSummary.uniqueTokens} unique)
+          </div>
+          <div>Start offset: {repositionSummary.startOffset} chars</div>
+          <div>Effective max chars: {repositionSummary.effectiveMaxChars}</div>
+          <div>
+            Order mode: {repositionSummary.orderMode === 'book-order'
+              ? 'Book order'
+              : 'Occurrences'}
+          </div>
+          <div>Min occurrences: {repositionSummary.minOccurrences}</div>
+          {#if repositionSummary.effectiveMaxTokens !== null}
+            <div>Effective max tokens: {repositionSummary.effectiveMaxTokens}</div>
+          {/if}
+          {#if repositionSummary.skippedNotFound.length > 0}
+            <div>Skipped not found: {repositionSummary.skippedNotFound.length}</div>
+          {/if}
+          {#if repositionSummary.skippedNotNew.length > 0}
+            <div>Skipped not new: {repositionSummary.skippedNotNew.length}</div>
+          {/if}
+        </div>
+      {/if}
+
+      <div class="flex justify-end">
+        <button
+          class="rounded border border-cyan-500/60 bg-cyan-500/15 px-3 py-1 text-sm text-cyan-100 hover:border-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+          on:click={runRepositionNewCards}
+          disabled={repositionLoading}
+        >
+          {#if repositionLoading}
+            Repositioning...
+          {:else}
+            Reposition New Cards
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
 {/if}
 {$blurListener$ ?? ''}
 {$reactiveElements$ ?? ''}

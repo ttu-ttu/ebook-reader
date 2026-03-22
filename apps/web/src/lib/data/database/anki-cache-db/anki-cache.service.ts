@@ -6,7 +6,7 @@
 
 import type { IDBPDatabase } from 'idb';
 import type { AnkiCacheDb } from './factory';
-import type { TokenColor, WordStatus } from '$lib/data/anki/token-color';
+import type { WordStatus } from '$lib/data/anki/token-color';
 
 export type CachedDocumentTokenStatus = 'uncollected' | 'new' | 'young' | 'mature' | 'unknown';
 
@@ -16,6 +16,11 @@ export interface CachedWordData {
   due?: boolean;
   cardIds: number[];
   expiresAtMs?: number;
+}
+
+export interface CachedLemmas {
+  lemmas: string[];
+  lemmaReadings: string[];
 }
 
 /** Cache TTL: 6 hours in milliseconds */
@@ -33,17 +38,13 @@ export class AnkiCacheService {
   /**
    * Get cached word data (status + cardIds) from IndexedDB
    * @param word - Word to lookup
-   * @returns Word data if found and not expired, undefined otherwise
+   * @returns Word data if found, undefined otherwise
    */
   async getWordData(word: string): Promise<CachedWordData | undefined> {
     const database = await this.db;
     const entry = await database.get('wordData', word);
 
     if (!entry) return undefined;
-    if (this._isWordDataExpired(entry)) {
-      await database.delete('wordData', word);
-      return undefined;
-    }
 
     const status = entry.status === 'low' ? 'due' : entry.status;
 
@@ -72,7 +73,7 @@ export class AnkiCacheService {
     }
 
     const database = await this.db;
-    const tx = database.transaction('wordData', 'readwrite');
+    const tx = database.transaction('wordData', 'readonly');
     const store = tx.objectStore('wordData');
     const entries = await Promise.all(
       uniqueWords.map(async (word) => ({
@@ -83,11 +84,6 @@ export class AnkiCacheService {
 
     for (const { word, entry } of entries) {
       if (!entry) {
-        continue;
-      }
-
-      if (this._isWordDataExpired(entry)) {
-        await store.delete(word);
         continue;
       }
 
@@ -106,6 +102,16 @@ export class AnkiCacheService {
 
     await tx.done;
     return result;
+  }
+
+  async deleteWordData(word: string): Promise<void> {
+    const normalizedWord = word.trim();
+    if (!normalizedWord) {
+      return;
+    }
+
+    const database = await this.db;
+    await database.delete('wordData', normalizedWord);
   }
 
   /**
@@ -170,22 +176,6 @@ export class AnkiCacheService {
   }
 
   /**
-   * Store token color in IndexedDB cache
-   * @param token - Token to cache
-   * @param color - Token color
-   * @param status - Optional card status
-   */
-  async setTokenColor(token: string, color: TokenColor, status?: WordStatus): Promise<void> {
-    const database = await this.db;
-    await database.put('tokenColor', {
-      token,
-      color,
-      status,
-      timestamp: Date.now()
-    });
-  }
-
-  /**
    * Get cached tokenization result from IndexedDB
    * @param text - Text to lookup
    * @returns Array of tokens if found and not expired, undefined otherwise
@@ -222,7 +212,7 @@ export class AnkiCacheService {
    * @param token - Token to lookup
    * @returns Array of lemmas if found and not expired, undefined otherwise
    */
-  async getLemmas(token: string): Promise<string[] | undefined> {
+  async getLemmas(token: string): Promise<CachedLemmas | undefined> {
     const database = await this.db;
     const entry = await database.get('lemmatize', token);
 
@@ -235,12 +225,15 @@ export class AnkiCacheService {
     const lemmas = Array.isArray(entry.lemmas)
       ? Array.from(new Set(entry.lemmas.map((lemma) => lemma.trim()).filter(Boolean)))
       : [];
-    if (lemmas.length === 0) {
+    const lemmaReadings = Array.isArray(entry.lemmaReadings)
+      ? Array.from(new Set(entry.lemmaReadings.map((lemma) => lemma.trim()).filter(Boolean)))
+      : [];
+    if (lemmas.length === 0 && lemmaReadings.length === 0) {
       await database.delete('lemmatize', token);
       return undefined;
     }
 
-    return lemmas;
+    return { lemmas, lemmaReadings };
   }
 
   /**
@@ -248,8 +241,8 @@ export class AnkiCacheService {
    * @param tokens - Tokens to lookup
    * @returns Map of token -> lemmas
    */
-  async getLemmasBatch(tokens: string[]): Promise<Map<string, string[]>> {
-    const result = new Map<string, string[]>();
+  async getLemmasBatch(tokens: string[]): Promise<Map<string, CachedLemmas>> {
+    const result = new Map<string, CachedLemmas>();
     const uniqueTokens = Array.from(new Set(tokens.map((token) => token.trim()).filter(Boolean)));
     if (uniqueTokens.length === 0) {
       return result;
@@ -278,12 +271,15 @@ export class AnkiCacheService {
       const lemmas = Array.isArray(entry.lemmas)
         ? Array.from(new Set(entry.lemmas.map((lemma) => lemma.trim()).filter(Boolean)))
         : [];
-      if (lemmas.length === 0) {
+      const lemmaReadings = Array.isArray(entry.lemmaReadings)
+        ? Array.from(new Set(entry.lemmaReadings.map((lemma) => lemma.trim()).filter(Boolean)))
+        : [];
+      if (lemmas.length === 0 && lemmaReadings.length === 0) {
         await store.delete(token);
         continue;
       }
 
-      result.set(token, lemmas);
+      result.set(token, { lemmas, lemmaReadings });
     }
 
     await tx.done;
@@ -293,9 +289,9 @@ export class AnkiCacheService {
   /**
    * Store lemmatization result in IndexedDB cache
    * @param token - Token
-   * @param lemmas - Array of lemmatized forms
+   * @param lemmas - Lemma and lemma-reading arrays
    */
-  async setLemmas(token: string, lemmas: string[]): Promise<void> {
+  async setLemmas(token: string, lemmas: CachedLemmas): Promise<void> {
     const database = await this.db;
     const normalizedToken = token.trim();
     if (!normalizedToken) {
@@ -303,9 +299,12 @@ export class AnkiCacheService {
     }
 
     const normalizedLemmas = Array.from(
-      new Set(lemmas.map((lemma) => lemma.trim()).filter(Boolean))
+      new Set((lemmas.lemmas || []).map((lemma) => lemma.trim()).filter(Boolean))
     );
-    if (normalizedLemmas.length === 0) {
+    const normalizedLemmaReadings = Array.from(
+      new Set((lemmas.lemmaReadings || []).map((lemma) => lemma.trim()).filter(Boolean))
+    );
+    if (normalizedLemmas.length === 0 && normalizedLemmaReadings.length === 0) {
       await database.delete('lemmatize', normalizedToken);
       return;
     }
@@ -313,6 +312,7 @@ export class AnkiCacheService {
     await database.put('lemmatize', {
       token: normalizedToken,
       lemmas: normalizedLemmas,
+      lemmaReadings: normalizedLemmaReadings,
       timestamp: Date.now()
     });
   }
@@ -321,7 +321,9 @@ export class AnkiCacheService {
    * Store multiple lemmatization results in a single IndexedDB transaction
    * @param entries - Token -> lemmas entries
    */
-  async setLemmasBatch(entries: Array<{ token: string; lemmas: string[] }>): Promise<void> {
+  async setLemmasBatch(
+    entries: Array<{ token: string; lemmas: string[]; lemmaReadings?: string[] }>
+  ): Promise<void> {
     if (entries.length === 0) {
       return;
     }
@@ -332,7 +334,7 @@ export class AnkiCacheService {
     const timestamp = Date.now();
 
     await Promise.all(
-      entries.map(async ({ token, lemmas }) => {
+      entries.map(async ({ token, lemmas, lemmaReadings }) => {
         const normalizedToken = token.trim();
         if (!normalizedToken) {
           return;
@@ -341,33 +343,23 @@ export class AnkiCacheService {
         const normalizedLemmas = Array.from(
           new Set(lemmas.map((lemma) => lemma.trim()).filter(Boolean))
         );
-        if (normalizedLemmas.length === 0) {
+        const normalizedLemmaReadings = Array.from(
+          new Set((lemmaReadings || []).map((lemma) => lemma.trim()).filter(Boolean))
+        );
+        if (normalizedLemmas.length === 0 && normalizedLemmaReadings.length === 0) {
           return;
         }
 
         await store.put({
           token: normalizedToken,
           lemmas: normalizedLemmas,
+          lemmaReadings: normalizedLemmaReadings,
           timestamp
         });
       })
     );
 
     await tx.done;
-  }
-
-  /**
-   * Store card IDs for a token
-   * @param token - Token
-   * @param cardIds - Array of card IDs
-   */
-  async setTokenCardIds(token: string, cardIds: number[]): Promise<void> {
-    const database = await this.db;
-    await database.put('tokenCardIds', {
-      token,
-      cardIds,
-      timestamp: Date.now()
-    });
   }
 
   /**
@@ -451,22 +443,12 @@ export class AnkiCacheService {
   async clearAllCaches(): Promise<void> {
     const database = await this.db;
     const tx = database.transaction(
-      [
-        'wordData',
-        'tokenColor',
-        'tokenCardIds',
-        'tokenize',
-        'lemmatize',
-        'termEntries',
-        'documentTokenCounts'
-      ],
+      ['wordData', 'tokenize', 'lemmatize', 'termEntries', 'documentTokenCounts'],
       'readwrite'
     );
 
     await Promise.all([
       tx.objectStore('wordData').clear(),
-      tx.objectStore('tokenColor').clear(),
-      tx.objectStore('tokenCardIds').clear(),
       tx.objectStore('tokenize').clear(),
       tx.objectStore('lemmatize').clear(),
       tx.objectStore('termEntries').clear(),
@@ -482,8 +464,6 @@ export class AnkiCacheService {
    */
   async getCacheStats(): Promise<{
     wordDataCount: number;
-    tokenColorCount: number;
-    tokenCardIdsCount: number;
     tokenizeCount: number;
     lemmatizeCount: number;
     termEntriesCount: number;
@@ -492,16 +472,12 @@ export class AnkiCacheService {
     const database = await this.db;
     const [
       wordDataCount,
-      tokenColorCount,
-      tokenCardIdsCount,
       tokenizeCount,
       lemmatizeCount,
       termEntriesCount,
       documentTokenCountsCount
     ] = await Promise.all([
       database.count('wordData'),
-      database.count('tokenColor'),
-      database.count('tokenCardIds'),
       database.count('tokenize'),
       database.count('lemmatize'),
       database.count('termEntries'),
@@ -510,8 +486,6 @@ export class AnkiCacheService {
 
     return {
       wordDataCount,
-      tokenColorCount,
-      tokenCardIdsCount,
       tokenizeCount,
       lemmatizeCount,
       termEntriesCount,

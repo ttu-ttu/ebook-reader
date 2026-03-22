@@ -1,6 +1,6 @@
 /**
  * @license BSD-3-Clause
- * Copyright (c) 2025, ッツ Reader Authors
+ * Copyright (c) 2026, ッツ Reader Authors
  * All rights reserved.
  */
 
@@ -60,6 +60,38 @@ export function getRangeForUserSelection(window: Window, preSelection: Range | u
   }
 
   return createRange(nodes[0]);
+}
+
+export function getRangeForUserSelectionInContainer(
+  window: Window,
+  preSelection: Range | undefined,
+  container: Element | undefined
+) {
+  const userSelection = getRangeForUserSelection(window, preSelection);
+  if (!userSelection || !container) {
+    return userSelection;
+  }
+
+  return isRangeInsideContainer(userSelection, container) ? userSelection : undefined;
+}
+
+export function isRangeInsideContainer(range: Range, container: Element): boolean {
+  return (
+    isNodeInsideContainer(range.startContainer, container) &&
+    isNodeInsideContainer(range.endContainer, container)
+  );
+}
+
+function isNodeInsideContainer(node: Node, container: Element): boolean {
+  if (node === container) {
+    return true;
+  }
+
+  if (node instanceof Element) {
+    return container.contains(node);
+  }
+
+  return !!node.parentElement && container.contains(node.parentElement);
 }
 
 export function getNodeBoundingRect(document: Document, node: Node) {

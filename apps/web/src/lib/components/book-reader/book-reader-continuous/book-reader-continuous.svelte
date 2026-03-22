@@ -148,6 +148,16 @@
 
   let prevIntendedCharCount = 0;
 
+  const bookmarkManagerReadyRetryDelayMs = 25;
+
+  const bookmarkManagerReadyMaxAttempts = 40;
+
+  const bookmarkRestoreLayoutQuietPeriodMs = 180;
+
+  const bookmarkRestoreLayoutMaxWaitMs = 2500;
+
+  const bookmarkRestoreLayoutPollMs = 50;
+
   let isResizeScroll = false;
 
   let bookmarkAdjustment = window.matchMedia('(min-width: 640px)').matches ? '0.5rem' : '0.25rem';
@@ -421,6 +431,73 @@
     customReadingPointScrollOffset = customReadingPointTop - firstDimensionMarginValue;
   }
 
+  function restoreBookmarkWhenManagerReady(data: BooksDbBookmarkData, attempt = 0) {
+    if (!bookmarkManager) {
+      if (attempt >= bookmarkManagerReadyMaxAttempts) {
+        logger.warn('Bookmark restore skipped: bookmark manager was not ready in time');
+        return;
+      }
+
+      window.setTimeout(() => {
+        restoreBookmarkWhenManagerReady(data, attempt + 1);
+      }, bookmarkManagerReadyRetryDelayMs);
+      return;
+    }
+
+    bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
+  }
+
+  function getContentLayoutSnapshot() {
+    if (!contentEl) {
+      return '';
+    }
+
+    return [
+      contentEl.scrollWidth,
+      contentEl.scrollHeight,
+      contentEl.clientWidth,
+      contentEl.clientHeight,
+      window.innerWidth,
+      window.innerHeight
+    ].join(':');
+  }
+
+  async function waitForBookmarkRestoreLayoutQuietPeriod() {
+    if (!browser || !contentEl) {
+      return;
+    }
+
+    const startAt = performance.now();
+    let lastSnapshot = getContentLayoutSnapshot();
+    let lastChangeAt = startAt;
+
+    while (true) {
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, bookmarkRestoreLayoutPollMs);
+      });
+
+      if (!contentEl) {
+        return;
+      }
+
+      const now = performance.now();
+      const nextSnapshot = getContentLayoutSnapshot();
+      if (nextSnapshot !== lastSnapshot) {
+        lastSnapshot = nextSnapshot;
+        lastChangeAt = now;
+      }
+
+      if (now - lastChangeAt >= bookmarkRestoreLayoutQuietPeriodMs) {
+        return;
+      }
+
+      if (now - startAt >= bookmarkRestoreLayoutMaxWaitMs) {
+        logger.warn('Bookmark restore layout quiet period timed out; continuing');
+        return;
+      }
+    }
+  }
+
   function onContentDisplayChange(_calculator: CharacterStatsCalculator) {
     _calculator.updateParagraphPos();
     updateCustomReadingPointPosition();
@@ -430,13 +507,14 @@
       scrollWhenReady = false;
 
       bookmarkData
-        .then((data) => {
-          if (!data || !bookmarkManager) {
+        .then(async (data) => {
+          if (!data) {
             return;
           }
 
+          await waitForBookmarkRestoreLayoutQuietPeriod();
           prevIntendedCharCount = data.exploredCharCount || 0;
-          bookmarkManager.scrollToBookmark(data, customReadingPointScrollOffset);
+          restoreBookmarkWhenManagerReady(data);
         })
         .finally(() => {
           if (autoBookmark) {

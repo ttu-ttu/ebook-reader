@@ -78,6 +78,25 @@ export interface GetAllCardsProgress {
   detail: string;
 }
 
+export interface RepositionNewCardsParams {
+  orderedCardIds: number[];
+  startPosition: number;
+  step: number;
+  shift: boolean;
+}
+
+export interface RepositionNewCardsResult {
+  requested: number;
+  deduped: number;
+  eligibleNew: number;
+  repositioned: number;
+  skippedNotFound: number[];
+  skippedNotNew: number[];
+  appliedStartPosition: number;
+  appliedStep: number;
+  appliedShift: boolean;
+}
+
 export class Anki {
   private readonly ankiConnectUrl: string;
   private readonly wordFields: string[];
@@ -327,6 +346,66 @@ export class Anki {
   async guiBrowse(query: string, ankiConnectUrl?: string): Promise<number[]> {
     const response = await this._executeAction('guiBrowse', { query }, ankiConnectUrl);
     return response.result || [];
+  }
+
+  async repositionNewCards(
+    params: RepositionNewCardsParams,
+    ankiConnectUrl?: string
+  ): Promise<RepositionNewCardsResult> {
+    if (!Array.isArray(params.orderedCardIds) || params.orderedCardIds.length === 0) {
+      throw new Error('repositionNewCards requires orderedCardIds.');
+    }
+    if (!Number.isFinite(params.startPosition) || params.startPosition < 1) {
+      throw new Error('repositionNewCards requires startPosition >= 1.');
+    }
+    if (!Number.isFinite(params.step) || params.step < 1) {
+      throw new Error('repositionNewCards requires step >= 1.');
+    }
+
+    const normalizedCardIds = params.orderedCardIds
+      .map((cardId) => Number(cardId))
+      .filter((cardId) => Number.isFinite(cardId));
+
+    if (normalizedCardIds.length === 0) {
+      throw new Error('repositionNewCards requires at least one numeric card ID.');
+    }
+
+    const response = await this._executeAction(
+      'repositionNewCards',
+      {
+        orderedCardIds: normalizedCardIds,
+        startPosition: Math.trunc(params.startPosition),
+        step: Math.trunc(params.step),
+        shift: !!params.shift
+      },
+      ankiConnectUrl
+    );
+
+    const result = response?.result;
+    if (!result || typeof result !== 'object') {
+      throw new Error('Unexpected repositionNewCards response payload.');
+    }
+
+    const values = result as Record<string, unknown>;
+    return {
+      requested: Number(values.requested) || 0,
+      deduped: Number(values.deduped) || 0,
+      eligibleNew: Number(values.eligibleNew) || 0,
+      repositioned: Number(values.repositioned) || 0,
+      skippedNotFound: Array.isArray(values.skippedNotFound)
+        ? values.skippedNotFound
+            .map((cardId) => Number(cardId))
+            .filter((cardId) => Number.isFinite(cardId))
+        : [],
+      skippedNotNew: Array.isArray(values.skippedNotNew)
+        ? values.skippedNotNew
+            .map((cardId) => Number(cardId))
+            .filter((cardId) => Number.isFinite(cardId))
+        : [],
+      appliedStartPosition: Number(values.appliedStartPosition) || Math.trunc(params.startPosition),
+      appliedStep: Number(values.appliedStep) || Math.trunc(params.step),
+      appliedShift: Boolean(values.appliedShift)
+    };
   }
 
   async isCardNew(cardId: number, ankiConnectUrl?: string): Promise<boolean> {
@@ -686,9 +765,12 @@ export class Anki {
   ): CardInfo['fields'] {
     const result: CardInfo['fields'] = {};
 
-    const nestedFields = values.fields;
-    if (nestedFields && typeof nestedFields === 'object') {
-      for (const [name, raw] of Object.entries(nestedFields as Record<string, unknown>)) {
+    const mergeFieldContainer = (container: unknown): void => {
+      if (!container || typeof container !== 'object') {
+        return;
+      }
+
+      for (const [name, raw] of Object.entries(container as Record<string, unknown>)) {
         if (raw && typeof raw === 'object' && 'value' in (raw as Record<string, unknown>)) {
           const value = (raw as Record<string, unknown>).value;
           result[name] = { value: typeof value === 'string' ? value : '' };
@@ -696,7 +778,12 @@ export class Anki {
           result[name] = { value: raw };
         }
       }
-    }
+    };
+
+    mergeFieldContainer(values.noteFields);
+
+    const nestedFields = values.fields;
+    mergeFieldContainer(nestedFields);
 
     for (const fieldName of this.wordFields) {
       const directValue = values[fieldName];
