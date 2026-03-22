@@ -1,0 +1,92 @@
+@startuml
+title Anki Cache DB - Table Relations (v6)
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam defaultFontName Monospace
+
+allowmixing
+
+legend left
+  == Legend ==
+  Solid arrow: primary read/write flow
+  Dashed arrow: fallback/enrichment flow
+  Gray entity: legacy store removed in DB v6
+endlegend
+
+package "IndexedDB: anki-cache (v6)" {
+  entity "wordData" as wordData {
+    * word : string <<PK>>
+    --
+    status
+    analysisStatus?
+    due?
+    cardIds[]
+    timestamp
+    expiresAtMs?
+  }
+
+  entity "tokenize" as tokenize {
+    * text : string <<PK>>
+    --
+    tokens[]
+    timestamp
+  }
+
+  entity "lemmatize" as lemmatize {
+    * token : string <<PK>>
+    --
+    lemmas[]
+    timestamp
+  }
+
+  entity "termEntries" as termEntries {
+    * token : string <<PK>>
+    --
+    entries
+    timestamp
+  }
+
+  entity "documentTokenCounts" as documentTokenCounts {
+    * key : string <<PK>>
+    --
+    entries[{token,count}]
+    totalTokens
+    timestamp
+  }
+}
+
+package "Application Flows" {
+  rectangle "Initial/Viewport Coloring\n(_getOrFetchTokens + _resolveTokenWordDataBatchShared)" as flowColor
+  rectangle "Token Panel Analysis\n(analyzeDocumentText)" as flowPanel
+  rectangle "Warm Cache\n(warmCache)" as flowWarm
+  rectangle "Yomitan Tokenize\n(yomitan.tokenize)" as flowTokenize
+  rectangle "Yomitan Lemmatize\n(yomitan.lemmatize)" as flowLemmatize
+}
+
+flowColor --> tokenize : read/write tokens cache
+flowColor --> lemmatize : read lemmas by token
+flowColor --> wordData : read word status/cardIds
+
+flowPanel --> documentTokenCounts : read/write token frequencies
+flowPanel --> lemmatize : read lemmas by token
+flowPanel --> wordData : read analysis source data
+
+flowWarm --> wordData : bulk write word entries
+
+flowTokenize --> lemmatize : write lemma map from mecab tokenize response
+flowLemmatize --> lemmatize : write/update lemma cache
+flowLemmatize ..> termEntries : read/write dictionary entries cache
+
+entity "tokenColor\n(removed v6)" as legacyTokenColor #eeeeee
+entity "tokenCardIds\n(removed v6)" as legacyTokenCardIds #eeeeee
+
+legacyTokenColor -[hidden]-> legacyTokenCardIds
+
+note right of legacyTokenColor
+  Legacy stores were deleted in DB schema v6
+  and are no longer used by runtime paths.
+end note
+
+@enduml

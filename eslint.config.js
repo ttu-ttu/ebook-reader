@@ -23,6 +23,7 @@ module.exports = (async () => {
         '**/.prettierrc.cjs',
         '**/material-elevation.cjs',
         '**/vite.config.js',
+        '**/vitest.config.js',
         '**/eslint.config.js',
         '**/tailwind.config.cjs'
       ]
