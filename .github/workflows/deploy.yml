@@ -5,6 +5,16 @@ on:
       - main
     paths:
       - apps/web/**
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     name: Build and deploy
@@ -13,6 +23,9 @@ jobs:
       startsWith(github.event.head_commit.message, 'fix') ||
       startsWith(github.event.head_commit.message, 'perf')
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -40,15 +53,15 @@ jobs:
         run: pnpm build
         working-directory: apps/web
         env:
+          NODE_ENV: production
           VITE_GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
           VITE_ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
 
-      - name: Deploy
-        uses: cloudflare/pages-action@v1.5.0
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
-          directory: build
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          workingDirectory: apps/web
+          path: apps/web/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
