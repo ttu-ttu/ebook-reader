@@ -53,7 +53,7 @@ jobs:
         run: pnpm build
         working-directory: apps/web
         env:
-          NODE_ENV: production
+          VITE_PAGE_PATH: /ebook-reader
           VITE_GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
           VITE_ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
 
