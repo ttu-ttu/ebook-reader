@@ -7,7 +7,7 @@
 
 // Dependencies
 // =============================================================================
-import balanced from 'balanced-match';
+import { balanced } from 'balanced-match';
 import type { CssTree } from './types';
 
 // Functions
