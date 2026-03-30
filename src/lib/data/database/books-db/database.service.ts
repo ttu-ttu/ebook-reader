@@ -238,7 +238,6 @@ export class DatabaseService {
         (oldData.lastBookOpen || 0) >= (data.lastBookOpen || 0)
       ) {
         bookData = oldData;
-        dataId = oldData.id;
       } else {
         bookData = {
           ...data,
@@ -251,7 +250,7 @@ export class DatabaseService {
               }),
           ...(removeStorageContext ? { storageSource: undefined } : {})
         };
-        dataId = await store.put(bookData);
+        await store.put(bookData);
       }
     } else {
       // Until https://github.com/jakearchibald/idb/issues/150 resolves

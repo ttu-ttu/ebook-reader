@@ -62,7 +62,7 @@ export function getReadingGoalWindow(
   readingGoal: ReadingGoal
 ) {
   let readingGoalStart = '';
-  let readingGoalEnd = '';
+  let readingGoalEnd;
 
   if (readingGoal.goalFrequency === ReadingGoalFrequency.DAILY) {
     readingGoalStart = todayKey;

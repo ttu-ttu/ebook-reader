@@ -107,7 +107,7 @@ export default function generateEpubHtml(
   const result = document.createElement('div');
 
   let mainChapters: Section[] = [];
-  let firstChapterMatchIndex = -1;
+  let firstChapterMatchIndex;
 
   if (applyImportFixes && restrictImportFixToAnchor) {
     selfClosingContentTagsToFix.push('a');

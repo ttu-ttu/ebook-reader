@@ -262,7 +262,6 @@ export class StorageOAuthManager {
     } catch (error: any) {
       errorMessage = error.message;
     } finally {
-      secret = '';
       this.clearAuthData();
     }
 
