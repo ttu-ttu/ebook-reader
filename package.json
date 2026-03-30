@@ -3,9 +3,12 @@
   "version": "2.0.0",
   "license": "BSD-3-Clause",
   "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "cd apps/web && pnpm dev",
-    "build": "cd apps/web && pnpm build",
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
     "prepare": "husky",
     "check": "eslint --fix-dry-run .",
     "check:pretty": "prettier --debug-check .",
@@ -31,7 +34,7 @@
     "prettier": "3.6.2",
     "prettier-plugin-svelte": "3.5.1",
     "prettier-plugin-tailwindcss": "0.7.2",
-    "svelte": "5.0.5",
+    "svelte": "4.2.20",
     "svelte-eslint-parser": "1.6.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.25.0"
@@ -42,11 +45,5 @@
       "prettier --write"
     ],
     "*.{json,md,html,scss,yml,yaml}": "prettier --write"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "svelte-preprocess",
-      "unrs-resolver"
-    ]
   }
 }

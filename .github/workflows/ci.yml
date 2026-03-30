@@ -8,27 +8,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          version: 10.33.0
-          run_install: false
-
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24.14.1
-          cache: pnpm
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Postinstall steps
-        run: pnpm svelte-kit sync
+        run: npx svelte-kit sync
         working-directory: apps/web
 
       - name: Lint
-        run: pnpm eslint .
+        run: npx eslint .
 
       - name: Test build
-        run: pnpm build
+        run: npm run build
