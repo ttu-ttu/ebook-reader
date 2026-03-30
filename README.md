@@ -11,9 +11,8 @@ Currently hosted on [kamperemu.github.io/ebook-reader](https://kamperemu.github.
 
 ```sh
 npm ci
-cd apps/web
 npx svelte-kit sync
 npm run build
 ```
 
-3. Have your server (such as [http-server](https://www.npmjs.com/package/http-server)) point towards `apps/web/build`
+3. Have your server (such as [http-server](https://www.npmjs.com/package/http-server)) point towards `build`

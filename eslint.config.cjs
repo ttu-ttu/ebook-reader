@@ -23,7 +23,7 @@ module.exports = (async () => {
         '**/.prettierrc.cjs',
         '**/material-elevation.cjs',
         '**/vite.config.js',
-        '**/eslint.config.js',
+        '**/eslint.config.cjs',
         '**/tailwind.config.cjs'
       ]
     },
@@ -35,7 +35,7 @@ module.exports = (async () => {
           extraFileExtensions: ['.svelte'],
           project: './tsconfig.eslint.json',
           sourceType: 'module',
-          tsconfigRootDir: './apps/web/'
+          tsconfigRootDir: './'
         }
       },
       name: 'root',

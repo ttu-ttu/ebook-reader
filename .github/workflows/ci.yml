@@ -19,7 +19,6 @@ jobs:
 
       - name: Postinstall steps
         run: npx svelte-kit sync
-        working-directory: apps/web
 
       - name: Lint
         run: npx eslint .

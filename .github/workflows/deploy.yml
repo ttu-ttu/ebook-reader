@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - apps/web/**
 
 permissions:
   contents: read
@@ -41,11 +39,9 @@ jobs:
 
       - name: Postinstall steps
         run: npx svelte-kit sync
-        working-directory: apps/web
 
       - name: Build
         run: npm run build
-        working-directory: apps/web
         env:
           VITE_PAGE_PATH: /ebook-reader
           VITE_GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
@@ -54,7 +50,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/web/build
+          path: build
 
       - name: Deploy to GitHub Pages
         id: deployment
