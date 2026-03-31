@@ -6,7 +6,6 @@ import { pagePath } from '$lib/data/env';
 import { toSearchParams } from '$lib/functions/to-search-params';
 import { userFontsCacheName } from '$lib/data/fonts';
 
-// eslint-disable-next-line no-restricted-globals
 const worker = self as unknown as ServiceWorkerGlobalScope;
 const BUILD_CACHE_NAME = `build:${version}`;
 

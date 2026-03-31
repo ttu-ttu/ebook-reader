@@ -1,4 +1,3 @@
-/* eslint-disable global-require */
 const plugin = require('tailwindcss/plugin');
 
 const config = {

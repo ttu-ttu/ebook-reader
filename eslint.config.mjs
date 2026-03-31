@@ -11,18 +11,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   eslintPluginPrettierRecommended,
   {
-    ignores: [
-      '**/build/*',
-      '**/.svelte-kit/*',
-      '**/service-worker.ts',
-      '**/postcss.config.cjs',
-      '**/.prettierrc.cjs',
-      '**/material-elevation.cjs',
-      '**/vite.config.js',
-      '**/tailwind.config.cjs',
-      '**/eslint.config.mjs',
-      '**/*.d.ts'
-    ]
+    ignores: ['**/build/*', '**/.svelte-kit/*', '**/*.d.ts', '**/service-worker.ts']
   },
   {
     languageOptions: {
@@ -30,7 +19,9 @@ export default tseslint.config(
         parser: '@typescript-eslint/parser',
         ecmaVersion: 2020,
         extraFileExtensions: ['.svelte'],
-        project: './tsconfig.eslint.json',
+        projectService: {
+          allowDefaultProject: ['*.js', '*.cjs', '*.mjs', '.prettierrc.cjs', 'tailwindcss/*.cjs']
+        },
         sourceType: 'module',
         tsconfigRootDir: import.meta.dirname
       }
@@ -76,6 +67,15 @@ export default tseslint.config(
     }
   },
   {
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs'
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
+  {
     ...eslintPluginSvelte.configs['flat/recommended'],
     files: ['*.svelte'],
     languageOptions: {
@@ -84,12 +84,6 @@ export default tseslint.config(
     rules: {
       'except-parens': 'off',
       quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }]
-    }
-  },
-  {
-    files: ['service-worker.ts'],
-    rules: {
-      'headers/header-format': 'off'
     }
   }
 );
