@@ -48,6 +48,7 @@
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
     fontSize$,
+    fontWeight$,
     furiganaStyle$,
     hideFurigana$,
     hideSpoilerImage$,
@@ -1705,6 +1706,7 @@
     hintFuriganaShadowColor={$themeOption$?.hintFuriganaShadowColor}
     fontFamilyGroupOne={$fontFamilyGroupOne$}
     fontFamilyGroupTwo={$fontFamilyGroupTwo$}
+    fontWeight={$fontWeight$}
     fontSize={$fontSize$}
     lineHeight={$lineHeight$}
     textIndentation={$textIndentation$}
