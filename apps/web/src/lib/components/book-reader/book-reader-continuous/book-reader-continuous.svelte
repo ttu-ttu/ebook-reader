@@ -17,6 +17,7 @@
     skipKeyDownListener$,
     userFonts$
   } from '$lib/data/store';
+  import type { TextMarginMode } from '$lib/data/text-margin-mode';
   import { prependValue } from '$lib/functions/file-loaders/epub/generate-epub-html';
   import { getReferencePoints } from '$lib/functions/range-util';
   import { getExternalTargetElement } from '$lib/functions/utils';
@@ -83,6 +84,8 @@
   export let lineHeight: number;
 
   export let textIndentation: number;
+
+  export let textMarginMode: TextMarginMode;
 
   export let textMarginValue: number;
 
@@ -689,6 +692,7 @@
   class:book-content--furigana-style-full={furiganaStyle === FuriganaStyle.Full}
   class:ttu-apply-important={prioritizeReaderStyles}
   class:ttu-apply-justification={enableTextJustification}
+  class:ttu-margin-manual={textMarginMode === 'manual'}
   class:ttu-text-wrap-pretty={enableTextWrapPretty}
   class="book-content m-auto"
 >
