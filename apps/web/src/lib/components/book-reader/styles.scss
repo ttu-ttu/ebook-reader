@@ -44,6 +44,10 @@
       text-indent: var(--book-content-text-intendation, 0rem);
     }
 
+    &.ttu-apply-font-weight {
+      font-weight: var(--font-weight, 0rem);
+    }
+
     &.book-content--writing-vertical-rl.ttu-margin-manual {
       :global(p) {
         margin-right: var(--book-content-text-margin, 0rem);
@@ -80,6 +84,10 @@
   &.ttu-apply-important {
     :global(p) {
       text-indent: var(--book-content-text-intendation, 0rem) !important;
+    }
+
+    &.ttu-apply-font-weight {
+      font-weight: var(--font-weight, 0rem) !important;
     }
 
     &.book-content--writing-vertical-rl.ttu-margin-manual {
