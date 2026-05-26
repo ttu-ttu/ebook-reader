@@ -6,6 +6,10 @@ An online e-book reader that supports dictionary extensions like Yomitan, which 
 
 **Note**: The reader was created for japanese (language learners) - while books in other languages may work to a specific degree other functionalites (e. g. character counter etc.) may have unsupported / unexpected results
 
+# Current Development Status
+
+Please not that ッツ Ebook Reader is currently not actively worked on / Maintenance only. Feel free to report further bugs / feature requests and / or open pull requests but don't expect (timely) responses on them
+
 # Features
 
 - [x] Supports HTMLZ, Plain Text and EPUB files
