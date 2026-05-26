@@ -44,14 +44,14 @@
       text-indent: var(--book-content-text-intendation, 0rem);
     }
 
-    &.book-content--writing-vertical-rl {
+    &.book-content--writing-vertical-rl.ttu-margin-manual {
       :global(p) {
         margin-right: var(--book-content-text-margin, 0rem);
         margin-left: var(--book-content-text-margin, 0rem);
       }
     }
 
-    &.book-content--writing-horizontal-rl {
+    &.book-content--writing-horizontal-rl.ttu-margin-manual {
       :global(p) {
         margin-top: var(--book-content-text-margin, 0rem);
         margin-bottom: var(--book-content-text-margin, 0rem);
@@ -82,14 +82,14 @@
       text-indent: var(--book-content-text-intendation, 0rem) !important;
     }
 
-    &.book-content--writing-vertical-rl {
+    &.book-content--writing-vertical-rl.ttu-margin-manual {
       :global(p) {
         margin-right: var(--book-content-text-margin, 0rem) !important;
         margin-left: var(--book-content-text-margin, 0rem) !important;
       }
     }
 
-    &.book-content--writing-horizontal-rl {
+    &.book-content--writing-horizontal-rl.ttu-margin-manual {
       :global(p) {
         margin-top: var(--book-content-text-margin, 0rem) !important;
         margin-bottom: var(--book-content-text-margin, 0rem) !important;
