@@ -15,6 +15,7 @@
     swipeThreshold$,
     userFonts$
   } from '$lib/data/store';
+  import type { TextMarginMode } from '$lib/data/text-margin-mode';
   import { clearRange, createRange, pulseElement } from '$lib/functions/range-util';
   import { iffBrowser } from '$lib/functions/rxjs/iff-browser';
   import { getExternalTargetElement, isMobile$ } from '$lib/functions/utils';
@@ -77,6 +78,8 @@
   export let lineHeight: number;
 
   export let textIndentation: number;
+
+  export let textMarginMode: TextMarginMode;
 
   export let textMarginValue: number;
 
@@ -714,6 +717,7 @@
   class:book-content--furigana-style-full={furiganaStyle === FuriganaStyle.Full}
   class:ttu-apply-important={prioritizeReaderStyles}
   class:ttu-apply-justification={enableTextJustification}
+  class:ttu-margin-manual={textMarginMode === 'manual'}
   class:ttu-text-wrap-pretty={enableTextWrapPretty}
   class="book-content m-auto"
   use:swipe={{ timeframe: 500, minSwipeDistance: $swipeThreshold$, touchAction: 'pan-y' }}
