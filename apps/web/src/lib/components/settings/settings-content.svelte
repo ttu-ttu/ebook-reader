@@ -64,6 +64,8 @@
 
   export let fontFamilyGroupTwo: string;
 
+  export let fontWeight: number | null;
+
   export let fontSize: number;
 
   export let lineHeight: number;
@@ -600,6 +602,31 @@
         class={inputClasses}
         placeholder="Noto Sans JP"
         bind:value={fontFamilyGroupTwo}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Font Weight"
+      tooltip={'Sets a font weight - leave empty to fallback to default'}
+    >
+      <input
+        type="number"
+        placeholder="default"
+        class={inputClasses}
+        step="100"
+        min="100"
+        max="1000"
+        bind:value={fontWeight}
+        on:change={() => {
+          if (fontWeight === null) {
+            return;
+          }
+
+          if (fontWeight < 100) {
+            fontWeight = 100;
+          } else if (fontWeight > 1000) {
+            fontWeight = 1000;
+          }
+        }}
       />
     </SettingsItemGroup>
     <SettingsItemGroup title="Font size">

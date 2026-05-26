@@ -79,6 +79,8 @@
 
   export let fontFamilyGroupTwo: string;
 
+  export let fontWeight: number | null;
+
   export let fontSize: number;
 
   export let lineHeight: number;
@@ -675,6 +677,7 @@
     : undefined}
   style:--font-family-serif={fontFamilyGroupOne}
   style:--font-family-sans-serif={fontFamilyGroupTwo}
+  style:--font-weight={fontWeight}
   style:--book-content-hint-furigana-font-color={hintFuriganaFontColor}
   style:--book-content-hint-furigana-shadow-color={hintFuriganaShadowColor}
   style:--book-content-child-height="{maxHeight || height}px"
@@ -690,6 +693,7 @@
   class:book-content--furigana-style-partial={furiganaStyle === FuriganaStyle.Partial}
   class:book-content--furigana-style-toggle={furiganaStyle === FuriganaStyle.Toggle}
   class:book-content--furigana-style-full={furiganaStyle === FuriganaStyle.Full}
+  class:ttu-apply-font-weight={!!fontWeight}
   class:ttu-apply-important={prioritizeReaderStyles}
   class:ttu-apply-justification={enableTextJustification}
   class:ttu-margin-manual={textMarginMode === 'manual'}

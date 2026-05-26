@@ -49,6 +49,7 @@ import { FuriganaStyle } from './furigana-style';
 import { ImportHTMLFixMode } from './import-html-fix-mode';
 import { writableBooleanLocalStorageSubject } from './internal/writable-boolean-local-storage-subject';
 import { writableNumberLocalStorageSubject } from './internal/writable-number-local-storage-subject';
+import { writableNumberOrNullLocalStorageSubject } from './internal/writable-number-or-null-local-storage-subject';
 import {
   writableArrayLocalStorageSubject,
   writableObjectLocalStorageSubject
@@ -75,6 +76,7 @@ export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()(
   'fontFamilyGroupTwo',
   'Noto Sans JP'
 );
+export const fontWeight$ = writableNumberOrNullLocalStorageSubject()('fontWeight', null);
 export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
 export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 1.65);
 export const textIndentation$ = writableNumberLocalStorageSubject()('textIndentation', 0);

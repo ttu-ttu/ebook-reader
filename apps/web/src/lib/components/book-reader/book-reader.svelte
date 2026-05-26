@@ -68,6 +68,8 @@
 
   export let fontFamilyGroupTwo: string;
 
+  export let fontWeight: number | null;
+
   export let fontSize: number;
 
   export let lineHeight: number;
@@ -296,6 +298,7 @@
       {hintFuriganaShadowColor}
       {fontFamilyGroupOne}
       {fontFamilyGroupTwo}
+      {fontWeight}
       {fontSize}
       {lineHeight}
       {textIndentation}
@@ -342,6 +345,7 @@
       {hintFuriganaShadowColor}
       {fontFamilyGroupOne}
       {fontFamilyGroupTwo}
+      {fontWeight}
       {fontSize}
       {lineHeight}
       {textIndentation}

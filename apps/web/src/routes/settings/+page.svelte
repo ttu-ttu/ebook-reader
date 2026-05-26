@@ -27,6 +27,7 @@
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
     fontSize$,
+    fontWeight$,
     furiganaStyle$,
     hideFurigana$,
     hideSpoilerImage$,
@@ -150,6 +151,7 @@
       bind:selectedTheme={$theme$}
       bind:fontFamilyGroupOne={$fontFamilyGroupOne$}
       bind:fontFamilyGroupTwo={$fontFamilyGroupTwo$}
+      bind:fontWeight={$fontWeight$}
       bind:fontSize={$fontSize$}
       bind:lineHeight={$lineHeight$}
       bind:textIndentation={$textIndentation$}
