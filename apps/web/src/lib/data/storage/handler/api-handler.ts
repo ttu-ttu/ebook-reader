@@ -120,6 +120,12 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     }
   }
 
+  async hasLocalBookData(): Promise<boolean> {
+    const data = await database.getDataByTitle(this.currentContext.title);
+
+    return !!data?.elementHtml;
+  }
+
   async prepareBookForReading(): Promise<number> {
     const data = await database.getDataByTitle(this.currentContext.title);
 
