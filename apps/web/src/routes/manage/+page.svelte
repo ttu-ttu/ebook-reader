@@ -6,6 +6,7 @@
   import BookManagerHeader from '$lib/components/book-card/book-manager-header.svelte';
   import BookExportDialog from '$lib/components/book-export/book-export-dialog.svelte';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+  import ExternalReadDialog from '$lib/components/external-read-dialog.svelte';
   import LogReportDialog from '$lib/components/log-report-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MessageDialog from '$lib/components/message-dialog.svelte';
@@ -16,6 +17,7 @@
   import { pagePath } from '$lib/data/env';
   import { logger } from '$lib/data/logger';
   import { SortDirection, type SortOption } from '$lib/data/sort-types';
+  import { ApiStorageHandler } from '$lib/data/storage/handler/api-handler';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import { StorageKey } from '$lib/data/storage/storage-types';
   import { storageSource$ } from '$lib/data/storage/storage-view';
@@ -25,6 +27,7 @@
     confirmStatisticsDeletion$,
     database,
     fileCountData$,
+    hideExternalReadHint$,
     isOnline$,
     keepLocalStatisticsOnDeletion$,
     lastExportedTarget$,
@@ -197,6 +200,37 @@
         });
 
         idToOpen = await handler.prepareBookForReading();
+
+        if (!$hideExternalReadHint$ && handler instanceof ApiStorageHandler) {
+          const hasLocalBookData = await handler.hasLocalBookData();
+          const nextAction = await new Promise<string>((resolver) => {
+            dialogManager.dialogs$.next([
+              {
+                component: ExternalReadDialog,
+                props: {
+                  hasLocalBookData,
+                  resolver
+                },
+                disableCloseOnClick: true
+              }
+            ]);
+          });
+
+          if (nextAction === 'cancel') {
+            return;
+          }
+
+          if (nextAction === 'export') {
+            selectedBookIds = cloneMutateSet(selectedBookIds, (set) => {
+              set.add(bookId);
+            });
+            selectMode = true;
+
+            await tick();
+
+            return onReplicateData();
+          }
+        }
 
         dialogManager.dialogs$.next([]);
       } catch (error: any) {
