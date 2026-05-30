@@ -134,6 +134,8 @@
 
   export let persistentStorage: boolean;
 
+  export let hideExternalReadHint: boolean;
+
   export let confirmClose: boolean;
 
   export let manualBookmark: boolean;
@@ -951,6 +953,12 @@
           <div class="ml-4">{storageQuota}</div>
         {/if}
       </div>
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Hide Source Hint"
+      tooltip="Hides the user warning when opening a book from an external storage source"
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideExternalReadHint} />
     </SettingsItemGroup>
     <SettingsItemGroup title="Epub Import Fixes" tooltip={importHTMLFixModeTooltip}>
       <ButtonToggleGroup

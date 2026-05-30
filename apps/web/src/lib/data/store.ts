@@ -196,6 +196,11 @@ export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(
   true
 );
 
+export const hideExternalReadHint$ = writableBooleanLocalStorageSubject()(
+  'hideExternalReadHint',
+  false
+);
+
 export const importHTMLFixMode$ = writableStringLocalStorageSubject<ImportHTMLFixMode>()(
   'importHTMLFixMode',
   ImportHTMLFixMode.OFF

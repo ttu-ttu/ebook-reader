@@ -29,6 +29,7 @@
     fontSize$,
     fontWeight$,
     furiganaStyle$,
+    hideExternalReadHint$,
     hideFurigana$,
     hideSpoilerImage$,
     importHTMLFixMode$,
@@ -186,6 +187,7 @@
       bind:enableTapEdgeToFlip={$enableTapEdgeToFlip$}
       bind:pageColumns={$pageColumns$}
       bind:persistentStorage={$persistentStorage$}
+      bind:hideExternalReadHint={$hideExternalReadHint$}
       bind:confirmClose={$confirmClose$}
       bind:manualBookmark={$manualBookmark$}
       bind:autoBookmark={$autoBookmark$}
