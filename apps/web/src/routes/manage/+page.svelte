@@ -202,15 +202,11 @@
         idToOpen = await handler.prepareBookForReading();
 
         if (!$hideExternalReadHint$ && handler instanceof ApiStorageHandler) {
-          const hasLocalBookData = await handler.hasLocalBookData();
           const nextAction = await new Promise<string>((resolver) => {
             dialogManager.dialogs$.next([
               {
                 component: ExternalReadDialog,
-                props: {
-                  hasLocalBookData,
-                  resolver
-                },
+                props: { resolver },
                 disableCloseOnClick: true
               }
             ]);

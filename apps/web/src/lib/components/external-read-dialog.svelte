@@ -5,7 +5,6 @@
   import { hideExternalReadHint$ } from '$lib/data/store';
   import { createEventDispatcher } from 'svelte';
 
-  export let hasLocalBookData: boolean;
   export let resolver: (arg0: string) => void;
 
   const dispatch = createEventDispatcher<{
@@ -21,21 +20,14 @@
 <DialogTemplate>
   <svelte:fragment slot="header">External Read</svelte:fragment>
   <svelte:fragment slot="content">
-    {#if hasLocalBookData}
-      <p class="my-2">You are opening a book from an external storage Source.</p>
-      <p class="my-2">Note: This may override configured sync target configurations.</p>
-    {:else}
-      <p class="my-2">
-        You are opening a book from an external storage Source without matching local book data.
-      </p>
-      <p class="my-2">
-        Note: This will redownload the complete book every time and may override configured sync
-        target configurations.
-      </p>
-    {/if}
+    <p class="my-2">You are opening a book from an external storage Source.</p>
     <p class="my-2">
-      Consider an export to the local browser and reading from browser storage view to prevent such
-      behaviour.
+      Note: This will redownload the complete book every time and may override other configured sync
+      target configurations.
+    </p>
+    <p class="my-2">
+      Consider an export to the local browser and switching to / reading from browser storage view
+      to prevent such behaviour.
     </p>
     <p class="flex items-center mt-4">
       <input id="show-hint" type="checkbox" bind:checked={$hideExternalReadHint$} />
