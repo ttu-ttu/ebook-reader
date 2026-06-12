@@ -33,8 +33,8 @@ importers:
         specifier: 10.1.8
         version: 10.1.8(eslint@9.39.4(jiti@2.4.1))
       eslint-import-resolver-typescript:
-        specifier: 4.4.4
-        version: 4.4.4(eslint@9.39.4(jiti@2.4.1))
+        specifier: 4.4.5
+        version: 4.4.5(eslint@9.39.4(jiti@2.4.1))
       eslint-plugin-headers:
         specifier: 1.3.4
         version: 1.3.4(eslint@9.39.4(jiti@2.4.1))
@@ -1431,8 +1431,8 @@ packages:
       unrs-resolver:
         optional: true
 
-  eslint-import-resolver-typescript@4.4.4:
-    resolution: {integrity: sha512-1iM2zeBvrYmUNTj2vSC/90JTHDth+dfOfiNKkxApWRsTJYNrc8rOdxxIf5vazX+BiAXTeOT0UvWpGI/7qIWQOw==}
+  eslint-import-resolver-typescript@4.4.5:
+    resolution: {integrity: sha512-nbE5XLph6TLtGYcu/U6e6ZVXyKBhbDWK5cLGk76eJ7NdZpwf1P9EFkpt1Z01mNZNrrilsAYWKH6zUkL4reoXbw==}
     engines: {node: ^16.17.0 || >=18.6.0}
     peerDependencies:
       eslint: '*'
@@ -2038,10 +2038,6 @@ packages:
   picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
-
-  picomatch@4.0.2:
-    resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
-    engines: {node: '>=12'}
 
   picomatch@4.0.4:
     resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
@@ -3839,7 +3835,7 @@ snapshots:
     optionalDependencies:
       unrs-resolver: 1.7.11
 
-  eslint-import-resolver-typescript@4.4.4(eslint@9.39.4(jiti@2.4.1)):
+  eslint-import-resolver-typescript@4.4.5(eslint@9.39.4(jiti@2.4.1)):
     dependencies:
       debug: 4.4.1
       eslint: 9.39.4(jiti@2.4.1)
@@ -4030,10 +4026,6 @@ snapshots:
   fastq@1.13.0:
     dependencies:
       reusify: 1.0.4
-
-  fdir@6.4.4(picomatch@4.0.2):
-    optionalDependencies:
-      picomatch: 4.0.2
 
   fdir@6.4.4(picomatch@4.0.4):
     optionalDependencies:
@@ -4426,8 +4418,6 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@2.3.1: {}
-
-  picomatch@4.0.2: {}
 
   picomatch@4.0.4: {}
 
@@ -4864,8 +4854,8 @@ snapshots:
 
   tinyglobby@0.2.14:
     dependencies:
-      fdir: 6.4.4(picomatch@4.0.2)
-      picomatch: 4.0.2
+      fdir: 6.4.4(picomatch@4.0.4)
+      picomatch: 4.0.4
 
   to-fast-properties@2.0.0: {}
 
