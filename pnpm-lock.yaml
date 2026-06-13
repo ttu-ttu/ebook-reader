@@ -40,7 +40,7 @@ importers:
         version: 1.3.4(eslint@9.39.4(jiti@2.4.1))
       eslint-plugin-prettier:
         specifier: 5.5.6
-        version: 5.5.6(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.4.1)))(eslint@9.39.4(jiti@2.4.1))(prettier@3.6.2)
+        version: 5.5.6(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.4.1)))(eslint@9.39.4(jiti@2.4.1))(prettier@3.8.4)
       eslint-plugin-rxjs:
         specifier: 5.0.3
         version: 5.0.3(eslint@9.39.4(jiti@2.4.1))(typescript@6.0.3)
@@ -54,14 +54,14 @@ importers:
         specifier: 17.0.7
         version: 17.0.7
       prettier:
-        specifier: 3.6.2
-        version: 3.6.2
+        specifier: 3.8.4
+        version: 3.8.4
       prettier-plugin-svelte:
         specifier: 4.1.0
-        version: 4.1.0(prettier@3.6.2)(svelte@5.0.5)
+        version: 4.1.0(prettier@3.8.4)(svelte@5.0.5)
       prettier-plugin-tailwindcss:
         specifier: 0.7.2
-        version: 0.7.2(prettier-plugin-svelte@4.1.0(prettier@3.6.2)(svelte@5.0.5))(prettier@3.6.2)
+        version: 0.7.2(prettier-plugin-svelte@4.1.0(prettier@3.8.4)(svelte@5.0.5))(prettier@3.8.4)
       svelte:
         specifier: 5.0.5
         version: 5.0.5
@@ -2198,8 +2198,8 @@ packages:
       prettier-plugin-svelte:
         optional: true
 
-  prettier@3.6.2:
-    resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
+  prettier@3.8.4:
+    resolution: {integrity: sha512-N2MylSdi48+5N/6S5j+maeHbUSIzzZ5uOcX5Hm4QpV8Dkb1HFjfAKTKX6yNPJQD9AhcT3ifHNB66tWTTJDi11Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -3858,10 +3858,10 @@ snapshots:
     dependencies:
       eslint: 9.39.4(jiti@2.4.1)
 
-  eslint-plugin-prettier@5.5.6(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.4.1)))(eslint@9.39.4(jiti@2.4.1))(prettier@3.6.2):
+  eslint-plugin-prettier@5.5.6(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.4.1)))(eslint@9.39.4(jiti@2.4.1))(prettier@3.8.4):
     dependencies:
       eslint: 9.39.4(jiti@2.4.1)
-      prettier: 3.6.2
+      prettier: 3.8.4
       prettier-linter-helpers: 1.0.1
       synckit: 0.11.13
     optionalDependencies:
@@ -4508,18 +4508,18 @@ snapshots:
     dependencies:
       fast-diff: 1.3.0
 
-  prettier-plugin-svelte@4.1.0(prettier@3.6.2)(svelte@5.0.5):
+  prettier-plugin-svelte@4.1.0(prettier@3.8.4)(svelte@5.0.5):
     dependencies:
-      prettier: 3.6.2
+      prettier: 3.8.4
       svelte: 5.0.5
 
-  prettier-plugin-tailwindcss@0.7.2(prettier-plugin-svelte@4.1.0(prettier@3.6.2)(svelte@5.0.5))(prettier@3.6.2):
+  prettier-plugin-tailwindcss@0.7.2(prettier-plugin-svelte@4.1.0(prettier@3.8.4)(svelte@5.0.5))(prettier@3.8.4):
     dependencies:
-      prettier: 3.6.2
+      prettier: 3.8.4
     optionalDependencies:
-      prettier-plugin-svelte: 4.1.0(prettier@3.6.2)(svelte@5.0.5)
+      prettier-plugin-svelte: 4.1.0(prettier@3.8.4)(svelte@5.0.5)
 
-  prettier@3.6.2: {}
+  prettier@3.8.4: {}
 
   prompts@2.4.2:
     dependencies:
