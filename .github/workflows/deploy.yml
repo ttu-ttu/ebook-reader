@@ -20,7 +20,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
-          version: 11.18.0
+          version: 11.20.0
           run_install: false
 
       - name: Install Node.js
