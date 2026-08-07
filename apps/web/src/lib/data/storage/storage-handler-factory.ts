@@ -14,11 +14,13 @@ import { GDriveStorageHandler } from '$lib/data/storage/handler/gdrive-handler';
 import { MergeMode } from '$lib/data/merge-mode';
 import { OneDriveStorageHandler } from '$lib/data/storage/handler/onedrive-handler';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
+import { RemoteApiStorageHandler } from './handler/remote-api-handler';
 
 let backupStorageHandler: BackupStorageHandler;
 let browserStorageHandler: BrowserStorageHandler;
 let gDriveStorageHandler: GDriveStorageHandler;
 let oneDriveStorageHandler: OneDriveStorageHandler;
+let remoteApiStorageHandler: RemoteApiStorageHandler;
 let fsStorageHandler: FilesystemStorageHandler;
 
 export function getStorageHandler(
@@ -151,6 +153,21 @@ export function getStorageHandler(
       );
 
       return oneDriveStorageHandler;
+    case StorageKey.TTSU_REMOTE:
+      remoteApiStorageHandler =
+        remoteApiStorageHandler || new RemoteApiStorageHandler(StorageKey.TTSU_REMOTE, window);
+      remoteApiStorageHandler.updateSettings(
+        window,
+        isForBrowser,
+        saveBehavior,
+        statisticsMergeMode,
+        readingGoalsMergeMode,
+        cacheStorageData,
+        askForStorageUnlock,
+        storageSourceName
+      );
+
+      return remoteApiStorageHandler;
     case StorageKey.FS:
       fsStorageHandler = fsStorageHandler || new FilesystemStorageHandler(window, StorageKey.FS);
       fsStorageHandler.updateSettings(
