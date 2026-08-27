@@ -128,10 +128,10 @@ importers:
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: 3.0.10
-        version: 3.0.10(@sveltejs/kit@2.70.2(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))
+        version: 3.0.10(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))
       '@sveltejs/kit':
-        specifier: 2.70.2
-        version: 2.70.2(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0))
+        specifier: 2.70.3
+        version: 2.70.3(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0))
       '@sveltejs/vite-plugin-svelte':
         specifier: 3.1.2
         version: 3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0))
@@ -814,8 +814,8 @@ packages:
     peerDependencies:
       '@sveltejs/kit': ^2.0.0
 
-  '@sveltejs/kit@2.70.2':
-    resolution: {integrity: sha512-RzRoRpuR2KXqc5yMO0akQHDZeT4AslOlznGITURsqHaVbtyYP4Wn3eE3gxj9JcDyNYO0crkxhdwFHc+2vkVm6w==}
+  '@sveltejs/kit@2.70.3':
+    resolution: {integrity: sha512-UDvEYuZqAMbfB/oXIoqKvbKcb7YczK5zYrzmsGV1zRJk03jntwp8dXiYoIJotxAndsKvcPFtx9H1GRSKFdSHgg==}
     engines: {node: '>=18.13'}
     hasBin: true
     peerDependencies:
@@ -1095,11 +1095,6 @@ packages:
 
   acorn@8.14.1:
     resolution: {integrity: sha512-OvQ/2pUDKmgfCg++xsTX1wGxfTaszcHVcTctW4UJB4hibJx2HXxxO5UmVgyjMa+ZDsiaf5wWLXYpRWMmBI0QHg==}
-    engines: {node: '>=0.4.0'}
-    hasBin: true
-
-  acorn@8.15.0:
-    resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -3155,11 +3150,11 @@ snapshots:
     dependencies:
       acorn: 8.16.0
 
-  '@sveltejs/adapter-static@3.0.10(@sveltejs/kit@2.70.2(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))':
+  '@sveltejs/adapter-static@3.0.10(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))':
     dependencies:
-      '@sveltejs/kit': 2.70.2(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0))
+      '@sveltejs/kit': 2.70.3(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0))
 
-  '@sveltejs/kit@2.70.2(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0))':
+  '@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@3.1.2(supports-color@7.2.0)(svelte@4.2.20)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0)))(svelte@4.2.20)(typescript@6.0.3)(vite@5.4.21(@types/node@24.13.3)(sass@1.102.0))':
     dependencies:
       '@standard-schema/spec': 1.0.0
       '@sveltejs/acorn-typescript': 1.0.10(acorn@8.16.0)
@@ -3441,8 +3436,6 @@ snapshots:
 
   acorn@8.14.1: {}
 
-  acorn@8.15.0: {}
-
   acorn@8.16.0: {}
 
   ajv@6.14.0:
@@ -3587,7 +3580,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
       '@types/estree': 1.0.6
-      acorn: 8.15.0
+      acorn: 8.16.0
       estree-walker: 3.0.3
       periscopic: 3.1.0
 
