@@ -11,6 +11,7 @@ import { BaseStorageHandler, type ExternalFile } from '$lib/data/storage/handler
 import { StorageKey } from '$lib/data/storage/storage-types';
 import { database, gDriveStorageSource$ } from '$lib/data/store';
 import pLimit from 'p-limit';
+import { StorageOAuthManager } from '../storage-oauth-manager';
 
 interface GDriveFile extends ExternalFile {
   thumbnailLink?: string;
@@ -23,7 +24,11 @@ export class GDriveStorageHandler extends ApiStorageHandler {
   private baseUploadApiUrl = 'https://www.googleapis.com/upload/drive/v3/files';
 
   constructor(window: Window) {
-    super(StorageKey.GDRIVE, window, gDriveRefreshEndpoint);
+    super(
+      StorageKey.GDRIVE,
+      window,
+      new StorageOAuthManager(StorageKey.GDRIVE, gDriveRefreshEndpoint)
+    );
   }
 
   setInternalSettings(storageSourceName: string) {

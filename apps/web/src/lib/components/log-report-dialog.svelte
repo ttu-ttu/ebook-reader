@@ -49,6 +49,7 @@
     showExternalPlaceholder$,
     gDriveStorageSource$,
     oneDriveStorageSource$,
+    ttsuRemoteStorageSource$,
     fsStorageSource$,
     syncTarget$,
     keepLocalStatisticsOnDeletion$,
@@ -148,6 +149,8 @@
             gDriveStorageSource$.getValue() === StorageSourceDefault.GDRIVE_DEFAULT,
           oneDriveStorageSource:
             oneDriveStorageSource$.getValue() === StorageSourceDefault.ONEDRIVE_DEFAULT,
+          ttsuRemoteStorageSource:
+            ttsuRemoteStorageSource$.getValue() === StorageSourceDefault.TTSU_REMOTE_DEFAULT,
           fsStorageSource: !!fsStorageSource$.getValue(),
           syncTarget: !!syncTarget$.getValue(),
           keepLocalStatisticsOnDeletion: keepLocalStatisticsOnDeletion$.getValue(),
