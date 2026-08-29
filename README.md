@@ -565,6 +565,17 @@ pnpm build
 
 3. Have your server (such as [http-server](https://www.npmjs.com/package/http-server)) point towards `apps/web/build`
 
+### Using Nix
+
+1. Have [Nix](https://nixos.org/) installed
+2. Run the command below
+
+```sh
+nix run .
+```
+
+If you don't want to use the provided web server, you can just build the static files with `nix build .#ebook-reader` and then bring your own HTTP server.
+
 ### External Hoster
 
 In case you want to use external hoster like GDrive for data import/export follow the steps described in [Storage Sources](#storage-sources)
