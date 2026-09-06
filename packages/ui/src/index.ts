@@ -17,5 +17,8 @@ export { default as Tooltip } from './tooltip/Tooltip.svelte';
 export { default as Input } from './input/Input.svelte';
 export { default as List } from './list/List.svelte';
 export { default as ListItem } from './list/ListItem.svelte';
+export { default as ListSection } from './list/ListSection.svelte';
+export { default as Select } from './select/Select.svelte';
+export { default as Tabs } from './tabs/Tabs.svelte';
 
 export * from './types';

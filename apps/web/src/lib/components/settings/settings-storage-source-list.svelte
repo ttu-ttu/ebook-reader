@@ -13,10 +13,8 @@
     faTriangleExclamation
   } from '@fortawesome/free-solid-svg-icons';
   import MessageDialog from '$lib/components/message-dialog.svelte';
-  import Popover from '$lib/components/popover/popover.svelte';
-  import Ripple from '$lib/components/ripple.svelte';
   import SettingsStorageSource from '$lib/components/settings/settings-storage-source.svelte';
-  import { buttonClasses } from '$lib/css-classes';
+  import { Button, IconButton, List, ListItem, ListSection, Tooltip } from '@custom-ereader/ui';
   import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
   import { gDriveRevokeEndpoint } from '$lib/data/env';
@@ -256,43 +254,39 @@
   }
 </script>
 
-<div class="mb-8 sm:col-span-2 lg:col-span-3">
-  <div class="flex">
-    <div class="flex grow">
-      <h1 class="mb-2 text-xl font-medium">
-        <span class="capitalize">Storage Sources</span>
-      </h1>
-      <Popover contentText={listTooltip} contentStyles="padding: 0.5rem;">
-        <Fa icon={faCircleQuestion} slot="icon" class="mx-2" />
-      </Popover>
-      {#if $autoReplication$ !== AutoReplicationType.Off && !$syncTarget$}
-        <Popover
-          contentText={'Auto import/export enabled but no source as sync target from list selected'}
-          contentStyles="padding: 0.25rem;"
+<ListSection title="Storage Sources" description={listTooltip}>
+  <div slot="action" class="flex items-center gap-2">
+    {#if $autoReplication$ !== AutoReplicationType.Off && !$syncTarget$}
+      <Tooltip
+        content="Auto import/export enabled but no sync target selected from list"
+        placement="bottom"
+      >
+        <span
+          class="flex items-center gap-1.5 text-xs font-medium px-2 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-md"
         >
-          <Fa icon={faTriangleExclamation} slot="icon" class="mx-2" />
-        </Popover>
-      {/if}
-    </div>
-    <button
-      class={buttonClasses}
-      class:cursor-not-allowed={!storageSources}
+          <Fa icon={faTriangleExclamation} />
+          <span class="hidden sm:inline">No sync target</span>
+        </span>
+      </Tooltip>
+    {/if}
+    <Button
+      size="sm"
+      variant="primary"
       disabled={!storageSources}
-      on:click={() => {
-        modifyStorageSource();
-      }}
+      on:click={() => modifyStorageSource()}
     >
-      <div class="flex items-center justify-center">
-        <Fa icon={faPlus} />
-        <span class="ml-1 hidden sm:block">Add</span>
-      </div>
-      <Ripple />
-    </button>
+      <Fa icon={faPlus} class="mr-1.5" />
+      <span>Add Source</span>
+    </Button>
   </div>
-  <hr class="border border-black" />
-  <div class="mt-6">
-    {#if !listLoading && storageSources}
-      <div class="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+
+  {#if !listLoading && storageSources}
+    {#if storageSources.length === 0}
+      <div class="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        No storage sources configured. Click "Add Source" above to connect cloud or local storage.
+      </div>
+    {:else}
+      <List variant="bordered" divided={true}>
         {#each storageSources as storageSource (storageSource.name)}
           {@const icon = getStorageIconData(storageSource.type)}
           {@const isDefault = isAppDefault(storageSource.name)}
@@ -309,131 +303,169 @@
             getConnectionState(storageSource.name, storageSource)}
           {@const accountEmail = getAccountEmail(storageSource)}
           {@const isLoading = !!actionLoading[storageSource.name]}
-          <div class="flex flex-col">
-            <div class="flex">
-              <svg
-                class="inline-block h-6 w-6 self-center shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox={icon.viewBox}
-              >
-                <path class="fill-current" d={icon.d} />
+
+          <ListItem
+            headline={storageSource.name}
+            description={isCloudSource
+              ? connectionState === StorageConnectionState.CONNECTED
+                ? accountEmail
+                  ? `Connected (${accountEmail})`
+                  : 'Connected'
+                : connectionState === StorageConnectionState.NEEDS_RECONNECT
+                  ? 'Session Expired — Reconnect required'
+                  : 'Disconnected'
+              : 'Local file system storage'}
+          >
+            <div
+              slot="prefix"
+              class="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300"
+            >
+              <svg class="h-5 w-5 fill-current" viewBox={icon.viewBox}>
+                <path d={icon.d} />
               </svg>
-              <div class="ml-3 self-center min-w-0">
-                <div class="truncate font-medium">{storageSource.name}</div>
-                {#if isCloudSource}
-                  <div class="flex items-center text-xs mt-0.5">
-                    {#if connectionState === StorageConnectionState.CONNECTED}
-                      <span
-                        class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5 shrink-0"
-                      />
-                      <span class="text-gray-400 truncate" title={accountEmail || 'Connected'}>
-                        {accountEmail || 'Connected'}
-                      </span>
-                    {:else if connectionState === StorageConnectionState.NEEDS_RECONNECT}
-                      <span
-                        class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 shrink-0 animate-pulse"
-                      />
-                      <span class="text-amber-500 font-medium">Session Expired</span>
-                    {:else}
-                      <span class="inline-block w-2 h-2 rounded-full bg-gray-400 mr-1.5 shrink-0" />
-                      <span class="text-gray-400">Disconnected</span>
-                    {/if}
-                  </div>
-                {/if}
-              </div>
             </div>
-            <div class="mt-4 flex items-center">
+
+            <div class="flex items-center gap-1.5 mt-1">
+              {#if isDefault}
+                <span
+                  class="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 tracking-wider"
+                >
+                  Default
+                </span>
+              {/if}
+              {#if storageSourceIsSyncTarget}
+                <span
+                  class="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 tracking-wider"
+                >
+                  Sync Target
+                </span>
+              {/if}
+              {#if storageSourceIsSourceDefault}
+                <span
+                  class="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 tracking-wider"
+                >
+                  Type Default
+                </span>
+              {/if}
+            </div>
+
+            <div slot="suffix" class="flex items-center gap-1">
               {#if isCloudSource}
-                <div
-                  tabindex="0"
-                  role="button"
-                  title={connectionState === StorageConnectionState.CONNECTED
+                <Tooltip
+                  content={connectionState === StorageConnectionState.CONNECTED
                     ? 'Reconnect session'
                     : 'Connect session'}
-                  class="mr-4 cursor-pointer hover:opacity-80"
-                  class:text-amber-500={connectionState === StorageConnectionState.NEEDS_RECONNECT}
-                  class:opacity-50={isLoading}
-                  on:click={() => !isLoading && reconnectStorageSource(storageSource)}
-                  on:keyup={dummyFn}
                 >
-                  <Fa icon={isLoading ? faSpinner : faArrowsRotate} spin={isLoading} />
-                </div>
-                {#if connectionState === StorageConnectionState.CONNECTED}
-                  <div
-                    tabindex="0"
-                    role="button"
-                    title="Disconnect session"
-                    class="mr-4 cursor-pointer text-gray-400 hover:text-red-500 transition-colors"
-                    class:opacity-50={isLoading}
-                    on:click={() => !isLoading && disconnectStorageSource(storageSource)}
-                    on:keyup={dummyFn}
+                  <IconButton
+                    size="sm"
+                    variant="ghost"
+                    label={connectionState === StorageConnectionState.CONNECTED
+                      ? 'Reconnect session'
+                      : 'Connect session'}
+                    disabled={isLoading}
+                    on:click={() => !isLoading && reconnectStorageSource(storageSource)}
                   >
-                    <Fa icon={faRightFromBracket} />
-                  </div>
+                    <Fa
+                      icon={isLoading ? faSpinner : faArrowsRotate}
+                      spin={isLoading}
+                      class={connectionState === StorageConnectionState.NEEDS_RECONNECT
+                        ? 'text-amber-500'
+                        : ''}
+                    />
+                  </IconButton>
+                </Tooltip>
+
+                {#if connectionState === StorageConnectionState.CONNECTED}
+                  <Tooltip content="Disconnect session">
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      label="Disconnect session"
+                      disabled={isLoading}
+                      on:click={() => !isLoading && disconnectStorageSource(storageSource)}
+                    >
+                      <Fa icon={faRightFromBracket} />
+                    </IconButton>
+                  </Tooltip>
                 {/if}
               {/if}
-              <div
-                tabindex="0"
-                role="button"
-                title="Edit source"
-                class="mr-4"
-                class:hidden={isDefault}
-                on:click={() => modifyStorageSource(storageSource)}
-                on:keyup={dummyFn}
+
+              {#if !isDefault}
+                <Tooltip content="Edit source settings">
+                  <IconButton
+                    size="sm"
+                    variant="ghost"
+                    label="Edit source"
+                    on:click={() => modifyStorageSource(storageSource)}
+                  >
+                    <Fa icon={faPenToSquare} />
+                  </IconButton>
+                </Tooltip>
+              {/if}
+
+              <Tooltip
+                content={storageSourceIsSyncTarget
+                  ? 'Current Sync Target (click to unset)'
+                  : 'Set as Sync Target'}
               >
-                <Fa icon={faPenToSquare} />
-              </div>
-              <div
-                tabindex="0"
-                role="button"
-                title="Toggle source as sync target"
-                class="mr-4"
-                class:opacity-50={!storageSourceIsSyncTarget}
-                on:click={() =>
-                  syncTarget$.next($syncTarget$ === storageSource.name ? '' : storageSource.name)}
-                on:keyup={dummyFn}
+                <IconButton
+                  size="sm"
+                  variant={storageSourceIsSyncTarget ? 'primary' : 'ghost'}
+                  active={storageSourceIsSyncTarget}
+                  label="Toggle sync target"
+                  on:click={() =>
+                    syncTarget$.next($syncTarget$ === storageSource.name ? '' : storageSource.name)}
+                >
+                  <Fa icon={faCloudArrowUp} />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip
+                content={storageSourceIsSourceDefault
+                  ? 'Default for this source type (click to unset)'
+                  : 'Set as default for this source type'}
               >
-                <Fa icon={faCloudArrowUp} />
-              </div>
-              <div
-                tabindex="0"
-                role="button"
-                title="Toggle source as data source for this type"
-                class="mr-4"
-                class:opacity-50={!storageSourceIsSourceDefault}
-                on:click={() =>
-                  setStorageSourceDefault(
-                    storageSourceIsSourceDefault ? '' : storageSource.name,
-                    storageSource.type
-                  )}
-                on:keyup={dummyFn}
-              >
-                <Fa icon={faTableList} />
-              </div>
-              <div
-                tabindex="0"
-                role="button"
-                title="Delete source"
-                class:hidden={isDefault}
-                on:click={() =>
-                  deleteStorageSource(
-                    storageSource,
-                    storageSourceIsSyncTarget,
-                    storageSourceIsSourceDefault
-                  )}
-                on:keyup={dummyFn}
-              >
-                <Fa icon={faTrash} />
-              </div>
+                <IconButton
+                  size="sm"
+                  variant={storageSourceIsSourceDefault ? 'secondary' : 'ghost'}
+                  active={storageSourceIsSourceDefault}
+                  label="Toggle type default"
+                  on:click={() =>
+                    setStorageSourceDefault(
+                      storageSourceIsSourceDefault ? '' : storageSource.name,
+                      storageSource.type
+                    )}
+                >
+                  <Fa icon={faTableList} />
+                </IconButton>
+              </Tooltip>
+
+              {#if !isDefault}
+                <Tooltip content="Delete source">
+                  <IconButton
+                    size="sm"
+                    variant="ghost"
+                    label="Delete source"
+                    class="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    on:click={() =>
+                      deleteStorageSource(
+                        storageSource,
+                        storageSourceIsSyncTarget,
+                        storageSourceIsSourceDefault
+                      )}
+                  >
+                    <Fa icon={faTrash} />
+                  </IconButton>
+                </Tooltip>
+              {/if}
             </div>
-          </div>
+          </ListItem>
         {/each}
-      </div>
-    {:else}
-      <div class="text-xl">
-        <Fa icon={faSpinner} spin />
-      </div>
+      </List>
     {/if}
-  </div>
-  <div />
-</div>
+  {:else}
+    <div class="py-8 flex justify-center text-xl text-zinc-400">
+      <Fa icon={faSpinner} spin />
+    </div>
+  {/if}
+</ListSection>
