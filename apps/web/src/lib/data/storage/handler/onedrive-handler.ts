@@ -11,6 +11,7 @@ import { BaseStorageHandler, type ExternalFile } from '$lib/data/storage/handler
 import { StorageKey } from '$lib/data/storage/storage-types';
 import { database, oneDriveStorageSource$ } from '$lib/data/store';
 import pLimit from 'p-limit';
+import { StorageOAuthManager } from '../storage-oauth-manager';
 
 interface OneDriveFile extends ExternalFile {
   thumbnails?: ExternalThumbnail[];
@@ -54,7 +55,11 @@ export class OneDriveStorageHandler extends ApiStorageHandler {
   private baseEndpoint = 'https://graph.microsoft.com/v1.0/me/drive/items';
 
   constructor(window: Window) {
-    super(StorageKey.ONEDRIVE, window, oneDriveTokenEndpoint);
+    super(
+      StorageKey.ONEDRIVE,
+      window,
+      new StorageOAuthManager(StorageKey.ONEDRIVE, oneDriveTokenEndpoint)
+    );
   }
 
   setInternalSettings(storageSourceName: string) {

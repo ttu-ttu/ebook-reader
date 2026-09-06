@@ -15,7 +15,8 @@
     gDriveStorageSource$,
     lastExportedTarget$,
     lastExportedTypes$,
-    oneDriveStorageSource$
+    oneDriveStorageSource$,
+    ttsuRemoteStorageSource$
   } from '$lib/data/store';
   import { executeReplicate$ } from '$lib/functions/replication/replication-progress';
   import { createEventDispatcher } from 'svelte';
@@ -28,6 +29,8 @@
   const dispatch = createEventDispatcher<{
     close: void;
   }>();
+
+  console.info("doing dispact", isStorageSourceAvailable(StorageKey.TTSU_REMOTE, $ttsuRemoteStorageSource$, window));
 
   $: if (browser) {
     icons = [
@@ -46,7 +49,10 @@
         : []),
       ...(isStorageSourceAvailable(StorageKey.FS, $fsStorageSource$, window)
         ? [{ ...getStorageIconData(StorageKey.FS), source: StorageKey.FS, label: 'Filesystem' }]
-        : [])
+        : []),
+      ...(isStorageSourceAvailable(StorageKey.TTSU_REMOTE, $ttsuRemoteStorageSource$, window)
+        ? [{ ...getStorageIconData(StorageKey.TTSU_REMOTE), source: StorageKey.TTSU_REMOTE, label: 'Ttsu Remote' }]
+        : []),
     ].filter((icon) => icon.source !== $storageSource$);
   }
 
