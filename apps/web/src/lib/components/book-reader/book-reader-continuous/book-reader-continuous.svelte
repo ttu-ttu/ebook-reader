@@ -49,7 +49,7 @@
   import Fa from 'svelte-fa';
   import type { AutoScroller, BookmarkManager, PageManager } from '../types';
   import { AutoScrollerContinuous } from './auto-scroller-continuous';
-  import { BookmarkManagerContinuous, type BookmarkPosData } from './bookmark-manager-continuous';
+  import { BookmarkManagerContinuous } from './bookmark-manager-continuous';
   import { CharacterStatsCalculator } from './character-stats-calculator';
   import { horizontalMouseWheel } from './horizontal-mouse-wheel';
   import { PageManagerContinuous } from './page-manager-continuous';

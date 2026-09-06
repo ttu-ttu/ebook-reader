@@ -26,22 +26,36 @@
   }
 </script>
 
-<div
-  class="astryx-card {customClass}"
-  class:is-interactive={interactive}
-  class:is-selected={selected}
-  data-variant={variant}
-  data-elevation={elevation}
-  data-padding={padding}
-  data-radius={radius}
-  role={interactive ? 'button' : undefined}
-  tabindex={interactive ? 0 : undefined}
-  on:click={handleClick}
-  on:keydown={handleKeyDown}
-  {...$$restProps}
->
-  <slot />
-</div>
+{#if interactive}
+  <div
+    class="astryx-card {customClass}"
+    class:is-interactive={true}
+    class:is-selected={selected}
+    data-variant={variant}
+    data-elevation={elevation}
+    data-padding={padding}
+    data-radius={radius}
+    role="button"
+    tabindex="0"
+    on:click={handleClick}
+    on:keydown={handleKeyDown}
+    {...$$restProps}
+  >
+    <slot />
+  </div>
+{:else}
+  <div
+    class="astryx-card {customClass}"
+    class:is-selected={selected}
+    data-variant={variant}
+    data-elevation={elevation}
+    data-padding={padding}
+    data-radius={radius}
+    {...$$restProps}
+  >
+    <slot />
+  </div>
+{/if}
 
 <style>
   .astryx-card {

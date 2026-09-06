@@ -22,6 +22,7 @@
 </script>
 
 <div
+  role="group"
   class="astryx-tooltip-wrapper {customClass}"
   on:mouseenter={show}
   on:mouseleave={hide}

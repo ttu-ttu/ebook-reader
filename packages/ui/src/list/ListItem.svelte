@@ -90,7 +90,7 @@
       type="button"
       class="astryx-list-item-inner is-button"
       {disabled}
-      aria-selected={selected}
+      aria-pressed={selected}
       on:click={handleClick}
       on:keydown={handleKeyDown}
     >
