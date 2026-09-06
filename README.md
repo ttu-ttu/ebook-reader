@@ -11,6 +11,14 @@ This repository is a personalized fork of the excellent [ttu-ttu/ebook-reader](h
 
 ---
 
+## Why Does This Exist?
+
+1. **Keep Improving ttu-reader**: While the original [ttu-reader](https://github.com/ttu-ttu/ebook-reader) is an outstanding reading platform, upstream updates have slowed down. This fork provides active maintenance, modern dependency updates, and rapid development for new capabilities.
+2. **Open & Hackable for the Community**: Kept completely open-source so anyone in the Japanese learning and reading immersion community can benefit from these enhancements, borrow features, or fork and adapt it for their own workflows.
+3. **Better Daily Reading Experience**: Purpose-built to solve real-world friction points during long reading sessions—such as multi-bookmarking, accidental scroll fling/glitch recovery, faster navigation, and robust sync across devices.
+
+---
+
 ## Features
 
 - **Format Support**: EPUB, HTMLZ, and Plain Text files.
@@ -37,7 +45,7 @@ _Base ttu-reader only supported a single reading bookmark representing your curr
 - **Slide-Out Bookmark Drawer**: A dedicated drawer panel (matching the Table of Contents UI/UX) to view, sort by progress, jump to, edit, or delete bookmarks.
 - **Visual Margin Indicators**: Colored bookmark ribbon icons appear directly in the text margin at the exact bookmarked position in both paginated and continuous modes (fully compatible with horizontal and vertical Japanese text layouts). Clicking an indicator scrolls directly to that point.
 - **In-Place Bookmark Editing**: Modify bookmark labels, color tags, and notes directly from the bookmark manager drawer.
-- **Rolling Autosave History & Glitch Recovery**: Automatically captures rolling position checkpoints every 10 seconds while reading (keeping the latest 5). If an accidental gesture, trackpad bug, or browser layout fling causes unexpected rapid scrolling, users can simply open the Bookmarks Manager, switch to the **Autosaves** tab, and jump right back to where they were.
+- **Rolling Autosave History & Glitch Recovery**: Automatically captures rolling position checkpoints when pausing on a page for 3 seconds (keeping the latest 10, configurable up to 20). If an accidental gesture, trackpad bug, or browser layout fling causes unexpected rapid scrolling, users can simply open the Bookmarks Manager, switch to the **Autosaves** tab, and jump right back to where they were.
 - **Glitch Jump Protection**: Detects abnormal position jumps (>2,000 characters within 1.5s) and immediately preserves the pre-jump reading location so users never lose their place.
 - **One-Click Promotion ("Keep")**: Any rolling autosave checkpoint can be converted into a permanent bookmark with a single click.
 - **Keyboard Shortcuts**:
