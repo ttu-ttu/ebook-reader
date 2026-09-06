@@ -4,12 +4,16 @@
  * All rights reserved.
  */
 
+import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+import MessageDialog from '$lib/components/message-dialog.svelte';
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
 import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
 import { dialogManager } from '$lib/data/dialog-manager';
 import {
   gDriveAuthEndpoint,
   gDriveClientId,
+  gDriveRefreshEndpoint,
+  gDriveRevokeEndpoint,
   gDriveScope,
   gDriveTokenEndpoint,
   oneDriveAuthEndpoint,
@@ -22,6 +26,7 @@ import { logger } from '$lib/data/logger';
 import {
   encrypt,
   isAppDefault,
+  isRemoteContext,
   unlockStorageData,
   type RemoteContext,
   type StorageUnlockAction
@@ -29,7 +34,26 @@ import {
 import { StorageSourceDefault, StorageKey } from '$lib/data/storage/storage-types';
 import { database } from '$lib/data/store';
 import { convertAuthErrorResponse } from '$lib/functions/replication/error-handler';
+import { writableSubject } from '$lib/functions/svelte/store';
 import { isMobile } from '$lib/functions/utils';
+
+export enum StorageConnectionState {
+  CONNECTED = 'connected',
+  NEEDS_RECONNECT = 'needs_reconnect',
+  DISCONNECTED = 'disconnected'
+}
+
+export const storageConnectionStates$ = writableSubject<Record<string, StorageConnectionState>>({});
+
+export function setConnectionState(storageSourceName: string, state: StorageConnectionState) {
+  const current = storageConnectionStates$.getValue();
+  if (current[storageSourceName] !== state) {
+    storageConnectionStates$.next({
+      ...current,
+      [storageSourceName]: state
+    });
+  }
+}
 
 interface OAuthTokenData {
   accessToken: string;
@@ -142,7 +166,9 @@ export class StorageOAuthManager {
       this.remoteData = {
         clientId: unlockResult.clientId,
         clientSecret: unlockResult.clientSecret,
-        refreshToken: unlockResult.refreshToken
+        refreshToken: unlockResult.refreshToken,
+        accountEmail: unlockResult.accountEmail,
+        accountName: unlockResult.accountName
       };
 
       token = await this.verifyToken(token);
@@ -219,6 +245,18 @@ export class StorageOAuthManager {
       token = await this.waitForAuth(window);
 
       storageOAuthTokens.set(storageSourceName, token);
+      setConnectionState(storageSourceName, StorageConnectionState.CONNECTED);
+
+      if (this.remoteData && !this.remoteData.accountEmail && token.accessToken) {
+        const account =
+          this.storageType === StorageKey.GDRIVE
+            ? await StorageOAuthManager.fetchGoogleAccount(token.accessToken)
+            : await StorageOAuthManager.fetchOneDriveAccount(token.accessToken);
+        if (account.email) {
+          this.remoteData.accountEmail = account.email;
+          this.remoteData.accountName = account.name;
+        }
+      }
 
       if (
         this.parentWindow &&
@@ -232,27 +270,23 @@ export class StorageOAuthManager {
 
         try {
           const db = await database.db;
+          const contextToStore: RemoteContext = {
+            clientId: this.remoteData.clientId,
+            clientSecret: this.remoteData.clientSecret,
+            refreshToken: token.refreshToken,
+            accountEmail: this.remoteData.accountEmail,
+            accountName: this.remoteData.accountName
+          };
           const newData = existingStorageSourceData.encryptionDisabled
-            ? {
-                clientId: this.remoteData.clientId,
-                clientSecret: this.remoteData.clientSecret,
-                refreshToken: token.refreshToken
-              }
-            : await encrypt(
-                this.parentWindow,
-                JSON.stringify({
-                  clientId: this.remoteData.clientId,
-                  clientSecret: this.remoteData.clientSecret,
-                  refreshToken: token.refreshToken
-                }),
-                secret!
-              );
+            ? contextToStore
+            : await encrypt(this.parentWindow, JSON.stringify(contextToStore), secret!);
 
           await db.put('storageSource', {
             ...existingStorageSourceData,
             name: storageSourceName,
             type: this.storageType,
             data: newData,
+            disconnected: false,
             lastSourceModified: Date.now()
           });
         } catch (err: any) {
@@ -279,6 +313,7 @@ export class StorageOAuthManager {
     }
 
     if (token && token.expiration > Date.now()) {
+      setConnectionState(this.storageSourceName, StorageConnectionState.CONNECTED);
       return token;
     }
 
@@ -321,6 +356,7 @@ export class StorageOAuthManager {
       });
 
     if (!response) {
+      setConnectionState(this.storageSourceName, StorageConnectionState.NEEDS_RECONNECT);
       this.remoteData.refreshToken = undefined;
       return undefined;
     }
@@ -328,6 +364,7 @@ export class StorageOAuthManager {
     const { access_token: accessToken, expires_in: expiration, scope } = response;
 
     if (!accessToken || !expiration || !scope) {
+      setConnectionState(this.storageSourceName, StorageConnectionState.NEEDS_RECONNECT);
       this.remoteData.refreshToken = undefined;
       logger.error(
         `A required authentication property was not found\nhad token: ${!!accessToken}\nhad expiration: ${!!expiration}\nhad scope: ${!!scope}`
@@ -343,6 +380,7 @@ export class StorageOAuthManager {
     };
 
     storageOAuthTokens.set(this.storageSourceName, token);
+    setConnectionState(this.storageSourceName, StorageConnectionState.CONNECTED);
 
     return token;
   }
@@ -532,4 +570,342 @@ export class StorageOAuthManager {
       // no-op
     });
   }
+
+  static async fetchGoogleAccount(accessToken: string): Promise<{ email?: string; name?: string }> {
+    try {
+      const res = await fetch(
+        'https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      );
+      if (res.ok) {
+        const json = await res.json();
+        return {
+          email: json.user?.emailAddress,
+          name: json.user?.displayName
+        };
+      }
+    } catch (err: any) {
+      logger.warn(`Failed to fetch Google Drive account info: ${err.message}`);
+    }
+    return {};
+  }
+
+  static async fetchOneDriveAccount(
+    accessToken: string
+  ): Promise<{ email?: string; name?: string }> {
+    try {
+      const res = await fetch('https://graph.microsoft.com/v1.0/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return {
+          email: json.userPrincipalName || json.mail,
+          name: json.displayName
+        };
+      }
+    } catch (err: any) {
+      logger.warn(`Failed to fetch OneDrive account info: ${err.message}`);
+    }
+    return {};
+  }
+
+  static async reconnect(window: Window, storageSourceName: string): Promise<boolean> {
+    const isDefault = isAppDefault(storageSourceName);
+    let storageSourceType = StorageKey.GDRIVE;
+    let refreshEndpoint = gDriveRefreshEndpoint;
+    let storageSource: BooksDbStorageSource | undefined;
+    let unlockResult: StorageUnlockAction | undefined;
+
+    if (isDefault) {
+      if (storageSourceName === StorageSourceDefault.ONEDRIVE_DEFAULT) {
+        storageSourceType = StorageKey.ONEDRIVE;
+        refreshEndpoint = oneDriveTokenEndpoint;
+      }
+    } else {
+      const db = await database.db;
+      storageSource = await db.get('storageSource', storageSourceName);
+
+      if (!storageSource) {
+        logger.error(`Storage source ${storageSourceName} not found for reconnect`);
+        return false;
+      }
+
+      if (storageSource.type !== StorageKey.GDRIVE && storageSource.type !== StorageKey.ONEDRIVE) {
+        logger.error(`Cannot reconnect non-cloud storage source ${storageSourceName}`);
+        return false;
+      }
+
+      storageSourceType = storageSource.type;
+      refreshEndpoint =
+        storageSource.type === StorageKey.GDRIVE ? gDriveRefreshEndpoint : oneDriveTokenEndpoint;
+
+      unlockResult = await unlockStorageData(
+        storageSource,
+        'You are trying to reconnect cloud storage',
+        {
+          action: `Enter the password for ${storageSourceName} to reconnect`,
+          encryptedData: storageSource.data,
+          forwardSecret: true
+        }
+      );
+
+      if (!unlockResult) {
+        return false;
+      }
+    }
+
+    const authWindow = StorageOAuthManager.createWindow(
+      `${pagePath}/auth?ttu-init-auth=1`,
+      'auth',
+      Math.min(Math.max(window.innerWidth, 300), 560),
+      Math.min(Math.max(window.innerHeight, 300), 560),
+      window
+    );
+
+    if (!authWindow) {
+      dialogManager.dialogs$.next([
+        {
+          component: MessageDialog,
+          props: {
+            title: 'Popup Blocked',
+            message: 'Unable to open login window. Please check your browser popup settings.'
+          },
+          disableCloseOnClick: true
+        }
+      ]);
+      return false;
+    }
+
+    const manager = new StorageOAuthManager(storageSourceType, refreshEndpoint);
+
+    try {
+      const accessToken = await manager.getToken(
+        window,
+        storageSourceName,
+        false,
+        authWindow,
+        unlockResult,
+        storageSource
+      );
+
+      if (!accessToken) {
+        return false;
+      }
+
+      const accountInfo =
+        storageSourceType === StorageKey.GDRIVE
+          ? await StorageOAuthManager.fetchGoogleAccount(accessToken)
+          : await StorageOAuthManager.fetchOneDriveAccount(accessToken);
+
+      const previousEmail = unlockResult?.accountEmail;
+      if (
+        previousEmail &&
+        accountInfo.email &&
+        previousEmail.trim().toLowerCase() !== accountInfo.email.trim().toLowerCase()
+      ) {
+        const wasCanceled = await new Promise<boolean>((resolve) => {
+          dialogManager.dialogs$.next([
+            {
+              component: ConfirmDialog,
+              props: {
+                dialogHeader: 'Account Mismatch Warning',
+                dialogMessage: `This storage source was previously linked to "${previousEmail}", but you just authenticated as "${accountInfo.email}".\n\nConnecting a different account may cause books, reading progress, and statistics to be mixed across accounts.\n\nDo you want to switch accounts to "${accountInfo.email}"?`,
+                contentStyles: 'white-space: pre-line;',
+                resolver: resolve
+              },
+              disableCloseOnClick: true
+            }
+          ]);
+        });
+
+        if (wasCanceled) {
+          const tokenData = storageOAuthTokens.get(storageSourceName);
+          if (tokenData?.refreshToken && storageSourceType === StorageKey.GDRIVE) {
+            StorageOAuthManager.revokeToken(gDriveRevokeEndpoint, tokenData.refreshToken);
+          }
+          storageOAuthTokens.delete(storageSourceName);
+          setConnectionState(storageSourceName, StorageConnectionState.DISCONNECTED);
+          return false;
+        }
+      }
+
+      if (storageSource && unlockResult) {
+        const tokenData = storageOAuthTokens.get(storageSourceName);
+        if (tokenData?.refreshToken) {
+          const db = await database.db;
+          const updatedContext: RemoteContext = {
+            clientId: unlockResult.clientId,
+            clientSecret: unlockResult.clientSecret,
+            refreshToken: tokenData.refreshToken,
+            accountEmail: accountInfo.email || unlockResult.accountEmail,
+            accountName: accountInfo.name || unlockResult.accountName
+          };
+
+          const newData = storageSource.encryptionDisabled
+            ? updatedContext
+            : await encrypt(window, JSON.stringify(updatedContext), unlockResult.secret || '');
+
+          await db.put('storageSource', {
+            ...storageSource,
+            data: newData,
+            disconnected: false,
+            lastSourceModified: Date.now()
+          });
+        }
+      }
+
+      setConnectionState(storageSourceName, StorageConnectionState.CONNECTED);
+
+      const db = await database.db;
+      const updatedSources = await db.getAll('storageSource');
+      database.storageSourcesChanged$.next(updatedSources);
+
+      return true;
+    } catch (err: any) {
+      logger.error(`Reconnect failed for ${storageSourceName}: ${err.message}`);
+      setConnectionState(storageSourceName, StorageConnectionState.NEEDS_RECONNECT);
+      dialogManager.dialogs$.next([
+        {
+          component: MessageDialog,
+          props: {
+            title: 'Reconnect Failed',
+            message: `Failed to reconnect ${storageSourceName}: ${err.message}`
+          },
+          disableCloseOnClick: true
+        }
+      ]);
+      return false;
+    }
+  }
+
+  static async disconnect(storageSourceName: string): Promise<boolean> {
+    const wasCanceled = await new Promise<boolean>((resolve) => {
+      dialogManager.dialogs$.next([
+        {
+          component: ConfirmDialog,
+          props: {
+            dialogHeader: 'Disconnect Storage Source',
+            dialogMessage: `Are you sure you want to disconnect "${storageSourceName}"?\n\nYour local books and remote cloud files will remain completely safe. You can reconnect at any time.`,
+            contentStyles: 'white-space: pre-line;',
+            resolver: resolve
+          },
+          disableCloseOnClick: true
+        }
+      ]);
+    });
+
+    if (wasCanceled) {
+      return false;
+    }
+
+    const isDefault = isAppDefault(storageSourceName);
+
+    if (!isDefault) {
+      const db = await database.db;
+      const storageSource = await db.get('storageSource', storageSourceName);
+
+      if (storageSource) {
+        let unlockResult: StorageUnlockAction | undefined;
+
+        try {
+          unlockResult = await unlockStorageData(storageSource, 'Unlinking storage session', {
+            requiresSecret: false,
+            encryptedData: storageSource.data
+          });
+        } catch (_) {
+          // Continue even if silent unlock fails
+        }
+
+        const refreshTokenToRevoke =
+          unlockResult?.refreshToken || storageOAuthTokens.get(storageSourceName)?.refreshToken;
+
+        if (refreshTokenToRevoke && storageSource.type === StorageKey.GDRIVE) {
+          StorageOAuthManager.revokeToken(gDriveRevokeEndpoint, refreshTokenToRevoke);
+        }
+
+        if (unlockResult) {
+          const updatedContext: RemoteContext = {
+            clientId: unlockResult.clientId,
+            clientSecret: unlockResult.clientSecret,
+            refreshToken: '',
+            accountEmail: unlockResult.accountEmail,
+            accountName: unlockResult.accountName
+          };
+
+          const newData = storageSource.encryptionDisabled
+            ? updatedContext
+            : unlockResult.secret
+              ? await encrypt(window, JSON.stringify(updatedContext), unlockResult.secret)
+              : storageSource.data;
+
+          await db.put('storageSource', {
+            ...storageSource,
+            data: newData,
+            disconnected: true,
+            lastSourceModified: Date.now()
+          });
+        } else {
+          await db.put('storageSource', {
+            ...storageSource,
+            disconnected: true,
+            lastSourceModified: Date.now()
+          });
+        }
+      }
+    } else {
+      const tokenData = storageOAuthTokens.get(storageSourceName);
+      if (tokenData?.refreshToken && storageSourceName === StorageSourceDefault.GDRIVE_DEFAULT) {
+        StorageOAuthManager.revokeToken(gDriveRevokeEndpoint, tokenData.refreshToken);
+      }
+    }
+
+    storageOAuthTokens.delete(storageSourceName);
+    setConnectionState(storageSourceName, StorageConnectionState.DISCONNECTED);
+
+    const db = await database.db;
+    const updatedSources = await db.getAll('storageSource');
+    database.storageSourcesChanged$.next(updatedSources);
+
+    return true;
+  }
+}
+
+export function getConnectionState(
+  storageSourceName: string,
+  storageSource?: BooksDbStorageSource
+): StorageConnectionState {
+  const stateMap = storageConnectionStates$.getValue();
+  if (stateMap[storageSourceName]) {
+    return stateMap[storageSourceName];
+  }
+
+  if (storageSource) {
+    if (storageSource.type !== StorageKey.GDRIVE && storageSource.type !== StorageKey.ONEDRIVE) {
+      return StorageConnectionState.CONNECTED;
+    }
+
+    if (storageSource.disconnected) {
+      return StorageConnectionState.DISCONNECTED;
+    }
+
+    const token = storageOAuthTokens.get(storageSourceName);
+    if (token && token.expiration > Date.now()) {
+      return StorageConnectionState.CONNECTED;
+    }
+
+    if (storageSource.encryptionDisabled && isRemoteContext(storageSource.data)) {
+      if (!storageSource.data.refreshToken) {
+        return StorageConnectionState.DISCONNECTED;
+      }
+    }
+  }
+
+  return StorageConnectionState.CONNECTED;
 }

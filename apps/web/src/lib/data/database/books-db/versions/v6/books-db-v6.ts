@@ -63,6 +63,7 @@ interface BooksDbV6StorageSource {
   storedInManager: boolean;
   encryptionDisabled: boolean;
   lastSourceModified: number;
+  disconnected?: boolean;
 }
 
 interface BooksDbV6Statistic {

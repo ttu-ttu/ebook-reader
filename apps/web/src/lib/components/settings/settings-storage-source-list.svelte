@@ -1,10 +1,12 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import {
+    faArrowsRotate,
     faCircleQuestion,
     faCloudArrowUp,
     faPenToSquare,
     faPlus,
+    faRightFromBracket,
     faSpinner,
     faTableList,
     faTrash,
@@ -18,9 +20,16 @@
   import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
   import { gDriveRevokeEndpoint } from '$lib/data/env';
-  import { StorageOAuthManager, storageOAuthTokens } from '$lib/data/storage/storage-oauth-manager';
+  import {
+    StorageOAuthManager,
+    storageOAuthTokens,
+    storageConnectionStates$,
+    getConnectionState,
+    StorageConnectionState
+  } from '$lib/data/storage/storage-oauth-manager';
   import {
     isAppDefault,
+    isRemoteContext,
     setStorageSourceDefault,
     type FsHandle,
     type StorageSourceSaveResult,
@@ -212,6 +221,39 @@
       storageSources.filter((source) => source.name !== storageSource.name)
     );
   }
+
+  let actionLoading: Record<string, boolean> = {};
+
+  function getAccountEmail(storageSource: BooksDbStorageSource) {
+    if (storageSource.encryptionDisabled && isRemoteContext(storageSource.data)) {
+      return storageSource.data.accountEmail || '';
+    }
+    return '';
+  }
+
+  async function reconnectStorageSource(storageSource: BooksDbStorageSource) {
+    actionLoading[storageSource.name] = true;
+    actionLoading = { ...actionLoading };
+
+    try {
+      await StorageOAuthManager.reconnect(window, storageSource.name);
+    } finally {
+      actionLoading[storageSource.name] = false;
+      actionLoading = { ...actionLoading };
+    }
+  }
+
+  async function disconnectStorageSource(storageSource: BooksDbStorageSource) {
+    actionLoading[storageSource.name] = true;
+    actionLoading = { ...actionLoading };
+
+    try {
+      await StorageOAuthManager.disconnect(storageSource.name);
+    } finally {
+      actionLoading[storageSource.name] = false;
+      actionLoading = { ...actionLoading };
+    }
+  }
 </script>
 
 <div class="mb-8 sm:col-span-2 lg:col-span-3">
@@ -260,18 +302,76 @@
             storageSource.type,
             [$gDriveStorageSource$, $oneDriveStorageSource$, $fsStorageSource$]
           )}
+          {@const isCloudSource =
+            storageSource.type === StorageKey.GDRIVE || storageSource.type === StorageKey.ONEDRIVE}
+          {@const connectionState =
+            $storageConnectionStates$[storageSource.name] ||
+            getConnectionState(storageSource.name, storageSource)}
+          {@const accountEmail = getAccountEmail(storageSource)}
+          {@const isLoading = !!actionLoading[storageSource.name]}
           <div class="flex flex-col">
             <div class="flex">
               <svg
-                class="inline-block h-6 w-6 self-center"
+                class="inline-block h-6 w-6 self-center shrink-0"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox={icon.viewBox}
               >
                 <path class="fill-current" d={icon.d} />
               </svg>
-              <div class="ml-3 self-center">{storageSource.name}</div>
+              <div class="ml-3 self-center min-w-0">
+                <div class="truncate font-medium">{storageSource.name}</div>
+                {#if isCloudSource}
+                  <div class="flex items-center text-xs mt-0.5">
+                    {#if connectionState === StorageConnectionState.CONNECTED}
+                      <span
+                        class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5 shrink-0"
+                      />
+                      <span class="text-gray-400 truncate" title={accountEmail || 'Connected'}>
+                        {accountEmail || 'Connected'}
+                      </span>
+                    {:else if connectionState === StorageConnectionState.NEEDS_RECONNECT}
+                      <span
+                        class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 shrink-0 animate-pulse"
+                      />
+                      <span class="text-amber-500 font-medium">Session Expired</span>
+                    {:else}
+                      <span class="inline-block w-2 h-2 rounded-full bg-gray-400 mr-1.5 shrink-0" />
+                      <span class="text-gray-400">Disconnected</span>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
             </div>
-            <div class="mt-4 flex">
+            <div class="mt-4 flex items-center">
+              {#if isCloudSource}
+                <div
+                  tabindex="0"
+                  role="button"
+                  title={connectionState === StorageConnectionState.CONNECTED
+                    ? 'Reconnect session'
+                    : 'Connect session'}
+                  class="mr-4 cursor-pointer hover:opacity-80"
+                  class:text-amber-500={connectionState === StorageConnectionState.NEEDS_RECONNECT}
+                  class:opacity-50={isLoading}
+                  on:click={() => !isLoading && reconnectStorageSource(storageSource)}
+                  on:keyup={dummyFn}
+                >
+                  <Fa icon={isLoading ? faSpinner : faArrowsRotate} spin={isLoading} />
+                </div>
+                {#if connectionState === StorageConnectionState.CONNECTED}
+                  <div
+                    tabindex="0"
+                    role="button"
+                    title="Disconnect session"
+                    class="mr-4 cursor-pointer text-gray-400 hover:text-red-500 transition-colors"
+                    class:opacity-50={isLoading}
+                    on:click={() => !isLoading && disconnectStorageSource(storageSource)}
+                    on:keyup={dummyFn}
+                  >
+                    <Fa icon={faRightFromBracket} />
+                  </div>
+                {/if}
+              {/if}
               <div
                 tabindex="0"
                 role="button"

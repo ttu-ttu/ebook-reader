@@ -50,6 +50,8 @@ export interface RemoteContext {
   clientId: string;
   clientSecret: string;
   refreshToken?: string;
+  accountEmail?: string;
+  accountName?: string;
 }
 
 export interface StorageSourceSaveResult {

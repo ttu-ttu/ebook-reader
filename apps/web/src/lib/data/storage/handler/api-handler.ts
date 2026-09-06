@@ -22,7 +22,12 @@ import {
   type ExternalFile
 } from '$lib/data/storage/handler/base-handler';
 import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
-import { StorageOAuthManager } from '$lib/data/storage/storage-oauth-manager';
+import {
+  StorageOAuthManager,
+  StorageConnectionState,
+  setConnectionState,
+  storageOAuthTokens
+} from '$lib/data/storage/storage-oauth-manager';
 import { StorageKey } from '$lib/data/storage/storage-types';
 import { database } from '$lib/data/store';
 import {
@@ -725,7 +730,16 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
             } else {
               const errorMessage = await convertAuthErrorResponse(this);
 
-              if (this.status === 404) {
+              if (this.status === 401) {
+                storageOAuthTokens.delete(self.storageSourceName);
+                setConnectionState(self.storageSourceName, StorageConnectionState.NEEDS_RECONNECT);
+                logger.error(errorMessage);
+                reject(
+                  new Error(
+                    `Session expired for "${self.storageSourceName}". Please reconnect in Settings.`
+                  )
+                );
+              } else if (this.status === 404) {
                 logger.error(errorMessage);
                 reject(new Error('Resource not found. Refresh your current tab and try again'));
               } else {
