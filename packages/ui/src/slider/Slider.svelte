@@ -149,6 +149,11 @@
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
+    outline: none;
+  }
+
+  .astryx-slider-native:focus {
+    outline: none;
   }
 
   .astryx-slider-native::-webkit-slider-runnable-track {

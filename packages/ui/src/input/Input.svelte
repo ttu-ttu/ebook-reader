@@ -218,9 +218,24 @@
     border: none;
     outline: none;
     background: transparent;
+    box-shadow: none;
     color: var(--astryx-color-fg-primary, #18181b);
     font-family: inherit;
     line-height: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .astryx-input-element:focus,
+  .astryx-input-element:focus-visible,
+  .astryx-input-element:active {
+    outline: none !important;
+    border: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    --tw-ring-color: transparent !important;
+    --tw-ring-shadow: none !important;
+    --tw-ring-offset-shadow: none !important;
   }
 
   .astryx-input-element::placeholder {
@@ -328,9 +343,15 @@
     cursor: pointer;
     border-radius: var(--astryx-radius-full, 9999px);
     transition: color 100ms ease;
+    outline: none;
   }
   .astryx-input-clear-btn:hover {
     color: var(--astryx-color-fg-primary, #18181b);
+  }
+  .astryx-input-clear-btn:focus,
+  .astryx-input-clear-btn:focus-visible {
+    outline: none;
+    box-shadow: none;
   }
 
   /* Feedback messages */
