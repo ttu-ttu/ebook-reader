@@ -5,6 +5,7 @@
   import { BOOKMARK_COLORS, type BooksDbUserBookmarkData } from './bookmark-types';
 
   export let bookmark: BooksDbUserBookmarkData;
+  export let isCurrentPosition = false;
 
   const dispatch = createEventDispatcher<{
     select: BooksDbUserBookmarkData;
@@ -59,7 +60,9 @@
 <div
   tabindex="0"
   role="button"
-  class="group flex cursor-pointer items-start justify-between gap-3 border-b border-gray-700/20 px-4 py-3 transition-colors hover:bg-black/5 dark:border-gray-300/20 dark:hover:bg-white/5"
+  class="group flex cursor-pointer items-start justify-between gap-3 border-b border-gray-700/20 px-4 py-3 transition-colors hover:bg-black/5 dark:border-gray-300/20 dark:hover:bg-white/5 {isCurrentPosition
+    ? 'bg-blue-500/10 dark:bg-blue-400/10'
+    : ''}"
   on:click={handleSelect}
   on:keydown={(e) => e.key === 'Enter' && handleSelect()}
 >
@@ -87,6 +90,14 @@
             ? formatRelativeTime(bookmark.createdAt)
             : formatDate(bookmark.createdAt)}</span
         >
+        {#if isCurrentPosition}
+          <span>•</span>
+          <span
+            class="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600 dark:bg-blue-400/25 dark:text-blue-300"
+          >
+            Current
+          </span>
+        {/if}
       </div>
     </div>
   </div>

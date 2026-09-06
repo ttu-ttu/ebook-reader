@@ -352,7 +352,7 @@ export class DatabaseService {
     return id;
   }
 
-  async putAutosaveBookmark(data: BooksDbUserBookmarkData, maxKeep: number = 5): Promise<void> {
+  async putAutosaveBookmark(data: BooksDbUserBookmarkData, maxKeep: number = 10): Promise<void> {
     const db = await this.db;
     const tx = db.transaction('userBookmark', 'readwrite');
     const store = tx.objectStore('userBookmark');

@@ -10,11 +10,20 @@
   import type { BooksDbUserBookmarkData } from './bookmark-types';
 
   export let bookmarks: BooksDbUserBookmarkData[] = [];
+  export let currentExploredCharCount: number = 0;
   export let wasTrackerPaused: boolean;
 
   let activeTab: 'bookmarks' | 'autosaves' = 'autosaves';
+  let bookmarkFilter = '';
 
   $: manualBookmarks = bookmarks.filter((b) => !b.isAutosave);
+  $: filteredManualBookmarks = bookmarkFilter
+    ? manualBookmarks.filter(
+        (b) =>
+          b.label.toLowerCase().includes(bookmarkFilter.toLowerCase()) ||
+          b.note?.toLowerCase().includes(bookmarkFilter.toLowerCase())
+      )
+    : manualBookmarks;
   $: autosaves = bookmarks.filter((b) => b.isAutosave).sort((a, b) => b.createdAt - a.createdAt);
 
   const dispatch = createEventDispatcher<{
@@ -130,7 +139,7 @@
     </div>
 
     <!-- Autosaves List / Empty State -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto overscroll-contain pb-8">
       {#if autosaves.length === 0}
         <div class="flex h-48 flex-col items-center justify-center p-6 text-center opacity-60">
           <p class="text-sm">No autosaves recorded yet.</p>
@@ -142,6 +151,7 @@
         {#each autosaves as bookmark (bookmark.id ?? bookmark.createdAt)}
           <BookBookmarkItem
             {bookmark}
+            isCurrentPosition={Math.abs(bookmark.exploredCharCount - currentExploredCharCount) < 50}
             on:select={(e) => handleSelect(e.detail)}
             on:promote={(e) => handlePromote(e.detail)}
             on:delete={(e) => handleDelete(e.detail)}
@@ -162,8 +172,20 @@
       </button>
     </div>
 
+    <!-- Filter input for long bookmark lists -->
+    {#if manualBookmarks.length > 5}
+      <div class="border-b border-gray-700/10 px-3 py-2 dark:border-gray-300/10">
+        <input
+          type="text"
+          placeholder="Filter bookmarks by title or note..."
+          class="w-full rounded border border-gray-700/10 bg-black/5 px-2.5 py-1 text-xs outline-none transition-all placeholder:opacity-50 focus:border-blue-500 focus:bg-black/10 dark:border-gray-300/10 dark:bg-white/10 dark:focus:bg-white/15"
+          bind:value={bookmarkFilter}
+        />
+      </div>
+    {/if}
+
     <!-- Permanent Bookmarks List / Empty State -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto overscroll-contain pb-8">
       {#if manualBookmarks.length === 0}
         <div class="flex h-48 flex-col items-center justify-center p-6 text-center opacity-60">
           <p class="text-sm">No bookmarks yet.</p>
@@ -171,10 +193,15 @@
             Click "+ Add Bookmark" above or press Shift+B to bookmark this location.
           </p>
         </div>
+      {:else if filteredManualBookmarks.length === 0}
+        <div class="flex h-32 flex-col items-center justify-center p-6 text-center opacity-60">
+          <p class="text-xs">No bookmarks match "{bookmarkFilter}".</p>
+        </div>
       {:else}
-        {#each manualBookmarks as bookmark (bookmark.id ?? bookmark.createdAt)}
+        {#each filteredManualBookmarks as bookmark (bookmark.id ?? bookmark.createdAt)}
           <BookBookmarkItem
             {bookmark}
+            isCurrentPosition={Math.abs(bookmark.exploredCharCount - currentExploredCharCount) < 50}
             on:select={(e) => handleSelect(e.detail)}
             on:edit={(e) => handleEdit(e.detail)}
             on:delete={(e) => handleDelete(e.detail)}

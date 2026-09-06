@@ -201,7 +201,7 @@ export const autosaveHistoryInterval$ = writableNumberLocalStorageSubject()(
 
 export const autosaveHistoryMaxCount$ = writableNumberLocalStorageSubject()(
   'autosaveHistoryMaxCount',
-  5
+  10
 );
 
 export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0);

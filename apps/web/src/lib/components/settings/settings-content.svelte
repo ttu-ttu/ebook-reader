@@ -891,7 +891,7 @@
       </SettingsItemGroup>
       <SettingsItemGroup
         title="Max Autosaves to Keep"
-        tooltip={'Number of rolling autosave checkpoints to preserve (older ones will be pruned)'}
+        tooltip={'Number of rolling autosave checkpoints to preserve (older ones will be pruned, max 20)'}
       >
         <input
           type="number"
@@ -902,7 +902,9 @@
           bind:value={autosaveHistoryMaxCount}
           on:blur={() => {
             if (autosaveHistoryMaxCount < 2 || typeof autosaveHistoryMaxCount !== 'number') {
-              autosaveHistoryMaxCount = 5;
+              autosaveHistoryMaxCount = 10;
+            } else if (autosaveHistoryMaxCount > 20) {
+              autosaveHistoryMaxCount = 20;
             }
           }}
         />

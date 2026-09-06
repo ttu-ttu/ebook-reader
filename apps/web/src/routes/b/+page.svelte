@@ -690,7 +690,7 @@
         lastModified: Date.now(),
         isAutosave: true
       },
-      $autosaveHistoryMaxCount$ || 5
+      $autosaveHistoryMaxCount$ || 10
     );
 
     await refreshUserBookmarks();
@@ -2079,6 +2079,7 @@
   >
     <BookBookmarkPanel
       bookmarks={userBookmarks}
+      currentExploredCharCount={exploredCharCount}
       {wasTrackerPaused}
       on:select={(e) => handleNavigateUserBookmark(e.detail)}
       on:edit={(e) => openEditBookmarkDialog(e.detail)}
