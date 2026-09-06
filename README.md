@@ -37,6 +37,9 @@ _Base ttu-reader only supported a single reading bookmark representing your curr
 - **Slide-Out Bookmark Drawer**: A dedicated drawer panel (matching the Table of Contents UI/UX) to view, sort by progress, jump to, edit, or delete bookmarks.
 - **Visual Margin Indicators**: Colored bookmark ribbon icons appear directly in the text margin at the exact bookmarked position in both paginated and continuous modes (fully compatible with horizontal and vertical Japanese text layouts). Clicking an indicator scrolls directly to that point.
 - **In-Place Bookmark Editing**: Modify bookmark labels, color tags, and notes directly from the bookmark manager drawer.
+- **Rolling Autosave History & Glitch Recovery**: Automatically captures rolling position checkpoints every 10 seconds while reading (keeping the latest 5). If an accidental gesture, trackpad bug, or browser layout fling causes unexpected rapid scrolling, users can simply open the Bookmarks Manager, switch to the **Autosaves** tab, and jump right back to where they were.
+- **Glitch Jump Protection**: Detects abnormal position jumps (>2,000 characters within 1.5s) and immediately preserves the pre-jump reading location so users never lose their place.
+- **One-Click Promotion ("Keep")**: Any rolling autosave checkpoint can be converted into a permanent bookmark with a single click.
 - **Keyboard Shortcuts**:
   - `Shift + B`: Quick-create a bookmark at current reading position.
   - `Shift + R`: Toggle open/close the bookmark drawer panel.
