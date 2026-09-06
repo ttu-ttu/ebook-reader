@@ -636,6 +636,7 @@
     const dots: typeof visibleUserBookmarkDots = [];
 
     for (const ub of userBookmarks) {
+      if (ub.isAutosave) continue;
       const safeCharCount = Math.max(1, ub.exploredCharCount);
       const result = calculator.checkBookmarkOnScreen(safeCharCount);
       if (result.isBookmarkScreen) {

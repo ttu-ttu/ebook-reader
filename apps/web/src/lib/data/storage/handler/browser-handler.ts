@@ -322,7 +322,7 @@ export class BrowserStorageHandler extends BaseStorageHandler {
 
     const bookmarks = dataId ? await database.getUserBookmarks(dataId) : [];
 
-    return bookmarks;
+    return bookmarks.filter((b) => !b.isAutosave);
   }
 
   async getStatistics() {

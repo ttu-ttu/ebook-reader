@@ -39,6 +39,7 @@ export interface BooksDbV7UserBookmarkData {
   note: string;
   createdAt: number;
   lastModified: number;
+  isAutosave?: boolean;
 }
 
 export default interface BooksDbV7 extends BooksDbV6 {

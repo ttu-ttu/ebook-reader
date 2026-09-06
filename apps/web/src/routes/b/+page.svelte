@@ -37,6 +37,9 @@
   import {
     autoBookmark$,
     autoBookmarkTime$,
+    autosaveHistoryEnabled$,
+    autosaveHistoryInterval$,
+    autosaveHistoryMaxCount$,
     autoPositionOnResize$,
     avoidPageBreak$,
     bookReaderKeybindMap$,
@@ -603,10 +606,82 @@
 
     readerImageGalleryPictures$.next([]);
 
-    if (dismissDialogs) {
-      dialogManager.dialogs$.next([]);
+    if (autosaveTimer) {
+      clearInterval(autosaveTimer);
     }
   });
+
+  let lastAutosavedCharCount = 0;
+  let previousObservedCharCount = 0;
+  let previousObservedTime = 0;
+  let autosaveTimer: any;
+
+  function resetAutosaveTimer(intervalSeconds: number, enabled: boolean) {
+    if (autosaveTimer) {
+      clearInterval(autosaveTimer);
+      autosaveTimer = undefined;
+    }
+    if (!browser || !enabled) return;
+    const ms = Math.max(5, intervalSeconds || 10) * 1000;
+    autosaveTimer = setInterval(() => {
+      if (!$autosaveHistoryEnabled$ || !bookCharCount || $isTrackerPaused$ || wasTrackerPaused) {
+        return;
+      }
+      if (exploredCharCount > 0 && Math.abs(exploredCharCount - lastAutosavedCharCount) >= 15) {
+        createAutosaveSnapshot(exploredCharCount);
+        lastAutosavedCharCount = exploredCharCount;
+      }
+    }, ms);
+  }
+
+  $: if (browser) {
+    resetAutosaveTimer($autosaveHistoryInterval$, $autosaveHistoryEnabled$);
+  }
+
+  $: {
+    if (browser && $autosaveHistoryEnabled$ && exploredCharCount > 0 && bookCharCount > 0) {
+      const now = Date.now();
+      if (previousObservedCharCount > 0 && previousObservedTime > 0) {
+        const timeDiff = now - previousObservedTime;
+        const charDiff = Math.abs(exploredCharCount - previousObservedCharCount);
+
+        // Abnormal jump detection (> 2000 chars or > 5% of book in < 1.5s)
+        const isGlitchJump =
+          timeDiff < 1500 && (charDiff > 2000 || charDiff > bookCharCount * 0.05);
+        if (isGlitchJump && Math.abs(previousObservedCharCount - lastAutosavedCharCount) >= 15) {
+          createAutosaveSnapshot(previousObservedCharCount, 'Pre-jump Checkpoint');
+          lastAutosavedCharCount = previousObservedCharCount;
+        }
+      } else {
+        lastAutosavedCharCount = exploredCharCount;
+      }
+      previousObservedCharCount = exploredCharCount;
+      previousObservedTime = now;
+    }
+  }
+
+  async function createAutosaveSnapshot(charCount: number, customPrefix?: string) {
+    const dataId = getBookIdSync();
+    if (!dataId || charCount <= 0 || !bookCharCount) return;
+
+    const chapterLabel = generateBookmarkLabel($sectionData$, charCount, bookCharCount);
+    const label = customPrefix ? `${customPrefix}: ${chapterLabel}` : chapterLabel;
+
+    await database.putAutosaveBookmark(
+      {
+        dataId,
+        exploredCharCount: Math.max(1, charCount),
+        progress: Math.min(1, charCount / bookCharCount),
+        label,
+        color: 'gray',
+        note: 'Autosaved reading checkpoint',
+        createdAt: Date.now(),
+        lastModified: Date.now(),
+        isAutosave: true
+      },
+      $autosaveHistoryMaxCount$ || 5
+    );
+  }
 
   function handleUnload(event: BeforeUnloadEvent) {
     if (
@@ -1169,8 +1244,9 @@
   }
 
   function navigateToNextBookmark() {
-    if (!userBookmarks || !userBookmarks.length) return;
-    const sorted = [...userBookmarks].sort((a, b) => a.exploredCharCount - b.exploredCharCount);
+    const list = userBookmarks.filter((b) => !b.isAutosave);
+    if (!list.length) return;
+    const sorted = [...list].sort((a, b) => a.exploredCharCount - b.exploredCharCount);
     const next = sorted.find((b) => b.exploredCharCount > exploredCharCount + 5);
     if (next) {
       handleNavigateUserBookmark(next);
@@ -1180,8 +1256,9 @@
   }
 
   function navigateToPrevBookmark() {
-    if (!userBookmarks || !userBookmarks.length) return;
-    const sorted = [...userBookmarks].sort((a, b) => a.exploredCharCount - b.exploredCharCount);
+    const list = userBookmarks.filter((b) => !b.isAutosave);
+    if (!list.length) return;
+    const sorted = [...list].sort((a, b) => a.exploredCharCount - b.exploredCharCount);
     const prev = [...sorted].reverse().find((b) => b.exploredCharCount < exploredCharCount - 5);
     if (prev) {
       handleNavigateUserBookmark(prev);
@@ -1299,8 +1376,22 @@
   async function handleDeleteUserBookmark(item: BooksDbUserBookmarkData) {
     if (item.id !== undefined) {
       await database.deleteUserBookmark(item.id);
-      scheduleReplication(StorageDataType.USER_BOOKMARKS);
+      if (!item.isAutosave) {
+        scheduleReplication(StorageDataType.USER_BOOKMARKS);
+      }
     }
+  }
+
+  async function handlePromoteAutosave(item: BooksDbUserBookmarkData) {
+    if (item.id === undefined) return;
+    await database.promoteAutosaveToBookmark(item.id);
+    scheduleReplication(StorageDataType.USER_BOOKMARKS);
+  }
+
+  async function handleClearAutosaves() {
+    const dataId = getBookIdSync();
+    if (!dataId) return;
+    await database.clearAutosaveBookmarks(dataId);
   }
 
   function getBookIdSync() {
@@ -1976,6 +2067,8 @@
       on:select={(e) => handleNavigateUserBookmark(e.detail)}
       on:edit={(e) => openEditBookmarkDialog(e.detail)}
       on:delete={(e) => handleDeleteUserBookmark(e.detail)}
+      on:promote={(e) => handlePromoteAutosave(e.detail)}
+      on:clearAutosaves={handleClearAutosaves}
       on:create={openCreateBookmarkDialog}
     />
   </div>

@@ -256,7 +256,9 @@
 
   $: {
     if (contentReadyEvent && bookmarkManagerConcrete && userBookmarks?.length) {
-      userBookmarkPositions = bookmarkManagerConcrete.getUserBookmarkPositions(userBookmarks);
+      userBookmarkPositions = bookmarkManagerConcrete.getUserBookmarkPositions(
+        userBookmarks.filter((b) => !b.isAutosave)
+      );
     } else {
       userBookmarkPositions = [];
     }

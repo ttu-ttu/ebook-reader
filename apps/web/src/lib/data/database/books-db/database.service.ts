@@ -12,7 +12,8 @@ import type {
   BooksDbStatistic,
   BooksDbStorageSource,
   BooksDbSubtitleData,
-  BooksDbUserBookmarkData
+  BooksDbUserBookmarkData,
+  BookmarkColor
 } from '$lib/data/database/books-db/versions/books-db';
 import { Observable, Subject, from } from 'rxjs';
 import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
@@ -337,23 +338,104 @@ export class DatabaseService {
   async putUserBookmark(data: BooksDbUserBookmarkData): Promise<number> {
     const db = await this.db;
     const id = (await db.put('userBookmark', data)) as number;
-    const book = await db.get('data', data.dataId);
+    if (!data.isAutosave) {
+      const book = await db.get('data', data.dataId);
+      if (book?.title) {
+        await db.put('lastModified', {
+          title: book.title,
+          dataType: StorageDataType.USER_BOOKMARKS,
+          lastModifiedValue: data.lastModified || Date.now()
+        });
+      }
+    }
+    this.userBookmarksChanged$.next();
+    return id;
+  }
+
+  async putAutosaveBookmark(data: BooksDbUserBookmarkData, maxKeep: number = 5): Promise<void> {
+    const db = await this.db;
+    const tx = db.transaction('userBookmark', 'readwrite');
+    const store = tx.objectStore('userBookmark');
+    const index = store.index('dataId');
+
+    const existing = await index.getAll(data.dataId);
+    const autosaves = existing
+      .filter((b) => b.isAutosave)
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    await store.add({
+      ...data,
+      isAutosave: true
+    });
+
+    if (autosaves.length >= maxKeep) {
+      const toDelete = autosaves.slice(maxKeep - 1);
+      for (const old of toDelete) {
+        if (old.id !== undefined) {
+          await store.delete(old.id);
+        }
+      }
+    }
+
+    await tx.done;
+    this.userBookmarksChanged$.next();
+  }
+
+  async clearAutosaveBookmarks(dataId: number): Promise<void> {
+    const db = await this.db;
+    const tx = db.transaction('userBookmark', 'readwrite');
+    const store = tx.objectStore('userBookmark');
+    const index = store.index('dataId');
+
+    const existing = await index.getAll(dataId);
+    for (const item of existing) {
+      if (item.isAutosave && item.id !== undefined) {
+        await store.delete(item.id);
+      }
+    }
+
+    await tx.done;
+    this.userBookmarksChanged$.next();
+  }
+
+  async promoteAutosaveToBookmark(
+    id: number,
+    label?: string,
+    color?: BookmarkColor,
+    note?: string
+  ): Promise<void> {
+    const db = await this.db;
+    const bookmark = await db.get('userBookmark', id);
+    if (!bookmark) return;
+
+    const updated: BooksDbUserBookmarkData = {
+      ...bookmark,
+      label: label !== undefined ? label : bookmark.label.replace(/\s*\(Autosave\)$/i, ''),
+      color: color || 'blue',
+      note: note !== undefined ? note : bookmark.note,
+      isAutosave: false,
+      lastModified: Date.now()
+    };
+
+    await db.put('userBookmark', updated);
+
+    const book = await db.get('data', bookmark.dataId);
     if (book?.title) {
       await db.put('lastModified', {
         title: book.title,
         dataType: StorageDataType.USER_BOOKMARKS,
-        lastModifiedValue: data.lastModified || Date.now()
+        lastModifiedValue: updated.lastModified
       });
     }
+
     this.userBookmarksChanged$.next();
-    return id;
   }
 
   async deleteUserBookmark(id: number): Promise<void> {
     const db = await this.db;
     const bookmark = await db.get('userBookmark', id);
     await db.delete('userBookmark', id);
-    if (bookmark?.dataId) {
+    if (bookmark?.dataId && !bookmark.isAutosave) {
       const book = await db.get('data', bookmark.dataId);
       if (book?.title) {
         await db.put('lastModified', {
@@ -388,7 +470,9 @@ export class DatabaseService {
         const index = ubStore.index('dataId');
         let cursor = await index.openCursor(dataId);
         while (cursor) {
-          await cursor.delete();
+          if (!cursor.value.isAutosave) {
+            await cursor.delete();
+          }
           cursor = await cursor.continue();
         }
 

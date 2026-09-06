@@ -10,6 +10,9 @@
     adjustStatisticsAfterIdleTime$,
     autoBookmark$,
     autoBookmarkTime$,
+    autosaveHistoryEnabled$,
+    autosaveHistoryInterval$,
+    autosaveHistoryMaxCount$,
     autoPositionOnResize$,
     autoReplication$,
     avoidPageBreak$,
@@ -192,6 +195,9 @@
       bind:manualBookmark={$manualBookmark$}
       bind:autoBookmark={$autoBookmark$}
       bind:autoBookmarkTime={$autoBookmarkTime$}
+      bind:autosaveHistoryEnabled={$autosaveHistoryEnabled$}
+      bind:autosaveHistoryInterval={$autosaveHistoryInterval$}
+      bind:autosaveHistoryMaxCount={$autosaveHistoryMaxCount$}
       bind:importHTMLFixMode={$importHTMLFixMode$}
       bind:restrictImportFixToAnchor={$restrictImportFixToAnchor$}
       bind:cacheStorageData={$cacheStorageData$}

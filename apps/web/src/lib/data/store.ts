@@ -189,6 +189,21 @@ export const autoBookmark$ = writableBooleanLocalStorageSubject()('autoBookmark'
 
 export const autoBookmarkTime$ = writableNumberLocalStorageSubject()('autoBookmarkTime', 3);
 
+export const autosaveHistoryEnabled$ = writableBooleanLocalStorageSubject()(
+  'autosaveHistoryEnabled',
+  true
+);
+
+export const autosaveHistoryInterval$ = writableNumberLocalStorageSubject()(
+  'autosaveHistoryInterval',
+  10
+);
+
+export const autosaveHistoryMaxCount$ = writableNumberLocalStorageSubject()(
+  'autosaveHistoryMaxCount',
+  5
+);
+
 export const pageColumns$ = writableNumberLocalStorageSubject()('pageColumns', 0);
 
 export const requestPersistentStorage$ = writableBooleanLocalStorageSubject()(

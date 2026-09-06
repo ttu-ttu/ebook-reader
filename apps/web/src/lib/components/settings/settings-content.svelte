@@ -144,6 +144,12 @@
 
   export let autoBookmarkTime: number;
 
+  export let autosaveHistoryEnabled: boolean;
+
+  export let autosaveHistoryInterval: number;
+
+  export let autosaveHistoryMaxCount: number;
+
   export let activeSettings: string;
 
   export let importHTMLFixMode: string;
@@ -855,6 +861,53 @@
     <SettingsItemGroup title="Auto Bookmark" tooltip={autoBookmarkTooltip}>
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
     </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Autosave History"
+      tooltip={'If enabled, automatically takes rolling position checkpoints while reading so you can restore your place if accidental rapid scrolling occurs'}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={autosaveHistoryEnabled}
+      />
+    </SettingsItemGroup>
+    {#if autosaveHistoryEnabled}
+      <SettingsItemGroup
+        title="Autosave Interval"
+        tooltip={'Interval in seconds between rolling autosaves while reading'}
+      >
+        <input
+          type="number"
+          step="1"
+          min="5"
+          max="60"
+          class={inputClasses}
+          bind:value={autosaveHistoryInterval}
+          on:blur={() => {
+            if (autosaveHistoryInterval < 5 || typeof autosaveHistoryInterval !== 'number') {
+              autosaveHistoryInterval = 10;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Max Autosaves to Keep"
+        tooltip={'Number of rolling autosave checkpoints to preserve (older ones will be pruned)'}
+      >
+        <input
+          type="number"
+          step="1"
+          min="2"
+          max="20"
+          class={inputClasses}
+          bind:value={autosaveHistoryMaxCount}
+          on:blur={() => {
+            if (autosaveHistoryMaxCount < 2 || typeof autosaveHistoryMaxCount !== 'number') {
+              autosaveHistoryMaxCount = 5;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup title="Blur image">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
     </SettingsItemGroup>

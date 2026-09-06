@@ -18,6 +18,7 @@ export type BooksDbLastModified = BooksDb['lastModified']['value'];
 export type BooksDbAudioBook = BooksDb['audioBook']['value'];
 export type BooksDbSubtitleData = BooksDb['subtitle']['value'];
 export type BooksDbHandle = BooksDb['handle']['value'];
+export type { BookmarkColor } from '$lib/data/database/books-db/versions/v7/books-db-v7';
 export const currentDbVersion = 7;
 
 export default BooksDb;
