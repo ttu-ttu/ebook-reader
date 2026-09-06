@@ -23,6 +23,41 @@ This repository is a personalized fork of the excellent [ttu-ttu/ebook-reader](h
 
 ---
 
+## Changelog: Changes from Base ttu-reader
+
+This fork extends the upstream [ttu-ttu/ebook-reader](https://github.com/ttu-ttu/ebook-reader) with several major features and enhancements:
+
+### 🔖 Multi-Bookmark & Annotation System
+
+_Base ttu-reader only supported a single reading bookmark representing your current progress. This fork introduces a comprehensive multi-bookmark system:_
+
+- **Multiple Named Bookmarks**: Create and manage unlimited bookmarks per book without overwriting your current reading position.
+- **Smart Auto-Naming**: Automatically suggests bookmark titles using the active chapter name and character progress percentage (e.g., `Chapter 3 (42%)`), with full support for custom labels and personal notes.
+- **Color Tagging**: Assign one of 6 distinct color tags (`Red`, `Blue`, `Green`, `Amber`, `Purple`, `Pink`) to categorize bookmarks (favorite passages, vocabulary, plot points, etc.).
+- **Slide-Out Bookmark Drawer**: A dedicated drawer panel (matching the Table of Contents UI/UX) to view, sort by progress, jump to, edit, or delete bookmarks.
+- **Visual Margin Indicators**: Colored bookmark ribbon icons appear directly in the text margin at the exact bookmarked position in both paginated and continuous modes (fully compatible with horizontal and vertical Japanese text layouts). Clicking an indicator scrolls directly to that point.
+- **In-Place Bookmark Editing**: Modify bookmark labels, color tags, and notes directly from the bookmark manager drawer.
+- **Keyboard Shortcuts**:
+  - `Shift + B`: Quick-create a bookmark at current reading position.
+  - `Shift + R`: Toggle open/close the bookmark drawer panel.
+  - `Shift + N`: Jump forward to the next bookmark in the book.
+  - `Shift + P`: Jump backward to the previous bookmark in the book.
+
+### 🔄 Multi-Device Sync, Export & Backup Integration
+
+- **ZIP Backup & Restore**: Full support for exporting and importing user bookmarks inside `.zip` backups (`userBookmarks_...json`).
+- **Cloud & Filesystem Sync**: Seamless two-way replication across Google Drive, Microsoft OneDrive, and local filesystem directory handles (`fs`).
+- **Smart Merging & Conflict Resolution**: Merges bookmarks across devices without overwriting newer annotations (preserves the most recently modified version per bookmark).
+- **Auto-Replication**: Automatically triggers background cloud/filesystem sync whenever bookmarks are created, modified, or removed.
+- **Export Selection UI**: Added a dedicated "User Bookmarks" checkbox in the export modal, enabled by default in export preferences.
+
+### 🚀 CI/CD & Deployment
+
+- **Automated GitHub Pages Deployment**: Fully automated build and deploy workflow via GitHub Actions (`pages.yml`).
+- **Configurable Base Path**: Native support for subpath hosting (`svelte.config.js` with `BASE_PATH`) and automated `.nojekyll` inclusion.
+
+---
+
 ## Live Deployment
 
 The reader is automatically built and deployed to GitHub Pages on every push to `main`:
