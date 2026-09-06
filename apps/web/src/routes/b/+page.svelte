@@ -1104,7 +1104,8 @@
           StorageDataType.STATISTICS,
           StorageDataType.READING_GOALS,
           StorageDataType.AUDIOBOOK,
-          StorageDataType.SUBTITLE
+          StorageDataType.SUBTITLE,
+          StorageDataType.USER_BOOKMARKS
         ]
       );
 
@@ -1120,7 +1121,14 @@
       !ev.altKey &&
       !ev.ctrlKey &&
       !ev.metaKey &&
-      (ev.code === 'KeyB' || ev.code === 'KeyR' || ev.key === 'B' || ev.key === 'R');
+      (ev.code === 'KeyB' ||
+        ev.code === 'KeyR' ||
+        ev.code === 'KeyN' ||
+        ev.code === 'KeyP' ||
+        ev.key === 'B' ||
+        ev.key === 'R' ||
+        ev.key === 'N' ||
+        ev.key === 'P');
 
     if (
       $skipKeyDownListener$ ||
@@ -1147,7 +1155,9 @@
       trackerDblClickHandler,
       freezeTrackerPosition,
       openCreateBookmarkDialog,
-      () => bookmarkPanelIsOpen$.next(!$bookmarkPanelIsOpen$)
+      () => bookmarkPanelIsOpen$.next(!$bookmarkPanelIsOpen$),
+      navigateToNextBookmark,
+      navigateToPrevBookmark
     );
 
     if (!result) return;
@@ -1156,6 +1166,28 @@
       document.activeElement.blur();
     }
     ev.preventDefault();
+  }
+
+  function navigateToNextBookmark() {
+    if (!userBookmarks || !userBookmarks.length) return;
+    const sorted = [...userBookmarks].sort((a, b) => a.exploredCharCount - b.exploredCharCount);
+    const next = sorted.find((b) => b.exploredCharCount > exploredCharCount + 5);
+    if (next) {
+      handleNavigateUserBookmark(next);
+    } else {
+      handleNavigateUserBookmark(sorted[0]);
+    }
+  }
+
+  function navigateToPrevBookmark() {
+    if (!userBookmarks || !userBookmarks.length) return;
+    const sorted = [...userBookmarks].sort((a, b) => a.exploredCharCount - b.exploredCharCount);
+    const prev = [...sorted].reverse().find((b) => b.exploredCharCount < exploredCharCount - 5);
+    if (prev) {
+      handleNavigateUserBookmark(prev);
+    } else {
+      handleNavigateUserBookmark(sorted[sorted.length - 1]);
+    }
   }
 
   async function openCreateBookmarkDialog() {
@@ -1201,6 +1233,7 @@
       createdAt: Date.now(),
       lastModified: Date.now()
     });
+    scheduleReplication(StorageDataType.USER_BOOKMARKS);
   }
 
   async function openEditBookmarkDialog(item: BooksDbUserBookmarkData) {
@@ -1241,6 +1274,7 @@
       note: result.note,
       lastModified: Date.now()
     });
+    scheduleReplication(StorageDataType.USER_BOOKMARKS);
   }
 
   function handleNavigateUserBookmark(item: BooksDbUserBookmarkData) {
@@ -1265,6 +1299,7 @@
   async function handleDeleteUserBookmark(item: BooksDbUserBookmarkData) {
     if (item.id !== undefined) {
       await database.deleteUserBookmark(item.id);
+      scheduleReplication(StorageDataType.USER_BOOKMARKS);
     }
   }
 

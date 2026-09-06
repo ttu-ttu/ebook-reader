@@ -10,7 +10,8 @@ import type {
   BooksDbBookmarkData,
   BooksDbReadingGoal,
   BooksDbStatistic,
-  BooksDbSubtitleData
+  BooksDbSubtitleData,
+  BooksDbUserBookmarkData
 } from '$lib/data/database/books-db/versions/books-db';
 import type { MergeMode } from '$lib/data/merge-mode';
 import { readingGoalSortFunction } from '$lib/data/reading-goal';
@@ -44,6 +45,11 @@ export class BackupStorageHandler extends BaseStorageHandler {
   }
 
   isProgressPresentAndUpToDate() {
+    BaseStorageHandler.reportProgress();
+    return Promise.resolve(false);
+  }
+
+  isUserBookmarksPresentAndUpToDate() {
     BaseStorageHandler.reportProgress();
     return Promise.resolve(false);
   }
@@ -177,6 +183,27 @@ export class BackupStorageHandler extends BaseStorageHandler {
     return new File([progressBlob], filename, { type: 'application/json' });
   }
 
+  async getUserBookmarks() {
+    const { zipEntry, filename } = this.findEntry(FilePrefix.USER_BOOKMARKS);
+
+    if (!zipEntry) {
+      return undefined;
+    }
+
+    if (this.isForBrowser) {
+      return this.extractAsJSON(zipEntry, 'Unable to read user bookmarks data');
+    }
+
+    const ubBlob = await this.readFromZip(
+      new BlobWriter(),
+      'Unable to read user bookmarks data',
+      zipEntry,
+      0.9
+    );
+
+    return new File([ubBlob], filename, { type: 'application/json' });
+  }
+
   async getStatistics() {
     const { zipEntry, filename } = this.findEntry('statistics_');
 
@@ -292,6 +319,20 @@ export class BackupStorageHandler extends BaseStorageHandler {
 
   async saveProgress(data: BooksDbBookmarkData | File) {
     const filename = `${this.sanitizedTitle}/${BaseStorageHandler.getProgressFileName(data)}`;
+
+    if (data instanceof File) {
+      this.exportZipWriter = await this.addDataToZip(filename, data, this.exportZipWriter);
+    } else {
+      this.exportZipWriter = await this.addDataToZip(
+        filename,
+        JSON.stringify(data),
+        this.exportZipWriter
+      );
+    }
+  }
+
+  async saveUserBookmarks(data: BooksDbUserBookmarkData[] | File) {
+    const filename = `${this.sanitizedTitle}/${BaseStorageHandler.getUserBookmarksFileName(data)}`;
 
     if (data instanceof File) {
       this.exportZipWriter = await this.addDataToZip(filename, data, this.exportZipWriter);

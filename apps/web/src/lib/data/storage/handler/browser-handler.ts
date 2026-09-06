@@ -11,7 +11,8 @@ import type {
   BooksDbBookmarkData,
   BooksDbReadingGoal,
   BooksDbStatistic,
-  BooksDbSubtitleData
+  BooksDbSubtitleData,
+  BooksDbUserBookmarkData
 } from '$lib/data/database/books-db/versions/books-db';
 import { database, lastReadingGoalsModified$ } from '$lib/data/store';
 
@@ -267,6 +268,31 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     );
   }
 
+  async isUserBookmarksPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+
+      return false;
+    }
+
+    const bookmarks = await this.getUserBookmarks();
+    const existingLastModified = await database.getLastModifiedForType(
+      this.currentContext.title,
+      StorageDataType.USER_BOOKMARKS
+    );
+    const fileName =
+      Array.isArray(bookmarks) && bookmarks.length
+        ? BaseStorageHandler.getUserBookmarksFileName(bookmarks, existingLastModified)
+        : undefined;
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getUserBookmarksMetadata,
+      'lastUserBookmarksModified',
+      referenceFilename,
+      fileName
+    );
+  }
+
   async getBook() {
     const book = this.currentContext.id
       ? await database.getData(this.currentContext.id)
@@ -286,6 +312,17 @@ export class BrowserStorageHandler extends BaseStorageHandler {
     const progress = dataId ? await database.getBookmark(dataId) : undefined;
 
     return progress;
+  }
+
+  async getUserBookmarks() {
+    const dataId =
+      this.currentContext.id || (await database.getDataByTitle(this.currentContext.title))?.id;
+
+    BaseStorageHandler.reportProgress(0.5);
+
+    const bookmarks = dataId ? await database.getUserBookmarks(dataId) : [];
+
+    return bookmarks;
   }
 
   async getStatistics() {
@@ -382,6 +419,18 @@ export class BrowserStorageHandler extends BaseStorageHandler {
 
       await database.putBookmark(bookmarkData);
     }
+  }
+
+  async saveUserBookmarks(data: BooksDbUserBookmarkData[] | File) {
+    if (data instanceof File) {
+      BaseStorageHandler.reportProgress();
+
+      return;
+    }
+
+    BaseStorageHandler.reportProgress(0.5);
+
+    await database.storeUserBookmarks(this.currentContext.title, data, this.saveBehavior);
   }
 
   async saveStatistics(data: BooksDbStatistic[], lastStatisticModified: number) {

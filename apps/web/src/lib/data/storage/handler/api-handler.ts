@@ -10,7 +10,8 @@ import type {
   BooksDbBookmarkData,
   BooksDbReadingGoal,
   BooksDbStatistic,
-  BooksDbSubtitleData
+  BooksDbSubtitleData,
+  BooksDbUserBookmarkData
 } from '$lib/data/database/books-db/versions/books-db';
 import { logger } from '$lib/data/logger';
 import { MergeMode } from '$lib/data/merge-mode';
@@ -316,6 +317,23 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     );
   }
 
+  async isUserBookmarksPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+
+      return false;
+    }
+
+    const { file } = await this.getExternalFile(FilePrefix.USER_BOOKMARKS);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getUserBookmarksMetadata,
+      'lastUserBookmarksModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
   async getBook() {
     const { file, data } = await this.getExternalFile(
       'bookdata_',
@@ -334,6 +352,18 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
 
   async getProgress() {
     const { file, data } = await this.getExternalFile('progress_', 'json');
+
+    if (!file) {
+      return undefined;
+    }
+
+    return this.isForBrowser
+      ? data
+      : new File([new Blob([JSON.stringify(data)])], file.name, { type: 'application/json' });
+  }
+
+  async getUserBookmarks() {
+    const { file, data } = await this.getExternalFile(FilePrefix.USER_BOOKMARKS, 'json');
 
     if (!file) {
       return undefined;
@@ -453,6 +483,19 @@ export abstract class ApiStorageHandler extends BaseStorageHandler {
     await this.upload(titleId, filename, files, file, progressData);
 
     this.addBookCard(this.currentContext.title, { lastBookmarkModified, progress });
+  }
+
+  async saveUserBookmarks(data: File | BooksDbUserBookmarkData[]) {
+    const filename = BaseStorageHandler.getUserBookmarksFileName(data);
+    const bookmarksData = data instanceof File ? data : JSON.stringify(data);
+    const { titleId, files, file } = await this.getExternalFile(
+      FilePrefix.USER_BOOKMARKS,
+      '',
+      0.2,
+      false
+    );
+
+    await this.upload(titleId, filename, files, file, bookmarksData);
   }
 
   async saveStatistics(statistics: BooksDbStatistic[], lastStatisticModified: number) {

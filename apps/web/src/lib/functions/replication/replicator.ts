@@ -154,7 +154,8 @@ export async function importBackup(
       StorageDataType.STATISTICS,
       StorageDataType.READING_GOALS,
       StorageDataType.AUDIOBOOK,
-      StorageDataType.SUBTITLE
+      StorageDataType.SUBTITLE,
+      StorageDataType.USER_BOOKMARKS
     ],
     cancelSignal
   );
@@ -183,6 +184,7 @@ export async function replicateData(
   const processReadingGoals = dataToReplicate.includes(StorageDataType.READING_GOALS);
   const processAudioBook = dataToReplicate.includes(StorageDataType.AUDIOBOOK);
   const processSubtitleData = dataToReplicate.includes(StorageDataType.SUBTITLE);
+  const processUserBookmarks = dataToReplicate.includes(StorageDataType.USER_BOOKMARKS);
   const replicationLimiter = pLimit(1);
   const replicationTasks: Promise<void>[] = [];
 
@@ -324,6 +326,29 @@ export async function replicateData(
             }
           }
 
+          if (processUserBookmarks) {
+            if (
+              await targetHandler.isUserBookmarksPresentAndUpToDate(
+                await sourceHandler.getFilenameForRecentCheck(FilePrefix.USER_BOOKMARKS)
+              )
+            ) {
+              checkCancelAndProgress(cancelSignal, !dataProcessed, true);
+              checkCancelAndProgress(cancelSignal, !dataProcessed, true);
+            } else {
+              const ubData = await sourceHandler.getUserBookmarks();
+
+              checkCancelAndProgress(cancelSignal, !dataProcessed);
+
+              if (ubData) {
+                await targetHandler.saveUserBookmarks(ubData);
+
+                dataProcessed = true;
+              }
+
+              checkCancelAndProgress(cancelSignal, !dataProcessed, !ubData);
+            }
+          }
+
           if (dataProcessed) {
             const coverData = await sourceHandler.getCover();
 
@@ -339,6 +364,10 @@ export async function replicateData(
 
             if (targetHandler.storageType === StorageKey.BROWSER && processProgressData) {
               database.bookmarksChanged$.next();
+            }
+
+            if (targetHandler.storageType === StorageKey.BROWSER && processUserBookmarks) {
+              database.userBookmarksChanged$.next();
             }
           } else {
             checkCancelAndProgress(cancelSignal, true, true);

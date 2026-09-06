@@ -337,14 +337,117 @@ export class DatabaseService {
   async putUserBookmark(data: BooksDbUserBookmarkData): Promise<number> {
     const db = await this.db;
     const id = (await db.put('userBookmark', data)) as number;
+    const book = await db.get('data', data.dataId);
+    if (book?.title) {
+      await db.put('lastModified', {
+        title: book.title,
+        dataType: StorageDataType.USER_BOOKMARKS,
+        lastModifiedValue: data.lastModified || Date.now()
+      });
+    }
     this.userBookmarksChanged$.next();
     return id;
   }
 
   async deleteUserBookmark(id: number): Promise<void> {
     const db = await this.db;
+    const bookmark = await db.get('userBookmark', id);
     await db.delete('userBookmark', id);
+    if (bookmark?.dataId) {
+      const book = await db.get('data', bookmark.dataId);
+      if (book?.title) {
+        await db.put('lastModified', {
+          title: book.title,
+          dataType: StorageDataType.USER_BOOKMARKS,
+          lastModifiedValue: Date.now()
+        });
+      }
+    }
     this.userBookmarksChanged$.next();
+  }
+
+  async storeUserBookmarks(
+    title: string,
+    bookmarks: BooksDbUserBookmarkData[],
+    saveBehavior: ReplicationSaveBehavior,
+    lastModified?: number
+  ): Promise<void> {
+    const book = await this.getDataByTitle(title);
+    if (!book || !book.id) return;
+
+    const dataId = book.id;
+    const db = await this.db;
+    const tx = db.transaction(['userBookmark', 'lastModified'], 'readwrite');
+
+    try {
+      const ubStore = tx.objectStore('userBookmark');
+      const lmStore = tx.objectStore('lastModified');
+      const isOverwrite = saveBehavior === ReplicationSaveBehavior.Overwrite;
+
+      if (isOverwrite) {
+        const index = ubStore.index('dataId');
+        let cursor = await index.openCursor(dataId);
+        while (cursor) {
+          await cursor.delete();
+          cursor = await cursor.continue();
+        }
+
+        for (const bm of bookmarks) {
+          await ubStore.add({
+            ...bm,
+            id: undefined,
+            dataId
+          });
+        }
+      } else {
+        const index = ubStore.index('dataId');
+        const existingList = await index.getAll(dataId);
+
+        for (const incoming of bookmarks) {
+          const match = existingList.find(
+            (e) =>
+              e.exploredCharCount === incoming.exploredCharCount &&
+              (e.createdAt === incoming.createdAt || e.label === incoming.label)
+          );
+
+          if (match && match.id !== undefined) {
+            if ((incoming.lastModified || 0) > (match.lastModified || 0)) {
+              await ubStore.put({
+                ...incoming,
+                id: match.id,
+                dataId
+              });
+            }
+          } else {
+            await ubStore.add({
+              ...incoming,
+              id: undefined,
+              dataId
+            });
+          }
+        }
+      }
+
+      const newLastModified =
+        lastModified || Math.max(...bookmarks.map((b) => b.lastModified || 0), Date.now());
+
+      await lmStore.put({
+        title,
+        dataType: StorageDataType.USER_BOOKMARKS,
+        lastModifiedValue: newLastModified
+      });
+
+      await tx.done;
+      this.userBookmarksChanged$.next();
+    } catch (error: any) {
+      try {
+        tx.abort();
+        await tx.done;
+      } catch (_) {
+        // no-op
+      }
+      throw error;
+    }
   }
 
   async putAudioBook(audioBook: BooksDbAudioBook) {

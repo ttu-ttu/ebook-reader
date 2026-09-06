@@ -330,7 +330,7 @@ export const lastExportedTarget$ = writableStringLocalStorageSubject<StorageKey>
 
 export const lastExportedTypes$ = writableArrayLocalStorageSubject<StorageDataType>()(
   'lastExportedTypes',
-  [StorageDataType.PROGRESS, StorageDataType.STATISTICS]
+  [StorageDataType.PROGRESS, StorageDataType.STATISTICS, StorageDataType.USER_BOOKMARKS]
 );
 
 export const lastBlurredTrackerItems$ = writableSetLocalStorageSubject<string>()(

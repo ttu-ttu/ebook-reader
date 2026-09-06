@@ -10,7 +10,8 @@ import type {
   BooksDbBookmarkData,
   BooksDbReadingGoal,
   BooksDbStatistic,
-  BooksDbSubtitleData
+  BooksDbSubtitleData,
+  BooksDbUserBookmarkData
 } from '$lib/data/database/books-db/versions/books-db';
 import { database, fsStorageSource$ } from '$lib/data/store';
 import { mergeReadingGoals, readingGoalSortFunction } from '$lib/data/reading-goal';
@@ -286,6 +287,22 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     );
   }
 
+  async isUserBookmarksPresentAndUpToDate(referenceFilename: string | undefined) {
+    if (!referenceFilename) {
+      BaseStorageHandler.reportProgress();
+      return false;
+    }
+
+    const { file } = await this.getExternalFile(FilePrefix.USER_BOOKMARKS, 1);
+
+    return BaseStorageHandler.checkIsPresentAndUpToDate(
+      BaseStorageHandler.getUserBookmarksMetadata,
+      'lastUserBookmarksModified',
+      referenceFilename,
+      file?.name
+    );
+  }
+
   async getBook() {
     const { file } = await this.getExternalFile('bookdata_', this.isForBrowser ? 0.4 : 0.8);
 
@@ -417,6 +434,28 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     return subtitleDataFile;
   }
 
+  async getUserBookmarks() {
+    const { file } = await this.getExternalFile(
+      FilePrefix.USER_BOOKMARKS,
+      this.isForBrowser ? 0.6 : 0.8
+    );
+
+    if (!file) {
+      return undefined;
+    }
+
+    const ubFile = await file.getFile();
+
+    if (this.isForBrowser) {
+      const ub = JSON.parse(await FilesystemStorageHandler.readFileObject(ubFile));
+
+      BaseStorageHandler.reportProgress(0.4);
+      return ub;
+    }
+
+    return ubFile;
+  }
+
   async saveBook(data: Omit<BooksDbBookData, 'id'> | File, skipTimestampFallback = true) {
     const isFile = data instanceof File;
     const { file, files, rootDirectory } = await this.getExternalFile('bookdata_', 0.2);
@@ -472,6 +511,20 @@ export class FilesystemStorageHandler extends BaseStorageHandler {
     );
 
     this.addBookCard(this.currentContext.title, { lastBookmarkModified, progress });
+  }
+
+  async saveUserBookmarks(data: BooksDbUserBookmarkData[] | File) {
+    const filename = BaseStorageHandler.getUserBookmarksFileName(data);
+    const { file, files, rootDirectory } = await this.getExternalFile(FilePrefix.USER_BOOKMARKS);
+
+    await this.writeFile(
+      rootDirectory,
+      filename,
+      data instanceof File ? data : JSON.stringify(data),
+      files,
+      file,
+      0.6
+    );
   }
 
   async saveStatistics(statistics: BooksDbStatistic[], lastStatisticModified: number) {

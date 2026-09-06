@@ -32,7 +32,9 @@ export function onKeydownReader(
   toggleTracker: () => void,
   freezeTrackerPosition: () => void,
   createUserBookmark?: () => void,
-  toggleBookmarkPanel?: () => void
+  toggleBookmarkPanel?: () => void,
+  nextUserBookmark?: () => void,
+  prevUserBookmark?: () => void
 ) {
   if (ev.shiftKey && (ev.code === 'KeyB' || ev.key === 'B')) {
     createUserBookmark?.();
@@ -40,6 +42,14 @@ export function onKeydownReader(
   }
   if (ev.shiftKey && (ev.code === 'KeyR' || ev.key === 'R')) {
     toggleBookmarkPanel?.();
+    return true;
+  }
+  if (ev.shiftKey && (ev.code === 'KeyN' || ev.key === 'N')) {
+    nextUserBookmark?.();
+    return true;
+  }
+  if (ev.shiftKey && (ev.code === 'KeyP' || ev.key === 'P')) {
+    prevUserBookmark?.();
     return true;
   }
 
