@@ -12,7 +12,7 @@
   export let bookmarks: BooksDbUserBookmarkData[] = [];
   export let wasTrackerPaused: boolean;
 
-  let activeTab: 'bookmarks' | 'autosaves' = 'bookmarks';
+  let activeTab: 'bookmarks' | 'autosaves' = 'autosaves';
 
   $: manualBookmarks = bookmarks.filter((b) => !b.isAutosave);
   $: autosaves = bookmarks.filter((b) => b.isAutosave).sort((a, b) => b.createdAt - a.createdAt);
@@ -83,21 +83,21 @@
     <div class="flex items-center gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10">
       <button
         type="button"
-        class="rounded-md px-3 py-1 text-sm font-medium transition-all {activeTab === 'bookmarks'
-          ? 'bg-white text-black shadow dark:bg-gray-800 dark:text-white'
-          : 'opacity-60 hover:opacity-100'}"
-        on:click={() => (activeTab = 'bookmarks')}
-      >
-        Bookmarks ({manualBookmarks.length})
-      </button>
-      <button
-        type="button"
         class="rounded-md px-3 py-1 text-sm font-medium transition-all {activeTab === 'autosaves'
           ? 'bg-white text-black shadow dark:bg-gray-800 dark:text-white'
           : 'opacity-60 hover:opacity-100'}"
         on:click={() => (activeTab = 'autosaves')}
       >
         Autosaves ({autosaves.length})
+      </button>
+      <button
+        type="button"
+        class="rounded-md px-3 py-1 text-sm font-medium transition-all {activeTab === 'bookmarks'
+          ? 'bg-white text-black shadow dark:bg-gray-800 dark:text-white'
+          : 'opacity-60 hover:opacity-100'}"
+        on:click={() => (activeTab = 'bookmarks')}
+      >
+        Bookmarks ({manualBookmarks.length})
       </button>
     </div>
     <button
@@ -110,40 +110,7 @@
     </button>
   </div>
 
-  {#if activeTab === 'bookmarks'}
-    <!-- Add Bookmark button -->
-    <div class="border-b border-gray-700/10 p-3 dark:border-gray-300/10">
-      <button
-        type="button"
-        class="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none"
-        on:click={handleCreate}
-      >
-        <Fa icon={faPlus} />
-        <span>Add Bookmark at Current Position</span>
-      </button>
-    </div>
-
-    <!-- Permanent Bookmarks List / Empty State -->
-    <div class="flex-1 overflow-y-auto">
-      {#if manualBookmarks.length === 0}
-        <div class="flex h-48 flex-col items-center justify-center p-6 text-center opacity-60">
-          <p class="text-sm">No bookmarks yet.</p>
-          <p class="mt-1 text-xs">
-            Click "+ Add Bookmark" above or press Shift+B to bookmark this location.
-          </p>
-        </div>
-      {:else}
-        {#each manualBookmarks as bookmark (bookmark.id ?? bookmark.createdAt)}
-          <BookBookmarkItem
-            {bookmark}
-            on:select={(e) => handleSelect(e.detail)}
-            on:edit={(e) => handleEdit(e.detail)}
-            on:delete={(e) => handleDelete(e.detail)}
-          />
-        {/each}
-      {/if}
-    </div>
-  {:else}
+  {#if activeTab === 'autosaves'}
     <!-- Autosaves Header Bar -->
     <div
       class="flex items-center justify-between border-b border-gray-700/10 px-4 py-2 text-xs opacity-75 dark:border-gray-300/10"
@@ -177,6 +144,39 @@
             {bookmark}
             on:select={(e) => handleSelect(e.detail)}
             on:promote={(e) => handlePromote(e.detail)}
+            on:delete={(e) => handleDelete(e.detail)}
+          />
+        {/each}
+      {/if}
+    </div>
+  {:else}
+    <!-- Add Bookmark button -->
+    <div class="border-b border-gray-700/10 p-3 dark:border-gray-300/10">
+      <button
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none"
+        on:click={handleCreate}
+      >
+        <Fa icon={faPlus} />
+        <span>Add Bookmark at Current Position</span>
+      </button>
+    </div>
+
+    <!-- Permanent Bookmarks List / Empty State -->
+    <div class="flex-1 overflow-y-auto">
+      {#if manualBookmarks.length === 0}
+        <div class="flex h-48 flex-col items-center justify-center p-6 text-center opacity-60">
+          <p class="text-sm">No bookmarks yet.</p>
+          <p class="mt-1 text-xs">
+            Click "+ Add Bookmark" above or press Shift+B to bookmark this location.
+          </p>
+        </div>
+      {:else}
+        {#each manualBookmarks as bookmark (bookmark.id ?? bookmark.createdAt)}
+          <BookBookmarkItem
+            {bookmark}
+            on:select={(e) => handleSelect(e.detail)}
+            on:edit={(e) => handleEdit(e.detail)}
             on:delete={(e) => handleDelete(e.detail)}
           />
         {/each}
