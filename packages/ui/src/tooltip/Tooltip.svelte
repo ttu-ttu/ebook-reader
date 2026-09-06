@@ -1,5 +1,6 @@
 <script lang="ts">
   export let text: string = '';
+  export let content: string = '';
   export let position: 'top' | 'bottom' | 'left' | 'right' = 'top';
   export let disabled: boolean = false;
   let customClass: string = '';
@@ -8,8 +9,10 @@
   let isVisible = false;
   let timeoutId: any;
 
+  $: tooltipText = text || content;
+
   function show() {
-    if (disabled || !text) return;
+    if (disabled || !tooltipText) return;
     timeoutId = setTimeout(() => {
       isVisible = true;
     }, 150);
@@ -32,9 +35,9 @@
 >
   <slot />
 
-  {#if isVisible && text}
+  {#if isVisible && tooltipText}
     <div role="tooltip" class="astryx-tooltip" data-position={position}>
-      {text}
+      {tooltipText}
       <div class="astryx-tooltip-arrow"></div>
     </div>
   {/if}
