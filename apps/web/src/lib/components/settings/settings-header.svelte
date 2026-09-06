@@ -1,45 +1,36 @@
 <script lang="ts">
-  import { faBookOpenReader, faClock, faDatabase } from '@fortawesome/free-solid-svg-icons';
-  import Fa from 'svelte-fa';
   import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
-  import Ripple from '$lib/components/ripple.svelte';
-  import { baseHeaderClasses, pxScreen } from '$lib/css-classes';
+  import { TopBar, Tabs } from '@custom-ereader/ui';
 
   export let leavePageLink: string;
   export let activeSettings: string;
 
   const settingItems = [
     {
-      label: 'Reader',
-      icon: faBookOpenReader
+      id: 'Reader',
+      label: 'Reader'
     },
     {
-      label: 'Data',
-      icon: faDatabase
+      id: 'Data',
+      label: 'Data'
     },
     {
-      label: 'Statistics',
-      icon: faClock
+      id: 'Statistics',
+      label: 'Statistics'
     }
   ];
 </script>
 
-<div class={baseHeaderClasses}>
-  <div class="{pxScreen} flex px-0 md:px-5">
-    <div class="h12 flex grow justify-evenly xl:h-10">
-      {#each settingItems as settingItem (settingItem.label)}
-        <button
-          class="flex grow flex-col items-center justify-center text-xs"
-          class:bg-gray-900={activeSettings === settingItem.label}
-          class:hover:bg-gray-900={activeSettings !== settingItem.label}
-          on:click={() => (activeSettings = settingItem.label)}
-        >
-          <Fa class="mb-1" icon={settingItem.icon} />
-          {settingItem.label}
-          <Ripple />
-        </button>
-      {/each}
-    </div>
+<TopBar bordered={true} class="shadow-sm">
+  <div slot="start" class="font-semibold text-sm tracking-tight hidden sm:block opacity-90 pl-1">
+    Settings
+  </div>
+
+  <div class="flex items-center justify-center w-full max-w-xs sm:max-w-sm">
+    <Tabs items={settingItems} bind:activeId={activeSettings} variant="pill" size="sm" />
+  </div>
+
+  <div slot="end" class="flex items-center">
     <MergedHeaderIcon {leavePageLink} />
   </div>
-</div>
+</TopBar>

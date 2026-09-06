@@ -15,12 +15,7 @@
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import Popover from '$lib/components/popover/popover.svelte';
-  import {
-    baseHeaderClasses,
-    baseIconClasses,
-    nTranslateXHeaderFa,
-    translateXHeaderFa
-  } from '$lib/css-classes';
+  import { IconButton, Tooltip, TopBar } from '@custom-ereader/ui';
   import { customReadingPointEnabled$, viewMode$ } from '$lib/data/store';
   import { ViewMode } from '$lib/data/view-mode';
   import { dummyFn, isMobile$, isOnOldUrl } from '$lib/functions/utils';
@@ -125,115 +120,133 @@
   }
 </script>
 
-<div class="flex justify-between bg-gray-700 px-4 md:px-8 {baseHeaderClasses}">
-  <div class="flex transform-gpu {nTranslateXHeaderFa}">
+<TopBar bordered={true} density="compact" translucent={true}>
+  <!-- Left / Start Actions -->
+  <div slot="start" class="flex items-center gap-0.5 sm:gap-1">
     {#if hasChapterData}
-      <div
-        tabindex="0"
-        role="button"
-        title="Open Table of Contents"
-        class={baseIconClasses}
-        on:click={() => dispatch('tocClick')}
-        on:keyup={dummyFn}
-      >
-        <Fa icon={faList} />
-      </div>
+      <Tooltip text="Open Table of Contents">
+        <IconButton
+          label="Open Table of Contents"
+          size="md"
+          variant="ghost"
+          on:click={() => dispatch('tocClick')}
+        >
+          <Fa icon={faList} class="text-base" />
+        </IconButton>
+      </Tooltip>
     {/if}
-    <div
-      tabindex="0"
-      role="button"
-      title="Open Bookmarks"
-      class={baseIconClasses}
-      on:click={() => dispatch('bookmarkPanelClick')}
-      on:keyup={dummyFn}
-    >
-      <Fa icon={faBookBookmark} />
-    </div>
-    <div
-      tabindex="0"
-      role="button"
-      title="Save Position (Hold to Create Named Bookmark)"
-      class={baseIconClasses}
-      on:pointerdown={handleBookmarkPointerDown}
-      on:pointerup={handleBookmarkPointerUp}
-      on:contextmenu|preventDefault={() => dispatch('createBookmarkClick')}
-      on:click={handleBookmarkClick}
-      on:keyup={dummyFn}
-    >
-      <Fa icon={isBookmarkScreen ? fasBookmark : farBookmark} />
-    </div>
+
+    <Tooltip text="Open Bookmarks">
+      <IconButton
+        label="Open Bookmarks"
+        size="md"
+        variant="ghost"
+        on:click={() => dispatch('bookmarkPanelClick')}
+      >
+        <Fa icon={faBookBookmark} class="text-base" />
+      </IconButton>
+    </Tooltip>
+
+    <Tooltip text="Save Position (Hold to Create Named Bookmark)">
+      <IconButton
+        label="Save Position (Hold to Create Named Bookmark)"
+        size="md"
+        variant="ghost"
+        active={isBookmarkScreen}
+        on:pointerdown={handleBookmarkPointerDown}
+        on:pointerup={handleBookmarkPointerUp}
+        on:contextmenu={(e) => {
+          e.preventDefault();
+          dispatch('createBookmarkClick');
+        }}
+        on:click={handleBookmarkClick}
+      >
+        <Fa icon={isBookmarkScreen ? fasBookmark : farBookmark} class="text-base" />
+      </IconButton>
+    </Tooltip>
+
     {#if hasBookmarkData}
-      <div
-        tabindex="0"
-        role="button"
-        title="Return to Bookmark"
-        class={baseIconClasses}
-        on:click={() => dispatch('scrollToBookmarkClick')}
-        on:keyup={dummyFn}
-      >
-        <Fa icon={faRotateLeft} />
-      </div>
+      <Tooltip text="Return to Bookmark">
+        <IconButton
+          label="Return to Bookmark"
+          size="md"
+          variant="ghost"
+          on:click={() => dispatch('scrollToBookmarkClick')}
+        >
+          <Fa icon={faRotateLeft} class="text-base" />
+        </IconButton>
+      </Tooltip>
     {/if}
+
     {#if $viewMode$ === ViewMode.Continuous && !$isMobile$}
-      <div
-        class="flex items-center px-4 text-xl xl:px-3 xl:text-lg"
+      <span
+        class="ml-1 flex items-center rounded-full bg-[var(--astryx-color-surface-hover)] px-2 py-0.5 text-xs font-semibold text-[var(--astryx-color-fg-muted)]"
         title="Current Autoscroll Speed"
       >
         {autoScrollMultiplier}x
-      </div>
+      </span>
     {/if}
   </div>
 
-  <div class="flex transform-gpu {translateXHeaderFa}">
-    <div
-      tabindex="0"
-      role="button"
-      title="Complete Book"
-      class={baseIconClasses}
-      on:click={() => dispatch('completeBook')}
-      on:keyup={dummyFn}
-    >
-      <Fa icon={faFlag} />
-    </div>
-    {#if $customReadingPointEnabled$ || $viewMode$ === ViewMode.Paginated}
-      <div class="flex">
-        <Popover
-          placement="bottom"
-          fallbackPlacements={['bottom-end', 'bottom-start']}
-          yOffset={0}
-          bind:this={customReadingPointMenuElm}
-        >
-          <div slot="icon" title="Open Custom Point Actions" class={baseIconClasses}>
-            <Fa icon={faCrosshairs} />
-          </div>
-          <div class="w-40 bg-gray-700 md:w-32" slot="content">
-            {#each customReadingPointMenuItems as actionItem (actionItem.label)}
-              <div
-                tabindex="0"
-                role="button"
-                class="px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
-                on:click={() => dispatchCustomReadingPointAction(actionItem.action)}
-                on:keyup={dummyFn}
-              >
-                {actionItem.label}
-              </div>
-            {/each}
-          </div>
-        </Popover>
-      </div>
-    {/if}
-    {#if showFullscreenButton}
-      <div
-        tabindex="0"
-        role="button"
-        title="Toggle Fullscreen"
-        class={baseIconClasses}
-        on:click={() => dispatch('fullscreenClick')}
-        on:keyup={dummyFn}
+  <!-- Right / End Actions -->
+  <div slot="end" class="flex items-center gap-0.5 sm:gap-1">
+    <Tooltip text="Complete Book">
+      <IconButton
+        label="Complete Book"
+        size="md"
+        variant="ghost"
+        on:click={() => dispatch('completeBook')}
       >
-        <Fa icon={faExpand} />
-      </div>
+        <Fa icon={faFlag} class="text-base" />
+      </IconButton>
+    </Tooltip>
+
+    {#if $customReadingPointEnabled$ || $viewMode$ === ViewMode.Paginated}
+      <Popover
+        placement="bottom"
+        fallbackPlacements={['bottom-end', 'bottom-start']}
+        yOffset={4}
+        bind:this={customReadingPointMenuElm}
+      >
+        <div
+          slot="icon"
+          class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--astryx-radius-md,6px)] text-[var(--astryx-color-fg-muted)] transition-colors hover:bg-[var(--astryx-color-surface-hover)] hover:text-[var(--astryx-color-fg-primary)]"
+          title="Open Custom Point Actions"
+        >
+          <Fa icon={faCrosshairs} class="text-base" />
+        </div>
+        <div
+          class="min-w-[8.5rem] rounded-lg border border-[var(--astryx-color-border-subtle)] bg-[var(--astryx-color-surface)] py-1 shadow-lg"
+          slot="content"
+        >
+          {#each customReadingPointMenuItems as actionItem (actionItem.label)}
+            <div
+              tabindex="0"
+              role="button"
+              class="cursor-pointer px-4 py-2 text-left text-sm text-[var(--astryx-color-fg-primary)] transition-colors hover:bg-[var(--astryx-color-surface-hover)]"
+              on:click={() => dispatchCustomReadingPointAction(actionItem.action)}
+              on:keyup={dummyFn}
+            >
+              {actionItem.label}
+            </div>
+          {/each}
+        </div>
+      </Popover>
     {/if}
+
+    {#if showFullscreenButton}
+      <Tooltip text="Toggle Fullscreen">
+        <IconButton
+          label="Toggle Fullscreen"
+          size="md"
+          variant="ghost"
+          on:click={() => dispatch('fullscreenClick')}
+        >
+          <Fa icon={faExpand} class="text-base" />
+        </IconButton>
+      </Tooltip>
+    {/if}
+
     <MergedHeaderIcon
       disableRouteNavigation
       items={menuItems}
@@ -254,4 +267,4 @@
       }}
     />
   </div>
-</div>
+</TopBar>

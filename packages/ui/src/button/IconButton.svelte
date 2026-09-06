@@ -31,6 +31,15 @@
   aria-label={label}
   title={label}
   on:click={handleClick}
+  on:pointerdown
+  on:pointerup
+  on:contextmenu
+  on:keydown
+  on:keyup
+  on:mouseenter
+  on:mouseleave
+  on:focus
+  on:blur
   {...$$restProps}
 >
   <span class="astryx-icon-wrap" aria-hidden="true">

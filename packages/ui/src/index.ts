@@ -20,5 +20,6 @@ export { default as ListItem } from './list/ListItem.svelte';
 export { default as ListSection } from './list/ListSection.svelte';
 export { default as Select } from './select/Select.svelte';
 export { default as Tabs } from './tabs/Tabs.svelte';
+export { default as TopBar } from './top-bar/TopBar.svelte';
 
 export * from './types';
