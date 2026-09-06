@@ -1,3 +1,4 @@
+import process from 'node:process';
 import adapter from '@sveltejs/adapter-static';
 import preprocess from 'svelte-preprocess';
 
@@ -16,6 +17,9 @@ const config = {
   ],
 
   kit: {
+    paths: {
+      base: process.env.BASE_PATH || ''
+    },
     adapter: adapter({
       fallback: '404.html'
     })
