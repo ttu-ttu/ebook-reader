@@ -59,7 +59,10 @@
     background-color: #18181b;
     border-radius: var(--astryx-radius-sm, 4px);
     box-shadow: var(--astryx-elevation-md, 0 4px 6px -1px rgba(0, 0, 0, 0.15));
-    white-space: nowrap;
+    max-width: var(--astryx-tooltip-max-width, 280px);
+    white-space: normal;
+    word-break: break-word;
+    text-align: center;
     pointer-events: none;
     animation: astryx-tooltip-fade 120ms ease forwards;
   }

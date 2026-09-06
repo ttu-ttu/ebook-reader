@@ -13,7 +13,10 @@
     Tooltip,
     Input,
     List,
-    ListItem
+    ListItem,
+    ListSection,
+    Select,
+    Tabs
   } from '@custom-ereader/ui';
 
   let currentTheme = 'stone';
@@ -23,6 +26,9 @@
   let lineHeight = 1.8;
   let autoBookmark = true;
   let hideHeaderOnScroll = false;
+  let selectedGoalFrequency = 'daily';
+  let activeTabId = 'reader';
+
   let isDialogOpen = false;
   let isButtonLoading = false;
   let isMuted = false;
@@ -678,6 +684,100 @@
             </svelte:fragment>
           </ListItem>
         </List>
+      </div>
+    </Card>
+
+    <!-- 8. Select & Dropdowns -->
+    <Card padding="lg" radius="lg">
+      <h2 class="section-title">8. Select & Dropdowns</h2>
+      <p class="section-desc">
+        Semantic dropdown selects with Astryx styling, chevron indicator, and theme tokens.
+      </p>
+
+      <div class="demo-grid-2">
+        <Select
+          label="Reading Goal Frequency"
+          helperText="Determines the target cycle for statistics"
+          bind:value={selectedGoalFrequency}
+          options={[
+            { value: 'daily', label: 'Daily (1 Day)' },
+            { value: 'weekly', label: 'Weekly (7 Days)' },
+            { value: 'monthly', label: 'Monthly (30 Days)' }
+          ]}
+        />
+
+        <Select
+          label="Font Family Preset"
+          placeholder="Choose font preset..."
+          value="noto-serif"
+          options={[
+            { value: 'noto-serif', label: 'Noto Serif JP' },
+            { value: 'shippori', label: 'Shippori Mincho' },
+            { value: 'klee', label: 'Klee One SemiBold' },
+            { value: 'noto-sans', label: 'Noto Sans JP' }
+          ]}
+        />
+      </div>
+    </Card>
+
+    <!-- 9. Tabs & Grouped Settings ListSections -->
+    <Card padding="lg" radius="lg">
+      <h2 class="section-title">9. Tabs & Grouped Settings ListSections</h2>
+      <p class="section-desc">
+        Cohesive navigation tabs and card-grouped settings lists with stacked layouts and multi-line
+        descriptions.
+      </p>
+
+      <div class="control-group">
+        <span class="group-label">Navigation Tabs:</span>
+        <Tabs
+          fullWidth={true}
+          bind:activeId={activeTabId}
+          items={[
+            { id: 'reader', label: 'Reader', badge: '12' },
+            { id: 'data', label: 'Data & Sync' },
+            { id: 'statistics', label: 'Statistics' }
+          ]}
+        />
+      </div>
+
+      <div style="margin-top: 24px;">
+        <ListSection
+          title="Reader Settings Preview"
+          description="Example of modern grouped settings card with Switch and Slider rows"
+        >
+          <ListItem
+            headline="Auto-Bookmark on Reading Pause"
+            description="Automatically captures current reading position after a brief pause without user interaction"
+          >
+            <Switch slot="suffix" bind:checked={autoBookmark} />
+          </ListItem>
+
+          <ListItem
+            layout="stacked"
+            headline="Font Size"
+            description="Adjusts primary Japanese and CJK typography scale across continuous and paginated views"
+          >
+            <span slot="suffix" class="badge-tag">{fontSize}px</span>
+            <Slider min={12} max={36} bind:value={fontSize} showValue={false} />
+          </ListItem>
+
+          <ListItem
+            layout="stacked"
+            headline="Writing Direction"
+            description="Controls text orientation and column progression flow"
+          >
+            <SegmentedControl
+              fullWidth={true}
+              size="sm"
+              options={[
+                { value: 'vertical', label: '縦書き (Vertical)' },
+                { value: 'horizontal', label: '横書き (Horizontal)' }
+              ]}
+              bind:value={readingDirection}
+            />
+          </ListItem>
+        </ListSection>
       </div>
     </Card>
   </main>

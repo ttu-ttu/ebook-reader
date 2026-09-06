@@ -39,3 +39,23 @@ export type InputVariant = 'outline' | 'filled' | 'underline';
 
 export type ListVariant = 'plain' | 'card' | 'bordered';
 export type ListDensity = 'compact' | 'normal' | 'relaxed';
+export type ListItemDensity = 'compact' | 'normal' | 'relaxed';
+export type ListItemLayout = 'row' | 'stacked';
+
+export interface SelectOption {
+  value: string | number;
+  label: string;
+  disabled?: boolean;
+}
+export type SelectSize = 'sm' | 'md' | 'lg';
+export type SelectVariant = 'outline' | 'filled' | 'underline';
+
+export interface TabItem {
+  id: string;
+  label: string;
+  icon?: any;
+  badge?: string | number;
+  disabled?: boolean;
+}
+export type TabVariant = 'pill' | 'underline' | 'bar';
+export type TabSize = 'sm' | 'md' | 'lg';
