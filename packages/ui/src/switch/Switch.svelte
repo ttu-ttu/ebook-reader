@@ -117,8 +117,14 @@
     position: absolute;
     background-color: #ffffff;
     border-radius: 50%;
-    box-shadow: var(--astryx-elevation-sm, 0 1px 2px rgba(0, 0, 0, 0.15));
-    transition: transform var(--astryx-duration-normal, 200ms) var(--astryx-ease, ease);
+    box-shadow: var(--astryx-elevation-sm, 0 1px 2px rgba(0, 0, 0, 0.2));
+    transition:
+      transform var(--astryx-duration-normal, 200ms) var(--astryx-ease, ease),
+      background-color var(--astryx-duration-normal, 200ms) var(--astryx-ease, ease);
+  }
+
+  .astryx-switch.is-checked .astryx-switch-thumb {
+    background-color: var(--astryx-color-fg-on-brand, #18181b);
   }
 
   /* Sizes */

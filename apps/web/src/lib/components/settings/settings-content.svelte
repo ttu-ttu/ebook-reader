@@ -627,7 +627,11 @@
       >
         {#if browser}
           <button
-            class="m-1 rounded-md border-2 border-gray-400 p-2 text-lg"
+            type="button"
+            title="Create new custom theme"
+            aria-label="Create new custom theme"
+            class="inline-flex items-center justify-center h-[38px] px-3.5 rounded-md border border-dashed transition-opacity cursor-pointer text-sm hover:opacity-80"
+            style="color: var(--astryx-color-fg-primary, inherit); border-color: var(--astryx-color-border-strong, #71717a); background-color: var(--astryx-color-surface-subtle, transparent);"
             on:click={() =>
               dialogManager.dialogs$.next([
                 {
@@ -636,7 +640,7 @@
                 }
               ])}
           >
-            <Fa icon={faPlus} class="mx-2" />
+            <Fa icon={faPlus} class="mx-1" />
             <Ripple />
           </button>
         {/if}
