@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { faBookmark as farBookmark } from '@fortawesome/free-regular-svg-icons';
   import {
+    faBookBookmark,
     faBookmark as fasBookmark,
     faCrosshairs,
     faExpand,
@@ -36,6 +37,8 @@
 
   const dispatch = createEventDispatcher<{
     tocClick: void;
+    bookmarkPanelClick: void;
+    createBookmarkClick: void;
     bookmarkClick: void;
     scrollToBookmarkClick: void;
     jumpClick: void;
@@ -50,6 +53,29 @@
     domainHintClick: void;
     bookManagerClick: void;
   }>();
+
+  let bookmarkPressTimer: any;
+  let didLongPress = false;
+
+  function handleBookmarkPointerDown() {
+    didLongPress = false;
+    bookmarkPressTimer = setTimeout(() => {
+      didLongPress = true;
+      dispatch('createBookmarkClick');
+    }, 500);
+  }
+
+  function handleBookmarkPointerUp() {
+    clearTimeout(bookmarkPressTimer);
+  }
+
+  function handleBookmarkClick() {
+    if (didLongPress) {
+      didLongPress = false;
+      return;
+    }
+    dispatch('bookmarkClick');
+  }
 
   const customReadingPointMenuItems: {
     label: string;
@@ -116,9 +142,22 @@
     <div
       tabindex="0"
       role="button"
-      title="Create Bookmark"
+      title="Open Bookmarks"
       class={baseIconClasses}
-      on:click={() => dispatch('bookmarkClick')}
+      on:click={() => dispatch('bookmarkPanelClick')}
+      on:keyup={dummyFn}
+    >
+      <Fa icon={faBookBookmark} />
+    </div>
+    <div
+      tabindex="0"
+      role="button"
+      title="Save Position (Hold to Create Named Bookmark)"
+      class={baseIconClasses}
+      on:pointerdown={handleBookmarkPointerDown}
+      on:pointerup={handleBookmarkPointerUp}
+      on:contextmenu|preventDefault={() => dispatch('createBookmarkClick')}
+      on:click={handleBookmarkClick}
       on:keyup={dummyFn}
     >
       <Fa icon={isBookmarkScreen ? fasBookmark : farBookmark} />

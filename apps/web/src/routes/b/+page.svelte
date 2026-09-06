@@ -118,6 +118,10 @@
     type SectionWithProgress
   } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
+  import { bookmarkPanelIsOpen$ } from '$lib/components/book-reader/book-bookmarks/book-bookmark-panel';
+  import BookBookmarkPanel from '$lib/components/book-reader/book-bookmarks/book-bookmark-panel.svelte';
+  import BookmarkCreateDialog from '$lib/components/book-reader/book-bookmarks/bookmark-create-dialog.svelte';
+  import { generateBookmarkLabel } from '$lib/components/book-reader/book-bookmarks/bookmark-utils';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
   import NumberDialog from '$lib/components/number-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
@@ -126,7 +130,8 @@
     currentDbVersion,
     type BooksDbBookData,
     type BooksDbBookmarkData,
-    type BooksDbStatistic
+    type BooksDbStatistic,
+    type BooksDbUserBookmarkData
   } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
   import { pagePath } from '$lib/data/env';
@@ -213,6 +218,7 @@
   let hasBookmarkData = false;
   let blockDataUpdates = false;
   let trackerElm: BookReadingTracker;
+  let userBookmarks: BooksDbUserBookmarkData[] = [];
   let showTrackerIcon = false;
   let wasTrackerPaused = true;
   let frozenPosition = -1;
@@ -350,6 +356,20 @@
     tap((rawBookData) => {
       if (!rawBookData) return;
       bookmarkData = database.getBookmark(rawBookData.id);
+    }),
+    reduceToEmptyString()
+  );
+
+  const initUserBookmarks$ = rawBookData$.pipe(
+    switchMap((b) => {
+      if (!b?.id) return EMPTY;
+      return database.userBookmarksChanged$.pipe(
+        startWith(0),
+        switchMap(() => database.getUserBookmarks(b.id)),
+        tap((bms) => {
+          userBookmarks = bms;
+        })
+      );
     }),
     reduceToEmptyString()
   );
@@ -1095,11 +1115,18 @@
   }
 
   function onKeydown(ev: KeyboardEvent) {
+    const isAllowedShift =
+      ev.shiftKey &&
+      !ev.altKey &&
+      !ev.ctrlKey &&
+      !ev.metaKey &&
+      (ev.code === 'KeyB' || ev.code === 'KeyR' || ev.key === 'B' || ev.key === 'R');
+
     if (
       $skipKeyDownListener$ ||
       ev.altKey ||
       ev.ctrlKey ||
-      ev.shiftKey ||
+      (ev.shiftKey && !isAllowedShift) ||
       ev.metaKey ||
       ev.repeat
     ) {
@@ -1118,7 +1145,9 @@
       changeChapter,
       handleSetCustomReadingPoint,
       trackerDblClickHandler,
-      freezeTrackerPosition
+      freezeTrackerPosition,
+      openCreateBookmarkDialog,
+      () => bookmarkPanelIsOpen$.next(!$bookmarkPanelIsOpen$)
     );
 
     if (!result) return;
@@ -1127,6 +1156,116 @@
       document.activeElement.blur();
     }
     ev.preventDefault();
+  }
+
+  async function openCreateBookmarkDialog() {
+    const dataId = getBookIdSync();
+    if (!dataId) return;
+
+    pauseTracker();
+    skipKeyDownListener$.next(true);
+
+    const defaultLabel = generateBookmarkLabel($sectionData$, exploredCharCount, bookCharCount);
+
+    const result = await new Promise<{ label: string; color: any; note: string } | undefined>(
+      (resolver) => {
+        dialogManager.dialogs$.next([
+          {
+            component: BookmarkCreateDialog,
+            zIndex: '70',
+            props: {
+              initialLabel: defaultLabel,
+              resolver
+            }
+          }
+        ]);
+      }
+    );
+
+    skipKeyDownListener$.next(false);
+    restartTrackerAfterCharacterChangeOrTime(1000);
+
+    if ($bookmarkPanelIsOpen$) {
+      dialogManager.dialogs$.next([{ component: '<div/>' }]);
+    }
+
+    if (!result) return;
+
+    await database.putUserBookmark({
+      dataId,
+      exploredCharCount: Math.max(1, exploredCharCount),
+      progress: bookCharCount ? Math.min(1, exploredCharCount / bookCharCount) : 0,
+      label: result.label,
+      color: result.color,
+      note: result.note,
+      createdAt: Date.now(),
+      lastModified: Date.now()
+    });
+  }
+
+  async function openEditBookmarkDialog(item: BooksDbUserBookmarkData) {
+    pauseTracker();
+    skipKeyDownListener$.next(true);
+
+    const result = await new Promise<{ label: string; color: any; note: string } | undefined>(
+      (resolver) => {
+        dialogManager.dialogs$.next([
+          {
+            component: BookmarkCreateDialog,
+            zIndex: '70',
+            props: {
+              title: 'Edit Bookmark',
+              initialLabel: item.label,
+              initialColor: item.color,
+              initialNote: item.note || '',
+              resolver
+            }
+          }
+        ]);
+      }
+    );
+
+    skipKeyDownListener$.next(false);
+    restartTrackerAfterCharacterChangeOrTime(1000);
+
+    if ($bookmarkPanelIsOpen$) {
+      dialogManager.dialogs$.next([{ component: '<div/>' }]);
+    }
+
+    if (!result) return;
+
+    await database.putUserBookmark({
+      ...item,
+      label: result.label,
+      color: result.color,
+      note: result.note,
+      lastModified: Date.now()
+    });
+  }
+
+  function handleNavigateUserBookmark(item: BooksDbUserBookmarkData) {
+    bookmarkPanelIsOpen$.next(false);
+    if (!bookmarkManager) return;
+
+    if (item.exploredCharCount !== exploredCharCount) {
+      pauseTracker(true);
+    }
+
+    bookmarkManager.scrollToBookmark(
+      {
+        dataId: item.dataId,
+        exploredCharCount: Math.max(1, item.exploredCharCount),
+        lastBookmarkModified: item.lastModified,
+        progress: item.progress
+      },
+      customReadingPointScrollOffset
+    );
+  }
+
+  async function handleDeleteUserBookmark(item: BooksDbUserBookmarkData) {
+    if (item.id !== undefined) {
+      await database.deleteUserBookmark(item.id);
+    }
   }
 
   function getBookIdSync() {
@@ -1635,6 +1774,15 @@
       }}
       on:fullscreenClick={onFullscreenClick}
       on:bookmarkClick={bookmarkPage}
+      on:bookmarkPanelClick={() => {
+        pauseTracker();
+        showHeader = false;
+        bookmarkPanelIsOpen$.next(true);
+      }}
+      on:createBookmarkClick={() => {
+        showHeader = false;
+        openCreateBookmarkDialog();
+      }}
       on:scrollToBookmarkClick={() => {
         showHeader = false;
         scrollToBookmark();
@@ -1724,6 +1872,7 @@
     autoBookmark={$autoBookmark$}
     autoBookmarkTime={$autoBookmarkTime$}
     multiplier={$multiplier$}
+    {userBookmarks}
     bind:exploredCharCount
     bind:bookCharCount
     bind:isBookmarkScreen
@@ -1741,6 +1890,7 @@
     on:trackerPause={() => pauseTracker(true)}
   />
   {$initBookmarkData$ ?? ''}
+  {$initUserBookmarks$ ?? ''}
   {$setBackgroundColor$ ?? ''}
   {$setWritingMode$ ?? ''}
   {$textSelector$ ?? ''}
@@ -1768,6 +1918,30 @@
       verticalMode={$verticalMode$}
       {exploredCharCount}
       {wasTrackerPaused}
+    />
+  </div>
+{/if}
+
+{#if $bookmarkPanelIsOpen$}
+  <div
+    class="writing-horizontal-tb fixed top-0 left-0 z-[60] flex h-full w-full max-w-xl flex-col justify-between"
+    style:color={$themeOption$?.fontColor}
+    style:background-color={$backgroundColor$}
+    in:fly|local={{ x: -100, duration: 100, easing: quintInOut }}
+    use:clickOutside={() => {
+      if ($statisticsEnabled$ && !wasTrackerPaused) {
+        isTrackerPaused$.next(false);
+      }
+      bookmarkPanelIsOpen$.next(false);
+    }}
+  >
+    <BookBookmarkPanel
+      bookmarks={userBookmarks}
+      {wasTrackerPaused}
+      on:select={(e) => handleNavigateUserBookmark(e.detail)}
+      on:edit={(e) => openEditBookmarkDialog(e.detail)}
+      on:delete={(e) => handleDeleteUserBookmark(e.detail)}
+      on:create={openCreateBookmarkDialog}
     />
   </div>
 {/if}

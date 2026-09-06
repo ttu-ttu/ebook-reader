@@ -8,6 +8,11 @@
   } from '$lib/components/book-reader/book-toc/book-toc';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
+  import {
+    BOOKMARK_COLORS,
+    type BooksDbUserBookmarkData
+  } from '$lib/components/book-reader/book-bookmarks/bookmark-types';
+  import type { BookmarkPosData } from './bookmark-manager-continuous';
   import { isStoredFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { logger } from '$lib/data/logger';
@@ -131,6 +136,8 @@
 
   export let customReadingPointScrollOffset: number;
 
+  export let userBookmarks: BooksDbUserBookmarkData[] = [];
+
   const dispatch = createEventDispatcher<{
     bookmark: void;
     contentChange: HTMLElement;
@@ -242,6 +249,16 @@
         if (!data) return;
         bookmarkPos = bookmarkManagerConcrete?.getBookmarkBarPosition(data);
       });
+    }
+  }
+
+  let userBookmarkPositions: { bookmark: BooksDbUserBookmarkData; pos: BookmarkPosData }[] = [];
+
+  $: {
+    if (contentReadyEvent && bookmarkManagerConcrete && userBookmarks?.length) {
+      userBookmarkPositions = bookmarkManagerConcrete.getUserBookmarkPositions(userBookmarks);
+    } else {
+      userBookmarkPositions = [];
     }
   }
 
@@ -741,6 +758,30 @@
     </div>
   {/if}
 {/if}
+
+{#each userBookmarkPositions as { bookmark, pos } (bookmark.id ?? bookmark.createdAt)}
+  {#if verticalMode}
+    <div
+      class="pointer-events-none absolute z-[6] text-xl opacity-80"
+      style:color={BOOKMARK_COLORS[bookmark.color] || '#3b82f6'}
+      style:right={`calc(${pos.right} + 1rem)`}
+      style:top={bookmarkAdjustment}
+      title={bookmark.label}
+    >
+      <Fa icon={faBookmark} />
+    </div>
+  {:else}
+    <div
+      class="pointer-events-none absolute z-[6] text-sm opacity-80 sm:text-xl"
+      style:color={BOOKMARK_COLORS[bookmark.color] || '#3b82f6'}
+      style:left={bookmarkAdjustment}
+      style:top={`calc(${pos.top} + 1.5rem)`}
+      title={bookmark.label}
+    >
+      <Fa icon={faBookmark} />
+    </div>
+  {/if}
+{/each}
 
 {#if !allowDisplay}
   <div

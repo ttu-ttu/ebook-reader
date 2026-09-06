@@ -16,7 +16,10 @@
   } from 'rxjs';
   import BookReaderContinuous from '$lib/components/book-reader/book-reader-continuous/book-reader-continuous.svelte';
   import { pxReader } from '$lib/components/book-reader/css-classes';
-  import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
+  import type {
+    BooksDbBookmarkData,
+    BooksDbUserBookmarkData
+  } from '$lib/data/database/books-db/versions/books-db';
   import type { FuriganaStyle } from '$lib/data/furigana-style';
   import type { TextMarginMode } from '$lib/data/text-margin-mode';
   import { ViewMode } from '$lib/data/view-mode';
@@ -123,6 +126,8 @@
   export let customReadingPointRange: Range | undefined;
 
   export let showCustomReadingPoint: boolean;
+
+  export let userBookmarks: BooksDbUserBookmarkData[] = [];
 
   let showBlurMessage = false;
 
@@ -313,6 +318,7 @@
       {autoBookmark}
       {autoBookmarkTime}
       {multiplier}
+      {userBookmarks}
       loadingState={$imageLoadingState$ ?? true}
       bind:exploredCharCount
       bind:bookCharCount
@@ -360,6 +366,7 @@
       {autoBookmark}
       {autoBookmarkTime}
       {firstDimensionMargin}
+      {userBookmarks}
       bind:exploredCharCount
       bind:bookCharCount
       bind:isBookmarkScreen

@@ -30,8 +30,19 @@ export function onKeydownReader(
   changeChapter: (offset: number) => void,
   handleSetCustomReadingPoint: () => void,
   toggleTracker: () => void,
-  freezeTrackerPosition: () => void
+  freezeTrackerPosition: () => void,
+  createUserBookmark?: () => void,
+  toggleBookmarkPanel?: () => void
 ) {
+  if (ev.shiftKey && (ev.code === 'KeyB' || ev.key === 'B')) {
+    createUserBookmark?.();
+    return true;
+  }
+  if (ev.shiftKey && (ev.code === 'KeyR' || ev.key === 'R')) {
+    toggleBookmarkPanel?.();
+    return true;
+  }
+
   const action = bookReaderKeybindMap[ev.code || ev.key?.toLowerCase()];
 
   switch (action) {

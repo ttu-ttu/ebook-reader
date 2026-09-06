@@ -5,7 +5,10 @@
  */
 
 import type { BookmarkManager } from '../types';
-import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
+import type {
+  BooksDbBookmarkData,
+  BooksDbUserBookmarkData
+} from '$lib/data/database/books-db/versions/books-db';
 import type { CharacterStatsCalculator } from './character-stats-calculator';
 import { formatPos } from '$lib/functions/format-pos';
 
@@ -57,6 +60,22 @@ export class BookmarkManagerContinuous implements BookmarkManager {
     if (!targetScroll) return undefined;
 
     return resolveTargetScroll(targetScroll, this.firstDimensionMargin).bookmarkPosData;
+  }
+
+  getUserBookmarkPositions(
+    userBookmarks: BooksDbUserBookmarkData[]
+  ): { bookmark: BooksDbUserBookmarkData; pos: BookmarkPosData }[] {
+    return userBookmarks
+      .map((b) => {
+        const pos = this.getBookmarkBarPosition({
+          dataId: b.dataId,
+          exploredCharCount: Math.max(1, b.exploredCharCount),
+          lastBookmarkModified: b.lastModified,
+          progress: b.progress
+        });
+        return pos ? { bookmark: b, pos } : undefined;
+      })
+      .filter((x): x is { bookmark: BooksDbUserBookmarkData; pos: BookmarkPosData } => !!x);
   }
 
   private getBookmarkPosition(bookmark: BooksDbBookmarkData): TargetScroll | undefined {

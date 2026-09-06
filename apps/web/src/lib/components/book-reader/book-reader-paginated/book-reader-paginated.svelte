@@ -3,6 +3,10 @@
   import { nextChapter$ } from '$lib/components/book-reader/book-toc/book-toc';
   import HtmlRenderer from '$lib/components/html-renderer.svelte';
   import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
+  import {
+    BOOKMARK_COLORS,
+    type BooksDbUserBookmarkData
+  } from '$lib/components/book-reader/book-bookmarks/bookmark-types';
   import { SECTION_CHANGE } from '$lib/data/events';
   import { isStoredFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
@@ -118,6 +122,8 @@
   export let customReadingPointRange: Range | undefined;
 
   export let showCustomReadingPoint: boolean;
+
+  export let userBookmarks: BooksDbUserBookmarkData[] = [];
 
   const dispatch = createEventDispatcher<{
     bookmark: void;
@@ -423,6 +429,7 @@
     bookmarkData.then((data) => {
       useExploredCharCount = isUser || !!customReadingPointRange;
       updateBookmarkScreen(data);
+      updateUserBookmarksScreen();
     });
   });
 
@@ -560,6 +567,7 @@
       });
     } else {
       bookmarkData.then(updateBookmarkScreen);
+      updateUserBookmarksScreen();
     }
     allowDisplay = true;
   }
@@ -606,6 +614,73 @@
 
     useExploredCharCount = true;
     isBookmarkScreen = result.isBookmarkScreen;
+  }
+
+  let visibleUserBookmarkDots: {
+    bookmark: BooksDbUserBookmarkData;
+    top?: string;
+    left?: string;
+    right?: string;
+  }[] = [];
+
+  function updateUserBookmarksScreen() {
+    if (!calculator || !userBookmarks?.length || !scrollEl) {
+      visibleUserBookmarkDots = [];
+      return;
+    }
+
+    const dimentionAdjustment = Number(
+      getComputedStyle(scrollEl)[verticalMode ? 'marginTop' : 'marginRight'].replace(/px$/, '')
+    );
+
+    const dots: typeof visibleUserBookmarkDots = [];
+
+    for (const ub of userBookmarks) {
+      const safeCharCount = Math.max(1, ub.exploredCharCount);
+      const result = calculator.checkBookmarkOnScreen(safeCharCount);
+      if (result.isBookmarkScreen) {
+        if (!result.bookmarkPos) {
+          if (verticalMode) {
+            dots.push({
+              bookmark: ub,
+              top: dimentionAdjustment ? `${dimentionAdjustment}px` : '0.5rem',
+              left: $firstDimensionMargin$ ? `${width - $firstDimensionMargin$}px` : undefined,
+              right: $firstDimensionMargin$ ? undefined : '0.75rem'
+            });
+          } else {
+            dots.push({
+              bookmark: ub,
+              top: $firstDimensionMargin$ ? `${$firstDimensionMargin$}px` : '0.5rem',
+              left: dimentionAdjustment ? `calc(${dimentionAdjustment}px + 0.75rem)` : '0.75rem',
+              right: undefined
+            });
+          }
+        } else if (verticalMode) {
+          dots.push({
+            bookmark: ub,
+            top: dimentionAdjustment ? `${dimentionAdjustment}px` : '0.5rem',
+            left: `${result.bookmarkPos.left}px`,
+            right: undefined
+          });
+        } else {
+          dots.push({
+            bookmark: ub,
+            top: `${result.bookmarkPos.top}px`,
+            left:
+              result.bookmarkPos.left > 0
+                ? `calc(${result.bookmarkPos.left}px - ${$isMobile$ ? '15' : '20'}px)`
+                : `calc(${Math.max($isMobile$ ? 15 : 20, dimentionAdjustment)}px)`,
+            right: undefined
+          });
+        }
+      }
+    }
+
+    visibleUserBookmarkDots = dots;
+  }
+
+  $: if (userBookmarks) {
+    updateUserBookmarksScreen();
   }
 
   function setDefaultBookmarkPositions(dimensionAdjustment: number) {
@@ -753,6 +828,19 @@
     <Fa icon={faBookmark} />
   </div>
 {/if}
+
+{#each visibleUserBookmarkDots as dot (dot.bookmark.id ?? dot.bookmark.createdAt)}
+  <div
+    class="pointer-events-none fixed z-[6] text-base opacity-80 sm:text-xl"
+    style:color={BOOKMARK_COLORS[dot.bookmark.color] || '#3b82f6'}
+    style:top={dot.top}
+    style:left={dot.left}
+    style:right={dot.right}
+    title={dot.bookmark.label}
+  >
+    <Fa icon={faBookmark} />
+  </div>
+{/each}
 
 <svelte:window on:keydown={onKeydown} on:resize={() => (isResizing = true)} />
 

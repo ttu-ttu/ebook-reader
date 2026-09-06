@@ -11,7 +11,8 @@ import type {
   BooksDbReadingGoal,
   BooksDbStatistic,
   BooksDbStorageSource,
-  BooksDbSubtitleData
+  BooksDbSubtitleData,
+  BooksDbUserBookmarkData
 } from '$lib/data/database/books-db/versions/books-db';
 import { Observable, Subject, from } from 'rxjs';
 import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
@@ -122,6 +123,8 @@ export class DatabaseService {
     switchMap((db) => db.getAll('bookmark')),
     shareReplay({ refCount: true, bufferSize: 1 })
   );
+
+  userBookmarksChanged$ = new Subject<void>();
 
   lastItemChanged$ = new Subject<void>();
 
@@ -325,6 +328,25 @@ export class DatabaseService {
     return db.put('bookmark', bookmarkData);
   }
 
+  async getUserBookmarks(dataId: number): Promise<BooksDbUserBookmarkData[]> {
+    const db = await this.db;
+    const all = await db.getAllFromIndex('userBookmark', 'dataId', dataId);
+    return all.sort((a, b) => a.exploredCharCount - b.exploredCharCount);
+  }
+
+  async putUserBookmark(data: BooksDbUserBookmarkData): Promise<number> {
+    const db = await this.db;
+    const id = (await db.put('userBookmark', data)) as number;
+    this.userBookmarksChanged$.next();
+    return id;
+  }
+
+  async deleteUserBookmark(id: number): Promise<void> {
+    const db = await this.db;
+    await db.delete('userBookmark', id);
+    this.userBookmarksChanged$.next();
+  }
+
   async putAudioBook(audioBook: BooksDbAudioBook) {
     const db = await this.db;
 
@@ -360,13 +382,14 @@ export class DatabaseService {
     const storeNames: (
       | 'data'
       | 'bookmark'
+      | 'userBookmark'
       | 'statistic'
       | 'lastItem'
       | 'lastModified'
       | 'audioBook'
       | 'subtitle'
       | 'handle'
-    )[] = ['data', 'audioBook', 'subtitle', 'handle'];
+    )[] = ['data', 'userBookmark', 'audioBook', 'subtitle', 'handle'];
     const shouldDeleteLastItem = cachedData.lastItem === dataId;
     const shouldDeleteBookmark = cachedData.bookmarkIds.has(dataId);
 
@@ -400,6 +423,14 @@ export class DatabaseService {
         await tx.objectStore('bookmark').delete(dataId);
       }
 
+      const userBookmarkStore = tx.objectStore('userBookmark');
+      const userBookmarkIndex = userBookmarkStore.index('dataId');
+      let userBookmarkCursor = await userBookmarkIndex.openCursor(dataId);
+      while (userBookmarkCursor) {
+        await userBookmarkCursor.delete();
+        userBookmarkCursor = await userBookmarkCursor.continue();
+      }
+
       if (shouldDeleteStatistics && bookTitle) {
         await tx.objectStore('statistic').delete(IDBKeyRange.bound([bookTitle], [bookTitle, []]));
         await tx.objectStore('lastModified').delete([bookTitle, StorageDataType.STATISTICS]);
@@ -413,6 +444,8 @@ export class DatabaseService {
 
       await tx.objectStore('data').delete(dataId);
       await tx.done;
+
+      this.userBookmarksChanged$.next();
 
       if (shouldDeleteLastItem) {
         this.lastItemChanged$.next();
