@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import '@custom-ereader/ui/styles';
+
 :root {
   --font-color: rgba(0, 0, 0, 0.87);
   --background-color: #eceff1;

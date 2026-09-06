@@ -1,0 +1,59 @@
+/**
+ * Astryx Design System - Core Design Tokens
+ * Based on Meta Astryx Design Foundations
+ */
+
+:root {
+  /* Spacing Scale (4px base) */
+  --astryx-space-0: 0px;
+  --astryx-space-0-5: 2px;
+  --astryx-space-1: 4px;
+  --astryx-space-1-5: 6px;
+  --astryx-space-2: 8px;
+  --astryx-space-2-5: 10px;
+  --astryx-space-3: 12px;
+  --astryx-space-4: 16px;
+  --astryx-space-5: 20px;
+  --astryx-space-6: 24px;
+  --astryx-space-8: 32px;
+  --astryx-space-10: 40px;
+  --astryx-space-12: 48px;
+
+  /* Border Radii / Shape */
+  --astryx-radius-none: 0px;
+  --astryx-radius-xs: 2px;
+  --astryx-radius-sm: 4px;
+  --astryx-radius-md: 6px;
+  --astryx-radius-lg: 10px;
+  --astryx-radius-xl: 14px;
+  --astryx-radius-full: 9999px;
+
+  /* Elevation / Shadows */
+  --astryx-elevation-none: none;
+  --astryx-elevation-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --astryx-elevation-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --astryx-elevation-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
+  --astryx-elevation-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+
+  /* Typography Scale */
+  --astryx-font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --astryx-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  --astryx-font-size-xs: 0.75rem;     /* 12px */
+  --astryx-font-size-sm: 0.875rem;    /* 14px */
+  --astryx-font-size-md: 1rem;        /* 16px */
+  --astryx-font-size-lg: 1.125rem;    /* 18px */
+  --astryx-font-size-xl: 1.25rem;     /* 20px */
+  --astryx-font-size-2xl: 1.5rem;     /* 24px */
+
+  --astryx-font-weight-regular: 400;
+  --astryx-font-weight-medium: 500;
+  --astryx-font-weight-semibold: 600;
+  --astryx-font-weight-bold: 700;
+
+  /* Motion */
+  --astryx-duration-fast: 120ms;
+  --astryx-duration-normal: 200ms;
+  --astryx-duration-slow: 300ms;
+  --astryx-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}

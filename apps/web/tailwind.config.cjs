@@ -2,7 +2,7 @@
 const plugin = require('tailwindcss/plugin');
 
 const config = {
-  content: ['./src/**/*.{html,js,svelte,ts}'],
+  content: ['./src/**/*.{html,js,svelte,ts}', '../../packages/ui/src/**/*.{svelte,ts}'],
   theme: {
     extend: {
       fontFamily: {

@@ -1,0 +1,41 @@
+/**
+ * Astryx Theme: Gothic
+ * Deep noir, true ink black, and high contrast designed for midnight reading and OLED screens.
+ */
+
+[data-astryx-theme='gothic'] {
+  --astryx-color-canvas: #000000;
+  --astryx-color-surface: #0a0a0c;
+  --astryx-color-surface-subtle: #141418;
+  --astryx-color-surface-active: #1f1f24;
+  --astryx-color-surface-elevated: #111115;
+  --astryx-color-overlay: rgba(0, 0, 0, 0.85);
+
+  --astryx-color-fg-primary: #f0f0f3;
+  --astryx-color-fg-secondary: #9b9ba6;
+  --astryx-color-fg-muted: #6b6b77;
+  --astryx-color-fg-subtle: #45454f;
+  --astryx-color-fg-on-brand: #000000;
+
+  --astryx-color-brand: #ffffff;
+  --astryx-color-brand-hover: #e5e5eb;
+  --astryx-color-brand-active: #d0d0d8;
+  --astryx-color-brand-subtle: #1a1a20;
+
+  --astryx-color-accent: #a78bfa;
+  --astryx-color-accent-hover: #c4b5fd;
+  --astryx-color-accent-subtle: #2e1065;
+
+  --astryx-color-border-subtle: #141418;
+  --astryx-color-border-default: #25252c;
+  --astryx-color-border-hover: #383842;
+  --astryx-color-border-strong: #545462;
+  --astryx-color-border-focus: #ffffff;
+
+  --astryx-color-danger: #f87171;
+  --astryx-color-danger-hover: #ef4444;
+  --astryx-color-danger-subtle: #3f0d0d;
+
+  --astryx-color-success: #34d399;
+  --astryx-color-warning: #fbbf24;
+}

@@ -1,0 +1,80 @@
+/**
+ * Astryx Theme: Stone
+ * Warm paper and sandstone tones designed for comfortable long-form e-reading.
+ */
+
+[data-astryx-theme='stone'],
+[data-astryx-theme='stone'][data-theme='light'] {
+  --astryx-color-canvas: #f6f5f0;
+  --astryx-color-surface: #fdfcf7;
+  --astryx-color-surface-subtle: #eceae1;
+  --astryx-color-surface-active: #dfdbcf;
+  --astryx-color-surface-elevated: #ffffff;
+  --astryx-color-overlay: rgba(50, 45, 40, 0.4);
+
+  --astryx-color-fg-primary: #2d2926;
+  --astryx-color-fg-secondary: #5c554e;
+  --astryx-color-fg-muted: #837a72;
+  --astryx-color-fg-subtle: #a89f96;
+  --astryx-color-fg-on-brand: #ffffff;
+
+  --astryx-color-brand: #4a423b;
+  --astryx-color-brand-hover: #3b342e;
+  --astryx-color-brand-active: #29241f;
+  --astryx-color-brand-subtle: #eceae1;
+
+  --astryx-color-accent: #925430;
+  --astryx-color-accent-hover: #7b4424;
+  --astryx-color-accent-subtle: #f5ebe4;
+
+  --astryx-color-border-subtle: #eceae1;
+  --astryx-color-border-default: #dfdbcf;
+  --astryx-color-border-hover: #cec8b8;
+  --astryx-color-border-strong: #9e9486;
+  --astryx-color-border-focus: #4a423b;
+
+  --astryx-color-danger: #c53030;
+  --astryx-color-danger-hover: #9b2c2c;
+  --astryx-color-danger-subtle: #fed7d7;
+
+  --astryx-color-success: #2f855a;
+  --astryx-color-warning: #c05621;
+}
+
+[data-astryx-theme='stone'][data-theme='dark'],
+.dark [data-astryx-theme='stone'] {
+  --astryx-color-canvas: #1c1917;
+  --astryx-color-surface: #262220;
+  --astryx-color-surface-subtle: #332d29;
+  --astryx-color-surface-active: #443c37;
+  --astryx-color-surface-elevated: #2d2825;
+  --astryx-color-overlay: rgba(0, 0, 0, 0.7);
+
+  --astryx-color-fg-primary: #f5f0eb;
+  --astryx-color-fg-secondary: #d6ccc2;
+  --astryx-color-fg-muted: #a89f96;
+  --astryx-color-fg-subtle: #786f67;
+  --astryx-color-fg-on-brand: #1c1917;
+
+  --astryx-color-brand: #ede6dd;
+  --astryx-color-brand-hover: #ded5c9;
+  --astryx-color-brand-active: #cec3b4;
+  --astryx-color-brand-subtle: #332d29;
+
+  --astryx-color-accent: #e09467;
+  --astryx-color-accent-hover: #f0a97f;
+  --astryx-color-accent-subtle: #4a2818;
+
+  --astryx-color-border-subtle: #332d29;
+  --astryx-color-border-default: #443c37;
+  --astryx-color-border-hover: #574d46;
+  --astryx-color-border-strong: #786f67;
+  --astryx-color-border-focus: #ede6dd;
+
+  --astryx-color-danger: #fc8181;
+  --astryx-color-danger-hover: #feb2b2;
+  --astryx-color-danger-subtle: #4c1d1d;
+
+  --astryx-color-success: #68d391;
+  --astryx-color-warning: #f6ad55;
+}

@@ -38,7 +38,7 @@
   },
   "lint-staged": {
     "*.{js,cjs,mjs,ts,svelte}": [
-      "eslint --fix",
+      "eslint --fix --no-warn-ignored",
       "prettier --write"
     ],
     "*.{json,md,html,scss,yml,yaml}": "prettier --write"

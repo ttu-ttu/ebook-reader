@@ -77,6 +77,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@custom-ereader/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@fortawesome/fontawesome-svg-core':
         specifier: 7.3.1
         version: 7.3.1
@@ -186,6 +189,18 @@ importers:
       vite:
         specifier: 5.4.21
         version: 5.4.21(@types/node@24.13.3)(sass@1.103.1)
+
+  packages/ui:
+    devDependencies:
+      svelte:
+        specifier: 4.2.20
+        version: 4.2.20
+      svelte-check:
+        specifier: 4.7.6
+        version: 4.7.6(picomatch@4.0.7)(svelte@4.2.20)(typescript@6.0.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
 packages:
 

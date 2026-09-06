@@ -24,7 +24,8 @@ module.exports = (async () => {
         '**/material-elevation.cjs',
         '**/vite.config.js',
         '**/eslint.config.js',
-        '**/tailwind.config.cjs'
+        '**/tailwind.config.cjs',
+        'packages/**'
       ]
     },
     {

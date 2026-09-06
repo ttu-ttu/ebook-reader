@@ -12,6 +12,7 @@ import {
   faFileZipper,
   faFolderPlus,
   faHashtag,
+  faIcons,
   faImages,
   faSignOutAlt,
   faTriangleExclamation
@@ -19,6 +20,12 @@ import {
 
 export const mergeEntries = {
   MANAGE: { routeId: '/manage', label: 'Manager', icon: faSignOutAlt, title: 'Go to Book Manager' },
+  UI_SHOWCASE: {
+    routeId: '/ui-showcase',
+    label: 'Astryx UI',
+    icon: faIcons,
+    title: 'Astryx UI Components Showcase'
+  },
   SETTINGS: {
     routeId: '/settings',
     label: 'Settings',

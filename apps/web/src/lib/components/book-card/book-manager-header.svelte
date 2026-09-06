@@ -481,6 +481,7 @@
                   ]
                 : [
                     mergeEntries.MANAGE,
+                    mergeEntries.UI_SHOWCASE,
                     mergeEntries.STATISTICS,
                     mergeEntries.SETTINGS,
                     mergeEntries.BUG_REPORT
