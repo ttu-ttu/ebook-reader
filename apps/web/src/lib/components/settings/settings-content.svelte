@@ -222,6 +222,8 @@
     showIcons: true
   }));
 
+  $: currentThemeOption = availableThemes.find(({ theme }) => theme === selectedTheme)?.option;
+
   onDestroy(() => dialogManager.dialogs$.next([]));
 
   const optionsForFuriganaStyle: ToggleOption<FuriganaStyle>[] = [
@@ -449,6 +451,26 @@
     value: o.id,
     label: o.text
   }));
+
+  const sampleJapanese =
+    '吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。';
+  const sampleDialogue =
+    '「本当に行くのかい？」「ええ、もう決めたの」風が木々を揺らし、二人の間に微かな沈黙が流れた。夜空には満天の星が瞬いていた。';
+  const sampleEnglish =
+    'The quick brown fox jumps over the lazy dog. Reading is to the mind what exercise is to the body. Books are a uniquely portable magic.';
+
+  const segmentsForPreviewWritingMode = [
+    { value: 'horizontal-tb', label: '横書き' },
+    { value: 'vertical-rl', label: '縦書き' }
+  ];
+
+  let previewText = sampleJapanese;
+  let previewWritingMode: WritingMode = writingMode;
+  let previousWritingMode: WritingMode = writingMode;
+  $: if (writingMode !== previousWritingMode) {
+    previewWritingMode = writingMode;
+    previousWritingMode = writingMode;
+  }
 
   const storageSources$ = database.storageSourcesChanged$.pipe(
     map((storageSources) => [
@@ -794,6 +816,78 @@
         {Number(lineHeight).toFixed(2)}x
       </span>
       <Slider min={1.0} max={2.5} step={0.05} bind:value={lineHeight} showValue={false} />
+    </ListItem>
+
+    <ListItem
+      layout="stacked"
+      headline="Example Text Preview"
+      description="Live preview reflecting current font size, line height, typeface, and weight"
+    >
+      <div slot="suffix" class="flex items-center gap-1.5">
+        <SegmentedControl
+          size="sm"
+          options={segmentsForPreviewWritingMode}
+          bind:value={previewWritingMode}
+        />
+      </div>
+
+      <div class="mt-2 flex flex-col gap-2 w-full">
+        <div
+          contenteditable="true"
+          role="textbox"
+          tabindex="0"
+          aria-multiline="true"
+          aria-label="Editable font preview text"
+          bind:textContent={previewText}
+          class="live-font-preview w-full rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 p-4 transition-[font-size,line-height] outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600 select-text cursor-text box-border"
+          style:font-size={`${fontSize}px`}
+          style:line-height={`${lineHeight}`}
+          style:font-family={fontFamilyGroupOne ? `"${fontFamilyGroupOne}", serif` : 'serif'}
+          style:font-weight={fontWeight ? `${fontWeight}` : 'inherit'}
+          style:font-kerning={enableFontKerning ? 'normal' : 'none'}
+          style:font-feature-settings={enableFontVPAL ? '"vpal"' : 'normal'}
+          style:writing-mode={previewWritingMode}
+          style:height={previewWritingMode === 'vertical-rl' ? '210px' : 'auto'}
+          style:min-height={previewWritingMode === 'vertical-rl' ? '210px' : '84px'}
+          style:max-height={previewWritingMode === 'vertical-rl' ? '240px' : '300px'}
+          style:overflow-x={previewWritingMode === 'vertical-rl' ? 'auto' : 'hidden'}
+          style:overflow-y={previewWritingMode === 'vertical-rl' ? 'hidden' : 'auto'}
+          style:background-color={currentThemeOption?.backgroundColor ??
+            'var(--astryx-color-surface-subtle, rgba(0, 0, 0, 0.03))'}
+          style:color={currentThemeOption?.fontColor ?? 'var(--astryx-color-fg-primary, inherit)'}
+        />
+
+        <div
+          class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400 px-0.5"
+        >
+          <span>Click text above to test custom words or kanji</span>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="hover:underline hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+              on:click={() => (previewText = sampleJapanese)}
+            >
+              吾輩は猫 (JA)
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              class="hover:underline hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+              on:click={() => (previewText = sampleDialogue)}
+            >
+              Dialogue
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              class="hover:underline hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+              on:click={() => (previewText = sampleEnglish)}
+            >
+              English
+            </button>
+          </div>
+        </div>
+      </div>
     </ListItem>
 
     <ListItem
