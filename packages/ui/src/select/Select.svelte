@@ -194,12 +194,25 @@
     border: none;
     outline: none;
     background: transparent;
+    box-shadow: none;
     color: var(--astryx-color-fg-primary, #18181b);
     font-family: inherit;
     line-height: inherit;
     cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
+  }
+
+  .astryx-select-element:focus,
+  .astryx-select-element:focus-visible,
+  .astryx-select-element:active {
+    outline: none !important;
+    border: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    --tw-ring-color: transparent !important;
+    --tw-ring-shadow: none !important;
+    --tw-ring-offset-shadow: none !important;
   }
 
   /* Option dropdown background */

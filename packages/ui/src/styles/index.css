@@ -3,11 +3,15 @@
 @import './themes/stone.css';
 @import './themes/gothic.css';
 
-/* Prevent framework resets (such as @tailwindcss/forms) from leaking focus rings or borders to Astryx inputs */
+/* Prevent framework resets (such as @tailwindcss/forms) from leaking focus rings or borders to Astryx inputs and selects */
 .astryx-input-element,
 .astryx-input-element:focus,
 .astryx-input-element:focus-visible,
-.astryx-input-element:active {
+.astryx-input-element:active,
+.astryx-select-element,
+.astryx-select-element:focus,
+.astryx-select-element:focus-visible,
+.astryx-select-element:active {
   outline: none !important;
   border: none !important;
   border-color: transparent !important;
