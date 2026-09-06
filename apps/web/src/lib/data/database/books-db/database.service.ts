@@ -363,13 +363,22 @@ export class DatabaseService {
       .filter((b) => b.isAutosave)
       .sort((a, b) => b.createdAt - a.createdAt);
 
+    // If an existing autosave is within 15 characters, remove the old one so this new one replaces it
+    const nearby = autosaves.find(
+      (b) => Math.abs(b.exploredCharCount - data.exploredCharCount) < 15
+    );
+    if (nearby?.id !== undefined) {
+      await store.delete(nearby.id);
+    }
+
     await store.add({
       ...data,
       isAutosave: true
     });
 
-    if (autosaves.length >= maxKeep) {
-      const toDelete = autosaves.slice(maxKeep - 1);
+    const remaining = autosaves.filter((b) => b.id !== nearby?.id);
+    if (remaining.length >= maxKeep) {
+      const toDelete = remaining.slice(maxKeep - 1);
       for (const old of toDelete) {
         if (old.id !== undefined) {
           await store.delete(old.id);

@@ -196,7 +196,7 @@ export const autosaveHistoryEnabled$ = writableBooleanLocalStorageSubject()(
 
 export const autosaveHistoryInterval$ = writableNumberLocalStorageSubject()(
   'autosaveHistoryInterval',
-  10
+  3
 );
 
 export const autosaveHistoryMaxCount$ = writableNumberLocalStorageSubject()(

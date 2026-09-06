@@ -872,19 +872,19 @@
     </SettingsItemGroup>
     {#if autosaveHistoryEnabled}
       <SettingsItemGroup
-        title="Autosave Interval"
-        tooltip={'Interval in seconds between rolling autosaves while reading'}
+        title="Autosave Pause Delay"
+        tooltip={'Number of seconds stopped on a page without scrolling before saving an autosave checkpoint (1-30s)'}
       >
         <input
           type="number"
           step="1"
-          min="5"
-          max="60"
+          min="1"
+          max="30"
           class={inputClasses}
           bind:value={autosaveHistoryInterval}
           on:blur={() => {
-            if (autosaveHistoryInterval < 5 || typeof autosaveHistoryInterval !== 'number') {
-              autosaveHistoryInterval = 10;
+            if (autosaveHistoryInterval < 1 || typeof autosaveHistoryInterval !== 'number') {
+              autosaveHistoryInterval = 3;
             }
           }}
         />

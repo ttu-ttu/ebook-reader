@@ -374,7 +374,7 @@
         })
       );
     }),
-    reduceToEmptyString()
+    map((): '' => '')
   );
 
   const bookData$ = rawBookData$.pipe(
@@ -606,58 +606,69 @@
 
     readerImageGalleryPictures$.next([]);
 
-    if (autosaveTimer) {
-      clearInterval(autosaveTimer);
+    if (autosaveDebounceTimer) {
+      clearTimeout(autosaveDebounceTimer);
     }
   });
 
   let lastAutosavedCharCount = 0;
   let previousObservedCharCount = 0;
   let previousObservedTime = 0;
-  let autosaveTimer: any;
+  let autosaveDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  function resetAutosaveTimer(intervalSeconds: number, enabled: boolean) {
-    if (autosaveTimer) {
-      clearInterval(autosaveTimer);
-      autosaveTimer = undefined;
+  function clearAutosaveDebounce() {
+    if (autosaveDebounceTimer) {
+      clearTimeout(autosaveDebounceTimer);
+      autosaveDebounceTimer = undefined;
     }
-    if (!browser || !enabled) return;
-    const ms = Math.max(5, intervalSeconds || 10) * 1000;
-    autosaveTimer = setInterval(() => {
-      if (!$autosaveHistoryEnabled$ || !bookCharCount || $isTrackerPaused$ || wasTrackerPaused) {
-        return;
-      }
-      if (exploredCharCount > 0 && Math.abs(exploredCharCount - lastAutosavedCharCount) >= 15) {
-        createAutosaveSnapshot(exploredCharCount);
-        lastAutosavedCharCount = exploredCharCount;
-      }
-    }, ms);
   }
 
-  $: if (browser) {
-    resetAutosaveTimer($autosaveHistoryInterval$, $autosaveHistoryEnabled$);
+  function handlePositionChangeForAutosave(charCount: number) {
+    if (!browser || !$autosaveHistoryEnabled$ || charCount <= 0 || !bookCharCount) return;
+
+    const now = Date.now();
+    if (previousObservedCharCount > 0 && previousObservedTime > 0) {
+      const timeDiff = now - previousObservedTime;
+      const charDiff = Math.abs(charCount - previousObservedCharCount);
+
+      // Abnormal jump detection (> 2000 chars or > 5% of book in < 1.5s)
+      const isGlitchJump = timeDiff < 1500 && (charDiff > 2000 || charDiff > bookCharCount * 0.05);
+      if (isGlitchJump && Math.abs(previousObservedCharCount - lastAutosavedCharCount) >= 15) {
+        createAutosaveSnapshot(previousObservedCharCount, 'Pre-jump Checkpoint');
+        lastAutosavedCharCount = previousObservedCharCount;
+      }
+    } else {
+      lastAutosavedCharCount = charCount;
+    }
+
+    previousObservedCharCount = charCount;
+    previousObservedTime = now;
+
+    // Reset debounce timer on every position change (page turn or scroll)
+    clearAutosaveDebounce();
+
+    const debounceSeconds = Math.max(1, $autosaveHistoryInterval$ || 3);
+    autosaveDebounceTimer = setTimeout(() => {
+      if (Math.abs(charCount - lastAutosavedCharCount) >= 15) {
+        createAutosaveSnapshot(charCount);
+        lastAutosavedCharCount = charCount;
+      }
+    }, debounceSeconds * 1000);
   }
 
-  $: {
-    if (browser && $autosaveHistoryEnabled$ && exploredCharCount > 0 && bookCharCount > 0) {
-      const now = Date.now();
-      if (previousObservedCharCount > 0 && previousObservedTime > 0) {
-        const timeDiff = now - previousObservedTime;
-        const charDiff = Math.abs(exploredCharCount - previousObservedCharCount);
+  $: if (browser && exploredCharCount > 0 && bookCharCount > 0 && $autosaveHistoryEnabled$) {
+    handlePositionChangeForAutosave(exploredCharCount);
+  }
 
-        // Abnormal jump detection (> 2000 chars or > 5% of book in < 1.5s)
-        const isGlitchJump =
-          timeDiff < 1500 && (charDiff > 2000 || charDiff > bookCharCount * 0.05);
-        if (isGlitchJump && Math.abs(previousObservedCharCount - lastAutosavedCharCount) >= 15) {
-          createAutosaveSnapshot(previousObservedCharCount, 'Pre-jump Checkpoint');
-          lastAutosavedCharCount = previousObservedCharCount;
-        }
-      } else {
-        lastAutosavedCharCount = exploredCharCount;
-      }
-      previousObservedCharCount = exploredCharCount;
-      previousObservedTime = now;
+  async function refreshUserBookmarks() {
+    const dataId = getBookIdSync();
+    if (dataId) {
+      userBookmarks = await database.getUserBookmarks(dataId);
     }
+  }
+
+  $: if ($bookmarkPanelIsOpen$) {
+    refreshUserBookmarks();
   }
 
   async function createAutosaveSnapshot(charCount: number, customPrefix?: string) {
@@ -681,6 +692,8 @@
       },
       $autosaveHistoryMaxCount$ || 5
     );
+
+    await refreshUserBookmarks();
   }
 
   function handleUnload(event: BeforeUnloadEvent) {
@@ -1376,6 +1389,7 @@
   async function handleDeleteUserBookmark(item: BooksDbUserBookmarkData) {
     if (item.id !== undefined) {
       await database.deleteUserBookmark(item.id);
+      await refreshUserBookmarks();
       if (!item.isAutosave) {
         scheduleReplication(StorageDataType.USER_BOOKMARKS);
       }
@@ -1385,6 +1399,7 @@
   async function handlePromoteAutosave(item: BooksDbUserBookmarkData) {
     if (item.id === undefined) return;
     await database.promoteAutosaveToBookmark(item.id);
+    await refreshUserBookmarks();
     scheduleReplication(StorageDataType.USER_BOOKMARKS);
   }
 
@@ -1392,6 +1407,7 @@
     const dataId = getBookIdSync();
     if (!dataId) return;
     await database.clearAutosaveBookmarks(dataId);
+    await refreshUserBookmarks();
   }
 
   function getBookIdSync() {
