@@ -431,6 +431,18 @@
     value: o.id,
     label: o.text
   }));
+  $: segmentsForImportHTMLFixes = optionsForImportHTMLFixes.map((o) => ({
+    value: o.id,
+    label: o.text
+  }));
+  $: segmentsForAutoReplicationType = optionsForAutoReplicationType.map((o) => ({
+    value: o.id,
+    label: o.text
+  }));
+  $: segmentsForReplicationSaveBehavior = optionsForReplicationSaveBehavior.map((o) => ({
+    value: o.id,
+    label: o.text
+  }));
 
   const storageSources$ = database.storageSourcesChanged$.pipe(
     map((storageSources) => [
@@ -1203,287 +1215,327 @@
       </ListItem>
     </ListSection>
   </div>
+{:else if activeSettings === 'Data'}
+  <div class="flex flex-col gap-6 max-w-3xl mx-auto pb-16">
+    <!-- Section 1: Local Storage & Caching -->
+    <ListSection
+      title="Local Storage & Caching"
+      description="Manage local storage persistence, quota, and offline caching"
+    >
+      <ListItem headline="Persistent Storage" description={persistentStorageTooltip}>
+        <div slot="suffix" class="flex items-center gap-3">
+          {#if storageQuota}
+            <span
+              class="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono"
+            >
+              {storageQuota}
+            </span>
+          {/if}
+          <Switch bind:checked={persistentStorage} />
+        </div>
+      </ListItem>
+
+      <ListItem headline="Cache Storage Data" description={cacheStorageDataTooltip}>
+        <Switch slot="suffix" bind:checked={cacheStorageData} />
+      </ListItem>
+    </ListSection>
+
+    <!-- Section 2: Book Import & Display -->
+    <ListSection
+      title="Book Import & Display"
+      description="Configure EPUB import sanitization and browser source indicators"
+    >
+      <ListItem
+        layout="stacked"
+        headline="EPUB Import Fixes"
+        description={importHTMLFixModeTooltip}
+      >
+        <SegmentedControl
+          options={segmentsForImportHTMLFixes}
+          bind:value={importHTMLFixMode}
+          size="sm"
+        />
+      </ListItem>
+
+      {#if importHTMLFixMode !== ImportHTMLFixMode.OFF}
+        <ListItem
+          headline="Restrict Fixes to Links"
+          description="Restricts EPUB fixes for self-closing tags to anchor links only"
+        >
+          <Switch slot="suffix" bind:checked={restrictImportFixToAnchor} />
+        </ListItem>
+      {/if}
+
+      <ListItem
+        headline="Hide External Source Hint"
+        description="Hides the warning notification when opening a book from an external storage source"
+      >
+        <Switch slot="suffix" bind:checked={hideExternalReadHint} />
+      </ListItem>
+
+      <ListItem
+        headline="Show External Books Placeholder"
+        description={showExternalPlaceholderToolTip}
+      >
+        <Switch slot="suffix" bind:checked={showExternalPlaceholder} />
+      </ListItem>
+    </ListSection>
+
+    <!-- Section 3: Synchronization & Auto-Replication -->
+    <ListSection
+      title="Synchronization & Auto-Replication"
+      description="Automatic background syncing between reader and connected storage targets"
+    >
+      <ListItem
+        layout="stacked"
+        headline="Auto Import/Export Direction"
+        description={autoReplicationTypeTooltip}
+      >
+        <SegmentedControl
+          options={segmentsForAutoReplicationType}
+          bind:value={autoReplication}
+          size="sm"
+        />
+      </ListItem>
+
+      <ListItem
+        layout="stacked"
+        headline="Import/Export Save Behavior"
+        description={replicationSaveBehaviorTooltip}
+      >
+        <SegmentedControl
+          options={segmentsForReplicationSaveBehavior}
+          bind:value={replicationSaveBehavior}
+          size="sm"
+        />
+      </ListItem>
+    </ListSection>
+
+    <!-- Section 4: Storage Sources -->
+    <SettingsStorageSourceList storageSources={$storageSources$} />
+  </div>
 {:else}
   <div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:md:gap-8 lg:grid-cols-3">
-    {#if activeSettings === 'Data'}
-      <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
-        <div class="flex items-center">
-          <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
-          {#if storageQuota}
-            <div class="ml-4">{storageQuota}</div>
-          {/if}
-        </div>
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Hide Source Hint"
-        tooltip="Hides the user warning when opening a book from an external storage source"
-      >
+    <SettingsItemGroup
+      title="Keep Local Data on Deletion"
+      tooltip={'Determines if local statistics will be deleted or not when removing a local book copy'}
+    >
+      <div class="flex items-center">
         <ButtonToggleGroup
           options={optionsForToggle}
-          bind:selectedOptionId={hideExternalReadHint}
+          bind:selectedOptionId={keepLocalStatisticsOnDeletion}
         />
-      </SettingsItemGroup>
-      <SettingsItemGroup title="Epub Import Fixes" tooltip={importHTMLFixModeTooltip}>
-        <ButtonToggleGroup
-          options={optionsForImportHTMLFixes}
-          bind:selectedOptionId={importHTMLFixMode}
-        />
-      </SettingsItemGroup>
-      {#if importHTMLFixMode !== ImportHTMLFixMode.OFF}
-        <SettingsItemGroup
-          title="Restrict to Links"
-          tooltip="Restricts epub fixes for self closing tags to links only"
-        >
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={restrictImportFixToAnchor}
-          />
-        </SettingsItemGroup>
-      {/if}
-      <SettingsItemGroup title="Cache Data" tooltip={cacheStorageDataTooltip}>
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={cacheStorageData} />
-      </SettingsItemGroup>
-      <SettingsItemGroup title="Auto Import/Export" tooltip={autoReplicationTypeTooltip}>
-        <ButtonToggleGroup
-          options={optionsForAutoReplicationType}
-          bind:selectedOptionId={autoReplication}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup title="Import/Export Behavior" tooltip={replicationSaveBehaviorTooltip}>
-        <ButtonToggleGroup
-          options={optionsForReplicationSaveBehavior}
-          bind:selectedOptionId={replicationSaveBehavior}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup title="Show Placeholder" tooltip={showExternalPlaceholderToolTip}>
-        <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={showExternalPlaceholder}
-        />
-      </SettingsItemGroup>
-      <SettingsStorageSourceList storageSources={$storageSources$} />
-    {:else}
-      <SettingsItemGroup
-        title="Keep Local Data on Deletion"
-        tooltip={'Determines if local statistics will be deleted or not when removing a local book copy'}
-      >
-        <div class="flex items-center">
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={keepLocalStatisticsOnDeletion}
-          />
-          <div
-            tabindex="0"
-            role="button"
-            class="ml-4 hover:underline"
-            on:click={() => {
-              showSpinner = true;
-              database
-                .clearZombieStatistics()
-                .catch(({ message }) =>
-                  dialogManager.dialogs$.next([
-                    {
-                      component: MessageDialog,
-                      props: {
-                        title: 'Error',
-                        message: `Error clearing Zombie Statistics: ${message}`
-                      }
+        <div
+          tabindex="0"
+          role="button"
+          class="ml-4 hover:underline"
+          on:click={() => {
+            showSpinner = true;
+            database
+              .clearZombieStatistics()
+              .catch(({ message }) =>
+                dialogManager.dialogs$.next([
+                  {
+                    component: MessageDialog,
+                    props: {
+                      title: 'Error',
+                      message: `Error clearing Zombie Statistics: ${message}`
                     }
-                  ])
-                )
-                .finally(() => (showSpinner = false));
-            }}
-            on:keyup={() => {}}
-          >
-            Clear Zombie Statistics
-          </div>
+                  }
+                ])
+              )
+              .finally(() => (showSpinner = false));
+          }}
+          on:keyup={() => {}}
+        >
+          Clear Zombie Statistics
         </div>
+      </div>
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Overwrite Book Completion"
+      tooltip={`Determines if only the first Book Completion will be tracked or if it always updates to the latest one`}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={overwriteBookCompletion}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title={`Start Day Hours: ${startOfDayHours}`}
+      tooltip={'Determines at which time a new day starts.\nData before this point will be counted towards the previous day'}
+    >
+      <input
+        type="range"
+        step="1"
+        min="0"
+        max="23"
+        class={inputClasses}
+        bind:value={startDayHoursForTracker}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Statistics Merge"
+      tooltip={`Determines if statistics will be merged entry by entry or replaced completely on a sync`}
+    >
+      <ButtonToggleGroup
+        options={optionsForMergeMode}
+        bind:selectedOptionId={statisticsMergeMode}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Reading Goals Merge"
+      tooltip={`Determines if reading goals will be merged entry by entry or replaced completely on a sync`}
+    >
+      <ButtonToggleGroup
+        options={optionsForMergeMode}
+        bind:selectedOptionId={readingGoalsMergeMode}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Enable Statistics"
+      tooltip="Enables the tracker icon in the bottom left corner of the reader which you need to use to start tracking your reading session"
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={statisticsEnabled} />
+    </SettingsItemGroup>
+    {#if statisticsEnabled}
+      <SettingsItemGroup title="Tracker Auto Pause" tooltip={trackerAutoPauseTooltip}>
+        <ButtonToggleGroup
+          options={optionsForTrackerAutoPause}
+          bind:selectedOptionId={trackerAutoPause}
+        />
       </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Overwrite Book Completion"
-        tooltip={`Determines if only the first Book Completion will be tracked or if it always updates to the latest one`}
-      >
+      <SettingsItemGroup title="Open Tracker on Completion">
         <ButtonToggleGroup
           options={optionsForToggle}
-          bind:selectedOptionId={overwriteBookCompletion}
+          bind:selectedOptionId={openTrackerOnCompletion}
         />
       </SettingsItemGroup>
       <SettingsItemGroup
-        title={`Start Day Hours: ${startOfDayHours}`}
-        tooltip={'Determines at which time a new day starts.\nData before this point will be counted towards the previous day'}
+        title="Update on Completion"
+        tooltip={`Determines if the missing amount of characters between the current position and the book total will be added to the statistics or not`}
+      >
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={addCharactersOnCompletion}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Autostart tracker (sec)"
+        tooltip={'Time in seconds without a change to the character count after which the tracker will initially auto start (0 = disabled, higher value recommended to avoid racing conditions)'}
       >
         <input
-          type="range"
+          type="number"
+          class={inputClasses}
           step="1"
           min="0"
-          max="23"
-          class={inputClasses}
-          bind:value={startDayHoursForTracker}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Statistics Merge"
-        tooltip={`Determines if statistics will be merged entry by entry or replaced completely on a sync`}
-      >
-        <ButtonToggleGroup
-          options={optionsForMergeMode}
-          bind:selectedOptionId={statisticsMergeMode}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Reading Goals Merge"
-        tooltip={`Determines if reading goals will be merged entry by entry or replaced completely on a sync`}
-      >
-        <ButtonToggleGroup
-          options={optionsForMergeMode}
-          bind:selectedOptionId={readingGoalsMergeMode}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Enable Statistics"
-        tooltip="Enables the tracker icon in the bottom left corner of the reader which you need to use to start tracking your reading session"
-      >
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={statisticsEnabled} />
-      </SettingsItemGroup>
-      {#if statisticsEnabled}
-        <SettingsItemGroup title="Tracker Auto Pause" tooltip={trackerAutoPauseTooltip}>
-          <ButtonToggleGroup
-            options={optionsForTrackerAutoPause}
-            bind:selectedOptionId={trackerAutoPause}
-          />
-        </SettingsItemGroup>
-        <SettingsItemGroup title="Open Tracker on Completion">
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={openTrackerOnCompletion}
-          />
-        </SettingsItemGroup>
-        <SettingsItemGroup
-          title="Update on Completion"
-          tooltip={`Determines if the missing amount of characters between the current position and the book total will be added to the statistics or not`}
-        >
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={addCharactersOnCompletion}
-          />
-        </SettingsItemGroup>
-        <SettingsItemGroup
-          title="Autostart tracker (sec)"
-          tooltip={'Time in seconds without a change to the character count after which the tracker will initially auto start (0 = disabled, higher value recommended to avoid racing conditions)'}
-        >
-          <input
-            type="number"
-            class={inputClasses}
-            step="1"
-            min="0"
-            bind:value={trackerAutoStartTime}
-            on:blur={() => {
-              const newValue = Number.parseFloat(`${trackerAutoStartTime ?? 0}`);
+          bind:value={trackerAutoStartTime}
+          on:blur={() => {
+            const newValue = Number.parseFloat(`${trackerAutoStartTime ?? 0}`);
 
-              if (isNaN(newValue) || newValue < 1) {
-                trackerAutoStartTime = 0;
-              }
-            }}
-          />
-        </SettingsItemGroup>
-        <SettingsItemGroup
-          title="Idle Time (min)"
-          tooltip={'Time in minutes after which the tracker will auto pause without page interaction (0 = disabled, max 12h)'}
-        >
-          <input
-            type="number"
-            class={inputClasses}
-            step="0.5"
-            min="0"
-            bind:value={trackerIdleTimeInMin}
-            on:blur={() => {
-              if (!trackerIdleTimeInMin || trackerIdleTimeInMin < 0) {
-                trackerIdleTime = 0;
-              } else if (trackerIdleTimeInMin > 43200) {
-                trackerIdleTime = 900;
-              } else {
-                trackerIdleTime = Math.floor(trackerIdleTimeInMin * 60);
-              }
-            }}
-          />
-        </SettingsItemGroup>
-        <SettingsItemGroup
-          title="Forward Skip Threshold"
-          tooltip={'Amount of positive characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
-        >
-          <input
-            type="number"
-            class={inputClasses}
-            step="1"
-            min="0"
-            bind:value={trackerForwardSkipThreshold}
-            on:blur={() => {
-              if (trackerForwardSkipThreshold === 0) {
-                trackerForwardSkipThreshold = 0;
-              } else if (!trackerForwardSkipThreshold || trackerForwardSkipThreshold < 0) {
-                trackerForwardSkipThreshold = 2700;
-              }
-            }}
-          />
-        </SettingsItemGroup>
-        <SettingsItemGroup
-          title="Backward Skip Threshold"
-          tooltip={'Amount of negative characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
-        >
-          <input
-            type="number"
-            class={inputClasses}
-            step="1"
-            bind:value={trackerBackwardSkipThreshold}
-            on:blur={() => {
-              if (trackerBackwardSkipThreshold < 0) {
-                trackerBackwardSkipThreshold = Math.abs(trackerBackwardSkipThreshold);
-              } else if (trackerBackwardSkipThreshold === 0) {
-                trackerBackwardSkipThreshold = 0;
-              } else if (!trackerBackwardSkipThreshold) {
-                trackerBackwardSkipThreshold = 2700;
-              }
-            }}
-          />
-        </SettingsItemGroup>
-        {#if trackerForwardSkipThreshold || trackerBackwardSkipThreshold}
-          <SettingsItemGroup
-            title="Threshold Action"
-            tooltip={`Determines what action will be executed in case a skip threshold was triggered`}
-          >
-            <ButtonToggleGroup
-              options={optionsForTrackerSkipThresholdAction}
-              bind:selectedOptionId={trackerSkipThresholdAction}
-            />
-          </SettingsItemGroup>
-        {/if}
-        {#if trackerAutoPause !== TrackerAutoPause.OFF}
-          <SettingsItemGroup
-            title="Dictionary Detection"
-            tooltip={`If enabled auto pause is skipped if open yomitan/jpdb-browser-reader was detected - yomitan requires disabled 'Secure Container' settings`}
-          >
-            <ButtonToggleGroup
-              options={optionsForToggle}
-              bind:selectedOptionId={trackerPopupDetection}
-            />
-          </SettingsItemGroup>
-        {/if}
-        {#if trackerIdleTime > 0}
-          <SettingsItemGroup
-            title="Rollback Statistics on Idle"
-            tooltip={`If enabled attempts to rollback statistics by subtracting the idled time value back from the session`}
-          >
-            <ButtonToggleGroup
-              options={optionsForToggle}
-              bind:selectedOptionId={adjustStatisticsAfterIdleTime}
-            />
-          </SettingsItemGroup>
-        {/if}
-        <SettingsReadingGoals
-          storageSources={$storageSources$}
-          on:spinner={({ detail }) => (showSpinner = detail)}
+            if (isNaN(newValue) || newValue < 1) {
+              trackerAutoStartTime = 0;
+            }
+          }}
         />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Idle Time (min)"
+        tooltip={'Time in minutes after which the tracker will auto pause without page interaction (0 = disabled, max 12h)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          step="0.5"
+          min="0"
+          bind:value={trackerIdleTimeInMin}
+          on:blur={() => {
+            if (!trackerIdleTimeInMin || trackerIdleTimeInMin < 0) {
+              trackerIdleTime = 0;
+            } else if (trackerIdleTimeInMin > 43200) {
+              trackerIdleTime = 900;
+            } else {
+              trackerIdleTime = Math.floor(trackerIdleTimeInMin * 60);
+            }
+          }}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Forward Skip Threshold"
+        tooltip={'Amount of positive characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          step="1"
+          min="0"
+          bind:value={trackerForwardSkipThreshold}
+          on:blur={() => {
+            if (trackerForwardSkipThreshold === 0) {
+              trackerForwardSkipThreshold = 0;
+            } else if (!trackerForwardSkipThreshold || trackerForwardSkipThreshold < 0) {
+              trackerForwardSkipThreshold = 2700;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Backward Skip Threshold"
+        tooltip={'Amount of negative characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
+      >
+        <input
+          type="number"
+          class={inputClasses}
+          step="1"
+          bind:value={trackerBackwardSkipThreshold}
+          on:blur={() => {
+            if (trackerBackwardSkipThreshold < 0) {
+              trackerBackwardSkipThreshold = Math.abs(trackerBackwardSkipThreshold);
+            } else if (trackerBackwardSkipThreshold === 0) {
+              trackerBackwardSkipThreshold = 0;
+            } else if (!trackerBackwardSkipThreshold) {
+              trackerBackwardSkipThreshold = 2700;
+            }
+          }}
+        />
+      </SettingsItemGroup>
+      {#if trackerForwardSkipThreshold || trackerBackwardSkipThreshold}
+        <SettingsItemGroup
+          title="Threshold Action"
+          tooltip={`Determines what action will be executed in case a skip threshold was triggered`}
+        >
+          <ButtonToggleGroup
+            options={optionsForTrackerSkipThresholdAction}
+            bind:selectedOptionId={trackerSkipThresholdAction}
+          />
+        </SettingsItemGroup>
       {/if}
+      {#if trackerAutoPause !== TrackerAutoPause.OFF}
+        <SettingsItemGroup
+          title="Dictionary Detection"
+          tooltip={`If enabled auto pause is skipped if open yomitan/jpdb-browser-reader was detected - yomitan requires disabled 'Secure Container' settings`}
+        >
+          <ButtonToggleGroup
+            options={optionsForToggle}
+            bind:selectedOptionId={trackerPopupDetection}
+          />
+        </SettingsItemGroup>
+      {/if}
+      {#if trackerIdleTime > 0}
+        <SettingsItemGroup
+          title="Rollback Statistics on Idle"
+          tooltip={`If enabled attempts to rollback statistics by subtracting the idled time value back from the session`}
+        >
+          <ButtonToggleGroup
+            options={optionsForToggle}
+            bind:selectedOptionId={adjustStatisticsAfterIdleTime}
+          />
+        </SettingsItemGroup>
+      {/if}
+      <SettingsReadingGoals
+        storageSources={$storageSources$}
+        on:spinner={({ detail }) => (showSpinner = detail)}
+      />
     {/if}
   </div>
 {/if}
