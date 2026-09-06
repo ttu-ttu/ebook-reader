@@ -255,7 +255,7 @@
 </script>
 
 <ListSection title="Storage Sources" description={listTooltip}>
-  <div slot="actions" class="flex items-center gap-2">
+  <div slot="action" class="flex items-center gap-2">
     {#if $autoReplication$ !== AutoReplicationType.Off && !$syncTarget$}
       <Tooltip
         content="Auto import/export enabled but no sync target selected from list"

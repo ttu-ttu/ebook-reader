@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  export let value: string | number = '';
+  export let value: string | number | null | undefined = '';
   export let type: string = 'text';
   export let label: string = '';
   export let placeholder: string = '';
