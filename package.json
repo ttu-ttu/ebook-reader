@@ -15,7 +15,7 @@
   "devDependencies": {
     "@commitlint/cli": "21.2.2",
     "@commitlint/config-conventional": "21.2.2",
-    "@eslint/compat": "2.1.0",
+    "@eslint/compat": "2.1.1",
     "@eslint/js": "9.39.5",
     "@types/eslint__js": "9.14.0",
     "@types/node": "24.13.3",
