@@ -15,8 +15,8 @@ importers:
         specifier: 21.2.2
         version: 21.2.2
       '@eslint/compat':
-        specifier: 2.1.0
-        version: 2.1.0(eslint@9.39.5(jiti@2.4.1)(supports-color@7.2.0))
+        specifier: 2.1.1
+        version: 2.1.1(eslint@9.39.5(jiti@2.4.1)(supports-color@7.2.0))
       '@eslint/js':
         specifier: 9.39.5
         version: 9.39.5
@@ -488,8 +488,8 @@ packages:
     resolution: {integrity: sha512-CCZCDJuduB9OUkFkY2IgppNZMi2lBQgD2qzwXkEia16cge2pijY/aXi96CJMquDMn3nJdlPV1A5KrJEXwfLNzQ==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
 
-  '@eslint/compat@2.1.0':
-    resolution: {integrity: sha512-LgaSCymEpw7tF53xvDw9SNsraPb1IBHxpdABIOM0hW8UAlP8znrjYtuxfR58FSJ3L9BhwD+FaPRFQpZq84Nh6g==}
+  '@eslint/compat@2.1.1':
+    resolution: {integrity: sha512-rMcy8GSrwNzcISX/BlTDY/GLB4eCopEuy9woIls3To+15OLxykZrxxq+WUcylCPCQ6F4MujjBM1DX5V1aqI3Vw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
       eslint: ^8.40 || 9 || 10
@@ -2904,7 +2904,7 @@ snapshots:
 
   '@eslint-community/regexpp@4.12.1': {}
 
-  '@eslint/compat@2.1.0(eslint@9.39.5(jiti@2.4.1)(supports-color@7.2.0))':
+  '@eslint/compat@2.1.1(eslint@9.39.5(jiti@2.4.1)(supports-color@7.2.0))':
     dependencies:
       '@eslint/core': 1.2.1
     optionalDependencies:
