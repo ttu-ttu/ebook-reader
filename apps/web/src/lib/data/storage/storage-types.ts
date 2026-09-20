@@ -9,7 +9,8 @@ export enum StorageKey {
   BROWSER = 'browser',
   FS = 'fs',
   GDRIVE = 'gdrive',
-  ONEDRIVE = 'onedrive'
+  ONEDRIVE = 'onedrive',
+  TTSU_REMOTE = 'ttsu-remote'
 }
 
 export enum StorageDataType {
@@ -23,7 +24,8 @@ export enum StorageDataType {
 
 export enum StorageSourceDefault {
   GDRIVE_DEFAULT = 'ttu-gdrive-default',
-  ONEDRIVE_DEFAULT = 'ttu-onedrive-default'
+  ONEDRIVE_DEFAULT = 'ttu-onedrive-default',
+  TTSU_REMOTE_DEFAULT = 'ttu-remote-default'
 }
 
 export enum InternalStorageSources {

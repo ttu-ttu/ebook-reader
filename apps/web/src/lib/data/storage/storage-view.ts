@@ -55,6 +55,11 @@ export function isStorageSourceAvailable(
         oneDriveScope;
       break;
 
+    case StorageKey.TTSU_REMOTE:
+      hasValidEnvironment =
+        !!storageSourceManager && storageSourceManager !== StorageSourceDefault.TTSU_REMOTE_DEFAULT;
+      break;
+
     case StorageKey.FS:
       hasValidEnvironment = !!storageSourceManager && 'showDirectoryPicker' in window;
       break;
