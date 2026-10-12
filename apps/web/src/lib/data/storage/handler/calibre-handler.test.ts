@@ -72,3 +72,27 @@ describe('CalibreStorageHandler.getBookList', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('CalibreStorageHandler sync errors', () => {
+  const unauthorized = async () => new Response('', { status: 401 });
+
+  it('asks a signed-out reader to sign in rather than saying the sign-in expired', async () => {
+    account.user = null;
+    vi.stubGlobal('fetch', unauthorized);
+
+    await expect(
+      new CalibreStorageHandler(window)['davRequest']('/calibre/sync/x', { method: 'MKCOL' })
+    ).rejects.toThrow('needs an account');
+    vi.unstubAllGlobals();
+  });
+
+  it('says the sign-in expired while signed in', async () => {
+    account.user = { id: 'a', username: 'a' };
+    vi.stubGlobal('fetch', unauthorized);
+
+    await expect(
+      new CalibreStorageHandler(window)['davRequest']('/account/sync/x', { method: 'MKCOL' })
+    ).rejects.toThrow('has expired');
+    vi.unstubAllGlobals();
+  });
+});

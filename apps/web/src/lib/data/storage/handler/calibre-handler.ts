@@ -47,8 +47,15 @@ interface DirectoryEntry {
 }
 
 const syncBaseUrl = '/calibre/sync/';
-const signInExpiredMessage =
-  'Your sign-in has expired. Sign in again in Settings → General → Account.';
+
+/** 401 from the sync folder: an expired session, or a signed-out reader outside the trusted networks. */
+function unauthorizedError() {
+  return new Error(
+    currentAccount()
+      ? 'Your sign-in has expired. Sign in again in Settings → General → Account.'
+      : 'Using the library from this network needs an account. Sign in in Settings → General → Account.'
+  );
+}
 
 function filesIn(folderId: string, entries: DirectoryEntry[] = []): ExternalFile[] {
   return entries
@@ -532,7 +539,7 @@ export class CalibreStorageHandler extends ApiStorageHandler {
     }
 
     if (response.status === 401) {
-      throw new Error(signInExpiredMessage);
+      throw unauthorizedError();
     }
 
     if (!response.ok) {
@@ -546,7 +553,7 @@ export class CalibreStorageHandler extends ApiStorageHandler {
     const response = await fetch(url, init);
 
     if (response.status === 401) {
-      throw new Error(signInExpiredMessage);
+      throw unauthorizedError();
     }
 
     if (!response.ok && !allowedStatuses.includes(response.status)) {
