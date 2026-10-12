@@ -8,6 +8,8 @@ anything a reader or a server operator would notice.
 
 ### Visual novels (ONScripter)
 
+- Games from the server's VN folder over 10 MB offer to keep their files in the browser
+  (Cache API, HTTPS only) so they start quickly next time; large files show a loading bar.
 - ZIPs of ONScripter games (a folder with `0.txt`, `00.txt`, `nscript.dat`…) open in a
   new player (`/v`) that runs the game in the browser (ONScripter-yuri, WebAssembly).
   Hover the game's own text to look words up with Yomitan: the player lays the page's

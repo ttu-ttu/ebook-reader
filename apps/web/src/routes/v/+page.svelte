@@ -65,6 +65,7 @@
     ReplicationSaveBehavior
   } from '$lib/functions/replication/replication-options';
   import { replicateData } from '$lib/functions/replication/replicator';
+  import { vnFolderSize } from '$lib/functions/file-loaders/vn/load-vn';
   import { formatPageTitle } from '$lib/functions/format-page-title';
   import { getDateKey } from '$lib/functions/statistic-util';
   import {
@@ -244,6 +245,28 @@
       .catch((error) => logger.warn(`Visual novel save sync failed: ${error.message}`));
   }
 
+  /** Games served by URL over 10 MB can be kept in the browser (Cache API, HTTPS only). */
+  async function gameCache(base: string | undefined) {
+    if (!base || !('caches' in window)) return undefined;
+
+    const name = `ttu-vn:${base}`;
+
+    if (await caches.has(name)) return name;
+
+    const size = await vnFolderSize(base).catch(() => 0);
+
+    if (
+      size <= 10 * 1024 * 1024 ||
+      !confirm(
+        `This game is ${size >= 1024 ** 3 ? `${(size / 1024 ** 3).toFixed(1)} GB` : `${Math.round(size / 1024 ** 2)} MB`}. Keep its files in this browser so it starts quickly next time?`
+      )
+    )
+      return undefined;
+
+    navigator.storage?.persist?.();
+    return name;
+  }
+
   async function start() {
     if (!book || !frame?.contentWindow) return;
 
@@ -255,12 +278,15 @@
       logger.warn(`Visual novel save sync failed: ${error.message}`);
       return {};
     });
+    const cacheName = await gameCache(info.base);
+
     lastTextTime = Date.now();
     await player.startGame({
       // Server folder games are fetched by URL; imported ones are blobs.
       files: info.base
         ? Object.fromEntries(info.files.map((path) => [path, `${info.base}${encodePath(path)}`]))
         : book.blobs,
+      cacheName,
       encoding: info.encoding,
       saveDir: `/save/${hashPage(book.title)}`,
       saves: Object.fromEntries(

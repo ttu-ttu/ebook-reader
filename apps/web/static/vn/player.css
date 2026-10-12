@@ -52,3 +52,24 @@ body {
 #overlay div div::selection {
   background: rgba(255, 220, 120, 0.35);
 }
+
+#progress {
+  position: absolute;
+  left: 50%;
+  bottom: 10%;
+  transform: translateX(-50%);
+  width: min(80%, 24rem);
+  color: #ddd;
+  font: 0.9rem sans-serif;
+  text-align: center;
+}
+
+#progress[hidden] {
+  display: none;
+}
+
+#progress progress {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.4rem;
+}

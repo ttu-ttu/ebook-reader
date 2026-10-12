@@ -73,20 +73,25 @@ async function fetchOk(url: string) {
 }
 
 /** Every file under a folder URL, through nginx's JSON directory listings. */
-async function listFiles(base: string, prefix = ''): Promise<string[]> {
-  const entries: { name: string; type: string }[] = await (
+async function listFiles(base: string, prefix = ''): Promise<{ path: string; size: number }[]> {
+  const entries: { name: string; type: string; size?: number }[] = await (
     await fetchOk(`${base}${encodePath(prefix)}`)
   ).json();
-  const files: string[] = [];
+  const files: { path: string; size: number }[] = [];
 
   for (const entry of entries) {
     if (entry.name.startsWith('.')) continue;
     if (entry.type === 'directory')
       files.push(...(await listFiles(base, `${prefix}${entry.name}/`)));
-    else files.push(`${prefix}${entry.name}`);
+    else files.push({ path: `${prefix}${entry.name}`, size: entry.size || 0 });
   }
 
   return files;
+}
+
+/** Total bytes of a game folder on the server. */
+export async function vnFolderSize(base: string) {
+  return (await listFiles(base)).reduce((sum, file) => sum + file.size, 0);
 }
 
 /**
@@ -100,7 +105,7 @@ export async function loadVnFolder(
   base: string,
   lastBookModified: number
 ): Promise<LoadData> {
-  const files = await listFiles(base);
+  const files = (await listFiles(base)).map((file) => file.path);
   const scripts = await Promise.all(
     files.filter(isScriptPath).map(async (path) => ({
       path,

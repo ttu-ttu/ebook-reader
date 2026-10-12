@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BlobReader, BlobWriter, ZipWriter, configure } from '@zip.js/zip.js';
 import loadCbz from '../cbz/load-cbz';
-import { loadVnFolder } from './load-vn';
+import { loadVnFolder, vnFolderSize } from './load-vn';
 import { isVn, vnInfo } from '$lib/data/vn';
 
 // jsdom has no Worker.
@@ -52,11 +52,11 @@ describe('loadVn', () => {
     const listings: Record<string, unknown> = {
       '/calibre/vn/G/': [
         { name: '0.txt', type: 'file' },
-        { name: 'arc.nsa', type: 'file' },
+        { name: 'arc.nsa', type: 'file', size: 2000 },
         { name: 'bgm', type: 'directory' },
         { name: '.DS_Store', type: 'file' }
       ],
-      '/calibre/vn/G/bgm/': [{ name: '曲.ogg', type: 'file' }]
+      '/calibre/vn/G/bgm/': [{ name: '曲.ogg', type: 'file', size: 30 }]
     };
     const fetched: string[] = [];
 
@@ -74,6 +74,7 @@ describe('loadVn', () => {
     });
     expect(book.characters).toBe(7);
     expect(fetched).toEqual(['/calibre/vn/G/', '/calibre/vn/G/bgm/', '/calibre/vn/G/0.txt']);
+    expect(await vnFolderSize('/calibre/vn/G/')).toBe(2030);
   });
 });
 

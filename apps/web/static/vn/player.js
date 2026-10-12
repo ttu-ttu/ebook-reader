@@ -133,17 +133,78 @@ window.addEventListener('resize', function () {
   scale_full(document.getElementById('canvas'), g_screen_width / g_screen_height);
 });
 
+// Cache API cache of a server game the reader chose to keep in the browser (startGame's cacheName).
+var fileCache;
+var progress = { loaded: 0, total: 0 };
+
+function showProgress() {
+  var box = document.getElementById('progress');
+  var mb = function (bytes) {
+    return Math.round(bytes / 1048576);
+  };
+
+  box.hidden = progress.loaded >= progress.total;
+  if (box.hidden) progress.loaded = progress.total = 0;
+  box.querySelector('progress').max = progress.total;
+  box.querySelector('progress').value = progress.loaded;
+  box.querySelector('span').textContent =
+    'Loading game files… ' + mb(progress.loaded) + ' / ' + mb(progress.total) + ' MB';
+}
+
+/** A response's bytes; files over 1 MB show in the progress bar while they load. */
+async function readResponse(response) {
+  var size = Number(response.headers.get('Content-Length')) || 0;
+
+  if (!response.body || size < 1048576) return response.arrayBuffer();
+
+  var data = new Uint8Array(size);
+  var offset = 0;
+  var reader = response.body.getReader();
+
+  progress.total += size;
+  showProgress();
+  try {
+    for (;;) {
+      var chunk = await reader.read();
+
+      if (chunk.done) break;
+      data.set(chunk.value, offset);
+      offset += chunk.value.length;
+      progress.loaded += chunk.value.length;
+      showProgress();
+    }
+    if (offset !== size) throw new Error('Truncated: ' + offset + ' of ' + size + ' bytes');
+  } finally {
+    // Failed reads leave the bar too.
+    progress.loaded += size - offset;
+    showProgress();
+  }
+  return data.buffer;
+}
+
+async function loadFile(url) {
+  var cached = fileCache && (await fileCache.match(url));
+
+  if (cached) return readResponse(cached);
+
+  var response = await fetch(url);
+
+  if (!response.ok) throw new Error('HTTP ' + response.status);
+  if (fileCache) {
+    fileCache.put(url, response.clone()).catch(function (error) {
+      console.warn('Could not keep ' + url + ' in the browser', error);
+    });
+  }
+  return readResponse(response);
+}
+
 /** Lazy loading (fopen_ons): copies a game file into the engine's memory on first use. */
 function fetch_file(FS, key, filemap) {
   var node = filemap[key];
 
   if (!node || node.loading) return;
   node.loading = true;
-  fetch(node.url)
-    .then(function (response) {
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      return response.arrayBuffer();
-    })
+  loadFile(node.url)
     .then(function (data) {
       FS.writeFile(node.path, new Uint8Array(data));
     })
@@ -217,7 +278,8 @@ function loadScript(src) {
 
 /**
  * options: files (path → Blob or URL, paths relative to the game folder), encoding ('sjis' |
- * 'utf8'), saveDir (unique per game), saves (synced save files, written when newer than
+ * 'utf8'), saveDir (unique per game), cacheName (Cache API cache keeping the fetched files, for
+ * games served by URL), saves (synced save files, written when newer than
  * this browser's), onText(bytes, skipped), onSave(saves), onExit(code).
  */
 async function startGame(options) {
@@ -227,6 +289,7 @@ async function startGame(options) {
   });
 
   onsyuriText = options.onText;
+  if (options.cacheName) fileCache = await caches.open(options.cacheName);
   onSave = options.onSave || onSave;
   textEncoding = options.encoding === 'utf8' ? 'utf-8' : 'shift_jis';
   g_onsyuri_index = { gamedir: gameDir, savedir: options.saveDir };
