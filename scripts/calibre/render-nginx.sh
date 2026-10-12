@@ -13,10 +13,10 @@ set -eu
 : "${IMPORT_UPSTREAM:=import:8767}"
 : "${DIFFICULTY_UPSTREAM:=difficulty:8765}"
 # Signed-out readers from these networks may read the library and write the
-# shared sync folder; empty = always require an account. Not 172.16.0.0/12 by
-# default: that is Docker's own range, where a reverse proxy on the same host
-# connects from, so every internet visitor would count as trusted.
-: "${TRUSTED_NETWORKS=10.0.0.0/8 192.168.0.0/16 100.64.0.0/10 fc00::/7}"
+# shared sync folder; empty (the default) = always require an account. Never
+# 172.16.0.0/12: that is Docker's own range, where a reverse proxy on the same
+# host connects from, so every internet visitor would count as trusted.
+: "${TRUSTED_NETWORKS:=}"
 # 1 = anyone who can reach the server may read the library without signing in.
 : "${PUBLIC_READS:=0}"
 case "$PUBLIC_READS" in 0|1) ;; *) echo "PUBLIC_READS must be 0 or 1" >&2; exit 1 ;; esac

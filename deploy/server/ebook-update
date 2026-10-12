@@ -30,6 +30,12 @@ if ! [[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
   exit 1
 fi
 dir=$data/state/update
+# The folder belongs to the containers' user: touch it only as that user, so a
+# link planted there can't turn root's writes into writes elsewhere.
+read -r uid gid < <(stat -c '%u %g' "$dir")
+as_owner() { setpriv --reuid="$uid" --regid="$gid" --clear-groups "$@"; }
+# write <file>: stdin to <file>, replacing it.
+write() { as_owner sh -c 'rm -f "$1.tmp" && cat > "$1.tmp" && mv "$1.tmp" "$1"' sh "$1"; }
 
 if [ "${1:-}" = install ]; then
   cat > /etc/systemd/system/ebook-update.service <<EOF
@@ -54,21 +60,18 @@ EOF
   systemctl enable ebook-update.path >/dev/null 2>&1
   systemctl restart ebook-update.path
   # The admin panel only offers updates when this marker exists.
-  printf '%s\n' "$repo" > "$dir/updater"
-  chmod 644 "$dir/updater"
+  printf '%s\n' "$repo" | write "$dir/updater"
   exit 0
 fi
 
 [ -f "$dir/request.json" ] || exit 0
-ref=$(sed -n 's/.*"ref": *"\([0-9a-f]\{7,40\}\)".*/\1/p' "$dir/request.json")
-rm -f "$dir/request.json"
+ref=$(as_owner sed -n 's/.*"ref": *"\([0-9a-f]\{7,40\}\)".*/\1/p' "$dir/request.json")
+as_owner rm -f "$dir/request.json"
 
 # Messages are fixed strings (no quotes), so this stays valid JSON.
 status() {
   printf '{"state": "%s", "ref": "%s", "at": %s, "message": "%s"}\n' \
-    "$1" "$ref" "$(date +%s)" "$2" > "$dir/status.json.tmp"
-  chmod 644 "$dir/status.json.tmp"
-  mv "$dir/status.json.tmp" "$dir/status.json"
+    "$1" "$ref" "$(date +%s)" "$2" | write "$dir/status.json"
 }
 
 if [ -z "$ref" ]; then
@@ -81,8 +84,15 @@ trap 'rm -rf "$work"' EXIT
 trap 'status failed "Update failed; see journalctl -u ebook-update on the server"' ERR
 
 status running "Downloading"
+# Only the head of main: GitHub also serves commits pushed to forks under this
+# repository's name, and the request file is writable from the containers.
+head=$(curl -fsSL -H 'Accept: application/vnd.github.sha' "https://api.github.com/repos/$repo/commits/main")
+if [[ ! "$head" =~ ^[0-9a-f]{40}$ ]] || [[ "$head" != "$ref"* ]]; then
+  status failed "That commit is not the newest on main any more; check again"
+  exit 0
+fi
 mkdir "$work/src"
-curl -fsSL "https://codeload.github.com/$repo/tar.gz/$ref" | tar -xz -C "$work/src" --strip-components=1
+curl -fsSL "https://codeload.github.com/$repo/tar.gz/$head" | tar -xz -C "$work/src" --strip-components=1
 
 status running "Building"
 compose=/usr/local/bin/ebook-compose

@@ -38,7 +38,9 @@ First public release. Compared with upstream ッツ Ebook Reader:
   their titles name and merges duplicate series, after a dry run; backs up
   `metadata.db` first) and **Updates** (compares the server with GitHub's main
   branch; servers set up with `scripts/deploy.sh` update and redeploy themselves
-  through `ebook-update`, `UPDATE_REPO`).
+  through `ebook-update`, `UPDATE_REPO`). The updater only installs the current
+  head of main and touches the shared state folder as the containers' user, so
+  a compromised container can't pick the code root builds or redirect its writes.
 - Progress, statistics, reading goals, highlights, recaps and lorebooks sync per
   account; AI settings and themes sync through `settings.json`, reader settings
   separately for phones and larger screens.
@@ -69,7 +71,8 @@ First public release. Compared with upstream ッツ Ebook Reader:
   deploys a checkout to a Proxmox container, an SSH host or the local machine.
   Upstream's reader-only image is `docker-compose.static.yml`.
 - **Security**: every location except the app checks access (accounts, trusted
-  networks, `PUBLIC_READS`, permissions); synced files are served as downloads
+  networks, `PUBLIC_READS`, permissions); `TRUSTED_NETWORKS` is empty by
+  default, so signed-out visitors get nothing until you list your networks; synced files are served as downloads
   only; book HTML is sanitized and a Content-Security-Policy allows only the
   site's own scripts; sign-in throttling per username and address; uploads stop
   when the disk is nearly full; security headers.

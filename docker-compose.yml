@@ -37,7 +37,7 @@ services:
     environment:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
-      TRUSTED_NETWORKS: ${TRUSTED_NETWORKS-10.0.0.0/8 192.168.0.0/16 100.64.0.0/10 fc00::/7}
+      TRUSTED_NETWORKS: ${TRUSTED_NETWORKS:-}
       REAL_IP_FROM: ${REAL_IP_FROM:-}
       PUBLIC_READS: ${PUBLIC_READS:-0}
     volumes:

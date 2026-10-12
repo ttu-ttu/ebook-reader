@@ -29,6 +29,8 @@ docker compose exec account ebook-account initial-admin
 The first start creates the admin account `admin` with a temporary password;
 `ebook-account initial-admin` (or `docker compose logs account`) shows it until
 that account has signed in. Change it in Settings → Account afterwards.
+Signing in needs HTTPS (see [HTTPS](#https)); to try it on a home network first,
+set `ALLOW_HTTP_ACCOUNTS=1` (see [Accounts](#accounts-and-permissions)).
 
 - `LIBRARY_PATH` is the Calibre library folder (the one with `metadata.db`).
   `PUID`/`PGID` must be able to read it; the catalog also writes `cover.jpg`
@@ -66,9 +68,15 @@ Then set in `.env`:
 
 - `REAL_IP_FROM`: the proxy's address as nginx sees it (for a proxy on the
   same host, Docker's gateway, e.g. `172.16.0.0/12`). Without it every visitor
-  appears to come from the proxy. That is safe with the default
-  `TRUSTED_NETWORKS` (Docker's range isn't in it, so everyone just needs an
-  account), but sign-in throttling then counts all visitors as one address.
+  appears to come from the proxy. For a proxy on the same host that only
+  weakens sign-in throttling (Docker's range isn't in the default
+  `TRUSTED_NETWORKS`). **For a proxy on another machine in your LAN it is a
+  hole** if you list your LAN in `TRUSTED_NETWORKS`: every visitor from the
+  internet counts as trusted and can read the library and change or delete the
+  shared sync folder. Set `REAL_IP_FROM` to that machine's address, or keep
+  `TRUSTED_NETWORKS` empty. The same applies to Docker Desktop and rootless
+  Docker, where all connections arrive from a private address: keep
+  `TRUSTED_NETWORKS` empty there.
 - `PUBLIC_HTTPS_URL` if people also use a plain-HTTP address with a different
   name; the HTTP page links there to sign in. Rebuild with `docker compose build web`.
 
@@ -93,9 +101,11 @@ panel), or with `docker compose exec account ebook-account ...`
 | permission `import` / `series` / `difficulty` | add books to Calibre / change series for everyone / start estimates |
 | admin                                  | everything, and manage accounts and permissions                      |
 
-`TRUSTED_NETWORKS` defaults to the usual home ranges (`10.0.0.0/8`,
-`192.168.0.0/16`, Tailscale's `100.64.0.0/10`). Set it empty to require an
-account for everything, e.g. when the server is reachable from the internet.
+`TRUSTED_NETWORKS` is empty by default, so everything needs an account. On a
+home server you can list your networks (e.g. `10.0.0.0/8 192.168.0.0/16`,
+Tailscale's `100.64.0.0/10`) so household readers don't have to sign in; read
+the `REAL_IP_FROM` note under [HTTPS](#https) first if the server is reachable
+from the internet.
 Don't add `172.16.0.0/12`: that is Docker's own network, so a reverse proxy on
 the same host would make every visitor trusted (the web container warns).
 
@@ -138,7 +148,9 @@ update from the admin panel: Tools → Updates compares the server with the main
 branch of `UPDATE_REPO` on GitHub, and "Update" makes `ebook-update` (a systemd
 path unit installed by the deploy) download that commit, rebuild the images and
 restart the stack. A failed build keeps the running version; the previous images
-stay tagged `:previous`. Its log: `journalctl -u ebook-update`.
+stay tagged `:previous`. Its log: `journalctl -u ebook-update`. It builds and
+runs whatever is on that branch as root, so only point `UPDATE_REPO` at a
+repository you trust.
 
 Otherwise:
 
