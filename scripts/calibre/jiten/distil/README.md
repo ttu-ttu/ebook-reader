@@ -1,6 +1,6 @@
-# Distilled difficulty model
+# chimi-difficulty
 
-`../difficulty_model_jiten_distilled.onnx` is Jiten's difficulty model retrained on
+`../chimi-difficulty.onnx` is this project's difficulty model: Jiten's approach retrained on
 jiten.moe's own scores, so local estimates land on jiten.moe's scale. The live site
 scores books with a private hosted model; the `.onnx` in Jiten's repository is the
 older model and is not used there.
@@ -25,9 +25,9 @@ script (手紙 and 仕事 are wago, 場所 mixed), and homographs are looked up 
 (事: こと is common, じ rare). Tables of contents, colophons and ads are left out of
 the text. `make_tables.py` builds both tables (needs fugashi and unidic-lite).
 
-Target: jiten.moe's `difficultyAlgorithmic` (before reader votes). The `_low`/`_high`
+Target: jiten.moe's `difficultyAlgorithmic` (before reader votes). The `-low`/`-high`
 models are its 10th and 90th percentiles; quantile boosting is overconfident on unseen
-books (62% inside), so the service widens both sides by `difficulty_model_range.json`
+books (62% inside), so the service widens both sides by `chimi-difficulty-range.json`
 (conformalized quantile regression, Romano et al. 2019), which brings it to 80%.
 
 Result (2026-10-11, 3,253 books of the library that are on jiten.moe, 5-fold
@@ -63,8 +63,8 @@ API for personal projects and small-scale research, not bulk downloading
    `extract.py`: `CALIBRE_LIBRARY=<library> python extract.py 4` (about 135 books a
    minute on 5 cores).
 6. `train.py` with scikit-learn and skl2onnx (a separate venv, e.g. `/opt/jiten-train`):
-   prints the comparison and writes the three `difficulty_model_jiten_distilled*.onnx`
-   and `difficulty_model_range.json`; copy them to `..`.
+   prints the comparison and writes the three `chimi-difficulty*.onnx`
+   and `chimi-difficulty-range.json`; copy them to `..`.
 
 Bump `MODEL_VERSION` in `../service.py` with a new model, so whole-library runs redo the
 estimates.

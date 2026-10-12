@@ -78,7 +78,7 @@ server {
     expires -1;
   }
 
-  # Difficulty estimates (Jiten's model), computed only when started from the library.
+  # Difficulty estimates (chimi-difficulty), computed only when started from the library.
   location = /calibre/difficulty.json {
     auth_request /_account_shared;
     alias ${DIFFICULTY_FILE};

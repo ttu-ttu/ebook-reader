@@ -27,8 +27,9 @@ anything a reader or a server operator would notice.
   books' estimates and how much of their kanji you have already met while
   reading in this browser. Starting estimates still needs the `difficulty`
   permission.
-- Estimates made by the previous model are redone by "Run" (`MODEL_VERSION`
-  `jiten-distilled-3`).
+- The model is now called chimi-difficulty (`chimi-difficulty*.onnx`); estimates
+  made by the previous model are redone by "Run" (`MODEL_VERSION`
+  `chimi-difficulty-1`).
 
 ## v3.0.0 and earlier
 

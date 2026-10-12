@@ -19,7 +19,7 @@
   style:--difficulty-color={difficultyColor(difficulty)}
   title="Difficulty {difficulty.toFixed(2)} of 5 ({difficultyName(
     difficulty
-  )}){range}, estimated locally with Jiten's features{words}"
+  )}){range}, estimated by chimi-difficulty{words}"
 >
   <span class="difficulty-dot" />
   {difficulty.toFixed(1)}{#if !compact}<span class="difficulty-label"

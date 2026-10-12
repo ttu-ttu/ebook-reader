@@ -1,4 +1,4 @@
-"""Distils jiten.moe's algorithmic scores into a local model, plus 10th/90th percentile
+"""Trains chimi-difficulty on jiten.moe's algorithmic scores, plus 10th/90th percentile
 models for a range. Evaluation is grouped by series."""
 import ast, json, math, os
 import numpy as np
@@ -63,19 +63,19 @@ print(f'10-90% range: holds {np.mean((y >= low) & (y <= high)):.0%} of books (ai
 widen = float(np.quantile(np.maximum(low - y, y - high), 0.8))
 print(f'widened by {widen:.3f}: holds {np.mean((y >= low - widen) & (y <= high + widen)):.0%}, '
       f'mean width {np.mean(high - low) + 2 * widen:.2f}')
-json.dump({'widen': round(widen, 4)}, open(os.path.join(HERE, 'difficulty_model_range.json'), 'w'))
+json.dump({'widen': round(widen, 4)}, open(os.path.join(HERE, 'chimi-difficulty-range.json'), 'w'))
 json.dump({str(r['id']): round(float(p), 3) for r, p in zip(rows, pred)}, open(os.path.join(HERE, 'cv-predictions.json'), 'w'))
 
 # Final models on everything, exported for onnxruntime with the service's input name.
 from skl2onnx import to_onnx  # noqa: E402
 from skl2onnx.common.data_types import FloatTensorType  # noqa: E402
-for suffix, loss in (('', {}), ('_low', {'loss': 'quantile', 'alpha': 0.1}), ('_high', {'loss': 'quantile', 'alpha': 0.9})):
+for suffix, loss in (('', {}), ('-low', {'loss': 'quantile', 'alpha': 0.1}), ('-high', {'loss': 'quantile', 'alpha': 0.9})):
     final = model(**loss).fit(X, y)
     if not suffix:
         top = sorted(zip(final.feature_importances_, NAMES), reverse=True)[:15]
         print('most important:', ', '.join(f'{n} {v:.3f}' for v, n in top))
     onx = to_onnx(final, initial_types=[('float_input', FloatTensorType([None, X.shape[1]]))], target_opset=17)
-    out = os.path.join(HERE, f'difficulty_model_jiten_distilled{suffix}.onnx')
+    out = os.path.join(HERE, f'chimi-difficulty{suffix}.onnx')
     open(out, 'wb').write(onx.SerializeToString())
     check = onnxruntime.InferenceSession(out).run(None, {'float_input': X[:5]})[0].ravel()
     print('exported', out, 'check', np.round(check, 2), 'vs', np.round(final.predict(X[:5]), 2))

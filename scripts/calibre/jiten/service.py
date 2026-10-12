@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """On-demand difficulty estimates for the Calibre library, with Jiten's features and a
-model distilled from jiten.moe's scores (distil/). Word frequencies come from Jiten's
+model of our own, chimi-difficulty, trained on jiten.moe's scores (distil/). Word frequencies come from Jiten's
 Yomitan frequency list (FREQUENCY_DICTIONARY).
 
 Nothing runs until asked: the reader (or the CLI) requests difficulty for chosen books.
@@ -37,17 +37,17 @@ FREQUENCY_DICTIONARY = os.environ.get('JITEN_FREQUENCY_DICTIONARY',
                                       os.path.join(STATE_DIR, 'frequency-dictionary.zip'))
 RESULTS_PATH = os.path.join(STATE_DIR, 'difficulty.json')
 MAX_DICTIONARY_BYTES = 64 * 1024 * 1024
-# Jiten's model retrained on jiten.moe's own scores (distil/, README there): their scale directly,
-# adjustment included, from Jiten's 55 features plus EXTRA_FEATURES. The _low/_high models
+# chimi-difficulty, trained on jiten.moe's own scores (distil/, README there): their scale directly,
+# adjustment included, from Jiten's 55 features plus EXTRA_FEATURES. The -low/-high models
 # are its 10th and 90th percentiles, shown as a range.
 MODEL_DIR = os.path.dirname(os.path.realpath(__file__))
-MODEL_PATHS = {name: os.path.join(MODEL_DIR, f'difficulty_model_jiten_distilled{suffix}.onnx')
-               for name, suffix in (('difficulty', ''), ('low', '_low'), ('high', '_high'))}
+MODEL_PATHS = {name: os.path.join(MODEL_DIR, f'chimi-difficulty{suffix}.onnx')
+               for name, suffix in (('difficulty', ''), ('low', '-low'), ('high', '-high'))}
 # Added to both sides of the range so it holds 80% of books (written by distil/train.py).
-with open(os.path.join(MODEL_DIR, 'difficulty_model_range.json'), encoding='utf-8') as _f:
+with open(os.path.join(MODEL_DIR, 'chimi-difficulty-range.json'), encoding='utf-8') as _f:
     RANGE_WIDEN = json.load(_f)['widen']
 # Stored with each estimate; whole-library runs redo estimates made by another model.
-MODEL_VERSION = 'jiten-distilled-3'
+MODEL_VERSION = 'chimi-difficulty-1'
 # Per-book kanji counts, gzipped JSON, for the reader's own coverage.
 KANJI_DIR = os.path.join(STATE_DIR, 'kanji')
 WORKERS = int(os.environ.get('JITEN_WORKERS', os.cpu_count() or 1))

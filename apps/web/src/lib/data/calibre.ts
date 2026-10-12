@@ -31,7 +31,7 @@ export interface CalibreBook {
   cover: string;
 }
 
-/** Difficulty estimate (Jiten's model, run on demand on the server), 0-5. */
+/** Difficulty estimate (chimi-difficulty, run on demand on the server), 0-5. */
 export interface CalibreDifficulty {
   /** Output of Jiten's local model */
   difficulty: number;

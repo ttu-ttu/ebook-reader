@@ -26,7 +26,7 @@ from xml.etree import ElementTree
 
 from deconjugator import Deconjugator
 
-# Feature order of Jiten's model (DifficultyPredictor.cs); the distilled model appends two more (service.py).
+# Feature order of Jiten's model (DifficultyPredictor.cs); chimi-difficulty appends EXTRA_FEATURES.
 FEATURE_ORDER = [
     'Ttr', 'AverageSentenceLength', 'DialoguePercentage', 'KanjiRatio',
     'KangoPercentage', 'WagoPercentage', 'GairaigoPercentage', 'VerbPercentage', 'ParticlePercentage',

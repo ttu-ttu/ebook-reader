@@ -128,7 +128,7 @@ section in paginated mode. `annotations.json` is merged per highlight (newest
   with `calibredb add`, one at a time, then rebuilds the catalog; the only writer
   of `metadata.db`.
 - **Difficulty** (`jiten/service.py`): on demand only; worker pools run Sudachi,
-  Jiten's features plus our own (`EXTRA_FEATURES`) and the distilled ONNX models
+  Jiten's features plus our own (`EXTRA_FEATURES`) and the chimi-difficulty ONNX models
   (estimate and 10-90% range); results in `state/difficulty/difficulty.json`,
   each book's kanji counts in `state/difficulty/kanji/` (`GET kanji/ID`, for each
   reader's own kanji coverage, compared in the browser with the kanji they met).

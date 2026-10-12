@@ -11,7 +11,7 @@ The difficulty estimates (scripts/calibre/jiten/) include material from Jiten
 scripts/calibre/jiten/LICENSE):
 - deconjugator.json, Jiten's deconjugation rules;
 - features.py and deconjugator.py, a Python port of Jiten's feature extraction;
-- difficulty_model_jiten_distilled*.onnx, models trained on Jiten's features and
+- chimi-difficulty*.onnx, models trained on Jiten's features and
   on difficulty scores published by jiten.moe.
 These files were modified or derived for this project. Jiten is not affiliated
 with this project.
