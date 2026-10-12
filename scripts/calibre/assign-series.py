@@ -14,8 +14,11 @@ from titles like the catalog does (`split_volume` in build-catalog.py). A book
 joins an existing Calibre series whose name matches its title's base (width and
 case ignored, so ～ and ~ match); otherwise two or more books with the same base
 form a new series, named as written in their titles. Books that already have a
-series, or no volume number in the title, are left alone. Duplicate series are
-merged into the variant with the most books, unless their authors differ. It takes the import
+series, or no volume number in the title, are left alone. Series that are one
+work are merged unless their authors differ: names written differently (width,
+case, spaces, punctuation, store tags like 【電子版限定特典付き】) go into the
+spelling with the most books, and series named after single volumes ('X 6',
+'X 第7話') become 'X' with that volume as the index. It takes the import
 queue's lock (calibre-import), so it never writes while a book is being added.
 Not part of upstream.
 """
@@ -39,6 +42,10 @@ KEEP_BACKUPS = 5
 SEPARATORS = ' 　-‐－:：・,、'
 PART_MIDDLE = re.compile(r'中(?:巻)?[\s)）】\]]*$')
 PART_LAST = re.compile(r'下(?:巻)?[\s)）】\]]*$')
+# 【電子版限定特典付き】, [特典ペーパー付き]: shop labels, not part of a series name.
+STORE_TAG = re.compile(r'[【\[［][^】\]］]*(?:特典|電子|限定|付き|版)[^】\]］]*[】\]］]')
+# A name that ends in a volume written with digits (after NFKC): 'X 6', 'X 第7話', 'X 三巻'.
+VOLUME_DIGITS = re.compile(r'[0-9〇一二三四五六七八九十百][\s)\]】〉》巻部章話集冊]*$')
 
 
 def load_catalog_module():
@@ -62,6 +69,7 @@ def key(name: str) -> str:
 
 def written_name(title: str, base: str) -> str:
     """The series name as written in the title (e.g. with ～), for the NFKC `base`."""
+    title = clean_name(title)
     # Drop an author prefix ([作者] or ［作者］): it is matched after NFKC, so find where it ends
     # in the original title.
     prefix = catalog.AUTHOR_PREFIX.match(unicodedata.normalize('NFKC', title))
@@ -105,8 +113,25 @@ def other_authors(author_lists) -> list[int]:
     return [i for i, names in known.items() if not any(related(name) for name in names)]
 
 
+def clean_name(name: str) -> str:
+    """Without store tags like 【電子版限定特典付き】 (【朗報】 and the like stay)."""
+    cleaned = STORE_TAG.sub('', name)
+    return cleaned.strip(SEPARATORS) if cleaned != name else name
+
+
 def merge_key(name: str) -> str:
-    return re.sub(r'[\s' + re.escape(SEPARATORS) + ']', '', key(name))
+    """Letters and digits only, so width, case, spaces, punctuation and store tags don't count."""
+    return ''.join(c for c in key(clean_name(name)) if unicodedata.category(c)[0] in 'LN')
+
+
+def numbered(name: str):
+    """(base, number) for a series named after one volume ('X 6', 'X 第6話'), else None.
+    Only digits count: a name ending in 上/中/下 (異世界道中) is not a volume."""
+    text = unicodedata.normalize('NFKC', clean_name(name))
+    base, number = catalog.split_volume(text)
+    if number is None or not catalog.is_series_name(base) or not VOLUME_DIGITS.search(text):
+        return None
+    return base, number
 
 
 def authors_related(a: set[str], b: set[str]) -> bool:
@@ -115,50 +140,103 @@ def authors_related(a: set[str], b: set[str]) -> bool:
         x == y or (min(len(x), len(y)) >= 2 and (x in y or y in x)) for x in a for y in b)
 
 
+def volume_series(name: str, members, numbered_names: int):
+    """How a series named after volume N ('X 6') joins 'X': 'keep' when it already holds
+    volumes N and up (the main series, misnamed), 'parts' when it is one of several such
+    series holding the parts of each volume ('X 第3話' 前編/後編 -> 3.1, 3.2), else None:
+    a series of its own (はやて×ブレード2 with volumes 1-6, 魔法少女201)."""
+    number = numbered(name)[1]
+    found = [b.get('index') or 1.0 for b in members]
+    if min(found) >= number:
+        return 'keep'
+    if numbered_names >= 2 and max(found) < 10:
+        return 'parts'
+    return None
+
+
 def merge_plan(books):
-    """Series written differently (width, case, spaces, separators) that share an author.
-    Returns ({id: series}, [{'to', 'from', 'books'}], warnings)."""
-    variants = defaultdict(lambda: defaultdict(list))
+    """Series that are one work: names written differently (width, case, spaces,
+    punctuation, store tags), and series named after single volumes (see volume_series).
+    Books by another author stay apart.
+    Returns ({id: series}, {id: index}, [{'to', 'from', 'books'}], warnings)."""
+    by_name = defaultdict(list)
     for book in books:
         if book['series']:
-            variants[merge_key(book['series'])][book['series']].append(book)
+            by_name[book['series']].append(book)
+    volume = {name: numbered(name) for name in by_name}
+    families = defaultdict(list)
+    for name in by_name:
+        families[merge_key(volume[name][0]) if volume[name] else merge_key(name)].append(name)
 
-    renames, merges, warnings = {}, [], []
-    for names in variants.values():
-        if len(names) < 2:
+    groups, mode = [], {}
+    for family in families.values():
+        count = sum(1 for name in family if volume[name])
+        for name in family:
+            mode[name] = volume_series(name, by_name[name], count) if volume[name] else 'plain'
+        joined = [name for name in family if mode[name]]
+        groups.append({name: by_name[name] for name in joined})
+        # Series of their own still merge with other spellings of the same name.
+        alone = defaultdict(dict)
+        for name in family:
+            if not mode[name]:
+                alone[merge_key(name)][name] = by_name[name]
+        groups.extend(alone.values())
+
+    renames, indexes, merges, warnings = {}, {}, [], []
+    authors = lambda members: set().union(*(author_keys(b['authors']) for b in members))  # noqa: E731
+    for names in groups:
+        if not names:
             continue
-        target = max(names, key=lambda name: (len(names[name]), name))
-        authors = lambda members: set().union(*(author_keys(b['authors']) for b in members))  # noqa: E731
-        target_authors = authors(names[target])
+        if len(names) == 1:
+            # Alone, a series only loses a store tag (its volume-like name may be its real one).
+            (name, members), = names.items()
+            if (clean := clean_name(name)) and clean != name:
+                renames.update({b['id']: clean for b in members})
+                merges.append({'to': clean, 'from': [name], 'books': len(members)})
+            continue
+        largest = max(names, key=lambda name: (len(names[name]), name))
+        plain = [n for n in names if mode[n] == 'plain']
+        if plain:
+            # Titles usually carry the official spelling, even when series metadata is sloppy.
+            bases = Counter(catalog.split_volume(clean_name(b['title']))[0]
+                            for members in names.values() for b in members)
+            best = max(plain, key=lambda name: (bases[catalog.split_volume(clean_name(name))[0]],
+                                                len(names[name]), name))
+            target = clean_name(best) or best
+        else:
+            target = written_name(largest, volume[largest][0])
+        reference = authors(names[largest])
         merged = []
         for name, members in names.items():
             if name == target:
                 continue
-            if not authors_related(target_authors, authors(members)):
+            if not authors_related(reference, authors(members)):
                 warnings.append(f'{name}: kept apart from {target} (other author)')
                 continue
             merged.append(name)
             renames.update({b['id']: target for b in members})
+            if mode[name] == 'parts':
+                indexes.update({b['id']: volume[name][1] + (b.get('index') or 1.0) / 10 for b in members})
         if merged:
             merges.append({'to': target, 'from': sorted(merged),
                            'books': sum(len(names[name]) for name in merged)})
-    return renames, merges, warnings
+    return renames, indexes, merges, warnings
 
 
 def plan(books):
     """books: dicts with id, title, series, authors. Returns ({id: (series, index)}, warnings)."""
-    existing = {key(b['series']): b['series'] for b in books if b['series']}
+    existing = {merge_key(b['series']): b['series'] for b in books if b['series']}
     existing_authors = defaultdict(list)
     for b in books:
         if b['series']:
-            existing_authors[key(b['series'])].append(b.get('authors', []))
+            existing_authors[merge_key(b['series'])].append(b.get('authors', []))
     groups = defaultdict(list)
     for book in books:
         if book['series']:
             continue
-        base, number = catalog.split_volume(book['title'])
+        base, number = catalog.split_volume(clean_name(book['title']))
         if number is not None and catalog.is_series_name(base):
-            groups[key(base)].append((book, base, number))
+            groups[merge_key(base)].append((book, base, number))
 
     changes, warnings = {}, []
     for group_key, members in groups.items():
@@ -209,10 +287,10 @@ def backup(library: str) -> str:
 
 def full_plan(books):
     """Merges first, so books without a series join the merged names."""
-    renames, merges, warnings = merge_plan(books)
+    renames, indexes, merges, warnings = merge_plan(books)
     merged = [{**b, 'series': renames.get(b['id'], b['series'])} for b in books]
     changes, more_warnings = plan(merged)
-    return renames, merges, changes, warnings + more_warnings
+    return renames, indexes, merges, changes, warnings + more_warnings
 
 
 def report(renames, merges, changes, warnings) -> dict:
@@ -237,16 +315,16 @@ def main(argv):
         api = db(LIBRARY).new_api
         ids = api.all_book_ids()
         titles, series = api.all_field_for('title', ids), api.all_field_for('series', ids)
-        authors = api.all_field_for('authors', ids)
-        books = [{'id': i, 'title': titles[i], 'series': series[i] or '', 'authors': list(authors[i])}
-                 for i in ids]
-        renames, merges, changes, warnings = full_plan(books)
+        authors, index = api.all_field_for('authors', ids), api.all_field_for('series_index', ids)
+        books = [{'id': i, 'title': titles[i], 'series': series[i] or '', 'authors': list(authors[i]),
+                  'index': index[i]} for i in ids]
+        renames, indexes, merges, changes, warnings = full_plan(books)
         result = report(renames, merges, changes, warnings)
 
         if apply and (changes or renames):
             result['backup'] = backup(LIBRARY)
             api.set_field('series', {**renames, **{i: name for i, (name, _) in changes.items()}})
-            api.set_field('series_index', {i: number for i, (_, number) in changes.items()})
+            api.set_field('series_index', {**indexes, **{i: number for i, (_, number) in changes.items()}})
             result['written'] = True
 
         if as_json:

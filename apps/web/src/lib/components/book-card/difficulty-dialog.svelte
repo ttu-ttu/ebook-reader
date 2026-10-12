@@ -13,7 +13,7 @@
 </script>
 
 <DialogTemplate>
-  <svelte:fragment slot="header">Difficulty estimates</svelte:fragment>
+  <svelte:fragment slot="header">Estimate difficulty</svelte:fragment>
   <div slot="content"><DifficultyPanel {selectedIds} bind:finishedCompute /></div>
   <div slot="footer" class="flex gap-2">
     {#if finishedCompute}

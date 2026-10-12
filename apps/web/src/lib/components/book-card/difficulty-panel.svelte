@@ -92,11 +92,7 @@
 </script>
 
 <div class="flex max-w-xl flex-col gap-4 text-sm">
-  <p>
-    Difficulty (0 Beginner – 5 Insane) is estimated on the server only when you start it, with
-    <a class="underline" href="https://github.com/Sirush/Jiten" target="_blank">Jiten</a>'s
-    text features and word frequencies, on the same scale as jiten.moe.
-  </p>
+  <p>Estimates difficulty of books in the library on a scale from 0 Beginner to 5 Insane.</p>
 
   {#if error}
     <p class="text-[color:var(--app-danger-color)]">{error}</p>
@@ -105,45 +101,31 @@
   {#if !status && !error}
     <p class="flex items-center gap-2"><Fa icon={faSpinner} spin /> Loading status...</p>
   {:else if status}
-    <section class="flex flex-col gap-2">
-      <h3 class="font-bold">Estimate difficulty</h3>
-      {#if !status.dictionary}
-        <p class="text-[color:var(--app-danger-color)]">
-          The word frequency list is not installed on the server (see docs/INSTALL.md,
-          "Difficulty estimates").
-        </p>
-      {/if}
-      <p class="text-[color:var(--app-muted-fg)]">
-        {status.results.toLocaleString()} books have an estimate. Each book takes about a second per
-        worker ({status.workers} workers).
-        {#if status.noText}
-          {status.noText.toLocaleString()} books have no text to estimate (image-only manga and scans)
-          and are skipped.
-        {/if}
-        {#if status.failed}
-          {status.failed.toLocaleString()} books have a damaged file and are skipped until the file
-          is replaced in Calibre.
-        {/if}
+    {#if !status.dictionary}
+      <p class="text-[color:var(--app-danger-color)]">
+        The word frequency list is not installed on the server (see docs/INSTALL.md,
+        "Difficulty estimates").
       </p>
-      <div class="flex flex-wrap gap-2">
-        {#if selectedIds.length}
-          <button
-            class={buttonClasses}
-            disabled={running || !status.dictionary}
-            on:click={() => post('compute', { ids: selectedIds })}
-          >
-            Selected books ({selectedIds.length})
-          </button>
-        {/if}
+    {/if}
+    <div class="flex flex-wrap gap-2">
+      <button
+        class={buttonClasses}
+        title="Books without an estimate"
+        disabled={running || !status.dictionary}
+        on:click={() => post('compute', { all: true })}
+      >
+        Run
+      </button>
+      {#if selectedIds.length}
         <button
           class={buttonClasses}
           disabled={running || !status.dictionary}
-          on:click={() => post('compute', { all: true })}
+          on:click={() => post('compute', { ids: selectedIds })}
         >
-          Books without an estimate
+          Selected books ({selectedIds.length})
         </button>
-      </div>
-    </section>
+      {/if}
+    </div>
 
     {#if status.job}
       {@const job = status.job}

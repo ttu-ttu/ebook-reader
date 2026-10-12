@@ -97,7 +97,7 @@
             </SettingsItemGroup>
           {/if}
           {#if hasPermission(user, 'difficulty')}
-            <SettingsItemGroup title="Difficulty estimates" wide>
+            <SettingsItemGroup title="Estimate difficulty" wide>
               <DifficultyPanel />
             </SettingsItemGroup>
           {/if}

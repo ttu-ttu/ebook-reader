@@ -12,8 +12,8 @@ assign = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(assign)
 
 
-def book(book_id, title, series='', authors=('Unknown',)):
-    return {'id': book_id, 'title': title, 'series': series, 'authors': list(authors)}
+def book(book_id, title, series='', authors=('Unknown',), index=1.0):
+    return {'id': book_id, 'title': title, 'series': series, 'authors': list(authors), 'index': index}
 
 
 class PlanTest(unittest.TestCase):
@@ -98,12 +98,12 @@ class MergeTest(unittest.TestCase):
             book(3, 'ソードアートオンライン3', 'ソードアートオンライン', ['川原 礫']),
             book(4, 'ＳＡＯ', 'ＳＡＯ', ['川原礫']),
         ]
-        renames, merges, _ = assign.merge_plan(books)
+        renames, _, merges, _ = assign.merge_plan(books)
         self.assertEqual(renames, {3: 'ソードアート・オンライン'})
         self.assertEqual(merges, [{'to': 'ソードアート・オンライン', 'from': ['ソードアートオンライン'], 'books': 1}])
 
     def test_keeps_series_by_other_authors_apart(self):
-        renames, merges, warnings = assign.merge_plan([
+        renames, _, merges, warnings = assign.merge_plan([
             book(1, 'A 1', 'Bleach', ['久保帯人']),
             book(2, 'B 1', 'BLEACH', ['松原真琴']),
         ])
@@ -111,7 +111,7 @@ class MergeTest(unittest.TestCase):
         self.assertEqual(len(warnings), 1)
 
     def test_books_without_a_series_join_the_merged_name(self):
-        renames, _, changes, _ = assign.full_plan([
+        renames, _, _, changes, _ = assign.full_plan([
             book(1, '物語 1', '物語', ['著者']),
             book(2, '物語 2', '物語', ['著者']),
             book(3, '物 語 3', '物 語', ['著者']),
@@ -119,3 +119,77 @@ class MergeTest(unittest.TestCase):
         ])
         self.assertEqual(renames, {3: '物語'})
         self.assertEqual(changes, {4: ('物語', 4.0)})
+
+    def test_punctuation_and_store_tags_dont_split_new_series(self):
+        _, _, _, changes, _ = assign.full_plan([
+            book(1, '【電子版限定特典付き】無限ガチャで『ざまぁ』します! 1', authors=['明鏡シスイ']),
+            book(2, '【電子版限定特典付き】無限ガチャで『ざまぁ！』します！ 2', authors=['明鏡シスイ']),
+            book(3, '無限ガチャで『ざまぁ！』します！ 3', authors=['明鏡シスイ']),
+        ])
+        self.assertEqual({name for name, _ in changes.values()}, {'無限ガチャで『ざまぁ！』します！'})
+        self.assertEqual(sorted(number for _, number in changes.values()), [1.0, 2.0, 3.0])
+
+    def test_series_holding_the_parts_of_each_volume_become_one(self):
+        renames, indexes, merges, _ = assign.merge_plan([
+            book(1, '第3話 前編', '十歳の最強魔導師 第3話', ['天乃聖樹'], 1.0),
+            book(2, '第3話 後編', '十歳の最強魔導師 第3話', ['天乃聖樹'], 2.0),
+            book(3, '第4話 前編', '十歳の最強魔導師 第4話', ['天乃聖樹'], 1.0),
+            book(4, '6上', '魔女と傭兵 6', ['超法規的かえる'], 1.0),
+            book(5, '6下', '魔女と傭兵6', ['超法規的かえる'], 3.0),
+        ])
+        self.assertEqual(renames, {1: '十歳の最強魔導師', 2: '十歳の最強魔導師', 3: '十歳の最強魔導師',
+                                   4: '魔女と傭兵', 5: '魔女と傭兵'})
+        self.assertEqual(indexes, {1: 3.1, 2: 3.2, 3: 4.1, 4: 6.1, 5: 6.3})
+        self.assertEqual(len(merges), 2)
+
+    def test_misnamed_main_series_joins_and_keeps_its_volumes(self):
+        renames, indexes, _, _ = assign.merge_plan([
+            book(1, 'a', '七つの魔剣が支配する', ['宇野朴人'], 1.0),
+            book(2, 'b', '七つの魔剣が支配する', ['宇野朴人'], 2.0),
+            book(3, 'c', '七つの魔剣が支配する　６', ['宇野朴人'], 6.0),
+            book(4, 'd', '七つの魔剣が支配する　６', ['宇野朴人'], 7.0),
+        ])
+        self.assertEqual((renames, indexes), ({3: '七つの魔剣が支配する', 4: '七つの魔剣が支配する'}, {}))
+
+    def test_sequel_series_stays_apart(self):
+        renames, _, merges, _ = assign.merge_plan([
+            book(1, 'a', 'はやて×ブレード', ['林家志弦'], 1.0),
+            book(2, 'b', 'はやて×ブレード2', ['林家志弦'], 1.0),
+            book(3, 'c', 'はやて×ブレード2', ['林家志弦'], 2.0),
+        ])
+        self.assertEqual((renames, merges), ({}, []))
+
+    def test_leaves_lone_volume_like_names_and_kanji_parts(self):
+        renames, _, merges, _ = assign.merge_plan([
+            book(1, 'a', '魔法少女201'),
+            book(2, 'b', '月が導く異世界道中', ['あずみ圭']),
+            book(3, 'c', '月が導く異世界道中', ['あずみ圭']),
+            book(4, 'd', 'はやて×ブレード2'),
+        ])
+        self.assertEqual((renames, merges), ({}, []))
+
+    def test_lone_series_loses_its_store_tag(self):
+        renames, _, _, _ = assign.merge_plan([
+            book(1, 'a', '島崎奈々＠お仕事募集中【特典ペーパー付き】'),
+            book(2, 'b', '【朗報】俺の許嫁になった地味子'),
+            book(3, 'c', 'Occultic;Nine -オカルティック・ナイン-'),
+        ])
+        self.assertEqual(renames, {1: '島崎奈々＠お仕事募集中'})
+
+    def test_spelling_found_in_titles_wins(self):
+        renames, _, _, _ = assign.merge_plan([
+            book(1, '蜘蛛ですが、なにか？ 1', '蜘蛛ですが, なにか'),
+            book(2, '蜘蛛ですが、なにか？ 2', '蜘蛛ですが, なにか'),
+            book(3, '蜘蛛ですが、なにか？ 3', '蜘蛛ですが、なにか？'),
+        ])
+        self.assertEqual(renames, {1: '蜘蛛ですが、なにか？', 2: '蜘蛛ですが、なにか？'})
+
+    def test_shorter_spelling_does_not_win_by_being_a_substring(self):
+        renames, _, _, _ = assign.merge_plan([
+            book(1, '神は遊戯に飢えている。1', '神は遊戯に飢えている。'),
+            book(2, '神は遊戯に飢えている。2', '神は遊戯に飢えている。'),
+            book(3, '神は遊戯に飢えている。3', '神は遊戯に飢えている'),
+            book(4, '神は遊戯に飢えている。4', '神は遊戯に飢えている'),
+            book(5, '神は遊戯に飢えている。5', '神は遊戯に飢えている'),
+        ])
+        self.assertEqual(renames, {3: '神は遊戯に飢えている。', 4: '神は遊戯に飢えている。', 5: '神は遊戯に飢えている。'})
