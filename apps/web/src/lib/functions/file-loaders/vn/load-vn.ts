@@ -7,17 +7,11 @@
 import { BlobWriter, Uint8ArrayWriter, type Entry } from '@zip.js/zip.js';
 import type { LoadData } from '../types';
 import { getMimeTypeFromName } from '../htmlz/extract-htmlz';
-import {
-  decodeScript,
-  decodeText,
-  detectEncoding,
-  scriptCharacters,
-  vnElementHtml
-} from '$lib/data/vn';
+import { analyzeScripts, encodePath, isScriptPath, vnElementHtml } from '$lib/data/vn';
 
 /**
- * An ONScripter game folder as a book: every file under `root` is a blob, keyed by its
- * path inside the game folder. characters is the script's text, for progress.
+ * An ONScripter game from a zip as a book: every file under `root` is a blob, keyed by
+ * its path inside the game folder. characters is the script's text, for progress.
  * shortcut: holds the whole game in memory while importing (like manga); stream entries
  * into IndexedDB one by one if large games fail to import on phones.
  */
@@ -28,7 +22,7 @@ export default async function loadVn(
   lastBookModified: number
 ): Promise<LoadData> {
   const blobs: Record<string, Blob> = {};
-  const decoded: Uint8Array[] = [];
+  const scripts: { path: string; bytes: Uint8Array }[] = [];
 
   for (const entry of entries) {
     const path = entry.filename.slice(root.length);
@@ -44,28 +38,16 @@ export default async function loadVn(
     }
 
     blobs[path] = await entry.getData(new BlobWriter());
+
+    if (isScriptPath(path)) {
+      scripts.push({ path, bytes: await entry.getData(new Uint8ArrayWriter()) });
+    }
   }
 
-  const scripts = entries
-    .filter((entry) => entry.getData && entry.filename.startsWith(root))
-    .map((entry) => ({ entry, path: entry.filename.slice(root.length) }))
-    .filter(({ path }) => blobs[path] && !path.includes('/'))
-    .sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
-
-  for (const { entry, path } of scripts) {
-    const bytes = decodeScript(path, await entry.getData!(new Uint8ArrayWriter()));
-
-    if (bytes) decoded.push(bytes, Uint8Array.of(0x0a));
-  }
-
-  const script = new Uint8Array(decoded.reduce((sum, bytes) => sum + bytes.length, 0));
-
-  decoded.reduce((offset, bytes) => (script.set(bytes, offset), offset + bytes.length), 0);
-  // Encrypted scripts (nscr_sec.dat, onscript.nt2…) can't be read here: assume Shift JIS.
-  const encoding = decoded.length ? detectEncoding(script) : 'sjis';
   const cover = Object.keys(blobs).find(
     (path) => !path.includes('/') && /(?:cover|icon).*\.(?:jpe?g|png|webp)$/i.test(path)
   );
+  const { encoding, characters } = analyzeScripts(scripts);
 
   return {
     title: name.replace(/\.(?:cbz|zip)$/i, ''),
@@ -76,7 +58,65 @@ export default async function loadVn(
       ? new Blob([blobs[cover]], { type: getMimeTypeFromName(cover) || '' })
       : undefined,
     hasThumb: !!cover,
-    characters: Math.max(scriptCharacters(decodeText(script, encoding)), 1),
+    characters,
+    lastBookModified,
+    lastBookOpen: 0
+  };
+}
+
+async function fetchOk(url: string) {
+  const response = await fetch(url, { cache: 'no-cache' });
+
+  if (!response.ok) throw new Error(`${decodeURI(url)}: HTTP ${response.status}`);
+
+  return response;
+}
+
+/** Every file under a folder URL, through nginx's JSON directory listings. */
+async function listFiles(base: string, prefix = ''): Promise<string[]> {
+  const entries: { name: string; type: string }[] = await (
+    await fetchOk(`${base}${encodePath(prefix)}`)
+  ).json();
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue;
+    if (entry.type === 'directory')
+      files.push(...(await listFiles(base, `${prefix}${entry.name}/`)));
+    else files.push(`${prefix}${entry.name}`);
+  }
+
+  return files;
+}
+
+/**
+ * A game kept unpacked on the server (VN_PATH): only the file list and the script are
+ * read here; the player fetches the other files when the engine opens them.
+ * shortcut: the file list is taken when the game is first opened; files added to the
+ * folder later are only seen after removing the game from the browser.
+ */
+export async function loadVnFolder(
+  title: string,
+  base: string,
+  lastBookModified: number
+): Promise<LoadData> {
+  const files = await listFiles(base);
+  const scripts = await Promise.all(
+    files.filter(isScriptPath).map(async (path) => ({
+      path,
+      bytes: new Uint8Array(await (await fetchOk(`${base}${encodePath(path)}`)).arrayBuffer())
+    }))
+  );
+  const { encoding, characters } = analyzeScripts(scripts);
+
+  return {
+    title,
+    styleSheet: '',
+    elementHtml: vnElementHtml({ encoding, files, base }),
+    blobs: {},
+    coverImage: undefined,
+    hasThumb: false,
+    characters,
     lastBookModified,
     lastBookOpen: 0
   };

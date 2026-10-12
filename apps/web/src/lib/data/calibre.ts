@@ -25,8 +25,9 @@ export interface CalibreBook {
   published?: number | null;
   /** Epoch milliseconds */
   added: number;
+  /** 'VN' for a game folder in VN_PATH (file and cover are relative to it) */
   format: string;
-  /** A CBZ/ZIP holding an ONScripter game rather than manga */
+  /** An ONScripter game: a VN folder, or a CBZ/ZIP holding one rather than manga */
   vn?: boolean;
   size: number;
   file: string;
@@ -53,6 +54,7 @@ const catalogUrl = '/calibre/catalog.json';
 const difficultyUrl = '/calibre/difficulty.json';
 export const difficultyApiUrl = '/calibre/difficulty/api/';
 const libraryUrl = '/calibre/library/';
+const vnUrl = '/calibre/vn/';
 
 let catalogCache: Promise<CalibreBook[]> | undefined;
 
@@ -99,8 +101,13 @@ export async function loadBookKanji(id: number): Promise<Record<string, number> 
   return response.ok ? response.json() : undefined;
 }
 
-function toLibraryUrl(path: string) {
-  return `${libraryUrl}${path.split('/').map(encodeURIComponent).join('/')}`;
+function toLibraryUrl(path: string, base = libraryUrl) {
+  return `${base}${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+/** URL of a VN_PATH game's folder, ending in a slash. */
+export function calibreVnUrl(book: CalibreBook) {
+  return `${toLibraryUrl(book.file, vnUrl)}/`;
 }
 
 export function calibreBookUrl(book: CalibreBook) {
@@ -108,7 +115,7 @@ export function calibreBookUrl(book: CalibreBook) {
 }
 
 export function calibreCoverUrl(book: CalibreBook) {
-  return book.cover ? toLibraryUrl(book.cover) : '';
+  return book.cover ? toLibraryUrl(book.cover, book.format === 'VN' ? vnUrl : libraryUrl) : '';
 }
 
 export function calibreBookFileName(book: CalibreBook) {

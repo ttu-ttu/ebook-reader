@@ -18,6 +18,7 @@ import sys
 import tempfile
 import unicodedata
 import zipfile
+import zlib
 from collections import Counter, defaultdict
 from datetime import datetime
 from io import BytesIO
@@ -121,6 +122,58 @@ def is_vn_file(file_path: str) -> bool:
             return is_vn(archive)
     except (OSError, zipfile.BadZipFile):
         return False
+
+
+VN_COVERS = ('cover.jpg', 'cover.jpeg', 'cover.png', 'cover.webp', 'icon.png', 'icon.jpg')
+
+
+def vn_root(folder: str) -> str | None:
+    """The folder holding a game's script: the game folder itself or one level down."""
+    candidates = [folder] + sorted(entry.path for entry in os.scandir(folder)
+                                   if entry.is_dir() and not entry.name.startswith('.'))
+    for path in candidates:
+        if any(name.lower() in VN_SCRIPTS for name in os.listdir(path)):
+            return path
+    return None
+
+
+def vn_games(vn_dir: str) -> list[dict]:
+    """Unpacked ONScripter games, one per folder of vn_dir, titled by the folder name.
+    Ids are negative (from the name) so they never meet Calibre's."""
+    games = []
+    for entry in sorted(os.scandir(vn_dir), key=lambda e: e.name):
+        if not entry.is_dir() or entry.name.startswith('.'):
+            continue
+        root = vn_root(entry.path)
+        if not root:
+            continue
+        cover = next((name for name in os.listdir(entry.path) if name.lower() in VN_COVERS), '')
+        games.append({
+            'id': -(zlib.crc32(entry.name.encode()) & 0x7fffffff) or -1,
+            'title': unicodedata.normalize('NFC', entry.name),
+            'authors': '',
+            'series': '',
+            'seriesIndex': None,
+            'seriesInferred': False,
+            'tags': [],
+            'rating': None,
+            'publisher': '',
+            'published': None,
+            'added': int(entry.stat().st_mtime * 1000),
+            'format': 'VN',
+            'vn': True,
+            'size': 0,
+            'file': os.path.relpath(root, vn_dir),
+            'cover': f'{entry.name}/{cover}' if cover else '',
+        })
+    return games
+
+
+def vn_mtime(vn_dir: str) -> float:
+    """Newest change to vn_dir's game folders (adding or removing a game or its files)."""
+    times = [os.path.getmtime(vn_dir)]
+    times += [entry.stat().st_mtime for entry in os.scandir(vn_dir) if entry.is_dir()]
+    return max(times)
 
 
 def is_valid_book(file_path: str, fmt: str) -> bool:
@@ -289,19 +342,21 @@ def add_missing_covers(library: str, books: dict, state_path: str) -> None:
     os.replace(tmp_state, state_path)
 
 
-def main(library: str, output: str) -> None:
+def main(library: str, output: str, vn_dir: str | None = None) -> None:
     # The timer and the import queue (calibre-import) both build; one at a time.
     with open(output + '.lock', 'a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        build(library, output)
+        build(library, output, vn_dir)
 
 
-def build(library: str, output: str) -> None:
+def build(library: str, output: str, vn_dir: str | None = None) -> None:
     db_path = os.path.join(library, 'metadata.db')
-    # Skip unless the library or this script changed since the last build. The
-    # output gets the inputs' time, not the time the build finished, so a book
+    vn_dir = vn_dir if vn_dir and os.path.isdir(vn_dir) else None
+    # Skip unless the library, the games or this script changed since the last build.
+    # The output gets the inputs' time, not the time the build finished, so a book
     # added while a build ran is picked up by the next one.
-    newest_input = max(os.path.getmtime(db_path), os.path.getmtime(__file__))
+    newest_input = max(os.path.getmtime(db_path), os.path.getmtime(__file__),
+                       vn_mtime(vn_dir) if vn_dir else 0)
     if os.path.exists(output) and os.path.getmtime(output) >= newest_input:
         return
 
@@ -367,6 +422,9 @@ def build(library: str, output: str) -> None:
         if os.path.exists(os.path.join(library, cover)):
             book['cover'] = cover
 
+    for game in vn_games(vn_dir) if vn_dir else []:
+        books[game['id']] = game
+
     # Most books have no Calibre series, so group volumes by title ('...１', '...２').
     groups = defaultdict(list)
     for book in books.values():
@@ -404,4 +462,4 @@ def build(library: str, output: str) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else os.environ.get('VN_DIR', '/vn'))

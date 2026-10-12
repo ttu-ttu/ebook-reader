@@ -33,6 +33,9 @@ export type VnEncoding = 'sjis' | 'utf8';
 export interface VnInfo {
   encoding: VnEncoding;
   files: string[];
+  /** URL of the game's folder on the server (VN_PATH games); the files are fetched from
+   * there instead of being blobs */
+  base?: string;
 }
 
 export interface VnRead {
@@ -92,6 +95,39 @@ export function decodeText(bytes: Uint8Array, encoding: VnEncoding) {
   return new TextDecoder(encoding === 'utf8' ? 'utf-8' : 'shift_jis')
     .decode(bytes)
     .replace(/�@?/g, '　');
+}
+
+/**
+ * Encoding and text length of a game from its script files (in any order): numbered .txt
+ * files concatenated, or nscript.dat. Encrypted scripts (nscr_sec.dat, onscript.nt2…)
+ * can't be read here: they count as Shift JIS without text.
+ */
+export function analyzeScripts(scripts: { path: string; bytes: Uint8Array }[]) {
+  const decoded = [...scripts]
+    .sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }))
+    .map(({ path, bytes }) => decodeScript(path, bytes))
+    .filter((bytes): bytes is Uint8Array => !!bytes);
+  const script = new Uint8Array(decoded.reduce((sum, bytes) => sum + bytes.length + 1, 0));
+
+  decoded.reduce((offset, bytes) => {
+    script.set(bytes, offset);
+    script[offset + bytes.length] = 0x0a;
+    return offset + bytes.length + 1;
+  }, 0);
+
+  const encoding = decoded.length ? detectEncoding(script) : 'sjis';
+
+  return {
+    encoding,
+    characters: Math.max(scriptCharacters(decodeText(script, encoding)), 1)
+  };
+}
+
+/** Script files the engine may read: top-level files of the game folder. */
+export function isScriptPath(path: string) {
+  return (
+    !path.includes('/') && (/^\d+\.txt$/i.test(path) || scriptNames.includes(path.toLowerCase()))
+  );
 }
 
 /**
@@ -210,4 +246,9 @@ export function toBase64(bytes: Uint8Array) {
 
 export function fromBase64(text: string) {
   return Uint8Array.from(atob(text), (char) => char.charCodeAt(0));
+}
+
+/** A path inside a game folder as a URL path (each segment encoded). */
+export function encodePath(path: string) {
+  return path.split('/').map(encodeURIComponent).join('/');
 }

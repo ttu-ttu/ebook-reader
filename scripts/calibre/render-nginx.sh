@@ -5,6 +5,7 @@ set -eu
 
 : "${WEB_ROOT:=/srv/www}"
 : "${LIBRARY_DIR:=/library}"
+: "${VN_DIR:=/vn}"
 : "${SYNC_DIR:=/data/sync}"
 : "${ACCOUNT_DATA_DIR:=/data/accounts}"
 : "${CATALOG_FILE:=/data/state/catalog/catalog.json}"
@@ -23,9 +24,9 @@ case "$PUBLIC_READS" in 0|1) ;; *) echo "PUBLIC_READS must be 0 or 1" >&2; exit 
 
 TRUSTED_NETWORKS_GEO=$(for network in $TRUSTED_NETWORKS; do printf '  %s 1;\n' "$network"; done)
 
-export WEB_ROOT LIBRARY_DIR SYNC_DIR ACCOUNT_DATA_DIR CATALOG_FILE DIFFICULTY_FILE \
+export WEB_ROOT LIBRARY_DIR VN_DIR SYNC_DIR ACCOUNT_DATA_DIR CATALOG_FILE DIFFICULTY_FILE \
   ACCOUNT_UPSTREAM IMPORT_UPSTREAM DIFFICULTY_UPSTREAM TRUSTED_NETWORKS_GEO PUBLIC_READS
 
 # Only these names: the template's own nginx variables ($host, ...) stay as they are.
-envsubst '${WEB_ROOT} ${LIBRARY_DIR} ${SYNC_DIR} ${ACCOUNT_DATA_DIR} ${CATALOG_FILE} ${DIFFICULTY_FILE} ${ACCOUNT_UPSTREAM} ${IMPORT_UPSTREAM} ${DIFFICULTY_UPSTREAM} ${TRUSTED_NETWORKS_GEO} ${PUBLIC_READS}' \
+envsubst '${WEB_ROOT} ${LIBRARY_DIR} ${VN_DIR} ${SYNC_DIR} ${ACCOUNT_DATA_DIR} ${CATALOG_FILE} ${DIFFICULTY_FILE} ${ACCOUNT_UPSTREAM} ${IMPORT_UPSTREAM} ${DIFFICULTY_UPSTREAM} ${TRUSTED_NETWORKS_GEO} ${PUBLIC_READS}' \
   < "$(dirname "$0")/nginx-ebook-reader.conf.template"

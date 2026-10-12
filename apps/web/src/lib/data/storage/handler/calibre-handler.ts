@@ -21,6 +21,7 @@ import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 import { accountReady, accountSyncUrl, currentAccount } from '$lib/data/account';
 import {
   calibreCoverUrl,
+  calibreVnUrl,
   downloadCalibreBook,
   loadCalibreCatalog,
   loadCalibreDifficulty,
@@ -38,6 +39,7 @@ import loadEpub from '$lib/functions/file-loaders/epub/load-epub';
 import loadHtmlz from '$lib/functions/file-loaders/htmlz/load-htmlz';
 import loadTxt from '$lib/functions/file-loaders/txt/load-txt';
 import loadCbz from '$lib/functions/file-loaders/cbz/load-cbz';
+import { loadVnFolder } from '$lib/functions/file-loaders/vn/load-vn';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import pLimit from 'p-limit';
 
@@ -162,7 +164,9 @@ export class CalibreStorageHandler extends ApiStorageHandler {
             difficultyHigh: difficulty[book.id]?.high,
             words95: difficulty[book.id]?.words95 ?? undefined,
             manga: (book.format === 'CBZ' || book.format === 'ZIP') && !book.vn,
-            calibreId: book.id
+            vn: !!book.vn,
+            // Game folders aren't in Calibre, so no difficulty estimates.
+            calibreId: book.format === 'VN' ? undefined : book.id
           });
         }
 
@@ -351,8 +355,17 @@ export class CalibreStorageHandler extends ApiStorageHandler {
       throw new Error(`${title} was not found in the Calibre library`);
     }
 
-    const file = await downloadCalibreBook(calibreBook);
     const lastBookModified = Date.now();
+
+    if (calibreBook.format === 'VN') {
+      const game = await loadVnFolder(title, calibreVnUrl(calibreBook), lastBookModified);
+
+      await this.saveBook(game, false);
+      await this.saveLocally(game);
+      return;
+    }
+
+    const file = await downloadCalibreBook(calibreBook);
     const { document } = this.window;
 
     let bookContent;

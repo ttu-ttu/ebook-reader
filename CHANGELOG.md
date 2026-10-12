@@ -16,6 +16,11 @@ anything a reader or a server operator would notice.
   read before, or skipped, count once or not at all).
 - Saves stay in the browser; for Calibre games they also sync per reader
   (`vnsaves.json` in the account's folder), newest copy of each save file winning.
+- Games can also live unpacked in a folder of their own (`VN_PATH`, default
+  `DATA_PATH/vn`, one folder per game) instead of Calibre: the catalog lists them in
+  the Store, and the player fetches each file only when the game opens it, so nothing
+  is downloaded whole or copied to the browser or the sync folder.
+- The library's Type filter has Visual novels next to Books and Manga.
 - Server: nginx compresses `.wasm`.
 
 ### Fixes

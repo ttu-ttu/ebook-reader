@@ -51,6 +51,7 @@ function fetch_file(FS, key, filemap) {
   node.loading = true;
   fetch(node.url)
     .then(function (response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
       return response.arrayBuffer();
     })
     .then(function (data) {
@@ -125,7 +126,7 @@ function loadScript(src) {
 }
 
 /**
- * options: files (path → Blob, paths relative to the game folder), encoding ('sjis' |
+ * options: files (path → Blob or URL, paths relative to the game folder), encoding ('sjis' |
  * 'utf8'), saveDir (unique per game), saves (synced save files, written when newer than
  * this browser's), onText(bytes, skipped), onSave(saves), onExit(code).
  */
@@ -141,7 +142,10 @@ async function startGame(options) {
   Object.keys(options.files).forEach(function (path) {
     g_onsyuri_filemap[(gameDir + '/' + path).toLowerCase()] = {
       path: gameDir + '/' + path,
-      url: URL.createObjectURL(options.files[path]),
+      url:
+        typeof options.files[path] === 'string'
+          ? options.files[path]
+          : URL.createObjectURL(options.files[path]),
       loaded: false
     };
   });

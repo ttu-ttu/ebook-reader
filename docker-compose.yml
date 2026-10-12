@@ -42,6 +42,7 @@ services:
       PUBLIC_READS: ${PUBLIC_READS:-0}
     volumes:
       - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library:ro
+      - ${VN_PATH:-${DATA_PATH:-./data}/vn}:/vn:ro
       - ${DATA_PATH:-./data}:/data
       - ${SYNC_PATH:-${DATA_PATH:-./data}/sync}:/data/sync
 
@@ -55,13 +56,15 @@ services:
       MIN_FREE_MB: ${MIN_FREE_MB:-1024}
       ALLOW_HTTP_ACCOUNTS: ${ALLOW_HTTP_ACCOUNTS:-0}
 
-  # Rebuilds the catalog (and extracts missing covers into the library) when metadata.db changes.
+  # Rebuilds the catalog (and extracts missing covers into the library) when metadata.db
+  # or the visual novel folder changes.
   catalog:
     <<: *services
     command: ["sh", "-c", "while :; do build-calibre-catalog /library /data/state/catalog/catalog.json; sleep ${CATALOG_INTERVAL:-600}; done"]
     volumes:
       - ${DATA_PATH:-./data}:/data
       - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library
+      - ${VN_PATH:-${DATA_PATH:-./data}/vn}:/vn:ro
 
   import:
     <<: *services
@@ -76,6 +79,8 @@ services:
     volumes:
       - ${DATA_PATH:-./data}:/data
       - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library
+      # Its catalog rebuilds list the visual novels too.
+      - ${VN_PATH:-${DATA_PATH:-./data}/vn}:/vn:ro
 
   difficulty:
     <<: *services

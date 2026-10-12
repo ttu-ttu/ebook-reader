@@ -26,6 +26,7 @@
   import { MergeMode } from '$lib/data/merge-mode';
   import {
     decodeText,
+    encodePath,
     fromBase64,
     hashPage,
     loadVnRead,
@@ -253,7 +254,10 @@
     });
     lastTextTime = Date.now();
     await player.startGame({
-      files: book.blobs,
+      // Server folder games are fetched by URL; imported ones are blobs.
+      files: info.base
+        ? Object.fromEntries(info.files.map((path) => [path, `${info.base}${encodePath(path)}`]))
+        : book.blobs,
       encoding: info.encoding,
       saveDir: `/save/${hashPage(book.title)}`,
       saves: Object.fromEntries(

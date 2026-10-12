@@ -42,8 +42,9 @@ export const libraryFilterSections: LibraryFilterSection[] = [
     key: 'type',
     label: 'Type',
     filters: [
-      { key: 'books', label: 'Books', test: (card) => !card.manga },
-      { key: 'manga', label: 'Manga', test: (card) => !!card.manga }
+      { key: 'books', label: 'Books', test: (card) => !card.manga && !card.vn },
+      { key: 'manga', label: 'Manga', test: (card) => !!card.manga },
+      { key: 'vn', label: 'Visual novels', test: (card) => !!card.vn }
     ]
   },
   {

@@ -272,7 +272,7 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | LIB-2 | Store tab: Books / Series | Full list; Series grid opens a series in reading order |
 | LIB-3 | Store: click a book | Selects it; "Read" in the toolbar opens it. On Home a click opens, long press / right-click selects |
 | LIB-4 | Sort → Series; Sort → Difficulty | Volume order (1, 2, 3 … not 1, 10, 2); estimated books first, unestimated last both ways |
-| LIB-5 | Filters: Reading status, Last read, Difficulty, Series, Length, Tags, Type (Books / Manga) | Counts match the shown books; combining works |
+| LIB-5 | Filters: Reading status, Last read, Difficulty, Series, Length, Tags, Type (Books / Manga / Visual novels) | Counts match the shown books; combining works |
 | LIB-6 | Search a title, series or tag | Matches; series results offer "Add all" |
 | LIB-7 | Inferred series | Titles like "…１", "…２" grouped as one series |
 | LIB-8 | Select a started book → "Clear progress" → confirm | Progress gone; opens at the start; a new `progress_*_0.json`; statistics and highlights unchanged |
@@ -283,7 +283,8 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | VN-1 | Open テストノベル (test stack) or import a ZIP of an ONScripter game | Opens in `/v`; the game runs; Enter or a click advances; each page's text appears below the game (Yomitan works there) |
 | VN-2 | With statistics on, advance a few pages, reopen and replay them | Home shows the characters read once; reread pages add nothing; progress in Continue reading |
 | VN-3 | Save in the game; open the same Calibre game in another browser, same account | The save is there |
-| VN-4 | Library Type filter | Calibre games are not listed as Manga |
+| VN-4 | Library Type filter | Games are under Visual novels, not Books or Manga |
+| VN-5 | Copy an unpacked game folder into `VN_PATH`; wait for the catalog (or run `build-calibre-catalog`) | It appears in the Store; opening it fetches only the files the game uses (network tab), and VN-1 to VN-3 work |
 
 ## 16. Import and covers
 

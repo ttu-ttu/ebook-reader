@@ -246,6 +246,24 @@ server {
     expires 1d;
   }
 
+  # Visual novels (VN_PATH): one unpacked ONScripter game per folder, read file by file
+  # by the player, which lists folders through the JSON directory listings.
+  location /calibre/vn/ {
+    auth_request /_account_shared;
+    alias ${VN_DIR}/;
+    autoindex on;
+    autoindex_format json;
+    # Game files are data for the player, never pages: no HTML/SVG on this origin.
+    types { image/jpeg jpg jpeg; image/png png; image/webp webp; }
+    default_type application/octet-stream;
+    charset off;
+    expires 1d;
+    add_header Content-Security-Policy "sandbox; default-src 'none'" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+    add_header Strict-Transport-Security $hsts always;
+  }
+
   # Synced reader data (processed books, progress, statistics, highlights) for
   # the Calibre storage source. Plain WebDAV writes plus JSON directory listings.
   location /calibre/sync/ {

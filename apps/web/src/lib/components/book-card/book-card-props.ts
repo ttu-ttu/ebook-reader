@@ -29,6 +29,8 @@ export interface BookCardProps {
   words95?: number;
   /** CBZ/ZIP read in the manga reader */
   manga?: boolean;
+  /** ONScripter game played in the visual novel player */
+  vn?: boolean;
   /** Calibre book id, for books from the Calibre source */
   calibreId?: number;
 }

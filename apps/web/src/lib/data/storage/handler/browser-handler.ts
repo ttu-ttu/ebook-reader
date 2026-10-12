@@ -15,6 +15,7 @@ import type {
 } from '$lib/data/database/books-db/versions/books-db';
 import { database, lastReadingGoalsModified$ } from '$lib/data/store';
 import { isManga } from '$lib/data/manga';
+import { isVn } from '$lib/data/vn';
 
 import type { MergeMode } from '$lib/data/merge-mode';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
@@ -56,7 +57,8 @@ export class BrowserStorageHandler extends BaseStorageHandler {
             lastBookModified: book.lastBookModified || 0,
             lastBookOpen: book.lastBookOpen || 0,
             isPlaceholder: !book.elementHtml,
-            manga: isManga(book)
+            manga: isManga(book),
+            vn: isVn(book)
           });
         }
 

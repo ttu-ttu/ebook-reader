@@ -4,9 +4,10 @@
  * All rights reserved.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BlobReader, BlobWriter, ZipWriter, configure } from '@zip.js/zip.js';
 import loadCbz from '../cbz/load-cbz';
+import { loadVnFolder } from './load-vn';
 import { isVn, vnInfo } from '$lib/data/vn';
 
 // jsdom has no Worker.
@@ -45,4 +46,37 @@ describe('loadVn', () => {
     expect(book.characters).toBe(7);
     expect(book.coverImage?.type).toBe('image/png');
   });
+
+  it('reads a server game folder through its listings, fetching only the script', async () => {
+    const script = new TextEncoder().encode('吾輩は猫である。');
+    const listings: Record<string, unknown> = {
+      '/calibre/vn/G/': [
+        { name: '0.txt', type: 'file' },
+        { name: 'arc.nsa', type: 'file' },
+        { name: 'bgm', type: 'directory' },
+        { name: '.DS_Store', type: 'file' }
+      ],
+      '/calibre/vn/G/bgm/': [{ name: '曲.ogg', type: 'file' }]
+    };
+    const fetched: string[] = [];
+
+    vi.stubGlobal('fetch', async (url: string) => {
+      fetched.push(url);
+      return url in listings ? new Response(JSON.stringify(listings[url])) : new Response(script);
+    });
+
+    const book = await loadVnFolder('ノベル', '/calibre/vn/G/', 1);
+
+    expect(vnInfo(book)).toEqual({
+      encoding: 'utf8',
+      files: ['0.txt', 'arc.nsa', 'bgm/曲.ogg'],
+      base: '/calibre/vn/G/'
+    });
+    expect(book.characters).toBe(7);
+    expect(fetched).toEqual(['/calibre/vn/G/', '/calibre/vn/G/bgm/', '/calibre/vn/G/0.txt']);
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });

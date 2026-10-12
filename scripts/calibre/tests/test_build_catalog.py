@@ -121,6 +121,21 @@ class MangaTest(unittest.TestCase):
         self.assertFalse(catalog.is_vn_file(self.archive(['1.jpg'])))
 
 
+class VnFolderTest(unittest.TestCase):
+    def test_game_folders_are_listed_with_their_script_folder_and_cover(self):
+        import tempfile
+        vn_dir = tempfile.mkdtemp()
+        for path in ('ノベル/0.txt', 'ノベル/cover.png', 'Nested/Game/nscript.dat', 'Empty/readme.txt'):
+            os.makedirs(os.path.dirname(os.path.join(vn_dir, path)), exist_ok=True)
+            open(os.path.join(vn_dir, path), 'w').close()
+        games = {game['title']: game for game in catalog.vn_games(vn_dir)}
+        self.assertEqual(sorted(games), ['Nested', 'ノベル'])
+        self.assertEqual(games['ノベル']['file'], 'ノベル')
+        self.assertEqual(games['ノベル']['cover'], 'ノベル/cover.png')
+        self.assertEqual(games['Nested']['file'], 'Nested/Game')
+        self.assertTrue(all(game['id'] < 0 and game['format'] == 'VN' for game in games.values()))
+
+
 class BuildTest(unittest.TestCase):
     """A whole build from a minimal Calibre library."""
 
