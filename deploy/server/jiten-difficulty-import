@@ -1,6 +1,0 @@
-#!/bin/sh
-# Installs the results of offline.py (scripts/calibre/jiten/README-offline.md):
-# frequency/difficulty files in a folder the difficulty container can read,
-# by default DATA_PATH/difficulty-import (/data/difficulty-import inside).
-exec /usr/local/bin/ebook-compose exec -T difficulty /opt/venv/bin/python -W ignore /app/jiten/service.py import \
-  "${1:-/data/difficulty-import}"

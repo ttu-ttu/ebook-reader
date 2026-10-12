@@ -14,7 +14,7 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
 - `apps/web/src/lib/functions/`: parsing, file loaders and utilities.
 - `scripts/calibre/`: the server side: nginx template, catalog builder and Python services (accounts, import, difficulty) with their tests.
 - `docker/`, `docker-compose.yml`: the Docker install. `docker-compose.static.yml` is upstream's reader-only image.
-- `scripts/deploy.sh`: deploys the working tree to a server (Proxmox container, SSH or local) and restarts the stack; reads the gitignored `local/` (`deploy.env`, `env`, optional override). `deploy/server/` holds the commands it installs (`ebook-compose`, `ebook-account`, `jiten-difficulty-import`), `deploy/examples/` optional setups (`tailscale-https/`).
+- `scripts/deploy.sh`: deploys the working tree to a server (Proxmox container, SSH or local) and restarts the stack; reads the gitignored `local/` (`deploy.env`, `env`, optional override). `deploy/server/` holds the commands it installs (`ebook-compose`, `ebook-account`, `ebook-update`), `deploy/examples/` optional setups (`tailscale-https/`).
 - Styling: Tailwind 3 + SCSS. Svelte 4 syntax in app code (not runes).
 
 ## Git workflow
@@ -87,7 +87,6 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
   The model (`jiten/difficulty_model_jiten_distilled.onnx`, built by `jiten/distil/`, README there) is Jiten's 55 features plus log characters and log unique kanji, trained on jiten.moe's algorithmic scores for 3,253 books: r 0.88 and mean error 0.23 against jiten.moe (Jiten's original `.onnx`: 0.63 / 0.77). Estimates carry `model` (`MODEL_VERSION`); "Books without an estimate" redoes those made by another model.
   jiten.moe itself scores with a private sentence-level model on RunPod (`DifficultyComputationJob` in Jiten's repo); the public `.onnx` is unused there.
   Jiten's API is for personal projects and small-scale research only (jiten.moe/guides/api-and-scraping): the training data was one list request plus one request per matched series, at most 75 a minute. Don't call it from the app or the service.
-  The full run can also be done on a faster computer: `scripts/calibre/jiten/offline.py` (instructions in `README-offline.md`) writes `difficulty.json`; the service's `import` command installs it.
 - Themes (`lib/data/theme/`, Settings → Themes, guide in `themes.md`) colour the whole app, not just the book: `theme-tokens.ts` lists every colour and its CSS variable, `themes.ts` the built-ins, inheritance and import validation, `theme-style.svelte` applies the active theme to `<html>`.
   Use the CSS variables (e.g. `var(--surface-strong-color)`, `var(--reader-panel-bg)`) rather than fixed colours in components.
 - The reader header uses the shared `app-header` shell, modeled on app.yatsu.moe.

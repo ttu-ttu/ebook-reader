@@ -23,8 +23,7 @@ First public release. Compared with upstream ッツ Ebook Reader:
 - **Manga**: CBZ and image-only ZIP files, in a page-turning reader (right to
   left, left to right, vertical strip).
 - **Difficulty estimates** with Jiten's features and a model distilled from
-  jiten.moe's scores, computed on the server on demand (or on a faster computer
-  with `offline.py`), started from the admin panel's Tools tab or for books
+  jiten.moe's scores, computed on the server on demand, started from the admin panel's Tools tab or for books
   selected in the library. The word frequency list (`jiten_freq_global.zip`)
   can be imported there.
 

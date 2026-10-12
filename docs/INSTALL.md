@@ -125,7 +125,7 @@ copies the working tree to the server, builds there and restarts the stack
 
 On the server the source goes to `/opt/ebook-reader` and the settings to
 `/etc/ebook-reader`; `ebook-compose` (= `docker compose` for the stack),
-`ebook-account`, `jiten-difficulty-import` and `ebook-update` are installed in
+`ebook-account` and `ebook-update` are installed in
 `/usr/local/bin`. The end of the output shows the first admin's temporary
 password until that account has signed in.
 Roll back with
@@ -161,12 +161,3 @@ The `difficulty` profile needs Jiten's word frequency list: download
 it in the admin panel (Tools → Estimate difficulty → "Import frequency list";
 the service checks it), or save it as
 `DATA_PATH/state/difficulty/frequency-dictionary.zip`.
-
-## Difficulty estimates on a faster computer
-
-See `scripts/calibre/jiten/README-offline.md`. Copy its `output/` folder into
-`DATA_PATH` (e.g. `data/difficulty-import/`), then:
-
-```sh
-docker compose exec difficulty /opt/venv/bin/python /app/jiten/service.py import /data/difficulty-import
-```

@@ -14,7 +14,7 @@ set -euo pipefail
 
 APP=/opt/ebook-reader
 CONFIG=/etc/ebook-reader
-COMMANDS="ebook-compose ebook-account jiten-difficulty-import ebook-update"
+COMMANDS="ebook-compose ebook-account ebook-update"
 
 setting() { sed -n "s/^$1=//p" "$CONFIG/env" | tail -n 1 | tr -d '"'"'"; }
 

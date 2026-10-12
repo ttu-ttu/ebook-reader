@@ -7,10 +7,11 @@
 #   local/docker-compose.override.yml  optional, e.g. deploy/examples/tailscale-https
 #
 # On the server: the source goes to /opt/ebook-reader, the settings to
-# /etc/ebook-reader, and ebook-compose / ebook-account / jiten-difficulty-import /
-# ebook-update to /usr/local/bin (ebook-update's systemd units are installed when
-# DATA_PATH is absolute, for updates from the admin panel). Images are built there; the running stack is only replaced
-# if every image builds, and the previous images stay tagged :previous.
+# /etc/ebook-reader, and ebook-compose / ebook-account / ebook-update to
+# /usr/local/bin (ebook-update's systemd units are installed when DATA_PATH is
+# absolute, for updates from the admin panel). Images are built there; the
+# running stack is only replaced if every image builds, and the previous images
+# stay tagged :previous.
 # Restarting the stack stops a running difficulty job.
 set -euo pipefail
 
@@ -59,7 +60,7 @@ if [ -f "$LOCAL/docker-compose.override.yml" ]; then
 else
   run rm -f /etc/ebook-reader/docker-compose.override.yml
 fi
-for command in ebook-compose ebook-account jiten-difficulty-import ebook-update; do
+for command in ebook-compose ebook-account ebook-update; do
   put "$REPO_ROOT/deploy/server/$command" "/usr/local/bin/$command" 755
 done
 

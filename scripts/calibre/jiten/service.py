@@ -12,8 +12,7 @@ HTTP API (bound to localhost, proxied by nginx at /calibre/difficulty/api/):
   POST dictionary   body: the zip    install Jiten's frequency list (jiten_freq_global.zip)
 Results are written to RESULTS_PATH, which nginx serves as /calibre/difficulty.json.
 
-CLI: service.py serve | compute ID... | import DIR
-(`import` installs a difficulty.json made elsewhere by offline.py.)
+CLI: service.py serve | compute ID...
 """
 import json
 import math
@@ -242,32 +241,6 @@ class JobRunner:
 runner = JobRunner()
 
 
-def import_results(source_dir: str):
-    """Installs difficulty.json from offline.py after checking it."""
-    import shutil
-    import urllib.request
-
-    try:
-        with urllib.request.urlopen(f'http://127.0.0.1:{PORT}/status', timeout=5) as response:
-            job = json.load(response).get('job')
-        if job and not job.get('finished'):
-            sys.exit('A difficulty job is running on the server; import after it finishes or cancel it.')
-    except OSError:
-        pass  # service not running
-
-    results = os.path.join(source_dir, 'difficulty.json')
-    if not os.path.isfile(results):
-        sys.exit(f'Missing {results} - run offline.py first')
-    with open(results, encoding='utf-8') as f:
-        books = json.load(f)['books']
-    if not books:
-        sys.exit('The results are empty')
-
-    shutil.copyfile(results, RESULTS_PATH + '.import')
-    os.replace(RESULTS_PATH + '.import', RESULTS_PATH)
-    print(f'Imported {len(books)} estimates.')
-
-
 def install_dictionary(source, length: int) -> int:
     """Checks an uploaded rank-based Yomitan frequency list and makes it the one in use
     (from the next job on); returns its number of terms."""
@@ -358,8 +331,6 @@ def main(argv):
     elif command == 'compute':
         runner.job = {'type': 'compute'}
         runner.compute([int(i) for i in argv[2:]] or None)
-    elif command == 'import' and len(argv) == 3:
-        import_results(argv[2])
     else:
         sys.exit(__doc__)
 
