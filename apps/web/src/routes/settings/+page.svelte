@@ -2,10 +2,11 @@
   import { browser } from '$app/environment';
   import { replaceState } from '$app/navigation';
   import {
-    faBars,
+    faChevronDown,
+    faChevronLeft,
+    faChevronRight,
     faMagnifyingGlass,
-    faUser,
-    faXmark
+    faUser
   } from '@fortawesome/free-solid-svg-icons';
   import { onDestroy, onMount, tick } from 'svelte';
   import { writable } from 'svelte/store';
@@ -112,20 +113,18 @@
   let activeSection = settingsAreas[0].sections[0].id;
   let query = '';
   let noResults = false;
-  let mobileMenuOpen = false;
+  /** Phones show the list of sections, or one area with a back button. */
+  let mobileView: 'list' | 'section' = 'list';
+  let collapsedAreas = new Set<string>();
   let sectionsElement: HTMLElement;
   let searchInput: HTMLInputElement;
-  let mobileSearchInput: HTMLInputElement;
+  let scrollToMatchTimer: ReturnType<typeof setTimeout> | undefined;
 
   $: view.set({ area: activeArea, query });
   $: applySearch(query);
   $: searching = !!query.trim();
   $: activeAreaInfo = settingsAreas.find((area) => area.id === activeArea) ?? settingsAreas[0];
   $: activeSectionInfo = findSettingsSection(activeSection);
-
-  $: if (browser) {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
-  }
 
   onMount(() => {
     const requested = sectionFromUrl(new URL(window.location.href));
@@ -141,11 +140,22 @@
     setStorageQuota();
   });
 
-  onDestroy(() => {
-    if (browser) {
-      document.body.style.overflow = '';
+  onDestroy(() => clearTimeout(scrollToMatchTimer));
+
+  function toggleArea(id: string) {
+    const next = new Set(collapsedAreas);
+
+    if (!next.delete(id)) {
+      next.add(id);
     }
-  });
+    collapsedAreas = next;
+  }
+
+  function backToList() {
+    mobileView = 'list';
+    query = '';
+    window.scrollTo({ top: 0 });
+  }
 
   async function showSection(id: string, smooth = true, updateUrl = true) {
     const section = findSettingsSection(id);
@@ -155,8 +165,11 @@
     }
 
     query = '';
-    mobileMenuOpen = false;
+    mobileView = 'section';
     activeArea = section.area;
+    if (collapsedAreas.has(section.area)) {
+      collapsedAreas = new Set([...collapsedAreas].filter((area) => area !== section.area));
+    }
     activeSection = section.id;
     if (updateUrl) {
       replaceState(`?section=${section.area}#${section.id}`, {});
@@ -191,10 +204,11 @@
       let visibleItems = 0;
 
       section.querySelectorAll<HTMLElement>('[data-settings-item]').forEach((item) => {
-        const match =
-          sectionMatch || (item.dataset.settingsSearch || '').toLowerCase().includes(needle);
+        const ownMatch = !!needle && (item.dataset.settingsSearch || '').toLowerCase().includes(needle);
+        const match = sectionMatch || ownMatch;
 
         item.hidden = !match;
+        item.toggleAttribute('data-settings-match', ownMatch);
         visibleItems += match ? 1 : 0;
       });
 
@@ -203,6 +217,18 @@
     });
 
     noResults = !!needle && !visibleSections;
+
+    clearTimeout(scrollToMatchTimer);
+    if (needle && !noResults) {
+      // Wait for typing to pause, then bring the first match into view.
+      scrollToMatchTimer = setTimeout(() => {
+        const first =
+          sectionsElement.querySelector<HTMLElement>('[data-settings-match]') ||
+          sectionsElement.querySelector<HTMLElement>('[data-settings-section]:not([hidden])');
+
+        first?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    }
   }
 
   /** Highlights the section being read in the sidebar. */
@@ -225,10 +251,14 @@
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
       event.preventDefault();
 
-      const input = searchInput?.offsetParent ? searchInput : mobileSearchInput;
+      if (!searchInput?.offsetParent) {
+        mobileView = 'list';
+      }
 
-      input?.focus();
-      input?.select();
+      tick().then(() => {
+        searchInput?.focus();
+        searchInput?.select();
+      });
     }
   }
 
@@ -293,17 +323,18 @@
   <AppHeader active="settings" currentBookId={$currentBookId$} />
 
   <div
-    class="settings-layout mx-auto max-w-7xl px-4 pb-28 pt-[5.25rem] md:px-8 xl:px-10 xl:pt-[4.75rem]"
+    class="settings-layout mx-auto max-w-6xl px-4 pb-28 pt-[5.25rem] md:px-8 xl:px-10 xl:pt-[4.75rem]"
+    data-mobile={searching ? 'search' : mobileView}
   >
     <aside class="settings-sidebar" aria-label="Settings categories">
       <h1 class="settings-title">Settings</h1>
       <div class="settings-search" role="search">
-        <Fa icon={faMagnifyingGlass} class="opacity-70" />
+        <Fa icon={faMagnifyingGlass} />
         <input
           bind:this={searchInput}
           bind:value={query}
           type="search"
-          placeholder="Find..."
+          placeholder="Find a setting"
           aria-label="Search settings"
           aria-keyshortcuts="Control+F Meta+F"
           on:keydown={onSearchKeydown}
@@ -314,56 +345,79 @@
       </div>
       <nav class="settings-nav" aria-label="Settings sections">
         {#each settingsAreas as area (area.id)}
+          {@const collapsed = collapsedAreas.has(area.id)}
           <div class="settings-nav-area">
-            <button
-              type="button"
-              class="settings-nav-area-button"
-              class:settings-nav-area-active={!searching && area.id === activeArea}
-              aria-pressed={!searching && area.id === activeArea}
-              on:click={() => showSection(area.sections[0].id)}
-            >
-              <span class="settings-nav-icon"><Fa icon={area.icon} /></span>
-              <span>{area.label}</span>
-            </button>
-            <div class="settings-nav-items">
-              {#each area.sections as section (section.id)}
-                <button
-                  type="button"
-                  class="settings-nav-item"
-                  class:settings-nav-item-active={!searching && section.id === activeSection}
-                  aria-current={!searching && section.id === activeSection ? 'page' : undefined}
-                  on:click={() => showSection(section.id)}
+            <div class="settings-nav-area-heading">
+              <button
+                type="button"
+                class="settings-nav-area-button"
+                class:settings-nav-area-active={!searching && area.id === activeArea}
+                on:click={() => showSection(area.sections[0].id)}
+              >
+                {area.label}
+              </button>
+              <button
+                type="button"
+                class="settings-nav-collapse"
+                aria-expanded={!collapsed}
+                aria-label="{collapsed ? 'Show' : 'Hide'} {area.label} sections"
+                on:click={() => toggleArea(area.id)}
+              >
+                <span class="settings-nav-chevron-down" class:settings-nav-collapsed={collapsed}
+                  ><Fa icon={faChevronDown} /></span
                 >
-                  <span class="settings-nav-icon"><Fa icon={section.icon} /></span>
-                  <span>{section.label}</span>
-                </button>
-              {/each}
+              </button>
             </div>
+            {#if !collapsed}
+              <div class="settings-nav-items">
+                {#each area.sections as section (section.id)}
+                  <button
+                    type="button"
+                    class="settings-nav-item"
+                    class:settings-nav-item-active={!searching && section.id === activeSection}
+                    aria-current={!searching && section.id === activeSection ? 'page' : undefined}
+                    on:click={() => showSection(section.id)}
+                  >
+                    <span class="settings-nav-icon"><Fa icon={section.icon} /></span>
+                    <span>{section.label}</span>
+                    <span class="settings-nav-chevron"><Fa icon={faChevronRight} /></span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
           </div>
         {/each}
       </nav>
       <div class="settings-sync-note">
         {#if $account$}
           <span class="sync-dot" data-state={$settingsSyncState$.state} />
-          <span>
-            Signed in as {$account$.username}. Progress, statistics, reader and AI settings and
-            themes sync to your account.
+          <span class="min-w-0 truncate" title="Progress, statistics, reader and AI settings and themes sync to your account">
+            {$account$.username}
           </span>
-        {:else}
           <button
             type="button"
-            class="text-left"
+            class="app-button app-button-quiet ml-auto"
             on:click={() => showSection('general-account')}
           >
-            <Fa icon={faUser} class="mr-1 inline" />
-            Sign in to sync progress, statistics, reader and AI settings and themes.
+            Account
+          </button>
+        {:else}
+          <Fa icon={faUser} />
+          <button
+            type="button"
+            class="app-button app-button-quiet"
+            on:click={() => showSection('general-account')}
+          >
+            Sign in to sync
           </button>
         {/if}
       </div>
     </aside>
 
     <main class="settings-main" aria-label="Settings">
-      <h1 class="settings-title settings-title-mobile">Settings</h1>
+      <button type="button" class="settings-back" on:click={backToList}>
+        <Fa icon={faChevronLeft} /> Settings
+      </button>
       <div class="settings-breadcrumb" aria-live="polite">
         {#if searching}
           <span>Results for “{query.trim()}”</span>
@@ -376,7 +430,13 @@
         {/if}
       </div>
       {#if noResults}
-        <p class="settings-no-results">No settings match “{query.trim()}”.</p>
+        <div class="settings-no-results" role="status">
+          <Fa icon={faMagnifyingGlass} />
+          <p>No settings match “{query.trim()}”.</p>
+          <button type="button" class="app-button" on:click={() => (query = '')}>
+            Clear search
+          </button>
+        </div>
       {/if}
       <div class="settings-sections" bind:this={sectionsElement}>
         <SettingsSection id="general-account">
@@ -464,61 +524,6 @@
     </main>
   </div>
 
-  <div class="settings-mobile-controls">
-    <label class="settings-mobile-search">
-      <Fa icon={faMagnifyingGlass} />
-      <input
-        bind:this={mobileSearchInput}
-        bind:value={query}
-        type="search"
-        placeholder="Find..."
-        aria-label="Search settings"
-        on:keydown={onSearchKeydown}
-      />
-    </label>
-    <span class="settings-mobile-divider" />
-    <button
-      type="button"
-      class="settings-mobile-menu-button"
-      aria-label="Open settings category menu"
-      aria-expanded={mobileMenuOpen}
-      on:click={() => (mobileMenuOpen = !mobileMenuOpen)}
-    >
-      <Fa icon={mobileMenuOpen ? faXmark : faBars} />
-    </button>
-  </div>
-
-  {#if mobileMenuOpen}
-    <button
-      type="button"
-      class="settings-mobile-backdrop"
-      aria-label="Close menu"
-      on:click={() => (mobileMenuOpen = false)}
-    />
-    <nav class="settings-mobile-sheet" aria-label="Settings sections">
-      {#each settingsAreas as area (area.id)}
-        <div class="settings-nav-area">
-          <div class="settings-nav-area-button settings-nav-area-active">
-            <span class="settings-nav-icon"><Fa icon={area.icon} /></span>
-            <span>{area.label}</span>
-          </div>
-          <div class="settings-nav-items">
-            {#each area.sections as section (section.id)}
-              <button
-                type="button"
-                class="settings-nav-item"
-                class:settings-nav-item-active={section.id === activeSection}
-                on:click={() => showSection(section.id)}
-              >
-                <span class="settings-nav-icon"><Fa icon={section.icon} /></span>
-                <span>{section.label}</span>
-              </button>
-            {/each}
-          </div>
-        </div>
-      {/each}
-    </nav>
-  {/if}
 </div>
 {$setPersistentStorage$ ?? ''}
 
@@ -529,38 +534,32 @@
     min-width: 0;
   }
 
-  .settings-sidebar {
-    display: none;
-  }
-
   .settings-title {
-    font-size: 1.35rem;
-    font-weight: 780;
-    line-height: 1.1;
-  }
-
-  .settings-title-mobile {
-    margin-top: 0.75rem;
+    font-family: var(--app-font-display);
+    font-size: 1.6rem;
+    font-weight: 400;
+    line-height: 1.2;
   }
 
   .settings-search {
     display: grid;
-    min-height: 2.75rem;
+    min-height: 2.5rem;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.4rem 0.6rem 0.4rem 0.8rem;
-    border: 1px solid color-mix(in srgb, var(--font-color) 8%, var(--border-color));
-    border-radius: calc(1rem * var(--app-radius-scale));
-    background: color-mix(in srgb, var(--surface-color) 92%, var(--background-color));
-    box-shadow:
-      0 1px 2px color-mix(in srgb, var(--shadow-color) 8%, transparent),
-      inset 0 1px color-mix(in srgb, var(--app-inset-highlight) 35%, transparent);
-    color: var(--app-muted-fg);
+    gap: 0.6rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+    border: 1px solid var(--app-control-border);
+    border-radius: calc(0.5rem * var(--app-radius-scale));
+    background: var(--app-control-bg);
+    color: var(--app-text-subtle);
   }
 
-  .settings-search input,
-  .settings-mobile-search input {
+  .settings-search:focus-within {
+    border-color: var(--app-focus-ring);
+    box-shadow: 0 0 0 1px var(--app-focus-ring);
+  }
+
+  .settings-search input {
     width: 100%;
     min-width: 0;
     padding: 0;
@@ -568,93 +567,105 @@
     background: transparent;
     box-shadow: none;
     color: var(--font-color);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     outline: 0;
   }
 
   .settings-search-shortcut {
     display: inline-flex;
-    gap: 0.25rem;
+    gap: 0.2rem;
   }
 
   .keycap {
     display: inline-flex;
-    min-width: 1.45rem;
-    height: 1.45rem;
+    min-width: 1.3rem;
+    height: 1.3rem;
     align-items: center;
     justify-content: center;
-    padding: 0 0.42rem;
-    border: 1px solid color-mix(in srgb, var(--font-color) 18%, var(--border-color));
-    border-radius: 0.42rem;
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--font-color) 10%, var(--surface-strong-color)),
-      color-mix(in srgb, var(--font-color) 6%, var(--surface-color))
-    );
-    box-shadow: 0 1px color-mix(in srgb, var(--shadow-color) 100%, transparent);
-    color: color-mix(in srgb, var(--font-color) 86%, transparent);
-    font-size: 0.72rem;
-    font-weight: 800;
+    padding: 0 0.3rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.3rem;
+    color: var(--app-text-subtle);
+    font-size: 0.65rem;
+    font-weight: 600;
     line-height: 1;
     text-transform: uppercase;
   }
 
-  .settings-nav,
-  .settings-mobile-sheet {
+  .settings-nav {
     display: grid;
-    gap: 0.85rem;
+    gap: 1rem;
     min-width: 0;
   }
 
-  .settings-nav-area {
-    display: grid;
-    gap: 0.25rem;
-    min-width: 0;
-  }
-
-  .settings-nav-area-button,
-  .settings-nav-item {
+  .settings-nav-area-heading {
     display: flex;
-    width: 100%;
-    min-width: 0;
     align-items: center;
-    gap: 0.55rem;
-    border-radius: calc(0.75rem * var(--app-radius-scale));
-    color: color-mix(in srgb, var(--font-color) 68%, transparent);
-    text-align: left;
-    transition:
-      background-color 0.16s ease,
-      color 0.16s ease;
+    justify-content: space-between;
   }
 
   .settings-nav-area-button {
-    min-height: 2.1rem;
-    padding: 0.35rem 0.55rem;
-    font-size: 0.78rem;
-    font-weight: 780;
+    padding: 0.2rem 0.5rem;
+    color: var(--app-text-subtle);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
+  .settings-nav-area-button:hover,
   .settings-nav-area-active {
     color: var(--font-color);
   }
 
+  .settings-nav-collapse {
+    display: inline-flex;
+    width: 1.6rem;
+    height: 1.6rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.3rem;
+    color: var(--app-text-subtle);
+    font-size: 0.65rem;
+  }
+
+  .settings-nav-collapse:hover {
+    color: var(--font-color);
+  }
+
+  .settings-nav-chevron-down {
+    display: inline-flex;
+    transition: transform 0.15s ease;
+  }
+
+  .settings-nav-collapsed {
+    transform: rotate(-90deg);
+  }
+
   .settings-nav-items {
     display: grid;
-    gap: 0.12rem;
+    gap: 1px;
     min-width: 0;
-    margin-left: 0.62rem;
-    padding-left: 0.45rem;
-    border-left: 1px solid color-mix(in srgb, var(--font-color) 8%, transparent);
+    margin-top: 0.15rem;
   }
 
   .settings-nav-item {
-    min-height: 2.38rem;
-    padding: 0.48rem 0.65rem;
-    font-size: 0.93rem;
-    font-weight: 720;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 2rem;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: calc(0.35rem * var(--app-radius-scale));
+    color: var(--app-muted-fg);
+    font-size: 0.88rem;
+    text-align: left;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
   }
 
-  button.settings-nav-area-button:hover,
   .settings-nav-item:hover {
     background: color-mix(in srgb, var(--font-color) 5%, transparent);
     color: var(--font-color);
@@ -662,44 +673,54 @@
 
   .settings-nav-item-active,
   .settings-nav-item-active:hover {
-    background: color-mix(in srgb, var(--accent-color) 13%, var(--surface-color));
+    background: transparent;
+    box-shadow: inset 2px 0 var(--accent-color);
     color: var(--font-color);
-    font-weight: 780;
+    font-weight: 600;
   }
 
   .settings-nav-icon {
     display: inline-flex;
-    width: 0.95rem;
+    width: 0.9rem;
     flex: 0 0 auto;
     justify-content: center;
-    color: color-mix(in srgb, var(--accent-color) 58%, var(--font-color));
+    color: var(--app-text-subtle);
+    font-size: 0.8rem;
   }
 
-  .settings-nav-area-button > span:last-child,
-  .settings-nav-item > span:last-child {
+  .settings-nav-item-active .settings-nav-icon {
+    color: var(--accent-color);
+  }
+
+  .settings-nav-item > span:nth-child(2) {
     min-width: 0;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
+  .settings-nav-chevron {
+    display: none;
+    color: var(--app-text-subtle);
+    font-size: 0.7rem;
+  }
+
   .settings-sync-note {
     display: flex;
-    align-items: flex-start;
-    gap: 0.55rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid color-mix(in srgb, var(--font-color) 7%, transparent);
-    color: color-mix(in srgb, var(--font-color) 58%, transparent);
-    font-size: 0.82rem;
-    font-weight: 650;
-    line-height: 1.35;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--app-muted-fg);
+    font-size: 0.8rem;
   }
 
   .sync-dot {
-    width: 0.48rem;
-    height: 0.48rem;
+    width: 0.45rem;
+    height: 0.45rem;
     flex: 0 0 auto;
-    margin-top: 0.35rem;
     border-radius: 9999px;
     background: color-mix(in srgb, var(--font-color) 26%, transparent);
   }
@@ -710,7 +731,6 @@
 
   .sync-dot[data-state='synced'] {
     background: var(--app-success-color);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-success-color) 18%, transparent);
   }
 
   .sync-dot[data-state='error'] {
@@ -720,31 +740,43 @@
   .settings-main {
     display: flex;
     min-width: 0;
+    max-width: 45rem;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.5rem;
+  }
+
+  .settings-back {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: flex-start;
+    padding: 0.4rem 0;
+    color: var(--accent-strong-color);
+    font-size: 0.9rem;
+    font-weight: 600;
   }
 
   .settings-breadcrumb {
     display: flex;
-    min-height: 2rem;
+    min-height: 1.5rem;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.42rem;
-    color: color-mix(in srgb, var(--font-color) 62%, transparent);
-    font-size: 0.9rem;
-    font-weight: 760;
-  }
-
-  .settings-breadcrumb span:last-child {
-    color: var(--font-color);
+    gap: 0.4rem;
+    color: var(--app-text-subtle);
+    font-size: 0.78rem;
   }
 
   .settings-no-results {
-    padding: 0.85rem 1rem;
-    border: 1px solid color-mix(in srgb, var(--font-color) 7%, var(--border-color));
-    border-radius: calc(1rem * var(--app-radius-scale));
-    color: color-mix(in srgb, var(--font-color) 70%, transparent);
-    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 2.5rem 1rem;
+    border: 1px dashed var(--border-color);
+    border-radius: calc(0.6rem * var(--app-radius-scale));
+    color: var(--app-muted-fg);
+    text-align: center;
   }
 
   /* Sections come from several components; CSS order keeps the sidebar's order. */
@@ -752,7 +784,7 @@
     display: flex;
     min-width: 0;
     flex-direction: column;
-    gap: 2.25rem;
+    gap: 3rem;
   }
 
   .settings-sections :global([data-settings-section][hidden]),
@@ -760,81 +792,52 @@
     display: none;
   }
 
-  .settings-mobile-controls {
-    position: fixed;
-    bottom: max(0.8rem, env(safe-area-inset-bottom));
-    left: 50%;
-    z-index: 50;
-    display: grid;
-    width: min(17rem, calc(100vw - 2rem));
-    min-height: 3.25rem;
-    grid-template-columns: minmax(0, 1fr) 1px 2.65rem;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 0.25rem 0.35rem 0.25rem 0.85rem;
-    transform: translate(-50%);
-    border: 1px solid color-mix(in srgb, var(--font-color) 10%, var(--border-color));
-    border-radius: calc(1.25rem * var(--app-radius-scale));
-    background: color-mix(in srgb, var(--surface-color) 96%, var(--background-color));
-    box-shadow:
-      0 0.85rem 2rem color-mix(in srgb, var(--shadow-color) 16%, transparent),
-      inset 0 1px color-mix(in srgb, var(--app-inset-highlight) 34%, transparent);
-  }
+  /* Phones: a list of sections that drills into one area, with a back button */
+  @media (max-width: 899px) {
+    .settings-layout[data-mobile='list'] .settings-main,
+    .settings-layout[data-mobile='section'] .settings-sidebar,
+    .settings-layout[data-mobile='search'] .settings-nav,
+    .settings-layout[data-mobile='search'] .settings-sync-note {
+      display: none;
+    }
 
-  .settings-mobile-search {
-    display: grid;
-    min-width: 0;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 0.5rem;
-    color: color-mix(in srgb, var(--font-color) 74%, transparent);
-  }
+    .settings-sidebar {
+      display: grid;
+      gap: 1rem;
+    }
 
-  .settings-mobile-search input {
-    font-weight: 700;
-  }
+    .settings-layout[data-mobile='section'] .settings-back {
+      display: inline-flex;
+    }
 
-  .settings-mobile-divider {
-    width: 1px;
-    height: 2.1rem;
-    background: color-mix(in srgb, var(--font-color) 12%, transparent);
-  }
+    .settings-nav-items {
+      border-top: 1px solid var(--border-color);
+    }
 
-  .settings-mobile-menu-button {
-    display: inline-flex;
-    width: 2.65rem;
-    height: 2.65rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.95rem;
-    color: color-mix(in srgb, var(--font-color) 82%, transparent);
-    font-size: 1.12rem;
-  }
+    .settings-nav-item {
+      min-height: 3rem;
+      border-bottom: 1px solid var(--border-color);
+      border-radius: 0;
+      font-size: 0.95rem;
+    }
 
-  .settings-mobile-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    background: color-mix(in srgb, var(--background-color) 70%, transparent);
-  }
+    .settings-nav-item-active,
+    .settings-nav-item-active:hover {
+      box-shadow: none;
+      font-weight: 400;
+    }
 
-  .settings-mobile-sheet {
-    position: fixed;
-    inset: auto 0 0;
-    z-index: 40;
-    max-height: min(78dvh, 42rem);
-    overflow-y: auto;
-    padding: 0.85rem 0.85rem 6rem;
-    border: 1px solid color-mix(in srgb, var(--font-color) 10%, var(--border-color));
-    border-radius: 1.4rem 1.4rem 0 0;
-    background: color-mix(in srgb, var(--surface-color) 98%, var(--background-color));
-    box-shadow: 0 -1.1rem 2.5rem color-mix(in srgb, var(--shadow-color) 12%, transparent);
+    .settings-nav-chevron {
+      display: inline-flex;
+    }
   }
 
   @media (min-width: 900px) {
     .settings-layout {
-      grid-template-columns: 17rem minmax(0, 1fr);
+      grid-template-columns: 14rem minmax(0, 1fr);
       align-items: start;
+      gap: 3rem;
+      padding-bottom: 3rem;
     }
 
     .settings-sidebar {
@@ -843,22 +846,10 @@
       display: grid;
       max-height: calc(100dvh - 6.5rem);
       align-content: start;
-      gap: 0.85rem;
+      gap: 1rem;
       overflow-y: auto;
-      padding: 0.25rem 1rem 1.25rem 0;
-      border-right: 1px solid color-mix(in srgb, var(--font-color) 7%, var(--border-color));
+      padding: 0.25rem 0.25rem 1.25rem 0;
       scrollbar-width: thin;
-    }
-
-    .settings-title-mobile,
-    .settings-mobile-controls,
-    .settings-mobile-backdrop,
-    .settings-mobile-sheet {
-      display: none;
-    }
-
-    .settings-layout {
-      padding-bottom: 3rem;
     }
   }
 

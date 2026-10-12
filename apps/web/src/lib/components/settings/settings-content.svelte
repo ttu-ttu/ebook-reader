@@ -799,18 +799,16 @@
           bind:selectedOptionId={customReadingPointEnabled}
         />
         {#if customReadingPointEnabled}
-          <div
-            tabindex="0"
-            role="button"
-            class="ml-4 hover:underline"
+          <button
+            type="button"
+            class="app-button app-button-quiet ml-4"
             on:click={() => {
               verticalCustomReadingPosition$.next(100);
               horizontalCustomReadingPosition$.next(0);
             }}
-            on:keyup={dummyFn}
           >
             Reset Points
-          </div>
+          </button>
         {/if}
       </div>
     </SettingsItemGroup>
@@ -1069,16 +1067,25 @@
     title="Keep Local Data on Deletion"
     tooltip={'Determines if local statistics will be deleted or not when removing a local book copy'}
   >
-    <div class="flex items-center">
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={keepLocalStatisticsOnDeletion}
-      />
-      <div
-        tabindex="0"
-        role="button"
-        class="ml-4 hover:underline"
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={keepLocalStatisticsOnDeletion}
+    />
+  </SettingsItemGroup>
+  <div class="settings-danger-zone" role="group" aria-label="Danger zone">
+    <p class="settings-danger-zone-label">Danger zone</p>
+    <SettingsItemGroup
+      title="Clear zombie statistics"
+      tooltip="Deletes the statistics of books that are no longer in this browser. This can't be undone."
+    >
+      <button
+        type="button"
+        class="app-button app-button-danger"
         on:click={() => {
+          if (!window.confirm('Delete the statistics of books that are no longer in this browser?')) {
+            return;
+          }
+
           showSpinner = true;
           database
             .clearZombieStatistics()
@@ -1095,12 +1102,11 @@
             )
             .finally(() => (showSpinner = false));
         }}
-        on:keyup={() => {}}
       >
-        Clear Zombie Statistics
-      </div>
-    </div>
-  </SettingsItemGroup>
+        Clear
+      </button>
+    </SettingsItemGroup>
+  </div>
 </SettingsSection>
 <SettingsSection id="tracking-merge">
   <SettingsItemGroup
@@ -1141,7 +1147,7 @@
     <div class="flex items-center">
       <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
       {#if storageQuota}
-        <div class="ml-4">{storageQuota}</div>
+        <span class="ml-4 text-sm text-[color:var(--app-muted-fg)]">{storageQuota}</span>
       {/if}
     </div>
   </SettingsItemGroup>
@@ -1208,11 +1214,8 @@
 
 <style>
   .settings-panel {
-    grid-column: 1 / -1;
     min-width: 0;
-    padding: 1rem 1rem 0.25rem;
-    border: 1px solid color-mix(in srgb, var(--font-color) 8%, var(--border-color));
-    border-radius: calc(1.2rem * var(--app-radius-scale));
-    background: color-mix(in srgb, var(--surface-color) 96%, var(--background-color));
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
   }
 </style>

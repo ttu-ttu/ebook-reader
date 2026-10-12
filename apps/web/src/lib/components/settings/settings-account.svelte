@@ -1,13 +1,14 @@
 <script lang="ts">
   import {
     faArrowRightFromBracket,
+    faChevronRight,
     faRightToBracket,
     faRotate,
     faSpinner,
     faUserShield
   } from '@fortawesome/free-solid-svg-icons';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
-  import { buttonClasses, inputClasses } from '$lib/css-classes';
+  import { buttonClasses, inputClasses, primaryButtonClasses } from '$lib/css-classes';
   import {
     account$,
     accountConfig,
@@ -121,39 +122,20 @@
         > instead.
       </p>
     {/if}
-    <div class="flex flex-wrap items-center gap-4">
+    <div class="account-identity">
       <span class="account-avatar">{user.username.charAt(0)}</span>
-      <span class="min-w-0 flex-1 truncate font-bold">{user.username}</span>
-      <button class="{buttonClasses} flex items-center gap-2" disabled={busy} on:click={onSignOut}>
-        <Fa icon={faArrowRightFromBracket} />
-        Sign out
-      </button>
+      <span class="min-w-0">
+        <span class="block truncate font-semibold">{user.username}</span>
+        <span class="block text-xs text-[color:var(--app-muted-fg)]">
+          Signed in{#if user.admin} · admin{/if} · {profileLabel} reader settings
+        </span>
+      </span>
     </div>
-    {#if error}<p class="account-error">{error}</p>{/if}
-  </SettingsItemGroup>
-
-  <SettingsItemGroup
-    title="What syncs"
-    tooltip="Stored in your account on this server, so every browser and device you sign in on shares them."
-  >
-    <ul class="account-list">
-      <li>Reading progress, statistics, reading goals and highlights of Calibre books</li>
-      <li>
-        AI settings and themes. API keys are removed from this browser when you sign out
-      </li>
-      <li>
-        Reader settings, kept separately for phones and for desktops and tablets (this device:
-        {profileLabel})
-      </li>
-    </ul>
-    <p class="mt-2 text-xs text-[color:var(--app-muted-fg)]">
-      Books themselves are shared by everyone using this server.
-    </p>
   </SettingsItemGroup>
 
   <SettingsItemGroup title="Settings sync">
     <div class="flex flex-wrap items-center gap-3">
-      <span class="sync-status" data-state={syncState.state}>
+      <span class="sync-status" data-state={syncState.state} aria-live="polite">
         <span class="sync-dot" />
         {#if syncState.state === 'syncing'}
           Syncing...
@@ -166,14 +148,31 @@
         {/if}
       </span>
       <button
-        class="sync-refresh"
-        title="Sync now"
+        class={buttonClasses}
         disabled={syncState.state === 'syncing'}
         on:click={syncAccountSettings}
       >
         <Fa icon={faRotate} spin={syncState.state === 'syncing'} />
+        Sync now
       </button>
     </div>
+    <details class="account-details" slot="after">
+      <summary>What syncs</summary>
+      <ul class="account-list">
+        <li>Reading progress, statistics, reading goals and highlights of Calibre books</li>
+        <li>
+          AI settings and themes. API keys are removed from this browser when you sign out
+        </li>
+        <li>
+          Reader settings, kept separately for phones and for desktops and tablets (this device:
+          {profileLabel})
+        </li>
+      </ul>
+      <p class="mt-2 text-xs text-[color:var(--app-muted-fg)]">
+        Stored in your account on this server, so every device you sign in on shares them. Books
+        themselves are shared by everyone using this server.
+      </p>
+    </details>
   </SettingsItemGroup>
 
   {#if user.temporaryPassword}
@@ -187,8 +186,9 @@
   <SettingsItemGroup
     title="Change password"
     tooltip="At least {minPasswordLength} characters. Signs out your other devices."
+    wide
   >
-    <form class="flex flex-col gap-2" on:submit|preventDefault={onChangePassword}>
+    <form class="account-password" on:submit|preventDefault={onChangePassword}>
       <input type="text" autocomplete="username" value={user.username} hidden readonly />
       <input
         type="password"
@@ -209,9 +209,9 @@
         class={inputClasses}
         bind:value={newPassword}
       />
-      <button class="{buttonClasses} self-start" disabled={busy}>Change password</button>
-      {#if passwordMessage}<p class="text-sm">{passwordMessage}</p>{/if}
+      <button class={buttonClasses} disabled={busy}>Change</button>
     </form>
+    {#if passwordMessage}<p class="mt-2 text-sm" role="status">{passwordMessage}</p>{/if}
   </SettingsItemGroup>
 
   {#if canOpenAdminPanel(user)}
@@ -219,12 +219,21 @@
       title="Admin panel"
       tooltip="Manage accounts and permissions, and run server tools such as difficulty estimates."
     >
-      <a class="{buttonClasses} inline-flex items-center gap-2 self-start" href="{pagePath}/admin">
+      <a class={buttonClasses} href="{pagePath}/admin">
         <Fa icon={faUserShield} />
-        Open admin panel
+        Open
+        <Fa icon={faChevronRight} />
       </a>
     </SettingsItemGroup>
   {/if}
+
+  <SettingsItemGroup title="Sign out" tooltip="Removes this browser's API keys and synced settings.">
+    <button class="app-button app-button-danger" disabled={busy} on:click={onSignOut}>
+      <Fa icon={faArrowRightFromBracket} />
+      Sign out
+    </button>
+    {#if error}<p class="account-error">{error}</p>{/if}
+  </SettingsItemGroup>
 {:else if user === undefined}
   <SettingsItemGroup title="Account" wide>
     <span class="flex items-center gap-2"><Fa icon={faSpinner} spin /> Checking sign-in...</span>
@@ -276,7 +285,7 @@
           class={inputClasses}
           bind:value={password}
         />
-        <button class="{buttonClasses} flex items-center gap-2" disabled={busy}>
+        <button class={primaryButtonClasses} disabled={busy}>
           <Fa icon={busy ? faSpinner : faRightToBracket} spin={busy} />
           Sign in
         </button>
@@ -326,10 +335,12 @@
     height: 2.75rem;
     align-items: center;
     justify-content: center;
+    flex: none;
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--accent-color) 22%, var(--surface-strong-color));
+    background: var(--accent-color);
+    color: var(--app-accent-fg);
+    font-family: var(--app-font-display);
     font-size: 1.2rem;
-    font-weight: 800;
     text-transform: uppercase;
   }
 
@@ -345,9 +356,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: color-mix(in srgb, var(--font-color) 70%, transparent);
-    font-size: 0.86rem;
-    font-weight: 650;
+    color: var(--app-muted-fg);
+    font-size: 0.85rem;
   }
 
   .sync-status[data-state='error'] {
@@ -373,19 +383,36 @@
     background: var(--app-danger-color);
   }
 
-  .sync-refresh {
-    display: inline-flex;
-    width: 1.9rem;
-    height: 1.9rem;
+  .account-identity {
+    display: flex;
+    min-width: 0;
     align-items: center;
-    justify-content: center;
-    border: 1px solid color-mix(in srgb, var(--font-color) 8%, var(--border-color));
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--font-color) 5%, transparent);
-    font-size: 0.8rem;
+    gap: 0.85rem;
   }
 
-  .sync-refresh:disabled {
-    opacity: 0.45;
+  .account-details summary {
+    width: fit-content;
+    color: var(--accent-strong-color);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .account-details[open] summary {
+    margin-bottom: 0.5rem;
+  }
+
+  .account-password {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .account-password input {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 12rem;
+    margin-top: 0;
   }
 </style>

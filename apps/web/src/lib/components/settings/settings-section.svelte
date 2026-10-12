@@ -36,34 +36,36 @@
 <style>
   .settings-section {
     display: grid;
-    gap: 0.85rem;
     min-width: 0;
     scroll-margin-top: 5.5rem;
   }
 
+  .settings-section-header {
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--font-color) 22%, var(--border-color));
+  }
+
   .settings-section-header h2 {
-    font-size: 1.12rem;
-    font-weight: 780;
-    line-height: 1.2;
+    font-family: var(--app-font-display);
+    font-size: 1.3rem;
+    font-weight: 400;
+    line-height: 1.3;
   }
 
   .settings-section-header p {
-    margin-top: 0.3rem;
+    margin-top: 0.2rem;
     color: var(--app-muted-fg);
-    font-size: 0.86rem;
-    font-weight: 600;
+    font-size: 0.82rem;
   }
 
+  /* A single column of rows (settings-item-group.svelte); "wide" sections hold editors. */
   .settings-section-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.85rem;
-    align-items: stretch;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
   }
 
-  @media (min-width: 1100px) {
-    .settings-section-grid:not(.settings-section-grid-wide) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .settings-section-grid-wide {
+    padding-top: 1rem;
   }
 </style>
