@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     faBookOpenReader,
+    faCheck,
     faXmark,
     type IconDefinition
   } from '@fortawesome/free-solid-svg-icons';
@@ -19,6 +20,8 @@
   export let heading = 'Continue reading';
   export let icon: IconDefinition = faBookOpenReader;
   export let removeTitle = '';
+  /** Set while the library is in select mode: clicks then toggle these */
+  export let selectedBookIds: ReadonlySet<number> | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     bookClick: { id: number };
@@ -55,6 +58,8 @@
             type="button"
             class="shelf-book"
             class:shelf-book-current={book.id === currentBookId}
+            class:shelf-book-selected={selectedBookIds?.has(book.id)}
+            aria-pressed={selectedBookIds ? selectedBookIds.has(book.id) : undefined}
             title={book.title}
             on:click={() => dispatch('bookClick', { id: book.id })}
             use:longPress={() => dispatch('bookSelect', { id: book.id })}
@@ -81,7 +86,10 @@
               <Fa icon={faBookOpenReader} /> Resume
             </button>
           {/if}
-          {#if removeTitle}
+          {#if selectedBookIds?.has(book.id)}
+            <span class="shelf-check" aria-hidden="true"><Fa icon={faCheck} /></span>
+          {/if}
+          {#if removeTitle && !selectedBookIds}
             <button
               type="button"
               class="shelf-remove"
@@ -205,7 +213,24 @@
     outline-offset: 3px;
   }
 
-  .shelf-book-current .shelf-cover {
+  .shelf-check {
+    position: absolute;
+    top: 0.3rem;
+    left: 0.3rem;
+    display: inline-flex;
+    width: 1.6rem;
+    height: 1.6rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--accent-color);
+    color: var(--app-accent-fg);
+    font-size: 0.8rem;
+    pointer-events: none;
+  }
+
+  .shelf-book-current .shelf-cover,
+  .shelf-book-selected .shelf-cover {
     outline: 2px solid var(--accent-color);
     outline-offset: 3px;
   }

@@ -187,10 +187,6 @@
   $: isLoading = !$bookCards$ || $booksAreLoading$;
   $: hasActiveFilter = activeFilter !== allBooksFilter.key || !!searchTerm.trim();
   $: isHome = $libraryTab$ !== 'store';
-  // Selecting works on the Store's list.
-  $: if (selectMode) {
-    $libraryTab$ = 'store';
-  }
   $: showSeriesGrid = !isHome && $storeView$ === 'series';
   $: seriesMatches = isHome || showSeriesGrid ? [] : matchingSeries($bookCards$ ?? [], searchTerm);
 
@@ -347,7 +343,7 @@
     onBookClick(bookId);
   }
 
-  /** Selects a book without toggling (long press can fire twice), which opens the Store. */
+  /** Selects a book without toggling (long press can fire twice). */
   function selectBook(bookId: number) {
     selectMode = true;
     selectedBookIds = new Set([...selectedBookIds, bookId]);
@@ -1143,15 +1139,18 @@
           <span class="mr-auto text-sm font-extrabold">
             {selectedBookIds.size} selected
           </span>
-          <button
-            type="button"
-            class="library-toolbar-button"
-            title="Select all shown books"
-            on:click={onSelectAllBooks}
-          >
-            <Fa icon={faCheckDouble} />
-            <span class="hidden sm:inline">Select all</span>
-          </button>
+          <!-- Home's shelves aren't the list Select all works on -->
+          {#if !isHome}
+            <button
+              type="button"
+              class="library-toolbar-button"
+              title="Select all shown books"
+              on:click={onSelectAllBooks}
+            >
+              <Fa icon={faCheckDouble} />
+              <span class="hidden sm:inline">Select all</span>
+            </button>
+          {/if}
           <button
             type="button"
             class="library-toolbar-button"
@@ -1265,6 +1264,7 @@
         <ContinueReadingShelf
           bookCards={$bookCards$}
           currentBookId={$currentBookId$}
+          selectedBookIds={selectMode ? selectedBookIds : undefined}
           on:bookClick={(ev) => onBookClick(ev.detail.id)}
           on:bookSelect={(ev) => selectBook(ev.detail.id)}
         />
@@ -1275,6 +1275,7 @@
           icon={faHouse}
           removeTitle="Remove from Home"
           currentBookId={$currentBookId$}
+          selectedBookIds={selectMode ? selectedBookIds : undefined}
           on:bookClick={(ev) => onBookClick(ev.detail.id)}
           on:bookSelect={(ev) => selectBook(ev.detail.id)}
           on:remove={(ev) => removeFromHome(ev.detail.title)}

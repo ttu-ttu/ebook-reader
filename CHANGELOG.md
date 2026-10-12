@@ -38,6 +38,8 @@ anything a reader or a server operator would notice.
 
 ### Fixes
 
+- Selecting books on Home (long press or right-click) no longer jumps to the Store; the
+  shelves show the selection.
 - A Calibre manga opened on a device that hadn't cached it yet (already read elsewhere)
   stayed on the loading spinner instead of opening in the manga reader.
 
