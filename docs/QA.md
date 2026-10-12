@@ -222,19 +222,21 @@ else uses the desktop profile.
 | SET-4 | Open `/settings?section=reader#reader-layout` directly | Reader area, scrolled to Page Layout; no console error |
 | SET-5 | Old links `/settings?tab=AI`, `?tab=Themes`, `?tab=Data`, `?tab=Statistics`, `?tab=Reader` | Open AI → Ask AI, General → Custom Themes, Data → Local Storage, Tracking → Statistics, Reader → Text Style |
 | SET-6 | Ctrl+F (Cmd+F on macOS) | Focuses the settings search instead of the browser's find |
-| SET-7 | Search "furigana", "columns", "api key", "zzzz" | Only matching items across all areas; "No settings match" for zzzz; Escape clears |
-| SET-8 | Width under 900 px | Sidebar hidden; floating bottom bar with search and a menu button; the menu lists all sections |
-| SET-9 | Each setting card | Title, description, control; conditional items appear/disappear with their condition |
+| SET-7 | Search "furigana", "columns", "api key", "zzzz" | Only matching items across all areas, matching rows highlighted and the first scrolled into view; "No settings match" with Clear search for zzzz; Escape clears |
+| SET-8 | Width under 900 px | A list of all sections with search; tapping one shows its area with a "‹ Settings" back button |
+| SET-9 | Each setting row | Title and description left, control right (wide ones below); on/off settings are switches that keyboard Space/Enter toggles; conditional items appear/disappear with their condition |
+| SET-11 | Tracking → Statistics → Danger zone → Clear | Asks for confirmation; Cancel does nothing |
+| SET-12 | Tab through any settings page | Every control shows a focus ring in the theme's focus colour |
 | SET-10 | Tracking → Reading Goals with statistics off | "Turn on statistics (Tracking → Statistics) to set reading goals." |
 
 ## 13. Themes
 
 | ID | Steps | Expected |
 | --- | --- | --- |
-| THM-1 | General → Theme, Follow system theme Off | One "Theme" picker; choosing a theme recolours the whole app |
-| THM-2 | Follow system theme On | "Light theme" and "Dark theme" pickers; switching the OS dark mode switches the app live |
+| THM-1 | General → Theme, Follow system theme Off | A grid of theme swatches grouped Light/Dark, the active one marked; choosing one recolours the whole app; a fresh browser starts on Washi |
+| THM-2 | Follow system theme On | "Light theme" and "Dark theme" swatch grids (Washi/Sumi by default); switching the OS dark mode switches the app live |
 | THM-3 | Reader header palette menu while following a dark system | Picking a theme changes the dark slot |
-| THM-4 | General → Custom Themes: New theme, edit colours, Save | Live preview; saved theme selected and listed in all pickers |
+| THM-4 | General → Custom Themes: New theme, edit colours, Save | Live preview (book card, settings row, reader text); setting Muted text close to the background shows a low-contrast warning but Save still works; saved theme selected and listed in all pickers |
 | THM-5 | Copy JSON / Download / Import (paste and file) | Round-trips; invalid JSON shows a descriptive error |
 | THM-6 | Rename a theme selected in the dark slot | Stays selected |
 | THM-7 | Delete the selected theme | Falls back to its base theme |

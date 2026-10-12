@@ -109,9 +109,10 @@
 
 <style>
   .admin-title {
-    font-size: 1.35rem;
-    font-weight: 780;
-    line-height: 1.1;
+    font-family: var(--app-font-display);
+    font-size: 1.6rem;
+    font-weight: 400;
+    line-height: 1.2;
   }
 
   .admin-tabs {

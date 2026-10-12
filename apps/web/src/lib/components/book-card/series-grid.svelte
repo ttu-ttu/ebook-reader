@@ -63,8 +63,8 @@
 <style>
   .series-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: 2rem 1.5rem;
     padding-bottom: 1rem;
   }
 
@@ -77,24 +77,27 @@
     display: flex;
     width: 100%;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
+    border-radius: calc(4px * var(--app-radius-scale));
     text-align: left;
   }
 
   .series-cover {
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--border-color);
-    border-radius: calc(0.7rem * var(--app-radius-scale));
+    margin-bottom: 0.4rem;
+    border-radius: calc(4px * var(--app-radius-scale));
+    /* A second cover peeking out behind: it's a series */
     box-shadow:
-      4px -4px 0 -1px color-mix(in srgb, var(--surface-strong-color) 85%, transparent),
-      4px -4px 0 0 var(--border-color);
-    transition: transform 0.16s ease;
+      5px -5px 0 -1px var(--surface-strong-color),
+      5px -5px 0 0 var(--border-color),
+      0 10px 22px -12px var(--app-cover-shadow);
+    transition: transform 0.2s var(--app-ease);
   }
 
   .series-open:hover .series-cover,
   .series-open:focus-visible .series-cover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
   }
 
   .series-count {
@@ -102,11 +105,12 @@
     right: 0.35rem;
     bottom: 0.35rem;
     padding: 0.1rem 0.5rem;
-    border-radius: 999px;
-    background: var(--reader-panel-bg);
-    color: var(--reader-panel-fg);
-    font-size: 0.72rem;
-    font-weight: 800;
+    border-radius: 2px;
+    background: var(--surface-strong-color);
+    color: var(--font-color);
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 
   .series-name {
@@ -115,16 +119,16 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
-    font-size: 0.82rem;
-    font-weight: 700;
-    line-height: 1.3;
+    padding-block: 0.05em;
+    font-family: var(--app-font-display);
+    font-size: 0.88rem;
+    line-height: 1.5;
   }
 
   .series-meta,
   .series-empty {
     color: var(--app-muted-fg);
-    font-size: 0.72rem;
-    font-weight: 700;
+    font-size: 0.74rem;
   }
 
   .series-empty {
@@ -142,8 +146,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    background: var(--reader-panel-bg);
-    color: var(--reader-panel-fg);
+    background: color-mix(in srgb, var(--surface-strong-color) 92%, transparent);
+    color: var(--accent-strong-color);
     font-size: 0.75rem;
   }
 
@@ -153,9 +157,9 @@
 
   .series-more {
     padding: 0.5rem 0.9rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.85rem;
+    border: 1px solid var(--app-control-border);
+    border-radius: calc(0.5rem * var(--app-radius-scale));
     font-size: 0.85rem;
-    font-weight: 700;
+    font-weight: 600;
   }
 </style>

@@ -132,7 +132,7 @@
     aria-label="Statistics"
   >
     <div class="mb-6">
-      <h1 class="text-2xl font-extrabold leading-tight">Statistics</h1>
+      <h1 class="text-[1.6rem] leading-tight [font-family:var(--app-font-display)]">Statistics</h1>
       <p class="mt-1 text-sm font-semibold text-[color:var(--app-muted-fg)]">
         Reading time, characters read and goals for the selected period
       </p>

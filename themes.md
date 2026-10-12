@@ -6,7 +6,10 @@ themes, the theme editor, the JSON format for sharing themes, and custom CSS.
 
 ## Picking a theme
 
-- **Settings → Themes** shows every theme with a preview. Click a preview to use it.
+- **Settings → General → Theme** shows every theme as a swatch, grouped light and
+  dark. Click one to use it. With "Follow system theme" on there is one grid for the
+  light slot and one for the dark slot (Washi and Sumi by default).
+- **Settings → General → Custom Themes** lists every theme with its actions.
 - **Settings → Reader → Theme** and the palette icon in the reader header switch
   themes quickly.
 
@@ -36,7 +39,7 @@ each browser has its own list. Export a theme to move it to another browser.
 
 ## Making a theme in the editor
 
-1. Go to **Settings → Themes**.
+1. Go to **Settings → General → Custom Themes**.
 2. Click **New theme**, which starts from the theme you are using, or the **+**
    on any theme card to duplicate that theme.
 3. Change what you like. Every change shows live across the whole app, so you can
@@ -53,8 +56,10 @@ In the editor:
   date pickers. Inherited from the base if left at "Same as base".
 - **Roundness**: scales the corner radius of cards, popovers, the header and
   buttons (0 is square, 1 is the default, 2 is very round).
-- **Glass blur**: the blur behind the translucent header, sidebar and popovers,
-  in pixels. 0 turns the glass effect off. This is useful on slow devices.
+- **Glass blur**: the blur behind translucent header backgrounds and popovers,
+  in pixels. 0 turns the glass effect off (Washi and Sumi use 0 and opaque bars).
+- The editor shows a live preview (a book card, a settings row and reader text) and
+  warns, without blocking, when text falls below WCAG AA contrast.
 - **Interface font**: a CSS font family for the app's interface, e.g.
   `'Zen Maru Gothic', sans-serif`. The book's own fonts are set in
   Settings → Reader. The font must be installed or added as a user font.

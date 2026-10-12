@@ -6,6 +6,31 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Washi & Sumi redesign
+
+- New look and default themes: Washi (warm paper, ink text, vermilion accent, mincho
+  headings) and its dark pair Sumi, also the default pair for "Follow system theme".
+  A theme chosen before stays selected; every built-in theme still works, and Sepia,
+  Sakura, Nord and Solarized Dark have slightly stronger muted text (WCAG AA).
+- Navigation is a flat bar anchored left (ち seal, section links, actions on the
+  right); phones get a bottom tab bar.
+- Library: covers without card boxes, title and author below, progress only on
+  started books, a 読了 seal on finished ones, difficulty as a five-segment meter
+  (the number is in the tooltip); quieter filters with counts on the active group.
+- Home: today's characters as the main number, the streak, an 18-week reading
+  heatmap and larger Continue reading covers with a Resume button.
+- Settings: one column of rows instead of cards, switches for on/off settings,
+  segmented controls, bordered inputs, collapsible nav groups, search that
+  highlights matching rows, a list that drills into sections on phones, a compact
+  Account section and a danger zone (clearing zombie statistics now asks first).
+- Theme picker is a grid of swatches; the theme editor has a live preview, new
+  colours (subtle text, accent hover, focus ring, success/warning, switches,
+  progress, cover shadow, difficulty 1–5, heatmap) and warns about low contrast.
+  Themes made before keep working: the new colours follow their existing ones.
+- Reader panels (companion, search, Ask AI, Listen, notes, selection toolbar) match
+  the theme with bordered inputs; the footer shows a hairline of the book's progress.
+- Visible keyboard focus everywhere, and reduced motion turns off animations.
+
 - While signed in, the Statistics page and the Home dashboard download the account's
   statistics and reading goals for every book, not only books opened in this browser.
 
