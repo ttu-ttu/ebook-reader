@@ -90,6 +90,8 @@ server {
     rewrite ^/calibre/difficulty/api/(.*)$ /$1 break;
     proxy_pass http://$difficulty_upstream;
     proxy_http_version 1.1;
+    # The frequency list upload (jiten_freq_global.zip, about 8 MB).
+    client_max_body_size 64m;
   }
 
   # Adding books to the Calibre library (import service).

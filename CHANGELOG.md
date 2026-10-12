@@ -25,7 +25,8 @@ First public release. Compared with upstream ッツ Ebook Reader:
 - **Difficulty estimates** with Jiten's features and a model distilled from
   jiten.moe's scores, computed on the server on demand (or on a faster computer
   with `offline.py`), started from the admin panel's Tools tab or for books
-  selected in the library.
+  selected in the library. The word frequency list (`jiten_freq_global.zip`)
+  can be imported there.
 
 ### Accounts and sync
 

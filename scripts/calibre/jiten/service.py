@@ -9,6 +9,7 @@ HTTP API (bound to localhost, proxied by nginx at /calibre/difficulty/api/):
   GET  status                       progress of the current job
   POST compute    {"ids": [...]}    estimate difficulty for these books ({"all": true} for all without a current estimate)
   POST cancel                       stop the running job
+  POST dictionary   body: the zip    install Jiten's frequency list (jiten_freq_global.zip)
 Results are written to RESULTS_PATH, which nginx serves as /calibre/difficulty.json.
 
 CLI: service.py serve | compute ID... | import DIR
@@ -17,7 +18,9 @@ CLI: service.py serve | compute ID... | import DIR
 import json
 import math
 import os
+import shutil
 import sys
+import zipfile
 import threading
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -33,6 +36,7 @@ STATE_DIR = os.environ.get('JITEN_STATE_DIR', '/data/state/difficulty')
 FREQUENCY_DICTIONARY = os.environ.get('JITEN_FREQUENCY_DICTIONARY',
                                       os.path.join(STATE_DIR, 'frequency-dictionary.zip'))
 RESULTS_PATH = os.path.join(STATE_DIR, 'difficulty.json')
+MAX_DICTIONARY_BYTES = 64 * 1024 * 1024
 # Jiten's model retrained on jiten.moe's own scores (distil/, README there): their scale directly,
 # adjustment included, from the 55 features plus log characters and log unique kanji.
 MODEL_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'difficulty_model_jiten_distilled.onnx')
@@ -264,6 +268,34 @@ def import_results(source_dir: str):
     print(f'Imported {len(books)} estimates.')
 
 
+def install_dictionary(source, length: int) -> int:
+    """Checks an uploaded rank-based Yomitan frequency list and makes it the one in use
+    (from the next job on); returns its number of terms."""
+    from frequency import load_yomitan_ranks
+
+    if not 0 < length <= MAX_DICTIONARY_BYTES:
+        raise ValueError('The file is empty or too large')
+    if runner.job and not runner.job.get('finished'):
+        raise RuntimeError('Wait until the running job has finished')
+    upload = FREQUENCY_DICTIONARY + '.upload'
+    try:
+        with open(upload, 'wb') as f:
+            shutil.copyfileobj(source, f, length)
+        if os.path.getsize(upload) != length:
+            raise ValueError('Upload incomplete')
+        try:
+            terms = len(load_yomitan_ranks(upload))
+        except (zipfile.BadZipFile, KeyError, ValueError, TypeError, AttributeError) as error:
+            raise ValueError("Not Jiten's frequency list (a rank-based Yomitan dictionary zip)") from error
+        if not terms:
+            raise ValueError('The frequency list has no words')
+        os.replace(upload, FREQUENCY_DICTIONARY)
+        return terms
+    finally:
+        if os.path.exists(upload):
+            os.remove(upload)
+
+
 class Handler(BaseHTTPRequestHandler):
     def _send(self, status, body):
         data = json.dumps(body).encode()
@@ -284,6 +316,14 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {'error': 'not found'})
 
     def do_POST(self):
+        if self._action() == 'dictionary':
+            try:
+                terms = install_dictionary(self.rfile, int(self.headers.get('Content-Length') or 0))
+            except RuntimeError as error:
+                return self._send(409, {'error': str(error)})
+            except ValueError as error:
+                return self._send(400, {'error': str(error)})
+            return self._send(200, {**runner.status(), 'terms': terms})
         try:
             length = max(int(self.headers.get('Content-Length') or 0), 0)
             body = json.loads(self.rfile.read(length) or b'{}')

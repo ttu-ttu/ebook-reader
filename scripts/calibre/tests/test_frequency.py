@@ -47,3 +47,29 @@ class YomitanRanksTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class InstallDictionaryTest(unittest.TestCase):
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            'jiten_service', os.path.join(os.path.dirname(__file__), '..', 'jiten', 'service.py'))
+        self.service = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.service)
+        self.service.FREQUENCY_DICTIONARY = os.path.join(tempfile.mkdtemp(), 'frequency-dictionary.zip')
+
+    def install(self, data: bytes):
+        import io
+        return self.service.install_dictionary(io.BytesIO(data), len(data))
+
+    def test_installs_a_rank_based_list(self):
+        with open(dictionary(), 'rb') as f:
+            self.assertEqual(self.install(f.read()), 4)
+        self.assertTrue(os.path.exists(self.service.FREQUENCY_DICTIONARY))
+
+    def test_rejects_other_files_and_keeps_the_current_one(self):
+        for data in (b'not a zip', open(dictionary('occurrence-based'), 'rb').read()):
+            with self.assertRaises(ValueError):
+                self.install(data)
+        self.assertFalse(os.path.exists(self.service.FREQUENCY_DICTIONARY))
+        self.assertEqual(os.listdir(os.path.dirname(self.service.FREQUENCY_DICTIONARY)), [])

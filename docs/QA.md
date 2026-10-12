@@ -302,6 +302,7 @@ Don't start jobs (rule 1) unless the owner approves a run.
 | DIF-2 | Admin panel → Tools (`difficulty` permission), and the gauge button with books selected in the library (Calibre source) | Estimate options and status; buttons disabled while a job runs |
 | DIF-3 | With results present | Badges and Difficulty sort/filter use `/calibre/difficulty.json` |
 | DIF-4 | No outbound calls to jiten.moe | None in the browser network log or server code |
+| DIF-6 | Tools → Estimate difficulty without a frequency list (scratch stack) | Where to download `jiten_freq_global.zip` and "Import frequency list"; a non-zip is refused; after importing the prompt is gone and Run works. With a list installed no prompt shows |
 | DIF-5 | Without the `difficulty` profile | The status call fails (502) and the app still works |
 
 ## 18. Install from scratch (Docker)

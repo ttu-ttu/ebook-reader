@@ -67,6 +67,41 @@
     }
   }
 
+  let importing = false;
+
+  /** Installs jiten_freq_global.zip on the server (it checks the file). */
+  async function importDictionary(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+
+    input.value = '';
+    if (!file) {
+      return;
+    }
+
+    importing = true;
+    try {
+      const response = await fetch(`${difficultyApiUrl}dictionary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/zip' },
+        body: file
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          (await response.json().catch(() => ({}))).error || `HTTP ${response.status}`
+        );
+      }
+
+      status = await response.json();
+      error = '';
+    } catch (e: any) {
+      error = e.message;
+    } finally {
+      importing = false;
+    }
+  }
+
   async function post(action: string, body: object = {}) {
     try {
       const response = await fetch(`${difficultyApiUrl}${action}`, {
@@ -102,10 +137,29 @@
     <p class="flex items-center gap-2"><Fa icon={faSpinner} spin /> Loading status...</p>
   {:else if status}
     {#if !status.dictionary}
-      <p class="text-[color:var(--app-danger-color)]">
-        The word frequency list is not installed on the server (see docs/INSTALL.md,
-        "Difficulty estimates").
-      </p>
+      <div class="flex flex-col gap-2">
+        <p>
+          Estimates need Jiten's word frequency list. Download
+          <strong>jiten_freq_global.zip</strong> from
+          <a
+            class="underline"
+            href="https://jiten.moe/frequency-dictionaries"
+            target="_blank"
+            rel="noreferrer">jiten.moe/frequency-dictionaries</a
+          >, then import it.
+        </p>
+        <label class="{buttonClasses} flex cursor-pointer items-center gap-2 self-start">
+          {#if importing}<Fa icon={faSpinner} spin />{/if}
+          Import frequency list
+          <input
+            type="file"
+            accept=".zip,application/zip"
+            class="hidden"
+            disabled={importing}
+            on:change={importDictionary}
+          />
+        </label>
+      </div>
     {/if}
     <div class="flex flex-wrap gap-2">
       <button

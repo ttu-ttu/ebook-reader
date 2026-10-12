@@ -157,8 +157,10 @@ docker compose pull && docker compose up -d
 ## Difficulty estimates
 
 The `difficulty` profile needs Jiten's word frequency list: download
-`jiten_freq_global.zip` from https://jiten.moe/frequency-dictionaries and save
-it as `DATA_PATH/state/difficulty/frequency-dictionary.zip`.
+`jiten_freq_global.zip` from https://jiten.moe/frequency-dictionaries and import
+it in the admin panel (Tools → Estimate difficulty → "Import frequency list";
+the service checks it), or save it as
+`DATA_PATH/state/difficulty/frequency-dictionary.zip`.
 
 ## Difficulty estimates on a faster computer
 
