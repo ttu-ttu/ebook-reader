@@ -6,6 +6,8 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+## v3.1.0 (2026-10-12)
+
 ### Name and icon
 
 - The app is called Chimimouryou in the tab title, header and installed app, with
@@ -27,6 +29,8 @@ anything a reader or a server operator would notice.
   permission.
 - Estimates made by the previous model are redone by "Run" (`MODEL_VERSION`
   `jiten-distilled-3`).
+
+## v3.0.0 and earlier
 
 First public release. Compared with upstream ッツ Ebook Reader:
 
