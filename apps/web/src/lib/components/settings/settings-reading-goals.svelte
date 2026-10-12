@@ -430,7 +430,7 @@
       </button>
     {/if}
   </div>
-  <hr class="border border-black" />
+  <hr class="border border-[color:var(--border-color)]" />
   <div class="grid grid-cols-1 gap-4 justify-between items-end mt-4 md:grid-cols-4">
     <div class="flex flex-col">
       Time Goal (Min)

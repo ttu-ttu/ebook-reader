@@ -166,7 +166,7 @@ export class SectionCharacterStatsCalculator {
     return totalProgress / 100;
   }
 
-  private getSectionStartCount() {
+  getSectionStartCount() {
     return this.sectionAccCharCounts[this.sectionIndex - 1] || 0;
   }
 

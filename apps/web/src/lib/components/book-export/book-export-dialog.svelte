@@ -22,7 +22,8 @@
 
   let icons = [
     { ...getStorageIconData(StorageKey.BACKUP), source: StorageKey.BACKUP, label: 'Zip File' },
-    { ...getStorageIconData(StorageKey.BROWSER), source: StorageKey.BROWSER, label: 'Browser DB' }
+    { ...getStorageIconData(StorageKey.BROWSER), source: StorageKey.BROWSER, label: 'Browser DB' },
+    { ...getStorageIconData(StorageKey.CALIBRE), source: StorageKey.CALIBRE, label: 'Calibre' }
   ];
 
   const dispatch = createEventDispatcher<{

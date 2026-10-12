@@ -65,6 +65,7 @@ export function isAppDefault(name: string) {
   return (
     name === StorageSourceDefault.GDRIVE_DEFAULT ||
     name === StorageSourceDefault.ONEDRIVE_DEFAULT ||
+    name === StorageSourceDefault.CALIBRE_DEFAULT ||
     internalStorageSourceName.has(name)
   );
 }

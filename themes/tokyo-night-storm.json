@@ -1,0 +1,32 @@
+{
+  "$format": 1,
+  "id": "tokyo-night-storm-theme",
+  "name": "Tokyo Night Storm",
+  "extends": "dark",
+  "dark": true,
+  "colors": {
+    "background": "#24283b",
+    "surface": "rgba(41, 46, 66, 0.82)",
+    "surfaceStrong": "rgba(47, 53, 73, 0.96)",
+    "text": "#c0caf5",
+    "mutedText": "rgba(154, 165, 206, 0.56)",
+    "control": "rgba(41, 46, 66, 0.92)",
+    "accent": "#7aa2f7",
+    "accentStrong": "rgba(115, 218, 203, 0.87)",
+    "accentText": "#c0caf5",
+    "headerBackground": "rgba(47, 53, 73, 0.78)",
+    "headerBorder": "rgba(65, 72, 104, 0.2)",
+    "panelBackground": "rgba(31, 35, 53, 0.96)",
+    "readerText": "rgba(192, 202, 245, 0.87)",
+    "readerBackground": "#24283b",
+    "footerText": "rgba(169, 177, 214, 0.6)",
+    "selectionText": "#c0caf5",
+    "selectionBackground": "#414868",
+    "furiganaHintShadow": "rgba(31, 35, 53, 0.3)",
+    "highlightYellow": "rgba(224, 175, 104, 0.34)",
+    "highlightGreen": "rgba(158, 206, 106, 0.3)",
+    "highlightBlue": "rgba(42, 195, 222, 0.3)",
+    "highlightPink": "rgba(247, 118, 142, 0.28)",
+    "readingLine": "rgba(187, 154, 247, 0.28)"
+  }
+}

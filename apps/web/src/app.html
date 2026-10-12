@@ -23,6 +23,8 @@
     <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
     <meta name="theme-color" content="#37474f" />
     <link rel="mask-icon" href="%sveltekit.assets%/safari-pinned-tab.svg" color="#37474f" />
+    <!-- A file, not inline, so the Content-Security-Policy needs no hash for it. -->
+    <script src="%sveltekit.assets%/theme-boot.js"></script>
     %sveltekit.head%
   </head>
   <body class="h-full w-full break-words font-sans">

@@ -48,6 +48,14 @@ export class BookmarkManagerContinuous implements BookmarkManager {
     };
   }
 
+  getRenderedStartCount() {
+    return 0;
+  }
+
+  isCharCountOnScreen(charCount: number) {
+    return this.calculator.isCharCountOnScreen(charCount);
+  }
+
   formatBookmarkDataByRange(bookId: number): BooksDbBookmarkData {
     return this.formatBookmarkData(bookId);
   }

@@ -1,0 +1,28 @@
+# HTTPS with a Tailscale certificate, nginx on the host's own network.
+# Copy to /etc/ebook-reader/docker-compose.override.yml (layout of
+# scripts/deploy.sh) or next to docker-compose.yml; see README.md here.
+# - nginx binds ports 80 and 443 directly and sees real client addresses
+#   (IPv4, IPv6 and Tailscale), so no REAL_IP_FROM is needed.
+# - The services listen on 127.0.0.1 only.
+services:
+  web:
+    network_mode: host
+    ports: !reset []
+    environment:
+      ACCOUNT_UPSTREAM: 127.0.0.1:8766
+      IMPORT_UPSTREAM: 127.0.0.1:8767
+      DIFFICULTY_UPSTREAM: 127.0.0.1:8765
+    volumes:
+      - /etc/ssl/tailscale:/etc/ssl/tailscale:ro
+      - /etc/ebook-reader/nginx-tls.conf:/etc/nginx/ebook-reader.d/tls.conf:ro
+
+  account:
+    ports: ["127.0.0.1:8766:8766"]
+
+  import:
+    ports: ["127.0.0.1:8767:8767"]
+
+  difficulty:
+    ports: ["127.0.0.1:8765:8765"]
+    # Keep the reader responsive while a long job runs.
+    cpu_shares: 512

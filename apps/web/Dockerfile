@@ -1,8 +1,9 @@
 # Run from pnpm workspace root (e.g. docker build -t ebook-reader -f apps/web/Dockerfile .)
 
-FROM node:20.11-alpine as builder
+FROM node:24-alpine AS builder
 
-RUN npm install -g pnpm
+ENV HUSKY=0
+RUN corepack enable
 
 WORKDIR /workspace
 COPY package.json pnpm-lock.yaml pnpm-*.yaml ./
@@ -13,6 +14,8 @@ COPY apps/web/package.json ./
 RUN pnpm install --frozen-lockfile
 
 COPY apps/web ./
+# No Calibre server in this image, so books live in the browser by default.
+ARG VITE_DEFAULT_STORAGE_SOURCE=browser
 RUN pnpm svelte-kit sync
 RUN pnpm build
 

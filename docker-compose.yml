@@ -1,10 +1,91 @@
-version: "2.0"
+# ebook-reader with a Calibre library: copy .env.example to .env, adjust it, then
+#   docker compose up -d                          reader, accounts, catalog
+#   docker compose --profile import up -d         + adding books to Calibre
+#   docker compose --profile difficulty up -d     + difficulty estimates
+# First admin: docker compose exec account ebook-account add NAME --admin
+# See docs/INSTALL.md (HTTPS, reverse proxies, backups). Builds the images here
+# unless IMAGE_PREFIX/IMAGE_TAG name published ones (docker compose pull).
+name: ebook-reader
+
+x-services: &services
+  build: &services-build
+    context: .
+    dockerfile: docker/services.Dockerfile
+    target: base
+  image: ${IMAGE_PREFIX:-ebook-reader}-services:${IMAGE_TAG:-local}
+  user: "${PUID:-1000}:${PGID:-1000}"
+  restart: unless-stopped
+  volumes:
+    - ${DATA_PATH:-./data}:/data
+  depends_on:
+    web:
+      condition: service_healthy
 
 services:
-  ebook-reader:
+  web:
     build:
-      context: ./
-      dockerfile: ./apps/web/Dockerfile
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        VITE_HTTPS_URL: ${PUBLIC_HTTPS_URL:-}
+        VERSION: ${VERSION:-docker}
+    image: ${IMAGE_PREFIX:-ebook-reader}-web:${IMAGE_TAG:-local}
+    restart: unless-stopped
     ports:
-      - 9010:80
-    restart: always
+      - "${HTTP_PORT:-8080}:80"
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TRUSTED_NETWORKS: ${TRUSTED_NETWORKS-10.0.0.0/8 192.168.0.0/16 100.64.0.0/10 fc00::/7}
+      REAL_IP_FROM: ${REAL_IP_FROM:-}
+      PUBLIC_READS: ${PUBLIC_READS:-0}
+    volumes:
+      - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library:ro
+      - ${DATA_PATH:-./data}:/data
+      - ${SYNC_PATH:-${DATA_PATH:-./data}/sync}:/data/sync
+
+  account:
+    <<: *services
+    command: ["python3", "/app/account/service.py", "serve"]
+    volumes:
+      - ${DATA_PATH:-./data}:/data
+      - ${SYNC_PATH:-${DATA_PATH:-./data}/sync}:/data/sync:ro
+    environment:
+      MIN_FREE_MB: ${MIN_FREE_MB:-1024}
+      ALLOW_HTTP_ACCOUNTS: ${ALLOW_HTTP_ACCOUNTS:-0}
+
+  # Rebuilds the catalog (and extracts missing covers into the library) when metadata.db changes.
+  catalog:
+    <<: *services
+    command: ["sh", "-c", "while :; do build-calibre-catalog /library /data/state/catalog/catalog.json; sleep ${CATALOG_INTERVAL:-600}; done"]
+    volumes:
+      - ${DATA_PATH:-./data}:/data
+      - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library
+
+  import:
+    <<: *services
+    profiles: [import]
+    build:
+      <<: *services-build
+      target: import
+    image: ${IMAGE_PREFIX:-ebook-reader}-import:${IMAGE_TAG:-local}
+    command: ["python3", "/app/import/service.py"]
+    environment:
+      ALLOW_HTTP_ACCOUNTS: ${ALLOW_HTTP_ACCOUNTS:-0}
+    volumes:
+      - ${DATA_PATH:-./data}:/data
+      - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library
+
+  difficulty:
+    <<: *services
+    profiles: [difficulty]
+    build:
+      <<: *services-build
+      target: difficulty
+    image: ${IMAGE_PREFIX:-ebook-reader}-difficulty:${IMAGE_TAG:-local}
+    command: ["/opt/venv/bin/python", "-W", "ignore", "/app/jiten/service.py", "serve"]
+    environment:
+      JITEN_WORKERS: ${DIFFICULTY_WORKERS:-2}
+    volumes:
+      - ${DATA_PATH:-./data}:/data
+      - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library:ro

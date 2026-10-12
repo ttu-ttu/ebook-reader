@@ -287,6 +287,9 @@ export const addCharactersOnCompletion$ = writableBooleanLocalStorageSubject()(
 
 export const trackerAutostartTime$ = writableNumberLocalStorageSubject()('trackerAutoStartTime', 0);
 
+/** Not part of upstream: start the tracker as soon as a book has opened (statistics enabled). */
+export const trackerStartOnOpen$ = writableBooleanLocalStorageSubject()('trackerStartOnOpen', true);
+
 export const trackerIdleTime$ = writableNumberLocalStorageSubject()('trackerIdleTime', 0);
 
 export const trackerForwardSkipThreshold$ = writableNumberLocalStorageSubject()(
@@ -497,10 +500,31 @@ export const booklistSortOptions$ = writableObjectLocalStorageSubject<Record<str
   'booklistSortOptions',
   {
     [StorageKey.BROWSER]: { property: 'lastBookOpen', direction: SortDirection.DESC },
+    [StorageKey.CALIBRE]: { property: 'lastBookOpen', direction: SortDirection.DESC },
     [StorageKey.GDRIVE]: { property: 'title', direction: SortDirection.ASC },
     [StorageKey.ONEDRIVE]: { property: 'title', direction: SortDirection.ASC },
     [StorageKey.FS]: { property: 'title', direction: SortDirection.ASC }
   }
+);
+
+// Sort options saved before the Calibre source existed have no entry for it.
+if (browser && !booklistSortOptions$.getValue()[StorageKey.CALIBRE]) {
+  booklistSortOptions$.next({
+    ...booklistSortOptions$.getValue(),
+    [StorageKey.CALIBRE]: { property: 'lastBookOpen', direction: SortDirection.DESC }
+  });
+}
+
+export type LibraryDisplayMode = 'covers-comfortable' | 'covers-compact' | 'list';
+
+export const libraryDisplayMode$ = writableStringLocalStorageSubject<LibraryDisplayMode>()(
+  'libraryDisplayMode',
+  'covers-comfortable'
+);
+
+export const libraryCollapsedFilterSections$ = writableArrayLocalStorageSubject<string>()(
+  'libraryCollapsedFilterSections',
+  []
 );
 
 export const verticalCustomReadingPosition$ = writableNumberLocalStorageSubject()(

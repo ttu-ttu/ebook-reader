@@ -2,6 +2,9 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import DomainHint from '$lib/components/domain-hint.svelte';
+  import ThemeStyle from '$lib/components/theme/theme-style.svelte';
+  import { accountReady } from '$lib/data/account';
+  import { startSettingsSync } from '$lib/data/account-settings-sync';
   import { basePath, clearConsoleOnReload } from '$lib/data/env';
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { userFontsCacheName, type UserFont } from '$lib/data/fonts';
@@ -14,6 +17,10 @@
   let dialogs: Dialog[] = [];
   let clickOnCloseDisabled = false;
   let zIndex = '';
+
+  if (browser) {
+    accountReady().then(startSettingsSync);
+  }
 
   $: if (browser) {
     isMobile$.next(isMobile(window));
@@ -102,6 +109,8 @@
   }}
 />
 
+<ThemeStyle />
+
 <slot />
 
 {#if dialogs.length > 0}
@@ -109,7 +118,7 @@
     <div
       tabindex="0"
       role="button"
-      class="tap-highlight-transparent absolute inset-0 bg-black/[.32]"
+      class="tap-highlight-transparent absolute inset-0 bg-[color:var(--app-overlay-color)]"
       on:click={() => {
         if (!clickOnCloseDisabled) {
           closeAllDialogs();

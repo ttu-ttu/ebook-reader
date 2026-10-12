@@ -7,6 +7,7 @@
 export enum StorageKey {
   BACKUP = 'backup',
   BROWSER = 'browser',
+  CALIBRE = 'calibre',
   FS = 'fs',
   GDRIVE = 'gdrive',
   ONEDRIVE = 'onedrive'
@@ -23,7 +24,8 @@ export enum StorageDataType {
 
 export enum StorageSourceDefault {
   GDRIVE_DEFAULT = 'ttu-gdrive-default',
-  ONEDRIVE_DEFAULT = 'ttu-onedrive-default'
+  ONEDRIVE_DEFAULT = 'ttu-onedrive-default',
+  CALIBRE_DEFAULT = 'ttu-calibre-default'
 }
 
 export enum InternalStorageSources {

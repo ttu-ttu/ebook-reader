@@ -1,3 +1,61 @@
+# chimimouryou
+
+A self-hosted Japanese e-book reader for your Calibre library: a fork of
+[ッツ Ebook Reader](https://github.com/ttu-ttu/ebook-reader) that turns
+the browser-based Japanese e-book reader into a reader for your own server: point
+it at a Calibre library and everyone in the house reads from it, with accounts,
+synced progress and highlights, and tools for language learners. The reader
+itself, and its Yomitan support, are upstream's; their README follows below.
+
+**What it adds**
+
+- **Your Calibre library** as the bookshelf: covers (extracted from EPUBs that
+  have none), series (Calibre's or guessed from volume numbers), tags, a
+  Home/Store layout with "Continue reading", filters and sorting. Books open
+  straight from the server; adding a file puts it into Calibre.
+- **Accounts** with an admin panel and per-account permissions; progress,
+  statistics, highlights and settings sync across devices.
+- **Highlights and notes**, full-text search (ignoring furigana), and a reader
+  companion with your highlights.
+- **AI helpers** with your own keys: Ask AI about a selection, "Story so far"
+  spoiler-free recaps, a lorebook of characters and places, and an AI voice that
+  reads aloud with the current line highlighted. Audiobooks with subtitles follow
+  the text too.
+- **Manga** (CBZ/ZIP) in a page-turning reader.
+- **Difficulty estimates** with [Jiten](https://github.com/Sirush/Jiten)'s
+  features and a model trained on jiten.moe's scores, computed on your server.
+- **App-wide themes** that follow the system's light and dark mode.
+
+**Run it** (Docker and a Calibre library):
+
+```sh
+git clone https://github.com/<owner>/chimimouryou && cd chimimouryou
+cp .env.example .env          # set LIBRARY_PATH, PUID/PGID
+docker compose up -d --build
+docker compose exec account ebook-account add NAME --admin
+```
+
+Then open `http://<server>:8080`. Signing in needs HTTPS: put a reverse proxy in
+front (Caddy, Traefik, Tailscale; see the install guide).
+
+**Documentation**
+
+- [docs/INSTALL.md](docs/INSTALL.md): installing, HTTPS, accounts, who may do what
+- [docs/CONFIGURATION.md](docs/CONFIGURATION.md): every setting
+- [ARCHITECTURE.md](ARCHITECTURE.md): how it works; [CONTRIBUTING.md](CONTRIBUTING.md): changing it
+- [docs/QA.md](docs/QA.md): test plan; [CHANGELOG.md](CHANGELOG.md); [themes.md](themes.md): writing themes
+- Prebuilt images: `ghcr.io/<owner>/chimimouryou-{web,services,import,difficulty}` (see INSTALL.md, "Updating")
+
+**Credits**: [ッツ Ebook Reader](https://github.com/ttu-ttu/ebook-reader) by
+ッツ Reader Authors (BSD 3-Clause, see [LICENSE](LICENSE)), from which this fork
+derives; [Jiten](https://github.com/Sirush/Jiten) for the difficulty features and
+deconjugation rules (Apache-2.0, see [NOTICE](NOTICE)). chimimouryou is not
+affiliated with or endorsed by either project.
+
+---
+
+_Upstream's README:_
+
 <img src="assets/readme/icon.png" align="left" style="margin-right: 1rem;" alt="logo">
 
 ## ッツ Ebook Reader

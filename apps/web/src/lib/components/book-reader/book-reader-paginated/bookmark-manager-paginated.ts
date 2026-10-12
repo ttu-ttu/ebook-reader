@@ -46,6 +46,10 @@ export class BookmarkManagerPaginated implements BookmarkManager {
     this.sectionIndex$.next(index);
   }
 
+  getRenderedStartCount() {
+    return this.calculator.getSectionStartCount();
+  }
+
   formatBookmarkData(bookId: number): BooksDbBookmarkData {
     return this.formatBookmarkDataByRange(bookId, undefined);
   }
@@ -63,5 +67,9 @@ export class BookmarkManagerPaginated implements BookmarkManager {
       progress: exploredCharCount / bookCharCount,
       lastBookmarkModified: new Date().getTime()
     };
+  }
+
+  isCharCountOnScreen(charCount: number) {
+    return this.calculator.checkBookmarkOnScreen(charCount).isBookmarkScreen;
   }
 }

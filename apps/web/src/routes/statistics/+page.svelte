@@ -8,7 +8,6 @@
     preFilteredTitlesForStatistics$,
     statisticsActionInProgress$
   } from '$lib/components/statistics/statistics-types';
-  import { pxScreen } from '$lib/css-classes';
   import {
     database,
     lastStartDayOfWeek$,
@@ -127,13 +126,26 @@
 
 <StatisticsHeader currentBookId={$currentBookId$} bind:showStatisticsSettings />
 
-<div class="{pxScreen} flex flex-col pt-16 h-full xl:pt-14">
-  <StatisticsContent />
+<div class="app-page-shell">
+  <main
+    class="mx-auto flex max-w-7xl flex-col px-4 pb-12 pt-[5.25rem] md:px-8 xl:px-10 xl:pt-[4.75rem]"
+    aria-label="Statistics"
+  >
+    <div class="mb-6">
+      <h1 class="text-2xl font-extrabold leading-tight">Statistics</h1>
+      <p class="mt-1 text-sm font-semibold text-[color:var(--app-muted-fg)]">
+        Reading time, characters read and goals for the selected period
+      </p>
+    </div>
+    <section class="app-surface-card rounded-[1.4rem] p-4 sm:p-6">
+      <StatisticsContent />
+    </section>
+  </main>
 </div>
 
 {#if showStatisticsSettings}
   <div
-    class="writing-horizontal-tb fixed top-0 right-0 z-[60] flex h-full w-full max-w-xl flex-col justify-between bg-gray-700 text-white"
+    class="writing-horizontal-tb fixed top-0 right-0 z-[60] flex h-full w-full max-w-xl flex-col justify-between bg-[color:var(--surface-strong-color)] text-[color:var(--font-color)]"
     in:fly|local={{ x: 100, duration: 100, easing: quintInOut }}
     use:clickOutside={() => {
       if (!$statisticsActionInProgress$) {

@@ -19,6 +19,7 @@
   export let singlePopover = true;
   export let xOffset = 0;
   export let yOffset = 10;
+  export let panelClasses = 'app-popover-panel';
 
   const dispatch = createEventDispatcher<{
     open: void;
@@ -155,7 +156,7 @@
 {#if isOpen}
   <div
     data-popover
-    class="max-w-60vw absolute z-10 rounded bg-[#333] text-sm font-bold text-white md:max-w-lg"
+    class="max-w-60vw absolute z-10 md:max-w-lg {panelClasses}"
     class:whitespace-pre-wrap={contentText}
     bind:this={popoverElement}
   >

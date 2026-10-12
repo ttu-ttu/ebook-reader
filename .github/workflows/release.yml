@@ -1,0 +1,77 @@
+# Publishes the Docker images to GitHub's container registry when a version tag
+# is pushed (git tag v1.2.3 && git push origin v1.2.3):
+#   ghcr.io/<owner>/<repository>-{web,services,import,difficulty}:{1.2.3,1.2,latest}
+# for linux/amd64 and linux/arm64. docker-compose.yml uses them with
+# IMAGE_PREFIX=ghcr.io/<owner>/<repository> (see docs/INSTALL.md).
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    name: Image ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: web
+            file: docker/web.Dockerfile
+          - image: services
+            file: docker/services.Dockerfile
+            target: base
+          - image: import
+            file: docker/services.Dockerfile
+            target: import
+          - image: difficulty
+            file: docker/services.Dockerfile
+            target: difficulty
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      # Registry names must be lower case.
+      - name: Image name
+        id: name
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ${{ steps.name.outputs.prefix }}-${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Set up QEMU (arm64)
+        uses: docker/setup-qemu-action@v4.4.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+
+      - name: Log in to GitHub's registry
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=${{ github.ref_name }}
+          cache-from: type=gha,scope=release-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=release-${{ matrix.image }}

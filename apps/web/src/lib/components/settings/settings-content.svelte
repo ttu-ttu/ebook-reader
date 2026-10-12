@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { faComputer, faPlus, faSpinner } from '@fortawesome/free-solid-svg-icons';
+  import { faComputer, faSpinner } from '@fortawesome/free-solid-svg-icons';
   import {
     TrackerAutoPause,
     TrackerSkipThresholdAction
@@ -11,12 +11,11 @@
     type ToggleOption
   } from '$lib/components/button-toggle-group/toggle-option';
   import MessageDialog from '$lib/components/message-dialog.svelte';
-  import Ripple from '$lib/components/ripple.svelte';
-  import SettingsCustomTheme from '$lib/components/settings/settings-custom-theme.svelte';
   import SettingsDimensionPopover from '$lib/components/settings/settings-dimension-popover.svelte';
   import SettingsFontSelector from '$lib/components/settings/settings-font-selector.svelte';
   import SettingsReadingGoals from '$lib/components/settings/settings-reading-goals.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
+  import SettingsSection from '$lib/components/settings/settings-section.svelte';
   import SettingsStorageSourceList from '$lib/components/settings/settings-storage-source-list.svelte';
   import SettingsUserFontDialog from '$lib/components/settings/settings-user-font-dialog.svelte';
   import { inputClasses } from '$lib/css-classes';
@@ -31,7 +30,6 @@
   import { defaultStorageSources } from '$lib/data/storage/storage-types';
   import { isStorageSourceAvailable } from '$lib/data/storage/storage-view';
   import {
-    customThemes$,
     database,
     fontFamilyGroupOne$,
     fontFamilyGroupTwo$,
@@ -39,10 +37,10 @@
     textMarginMode$,
     textMarginValue$,
     theme$,
+    trackerStartOnOpen$,
     verticalCustomReadingPosition$
   } from '$lib/data/store';
   import type { TextMarginMode } from '$lib/data/text-margin-mode';
-  import { availableThemes as availableThemesMap } from '$lib/data/theme-option';
   import type { VerticalTextOrientation } from '$lib/data/vertical-text-orientation';
   import { ViewMode } from '$lib/data/view-mode';
   import type { WritingMode } from '$lib/data/writing-mode';
@@ -55,8 +53,6 @@
   import { map } from 'rxjs';
   import Fa from 'svelte-fa';
   import { onDestroy } from 'svelte';
-
-  export let selectedTheme: string;
 
   export let viewMode: ViewMode;
 
@@ -144,8 +140,6 @@
 
   export let autoBookmarkTime: number;
 
-  export let activeSettings: string;
-
   export let importHTMLFixMode: string;
 
   export let restrictImportFixToAnchor: boolean;
@@ -189,26 +183,6 @@
   export let trackerPopupDetection: boolean;
 
   export let adjustStatisticsAfterIdleTime: boolean;
-
-  $: availableThemes = (
-    browser
-      ? [...Array.from(availableThemesMap.entries()), ...Object.entries($customThemes$)]
-      : Array.from(availableThemesMap.entries())
-  ).map(([theme, option]) => ({
-    theme,
-    option
-  }));
-
-  $: optionsForTheme = availableThemes.map(({ theme, option }) => ({
-    id: theme,
-    text: 'ぁあ',
-    style: {
-      color: option.fontColor,
-      'background-color': option.backgroundColor
-    },
-    thickBorders: true,
-    showIcons: true
-  }));
 
   onDestroy(() => dialogManager.dialogs$.next([]));
 
@@ -400,7 +374,7 @@
     verticalTextOrientation === 'mixed'
       ? 'Rotates the characters of horizontal scripts 90° clockwise'
       : 'Lays out the characters of horizontal scripts naturally (upright), as well as the glyphs for vertical scripts.';
-  $: autoBookmarkTooltip = `If enabled sets a bookmark after ${autoBookmarkTime} seconds without scrolling/page change`;
+  $: autoBookmarkTooltip = `If enabled sets a bookmark after ${autoBookmarkTime} seconds without scrolling/page change. A bookmark that is still on screen is kept`;
   $: wakeLockSupported = browser && 'wakeLock' in navigator;
   $: verticalMode = writingMode === 'vertical-rl';
   $: fontCacheSupported = browser && 'caches' in window;
@@ -481,7 +455,7 @@
       break;
   }
 
-  $: if ((activeSettings === 'Data' || activeSettings === 'Statistics') && !$storageSources$) {
+  $: if (browser && !$storageSources$) {
     database
       .getStorageSources()
       .then((storageSources) => {
@@ -494,738 +468,751 @@
   }
 </script>
 
-<div class="grid grid-cols-1 items-center sm:grid-cols-2 sm:gap-6 lg:md:gap-8 lg:grid-cols-3">
-  {#if activeSettings === 'Reader'}
-    <div class="lg:col-span-2">
-      <SettingsItemGroup title="Theme">
-        <ButtonToggleGroup
-          options={optionsForTheme}
-          bind:selectedOptionId={selectedTheme}
-          on:edit={({ detail }) =>
+<SettingsSection id="reader-text">
+  <SettingsItemGroup title="Font family (Group 1)">
+    <div slot="header" class="flex items-center">
+      <SettingsFontSelector
+        availableFonts={[
+          LocalFont.NOTOSERIFJP,
+          LocalFont.KZUDMINCHO,
+          LocalFont.GENEI,
+          LocalFont.SHIPPORIMINCHO,
+          LocalFont.KLEEONE,
+          LocalFont.KLEEONESEMIBOLD,
+          LocalFont.SERIF
+        ]}
+        bind:fontValue={fontFamilyGroupOne}
+      />
+      {#if fontCacheSupported}
+        <div
+          tabindex="0"
+          role="button"
+          title="Open Custom Font Dialog"
+          on:click={() =>
             dialogManager.dialogs$.next([
               {
-                component: SettingsCustomTheme,
-                props: { selectedTheme: detail, existingThemes: optionsForTheme }
+                component: SettingsUserFontDialog,
+                props: { fontFamily: fontFamilyGroupOne$ }
               }
             ])}
-          on:delete={({ detail }) => {
-            $theme$ = optionsForTheme[optionsForTheme.length - 2]?.id || 'light-theme';
-            delete $customThemes$[detail];
-            $customThemes$ = { ...$customThemes$ };
-          }}
+          on:keyup={dummyFn}
         >
-          {#if browser}
-            <button
-              class="m-1 rounded-md border-2 border-gray-400 p-2 text-lg"
-              on:click={() =>
-                dialogManager.dialogs$.next([
-                  {
-                    component: SettingsCustomTheme,
-                    props: { existingThemes: optionsForTheme }
-                  }
-                ])}
-            >
-              <Fa icon={faPlus} class="mx-2" />
-              <Ripple />
-            </button>
-          {/if}
-        </ButtonToggleGroup>
-      </SettingsItemGroup>
+          <Fa icon={faComputer} />
+        </div>
+      {/if}
     </div>
-    <div class="h-full">
-      <SettingsItemGroup title="View mode">
-        <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
-      </SettingsItemGroup>
+    <input
+      type="text"
+      class={inputClasses}
+      placeholder="Noto Serif JP"
+      bind:value={fontFamilyGroupOne}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Font family (Group 2)">
+    <div slot="header" class="flex items-center">
+      <SettingsFontSelector
+        availableFonts={[LocalFont.NOTOSANSJP, LocalFont.KZUDGOTHIC, LocalFont.SANSSERIF]}
+        bind:fontValue={fontFamilyGroupTwo}
+      />
+      {#if fontCacheSupported}
+        <div
+          tabindex="0"
+          role="button"
+          on:click={() =>
+            dialogManager.dialogs$.next([
+              {
+                component: SettingsUserFontDialog,
+                props: { fontFamily: fontFamilyGroupTwo$ }
+              }
+            ])}
+          on:keyup={dummyFn}
+        >
+          <Fa icon={faComputer} />
+        </div>
+      {/if}
     </div>
-    <SettingsItemGroup title="Font family (Group 1)">
-      <div slot="header" class="flex items-center">
-        <SettingsFontSelector
-          availableFonts={[
-            LocalFont.NOTOSERIFJP,
-            LocalFont.KZUDMINCHO,
-            LocalFont.GENEI,
-            LocalFont.SHIPPORIMINCHO,
-            LocalFont.KLEEONE,
-            LocalFont.KLEEONESEMIBOLD,
-            LocalFont.SERIF
-          ]}
-          bind:fontValue={fontFamilyGroupOne}
-        />
-        {#if fontCacheSupported}
-          <div
-            tabindex="0"
-            role="button"
-            title="Open Custom Font Dialog"
-            on:click={() =>
-              dialogManager.dialogs$.next([
-                {
-                  component: SettingsUserFontDialog,
-                  props: { fontFamily: fontFamilyGroupOne$ }
-                }
-              ])}
-            on:keyup={dummyFn}
-          >
-            <Fa icon={faComputer} />
-          </div>
-        {/if}
-      </div>
-      <input
-        type="text"
-        class={inputClasses}
-        placeholder="Noto Serif JP"
-        bind:value={fontFamilyGroupOne}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Font family (Group 2)">
-      <div slot="header" class="flex items-center">
-        <SettingsFontSelector
-          availableFonts={[LocalFont.NOTOSANSJP, LocalFont.KZUDGOTHIC, LocalFont.SANSSERIF]}
-          bind:fontValue={fontFamilyGroupTwo}
-        />
-        {#if fontCacheSupported}
-          <div
-            tabindex="0"
-            role="button"
-            on:click={() =>
-              dialogManager.dialogs$.next([
-                {
-                  component: SettingsUserFontDialog,
-                  props: { fontFamily: fontFamilyGroupTwo$ }
-                }
-              ])}
-            on:keyup={dummyFn}
-          >
-            <Fa icon={faComputer} />
-          </div>
-        {/if}
-      </div>
-      <input
-        type="text"
-        class={inputClasses}
-        placeholder="Noto Sans JP"
-        bind:value={fontFamilyGroupTwo}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Font Weight"
-      tooltip={'Sets a font weight - leave empty to fallback to default'}
-    >
-      <input
-        type="number"
-        placeholder="default"
-        class={inputClasses}
-        step="100"
-        min="100"
-        max="1000"
-        bind:value={fontWeight}
-        on:change={() => {
-          if (fontWeight === null) {
-            return;
-          }
+    <input
+      type="text"
+      class={inputClasses}
+      placeholder="Noto Sans JP"
+      bind:value={fontFamilyGroupTwo}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Font Weight"
+    tooltip={'Sets a font weight - leave empty to fallback to default'}
+  >
+    <input
+      type="number"
+      placeholder="default"
+      class={inputClasses}
+      step="100"
+      min="100"
+      max="1000"
+      bind:value={fontWeight}
+      on:change={() => {
+        if (fontWeight === null) {
+          return;
+        }
 
-          if (fontWeight < 100) {
-            fontWeight = 100;
-          } else if (fontWeight > 1000) {
-            fontWeight = 1000;
-          }
-        }}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Font size">
-      <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Line Height">
-      <input
-        type="number"
-        class={inputClasses}
-        step="0.05"
-        min="1"
-        bind:value={lineHeight}
-        on:change={() => {
-          if (!lineHeight || lineHeight < 1) {
-            lineHeight = 1.65;
-          }
-        }}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Paragraph Indentation"
-      tooltip="# of rem added as text indentation of new paragraphs"
-    >
+        if (fontWeight < 100) {
+          fontWeight = 100;
+        } else if (fontWeight > 1000) {
+          fontWeight = 1000;
+        }
+      }}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Font size">
+    <input type="number" class={inputClasses} step="1" min="1" bind:value={fontSize} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Line Height">
+    <input
+      type="number"
+      class={inputClasses}
+      step="0.05"
+      min="1"
+      bind:value={lineHeight}
+      on:change={() => {
+        if (!lineHeight || lineHeight < 1) {
+          lineHeight = 1.65;
+        }
+      }}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Paragraph Indentation"
+    tooltip="# of rem added as text indentation of new paragraphs"
+  >
+    <input
+      type="number"
+      class={inputClasses}
+      step=".5"
+      min="0"
+      bind:value={textIndentation}
+      on:blur={() => {
+        const newValue = Number.parseFloat(`${textIndentation ?? 0}`);
+
+        if (isNaN(newValue) || newValue < 1) {
+          textIndentation = 0;
+        }
+      }}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Paragraph Margin Mode"
+    tooltip={'When set to manual it allows to specify a margin value which should be applied to paragraphs'}
+  >
+    <ButtonToggleGroup
+      options={optionsForTextMarginMode}
+      bind:selectedOptionId={textMarginMode}
+    />
+  </SettingsItemGroup>
+  {#if textMarginMode === 'manual'}
+    <SettingsItemGroup title="Paragraph Margins" tooltip="# of rem added as margin to paragraphs">
       <input
         type="number"
         class={inputClasses}
         step=".5"
         min="0"
-        bind:value={textIndentation}
+        bind:value={textMarginValue}
         on:blur={() => {
-          const newValue = Number.parseFloat(`${textIndentation ?? 0}`);
+          const newValue = Number.parseFloat(`${textMarginValue ?? 0}`);
 
           if (isNaN(newValue) || newValue < 1) {
-            textIndentation = 0;
+            textMarginValue = 0;
           }
         }}
       />
     </SettingsItemGroup>
-    {#if textMarginMode === 'manual'}
-      <SettingsItemGroup title="Paragraph Margins" tooltip="# of rem added as margin to paragraphs">
-        <input
-          type="number"
-          class={inputClasses}
-          step=".5"
-          min="0"
-          bind:value={textMarginValue}
-          on:blur={() => {
-            const newValue = Number.parseFloat(`${textMarginValue ?? 0}`);
-
-            if (isNaN(newValue) || newValue < 1) {
-              textMarginValue = 0;
-            }
-          }}
-        />
+  {/if}
+  <SettingsItemGroup
+    title="Enable Text Justification"
+    tooltip={'When enabled the reader adds styles to justify text content of paragraphs'}
+  >
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={enableTextJustification}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Enable Pretty Text Wrap"
+    tooltip={'When enabled the reader adds the pretty text wrap style to supported browsers'}
+  >
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTextWrapPretty} />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Prioritize Reader Styles"
+    tooltip={'When enabled the "important" declaration is added to certain rules like margins or justification which makes it more likely to be applied in case of conflicting book styles'}
+  >
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={prioritizeReaderStyles}
+    />
+  </SettingsItemGroup>
+</SettingsSection>
+<SettingsSection id="reader-writing">
+  <SettingsItemGroup title="Writing mode">
+    <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
+  </SettingsItemGroup>
+  {#if verticalMode}
+    <SettingsItemGroup
+      title="Enable Font Kerning"
+      tooltip={'Can lead to better visual balance for vertical spacing of text if font and browser supports it'}
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableFontKerning} />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Enable VPAL"
+      tooltip={'Can lead to more natural spacing for vertically laid-out text if font and browser supports it'}
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableFontVPAL} />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Text Orientation" tooltip={verticalTextOrientationTooltip}>
+      <ButtonToggleGroup
+        options={optionsForVerticalTextOrientation}
+        bind:selectedOptionId={verticalTextOrientation}
+      />
+    </SettingsItemGroup>
+  {/if}
+  <SettingsItemGroup title="Hide furigana">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
+  </SettingsItemGroup>
+  {#if hideFurigana}
+    <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
+      <ButtonToggleGroup
+        options={optionsForFuriganaStyle}
+        bind:selectedOptionId={furiganaStyle}
+      />
+    </SettingsItemGroup>
+  {/if}
+</SettingsSection>
+<SettingsSection id="reader-layout">
+  <SettingsItemGroup title="View mode">
+    <ButtonToggleGroup options={optionsForViewMode} bind:selectedOptionId={viewMode} />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}
+  >
+    <SettingsDimensionPopover
+      slot="header"
+      isFirstDimension
+      isVertical={verticalMode}
+      bind:dimensionValue={firstDimensionMargin}
+    />
+    <input
+      type="number"
+      class={inputClasses}
+      step="1"
+      min="0"
+      bind:value={firstDimensionMargin}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup title={verticalMode ? 'Reader Max height' : 'Reader Max width'}>
+    <SettingsDimensionPopover
+      slot="header"
+      isVertical={verticalMode}
+      bind:dimensionValue={secondDimensionMaxValue}
+    />
+    <input
+      type="number"
+      class={inputClasses}
+      step="1"
+      min="0"
+      bind:value={secondDimensionMaxValue}
+    />
+  </SettingsItemGroup>
+  {#if viewMode !== ViewMode.Continuous}
+    <SettingsItemGroup title="Avoid Page Break" tooltip={avoidPageBreakTooltip}>
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
+    </SettingsItemGroup>
+    {#if !verticalMode}
+      <SettingsItemGroup title="Page Columns" tooltip="# of text columns rendered">
+        <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />
       </SettingsItemGroup>
     {/if}
+  {/if}
+  <SettingsItemGroup title="Blur image">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
+  </SettingsItemGroup>
+  {#if blurImage}
     <SettingsItemGroup
-      title={verticalMode ? 'Reader Left/right margin' : 'Reader Top/bottom margin'}
+      title="Blur Mode"
+      tooltip="Determines if all or only images after the table of contents will be blurred"
     >
-      <SettingsDimensionPopover
-        slot="header"
-        isFirstDimension
-        isVertical={verticalMode}
-        bind:dimensionValue={firstDimensionMargin}
-      />
-      <input
-        type="number"
-        class={inputClasses}
-        step="1"
-        min="0"
-        bind:value={firstDimensionMargin}
-      />
+      <ButtonToggleGroup options={optionsForBlurMode} bind:selectedOptionId={blurImageMode} />
     </SettingsItemGroup>
-    <SettingsItemGroup title={verticalMode ? 'Reader Max height' : 'Reader Max width'}>
-      <SettingsDimensionPopover
-        slot="header"
-        isVertical={verticalMode}
-        bind:dimensionValue={secondDimensionMaxValue}
-      />
+  {/if}
+</SettingsSection>
+<SettingsSection id="reader-progress">
+  <SettingsItemGroup title="Show Character Counter">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showCharacterCounter} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Show Percentage">
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showPercentage} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Show Footer Chapter Characters">
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={showFooterChapterCharacterCounter}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Show Footer Chapter Percentage">
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={showFooterChapterPercentage}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Manual Bookmark"
+    tooltip={'If enabled current position will not be bookmarked when leaving the reader via menu elements'}
+  >
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={manualBookmark} />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Auto Bookmark" tooltip={autoBookmarkTooltip}>
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
+  </SettingsItemGroup>
+  {#if autoBookmark}
+    <SettingsItemGroup title="Auto Bookmark Time" tooltip={'Time in s for Auto Bookmark'}>
       <input
         type="number"
-        class={inputClasses}
         step="1"
-        min="0"
-        bind:value={secondDimensionMaxValue}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Swipe Threshold"
-      tooltip={'Distance which you need to swipe in order trigger a navigation'}
-    >
-      <input
-        type="number"
-        step="1"
-        min="10"
+        min="1"
         class={inputClasses}
-        bind:value={swipeThreshold}
+        bind:value={autoBookmarkTime}
         on:blur={() => {
-          if (swipeThreshold < 10 || typeof swipeThreshold !== 'number') {
-            swipeThreshold = 10;
+          if (autoBookmarkTime < 1 || typeof autoBookmarkTime !== 'number') {
+            autoBookmarkTime = 3;
           }
         }}
       />
     </SettingsItemGroup>
-    {#if autoBookmark}
-      <SettingsItemGroup title="Auto Bookmark Time" tooltip={'Time in s for Auto Bookmark'}>
-        <input
-          type="number"
-          step="1"
-          min="1"
-          class={inputClasses}
-          bind:value={autoBookmarkTime}
-          on:blur={() => {
-            if (autoBookmarkTime < 1 || typeof autoBookmarkTime !== 'number') {
-              autoBookmarkTime = 3;
-            }
-          }}
-        />
-      </SettingsItemGroup>
-    {/if}
-    <SettingsItemGroup title="Writing mode">
-      <ButtonToggleGroup options={optionsForWritingMode} bind:selectedOptionId={writingMode} />
-    </SettingsItemGroup>
-    {#if verticalMode}
-      <SettingsItemGroup
-        title="Enable Font Kerning"
-        tooltip={'Can lead to better visual balance for vertical spacing of text if font and browser supports it'}
-      >
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableFontKerning} />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Enable VPAL"
-        tooltip={'Can lead to more natural spacing for vertically laid-out text if font and browser supports it'}
-      >
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableFontVPAL} />
-      </SettingsItemGroup>
-      <SettingsItemGroup title="Text Orientation" tooltip={verticalTextOrientationTooltip}>
-        <ButtonToggleGroup
-          options={optionsForVerticalTextOrientation}
-          bind:selectedOptionId={verticalTextOrientation}
-        />
-      </SettingsItemGroup>
-    {/if}
+  {/if}
+  {#if viewMode === ViewMode.Continuous}
     <SettingsItemGroup
-      title="Prioritize Reader Styles"
-      tooltip={'When enabled the "important" declaration is added to certain rules like margins or justification which makes it more likely to be applied in case of conflicting book styles'}
+      title="Custom Reading Point"
+      tooltip={'Allows to set a persistent custom point in the reader from which the current progress and bookmark is calculated when enabled'}
     >
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={prioritizeReaderStyles}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Enable Text Justification"
-      tooltip={'When enabled the reader adds styles to justify text content of paragraphs'}
-    >
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={enableTextJustification}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Enable Pretty Text Wrap"
-      tooltip={'When enabled the reader adds the pretty text wrap style to supported browsers'}
-    >
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTextWrapPretty} />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Paragraph Margin Mode"
-      tooltip={'When set to manual it allows to specify a margin value which should be applied to paragraphs'}
-    >
-      <ButtonToggleGroup
-        options={optionsForTextMarginMode}
-        bind:selectedOptionId={textMarginMode}
-      />
-    </SettingsItemGroup>
-    {#if wakeLockSupported}
-      <SettingsItemGroup
-        title="Enable Screen Lock"
-        tooltip={'When enabled the reader site attempts to request a WakeLock that prevents device screens from dimming or locking'}
-      >
-        <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={enableReaderWakeLock}
-        />
-      </SettingsItemGroup>
-    {/if}
-    <SettingsItemGroup title="Show Character Counter">
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showCharacterCounter} />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Show Percentage">
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={showPercentage} />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Show Footer Chapter Characters">
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={showFooterChapterCharacterCounter}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Show Footer Chapter Percentage">
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={showFooterChapterPercentage}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Disable Wheel Navigation">
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={disableWheelNavigation}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Close Confirmation"
-      tooltip={`When enabled asks for confirmation on closing/reloading a reader tab and unsaved changes were detected`}
-    >
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={confirmClose} />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Manual Bookmark"
-      tooltip={'If enabled current position will not be bookmarked when leaving the reader via menu elements'}
-    >
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={manualBookmark} />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Auto Bookmark" tooltip={autoBookmarkTooltip}>
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={autoBookmark} />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Blur image">
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={blurImage} />
-    </SettingsItemGroup>
-    {#if blurImage}
-      <SettingsItemGroup
-        title="Blur Mode"
-        tooltip="Determines if all or only images after the table of contents will be blurred"
-      >
-        <ButtonToggleGroup options={optionsForBlurMode} bind:selectedOptionId={blurImageMode} />
-      </SettingsItemGroup>
-    {/if}
-    <SettingsItemGroup title="Hide furigana">
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideFurigana} />
-    </SettingsItemGroup>
-    {#if hideFurigana}
-      <SettingsItemGroup title="Hide furigana style" tooltip={furiganaStyleTooltip}>
-        <ButtonToggleGroup
-          options={optionsForFuriganaStyle}
-          bind:selectedOptionId={furiganaStyle}
-        />
-      </SettingsItemGroup>
-    {/if}
-    {#if statisticsEnabled}
-      <SettingsItemGroup
-        title="Custom Point pauses Tracker"
-        tooltip={'When enabled the tracker will auto pause and unpause while setting a custom reading point'}
-      >
-        <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={pauseTrackerOnCustomPointChange}
-        />
-      </SettingsItemGroup>
-    {/if}
-    {#if viewMode === ViewMode.Continuous}
-      <SettingsItemGroup
-        title="Custom Reading Point"
-        tooltip={'Allows to set a persistent custom point in the reader from which the current progress and bookmark is calculated when enabled'}
-      >
-        <div class="flex items-center">
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={customReadingPointEnabled}
-          />
-          {#if customReadingPointEnabled}
-            <div
-              tabindex="0"
-              role="button"
-              class="ml-4 hover:underline"
-              on:click={() => {
-                verticalCustomReadingPosition$.next(100);
-                horizontalCustomReadingPosition$.next(0);
-              }}
-              on:keyup={dummyFn}
-            >
-              Reset Points
-            </div>
-          {/if}
-        </div>
-      </SettingsItemGroup>
-      <SettingsItemGroup title="Auto position on resize">
-        <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={autoPositionOnResize}
-        />
-      </SettingsItemGroup>
-    {:else}
-      <SettingsItemGroup title="Avoid Page Break" tooltip={avoidPageBreakTooltip}>
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={avoidPageBreak} />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Selection to Bookmark"
-        tooltip={'When enabled bookmarks will be placed to a near paragraph of current/previous selected text instead of page start'}
-      >
-        <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={selectionToBookmarkEnabled}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Tap to Flip"
-        tooltip="Reserves small margins on the left and right on which you can tap to turn pages"
-      >
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTapEdgeToFlip} />
-      </SettingsItemGroup>
-      {#if !verticalMode}
-        <SettingsItemGroup title="Page Columns" tooltip="# of text columns rendered">
-          <input type="number" class={inputClasses} step="1" min="0" bind:value={pageColumns} />
-        </SettingsItemGroup>
-      {/if}
-    {/if}
-  {:else if activeSettings === 'Data'}
-    <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
       <div class="flex items-center">
-        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
-        {#if storageQuota}
-          <div class="ml-4">{storageQuota}</div>
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={customReadingPointEnabled}
+        />
+        {#if customReadingPointEnabled}
+          <div
+            tabindex="0"
+            role="button"
+            class="ml-4 hover:underline"
+            on:click={() => {
+              verticalCustomReadingPosition$.next(100);
+              horizontalCustomReadingPosition$.next(0);
+            }}
+            on:keyup={dummyFn}
+          >
+            Reset Points
+          </div>
         {/if}
       </div>
     </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Hide Source Hint"
-      tooltip="Hides the user warning when opening a book from an external storage source"
-    >
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideExternalReadHint} />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Epub Import Fixes" tooltip={importHTMLFixModeTooltip}>
+    <SettingsItemGroup title="Auto position on resize">
       <ButtonToggleGroup
-        options={optionsForImportHTMLFixes}
-        bind:selectedOptionId={importHTMLFixMode}
+        options={optionsForToggle}
+        bind:selectedOptionId={autoPositionOnResize}
       />
     </SettingsItemGroup>
-    {#if importHTMLFixMode !== ImportHTMLFixMode.OFF}
+  {:else}
+    <SettingsItemGroup
+      title="Selection to Bookmark"
+      tooltip={'When enabled bookmarks will be placed to a near paragraph of current/previous selected text instead of page start'}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={selectionToBookmarkEnabled}
+      />
+    </SettingsItemGroup>
+  {/if}
+</SettingsSection>
+<SettingsSection id="reader-navigation">
+  <SettingsItemGroup
+    title="Swipe Threshold"
+    tooltip={'Distance which you need to swipe in order trigger a navigation'}
+  >
+    <input
+      type="number"
+      step="1"
+      min="10"
+      class={inputClasses}
+      bind:value={swipeThreshold}
+      on:blur={() => {
+        if (swipeThreshold < 10 || typeof swipeThreshold !== 'number') {
+          swipeThreshold = 10;
+        }
+      }}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Disable Wheel Navigation">
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={disableWheelNavigation}
+    />
+  </SettingsItemGroup>
+  {#if viewMode !== ViewMode.Continuous}
+    <SettingsItemGroup
+      title="Tap to Flip"
+      tooltip="Reserves small margins on the left and right on which you can tap to turn pages"
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={enableTapEdgeToFlip} />
+    </SettingsItemGroup>
+  {/if}
+</SettingsSection>
+<SettingsSection id="reader-session">
+  {#if wakeLockSupported}
+    <SettingsItemGroup
+      title="Enable Screen Lock"
+      tooltip={'When enabled the reader site attempts to request a WakeLock that prevents device screens from dimming or locking'}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={enableReaderWakeLock}
+      />
+    </SettingsItemGroup>
+  {/if}
+  <SettingsItemGroup
+    title="Close Confirmation"
+    tooltip={`When enabled asks for confirmation on closing/reloading a reader tab and unsaved changes were detected`}
+  >
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={confirmClose} />
+  </SettingsItemGroup>
+</SettingsSection>
+<SettingsSection id="tracking-statistics">
+  <SettingsItemGroup
+    title="Enable Statistics"
+    tooltip="Enables the tracker icon in the bottom left corner of the reader which you need to use to start tracking your reading session"
+  >
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={statisticsEnabled} />
+  </SettingsItemGroup>
+  {#if statisticsEnabled}
+    <SettingsItemGroup
+      title="Custom Point pauses Tracker"
+      tooltip={'When enabled the tracker will auto pause and unpause while setting a custom reading point'}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={pauseTrackerOnCustomPointChange}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Tracker Auto Pause" tooltip={trackerAutoPauseTooltip}>
+      <ButtonToggleGroup
+        options={optionsForTrackerAutoPause}
+        bind:selectedOptionId={trackerAutoPause}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Open Tracker on Completion">
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={openTrackerOnCompletion}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Update on Completion"
+      tooltip={`Determines if the missing amount of characters between the current position and the book total will be added to the statistics or not`}
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={addCharactersOnCompletion}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Start tracker when a book opens"
+      tooltip="Starts the tracker once the book has loaded and settled on your position, so it runs without pressing play."
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={$trackerStartOnOpen$} />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Autostart tracker (sec)"
+      tooltip={'Time in seconds without a change to the character count after which the tracker will initially auto start (0 = disabled, higher value recommended to avoid racing conditions)'}
+    >
+      <input
+        type="number"
+        class={inputClasses}
+        step="1"
+        min="0"
+        bind:value={trackerAutoStartTime}
+        on:blur={() => {
+          const newValue = Number.parseFloat(`${trackerAutoStartTime ?? 0}`);
+
+          if (isNaN(newValue) || newValue < 1) {
+            trackerAutoStartTime = 0;
+          }
+        }}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Idle Time (min)"
+      tooltip={'Time in minutes after which the tracker will auto pause without page interaction (0 = disabled, max 12h)'}
+    >
+      <input
+        type="number"
+        class={inputClasses}
+        step="0.5"
+        min="0"
+        bind:value={trackerIdleTimeInMin}
+        on:blur={() => {
+          if (!trackerIdleTimeInMin || trackerIdleTimeInMin < 0) {
+            trackerIdleTime = 0;
+          } else if (trackerIdleTimeInMin > 43200) {
+            trackerIdleTime = 900;
+          } else {
+            trackerIdleTime = Math.floor(trackerIdleTimeInMin * 60);
+          }
+        }}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Forward Skip Threshold"
+      tooltip={'Amount of positive characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
+    >
+      <input
+        type="number"
+        class={inputClasses}
+        step="1"
+        min="0"
+        bind:value={trackerForwardSkipThreshold}
+        on:blur={() => {
+          if (trackerForwardSkipThreshold === 0) {
+            trackerForwardSkipThreshold = 0;
+          } else if (!trackerForwardSkipThreshold || trackerForwardSkipThreshold < 0) {
+            trackerForwardSkipThreshold = 2700;
+          }
+        }}
+      />
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Backward Skip Threshold"
+      tooltip={'Amount of negative characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
+    >
+      <input
+        type="number"
+        class={inputClasses}
+        step="1"
+        bind:value={trackerBackwardSkipThreshold}
+        on:blur={() => {
+          if (trackerBackwardSkipThreshold < 0) {
+            trackerBackwardSkipThreshold = Math.abs(trackerBackwardSkipThreshold);
+          } else if (trackerBackwardSkipThreshold === 0) {
+            trackerBackwardSkipThreshold = 0;
+          } else if (!trackerBackwardSkipThreshold) {
+            trackerBackwardSkipThreshold = 2700;
+          }
+        }}
+      />
+    </SettingsItemGroup>
+    {#if trackerForwardSkipThreshold || trackerBackwardSkipThreshold}
       <SettingsItemGroup
-        title="Restrict to Links"
-        tooltip="Restricts epub fixes for self closing tags to links only"
+        title="Threshold Action"
+        tooltip={`Determines what action will be executed in case a skip threshold was triggered`}
       >
         <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={restrictImportFixToAnchor}
+          options={optionsForTrackerSkipThresholdAction}
+          bind:selectedOptionId={trackerSkipThresholdAction}
         />
       </SettingsItemGroup>
     {/if}
-    <SettingsItemGroup title="Cache Data" tooltip={cacheStorageDataTooltip}>
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={cacheStorageData} />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Auto Import/Export" tooltip={autoReplicationTypeTooltip}>
-      <ButtonToggleGroup
-        options={optionsForAutoReplicationType}
-        bind:selectedOptionId={autoReplication}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Import/Export Behavior" tooltip={replicationSaveBehaviorTooltip}>
-      <ButtonToggleGroup
-        options={optionsForReplicationSaveBehavior}
-        bind:selectedOptionId={replicationSaveBehavior}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Show Placeholder" tooltip={showExternalPlaceholderToolTip}>
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={showExternalPlaceholder}
-      />
-    </SettingsItemGroup>
-    <SettingsStorageSourceList storageSources={$storageSources$} />
-  {:else}
-    <SettingsItemGroup
-      title="Keep Local Data on Deletion"
-      tooltip={'Determines if local statistics will be deleted or not when removing a local book copy'}
-    >
-      <div class="flex items-center">
+    {#if trackerAutoPause !== TrackerAutoPause.OFF}
+      <SettingsItemGroup
+        title="Dictionary Detection"
+        tooltip={`If enabled auto pause is skipped if open yomitan/jpdb-browser-reader was detected - yomitan requires disabled 'Secure Container' settings`}
+      >
         <ButtonToggleGroup
           options={optionsForToggle}
-          bind:selectedOptionId={keepLocalStatisticsOnDeletion}
+          bind:selectedOptionId={trackerPopupDetection}
         />
-        <div
-          tabindex="0"
-          role="button"
-          class="ml-4 hover:underline"
-          on:click={() => {
-            showSpinner = true;
-            database
-              .clearZombieStatistics()
-              .catch(({ message }) =>
-                dialogManager.dialogs$.next([
-                  {
-                    component: MessageDialog,
-                    props: {
-                      title: 'Error',
-                      message: `Error clearing Zombie Statistics: ${message}`
-                    }
+      </SettingsItemGroup>
+    {/if}
+    {#if trackerIdleTime > 0}
+      <SettingsItemGroup
+        title="Rollback Statistics on Idle"
+        tooltip={`If enabled attempts to rollback statistics by subtracting the idled time value back from the session`}
+      >
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={adjustStatisticsAfterIdleTime}
+        />
+      </SettingsItemGroup>
+    {/if}
+  {/if}
+</SettingsSection>
+<SettingsSection id="tracking-day">
+  <SettingsItemGroup
+    title={`Start Day Hours: ${startOfDayHours}`}
+    tooltip={'Determines at which time a new day starts.\nData before this point will be counted towards the previous day'}
+  >
+    <input
+      type="range"
+      step="1"
+      min="0"
+      max="23"
+      class={inputClasses}
+      bind:value={startDayHoursForTracker}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Overwrite Book Completion"
+    tooltip={`Determines if only the first Book Completion will be tracked or if it always updates to the latest one`}
+  >
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={overwriteBookCompletion}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Keep Local Data on Deletion"
+    tooltip={'Determines if local statistics will be deleted or not when removing a local book copy'}
+  >
+    <div class="flex items-center">
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={keepLocalStatisticsOnDeletion}
+      />
+      <div
+        tabindex="0"
+        role="button"
+        class="ml-4 hover:underline"
+        on:click={() => {
+          showSpinner = true;
+          database
+            .clearZombieStatistics()
+            .catch(({ message }) =>
+              dialogManager.dialogs$.next([
+                {
+                  component: MessageDialog,
+                  props: {
+                    title: 'Error',
+                    message: `Error clearing Zombie Statistics: ${message}`
                   }
-                ])
-              )
-              .finally(() => (showSpinner = false));
-          }}
-          on:keyup={() => {}}
-        >
-          Clear Zombie Statistics
-        </div>
+                }
+              ])
+            )
+            .finally(() => (showSpinner = false));
+        }}
+        on:keyup={() => {}}
+      >
+        Clear Zombie Statistics
       </div>
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Overwrite Book Completion"
-      tooltip={`Determines if only the first Book Completion will be tracked or if it always updates to the latest one`}
-    >
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={overwriteBookCompletion}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title={`Start Day Hours: ${startOfDayHours}`}
-      tooltip={'Determines at which time a new day starts.\nData before this point will be counted towards the previous day'}
-    >
-      <input
-        type="range"
-        step="1"
-        min="0"
-        max="23"
-        class={inputClasses}
-        bind:value={startDayHoursForTracker}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Statistics Merge"
-      tooltip={`Determines if statistics will be merged entry by entry or replaced completely on a sync`}
-    >
-      <ButtonToggleGroup
-        options={optionsForMergeMode}
-        bind:selectedOptionId={statisticsMergeMode}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Reading Goals Merge"
-      tooltip={`Determines if reading goals will be merged entry by entry or replaced completely on a sync`}
-    >
-      <ButtonToggleGroup
-        options={optionsForMergeMode}
-        bind:selectedOptionId={readingGoalsMergeMode}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Enable Statistics"
-      tooltip="Enables the tracker icon in the bottom left corner of the reader which you need to use to start tracking your reading session"
-    >
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={statisticsEnabled} />
-    </SettingsItemGroup>
-    {#if statisticsEnabled}
-      <SettingsItemGroup title="Tracker Auto Pause" tooltip={trackerAutoPauseTooltip}>
-        <ButtonToggleGroup
-          options={optionsForTrackerAutoPause}
-          bind:selectedOptionId={trackerAutoPause}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup title="Open Tracker on Completion">
-        <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={openTrackerOnCompletion}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Update on Completion"
-        tooltip={`Determines if the missing amount of characters between the current position and the book total will be added to the statistics or not`}
-      >
-        <ButtonToggleGroup
-          options={optionsForToggle}
-          bind:selectedOptionId={addCharactersOnCompletion}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Autostart tracker (sec)"
-        tooltip={'Time in seconds without a change to the character count after which the tracker will initially auto start (0 = disabled, higher value recommended to avoid racing conditions)'}
-      >
-        <input
-          type="number"
-          class={inputClasses}
-          step="1"
-          min="0"
-          bind:value={trackerAutoStartTime}
-          on:blur={() => {
-            const newValue = Number.parseFloat(`${trackerAutoStartTime ?? 0}`);
-
-            if (isNaN(newValue) || newValue < 1) {
-              trackerAutoStartTime = 0;
-            }
-          }}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Idle Time (min)"
-        tooltip={'Time in minutes after which the tracker will auto pause without page interaction (0 = disabled, max 12h)'}
-      >
-        <input
-          type="number"
-          class={inputClasses}
-          step="0.5"
-          min="0"
-          bind:value={trackerIdleTimeInMin}
-          on:blur={() => {
-            if (!trackerIdleTimeInMin || trackerIdleTimeInMin < 0) {
-              trackerIdleTime = 0;
-            } else if (trackerIdleTimeInMin > 43200) {
-              trackerIdleTime = 900;
-            } else {
-              trackerIdleTime = Math.floor(trackerIdleTimeInMin * 60);
-            }
-          }}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Forward Skip Threshold"
-        tooltip={'Amount of positive characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
-      >
-        <input
-          type="number"
-          class={inputClasses}
-          step="1"
-          min="0"
-          bind:value={trackerForwardSkipThreshold}
-          on:blur={() => {
-            if (trackerForwardSkipThreshold === 0) {
-              trackerForwardSkipThreshold = 0;
-            } else if (!trackerForwardSkipThreshold || trackerForwardSkipThreshold < 0) {
-              trackerForwardSkipThreshold = 2700;
-            }
-          }}
-        />
-      </SettingsItemGroup>
-      <SettingsItemGroup
-        title="Backward Skip Threshold"
-        tooltip={'Amount of negative characters passed between a tick after which a threshold action is triggered (0 = disabled)'}
-      >
-        <input
-          type="number"
-          class={inputClasses}
-          step="1"
-          bind:value={trackerBackwardSkipThreshold}
-          on:blur={() => {
-            if (trackerBackwardSkipThreshold < 0) {
-              trackerBackwardSkipThreshold = Math.abs(trackerBackwardSkipThreshold);
-            } else if (trackerBackwardSkipThreshold === 0) {
-              trackerBackwardSkipThreshold = 0;
-            } else if (!trackerBackwardSkipThreshold) {
-              trackerBackwardSkipThreshold = 2700;
-            }
-          }}
-        />
-      </SettingsItemGroup>
-      {#if trackerForwardSkipThreshold || trackerBackwardSkipThreshold}
-        <SettingsItemGroup
-          title="Threshold Action"
-          tooltip={`Determines what action will be executed in case a skip threshold was triggered`}
-        >
-          <ButtonToggleGroup
-            options={optionsForTrackerSkipThresholdAction}
-            bind:selectedOptionId={trackerSkipThresholdAction}
-          />
-        </SettingsItemGroup>
-      {/if}
-      {#if trackerAutoPause !== TrackerAutoPause.OFF}
-        <SettingsItemGroup
-          title="Dictionary Detection"
-          tooltip={`If enabled auto pause is skipped if open yomitan/jpdb-browser-reader was detected - yomitan requires disabled 'Secure Container' settings`}
-        >
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={trackerPopupDetection}
-          />
-        </SettingsItemGroup>
-      {/if}
-      {#if trackerIdleTime > 0}
-        <SettingsItemGroup
-          title="Rollback Statistics on Idle"
-          tooltip={`If enabled attempts to rollback statistics by subtracting the idled time value back from the session`}
-        >
-          <ButtonToggleGroup
-            options={optionsForToggle}
-            bind:selectedOptionId={adjustStatisticsAfterIdleTime}
-          />
-        </SettingsItemGroup>
-      {/if}
+    </div>
+  </SettingsItemGroup>
+</SettingsSection>
+<SettingsSection id="tracking-merge">
+  <SettingsItemGroup
+    title="Statistics Merge"
+    tooltip={`Determines if statistics will be merged entry by entry or replaced completely on a sync`}
+  >
+    <ButtonToggleGroup
+      options={optionsForMergeMode}
+      bind:selectedOptionId={statisticsMergeMode}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Reading Goals Merge"
+    tooltip={`Determines if reading goals will be merged entry by entry or replaced completely on a sync`}
+  >
+    <ButtonToggleGroup
+      options={optionsForMergeMode}
+      bind:selectedOptionId={readingGoalsMergeMode}
+    />
+  </SettingsItemGroup>
+</SettingsSection>
+<SettingsSection id="tracking-goals" wide>
+  {#if statisticsEnabled}
+    <div class="settings-panel" data-settings-item data-settings-search="Reading goals daily weekly monthly target">
       <SettingsReadingGoals
         storageSources={$storageSources$}
         on:spinner={({ detail }) => (showSpinner = detail)}
       />
-    {/if}
-  {/if}
-  {#if showSpinner}
-    <div class="tap-highlight-transparent fixed inset-0 bg-black/[.2]" />
-    <div class="fixed inset-0 flex h-full w-full items-center justify-center text-7xl">
-      <Fa icon={faSpinner} spin />
     </div>
+  {:else}
+    <SettingsItemGroup title="Reading goals" wide>
+      Turn on statistics (Tracking → Statistics) to set reading goals.
+    </SettingsItemGroup>
   {/if}
-</div>
+</SettingsSection>
+<SettingsSection id="data-storage">
+  <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
+    <div class="flex items-center">
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
+      {#if storageQuota}
+        <div class="ml-4">{storageQuota}</div>
+      {/if}
+    </div>
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Cache Data" tooltip={cacheStorageDataTooltip}>
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={cacheStorageData} />
+  </SettingsItemGroup>
+</SettingsSection>
+<SettingsSection id="data-import">
+  <SettingsItemGroup title="Epub Import Fixes" tooltip={importHTMLFixModeTooltip}>
+    <ButtonToggleGroup
+      options={optionsForImportHTMLFixes}
+      bind:selectedOptionId={importHTMLFixMode}
+    />
+  </SettingsItemGroup>
+  {#if importHTMLFixMode !== ImportHTMLFixMode.OFF}
+    <SettingsItemGroup
+      title="Restrict to Links"
+      tooltip="Restricts epub fixes for self closing tags to links only"
+    >
+      <ButtonToggleGroup
+        options={optionsForToggle}
+        bind:selectedOptionId={restrictImportFixToAnchor}
+      />
+    </SettingsItemGroup>
+  {/if}
+</SettingsSection>
+<SettingsSection id="data-sync">
+  <SettingsItemGroup title="Auto Import/Export" tooltip={autoReplicationTypeTooltip}>
+    <ButtonToggleGroup
+      options={optionsForAutoReplicationType}
+      bind:selectedOptionId={autoReplication}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Import/Export Behavior" tooltip={replicationSaveBehaviorTooltip}>
+    <ButtonToggleGroup
+      options={optionsForReplicationSaveBehavior}
+      bind:selectedOptionId={replicationSaveBehavior}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup title="Show Placeholder" tooltip={showExternalPlaceholderToolTip}>
+    <ButtonToggleGroup
+      options={optionsForToggle}
+      bind:selectedOptionId={showExternalPlaceholder}
+    />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Hide Source Hint"
+    tooltip="Hides the user warning when opening a book from an external storage source"
+  >
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={hideExternalReadHint} />
+  </SettingsItemGroup>
+</SettingsSection>
+<SettingsSection id="data-sources" wide>
+  <div class="settings-panel" data-settings-item data-settings-search="Storage sources Calibre browser Google Drive OneDrive folder">
+    <SettingsStorageSourceList storageSources={$storageSources$} />
+  </div>
+</SettingsSection>
+{#if showSpinner}
+  <div class="tap-highlight-transparent fixed inset-0 bg-black/[.2]" />
+  <div class="fixed inset-0 flex h-full w-full items-center justify-center text-7xl">
+    <Fa icon={faSpinner} spin />
+  </div>
+{/if}
+
+<style>
+  .settings-panel {
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding: 1rem 1rem 0.25rem;
+    border: 1px solid color-mix(in srgb, var(--font-color) 8%, var(--border-color));
+    border-radius: calc(1.2rem * var(--app-radius-scale));
+    background: color-mix(in srgb, var(--surface-color) 96%, var(--background-color));
+  }
+</style>

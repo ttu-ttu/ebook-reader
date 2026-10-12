@@ -34,7 +34,7 @@ import { replicationProgress$ } from '$lib/functions/replication/replication-pro
 import { mergeStatistics, updateStatisticToStore } from '$lib/functions/statistic-util';
 import pLimit from 'p-limit';
 
-interface RequestOptions {
+export interface RequestOptions {
   method?: string;
   headers?: Record<string, string>;
   body?: XMLHttpRequestBodyInit | null | undefined;

@@ -124,7 +124,7 @@
       tabindex="0"
       role="button"
       title={canSave ? 'Save' : 'Select a File and Font name to save'}
-      class:text-gray-500={!canSave}
+      class:opacity-50={!canSave}
       class:cursor-not-allowed={!canSave}
       on:click={() => {
         if (canSave) {

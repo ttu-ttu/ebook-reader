@@ -28,6 +28,12 @@ export interface BookmarkManager {
     bookmarkData: BooksDbBookmarkData,
     customReadingPointScrollOffset?: number
   ) => void;
+
+  /** Character count where the rendered content starts (the current section when paginated) */
+  getRenderedStartCount: () => number;
+
+  /** Whether a character count is on the current screen (page when paginated) */
+  isCharCountOnScreen: (charCount: number) => boolean;
 }
 
 export interface PageManager {

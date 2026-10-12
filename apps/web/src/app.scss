@@ -5,9 +5,51 @@
 @tailwind utilities;
 
 :root {
-  --font-color: rgba(0, 0, 0, 0.87);
-  --background-color: #eceff1;
-  scrollbar-color: #c1c1c1 #c1c1c100;
+  --font-color: #152033;
+  --background-color: #eef3f6;
+  --surface-color: rgba(255, 255, 255, 0.8);
+  --surface-strong-color: rgba(255, 255, 255, 0.92);
+  --border-color: rgba(148, 163, 184, 0.26);
+  --shadow-color: rgba(15, 23, 42, 0.12);
+  --accent-color: #0f766e;
+  --accent-strong-color: #115e59;
+  --app-accent-fg: #f8fafc;
+  --app-muted-fg: rgba(15, 23, 42, 0.66);
+  --app-header-bg: rgba(15, 23, 42, 0.78);
+  --app-header-fg: #f8fafc;
+  --app-header-border: rgba(255, 255, 255, 0.1);
+  --app-header-icon-bg: rgba(255, 255, 255, 0.06);
+  --app-header-icon-border: rgba(255, 255, 255, 0.12);
+  --app-header-icon-fg: rgba(226, 232, 240, 0.86);
+  --app-header-icon-hover-bg: rgba(255, 255, 255, 0.12);
+  --app-header-control-height: 2.6rem;
+  --app-header-pill-height: 3.1rem;
+  --app-header-label-size: 0.92rem;
+  --app-header-icon-size: 1rem;
+  --app-control-bg: rgba(255, 255, 255, 0.88);
+  --app-control-border: rgba(148, 163, 184, 0.38);
+  /* The rest are set by the active theme (lib/data/theme); these are the light defaults. */
+  --app-inset-highlight: rgba(255, 255, 255, 0.72);
+  --app-danger-color: #dc2626;
+  --app-overlay-color: rgba(0, 0, 0, 0.32);
+  --app-scrollbar-color: rgba(100, 116, 139, 0.55);
+  --app-radius-scale: 1;
+  --app-blur: 24px;
+  --reader-panel-bg: rgba(31, 41, 55, 0.96);
+  --reader-panel-fg: #f9fafb;
+  --highlight-yellow: rgba(250, 204, 21, 0.4);
+  --highlight-green: rgba(74, 222, 128, 0.38);
+  --highlight-blue: rgba(96, 165, 250, 0.38);
+  --highlight-pink: rgba(244, 114, 182, 0.38);
+  --search-match-color: rgba(249, 115, 22, 0.5);
+  scrollbar-color: var(--app-scrollbar-color) transparent;
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --app-header-control-height: 2.35rem;
+    --app-header-pill-height: 2.85rem;
+  }
 }
 
 .book-cover {
@@ -18,6 +60,31 @@
   body {
     color: var(--font-color);
     background-color: var(--background-color);
+    font-family: var(--app-ui-font, 'Noto Sans JP'), sans-serif;
+  }
+
+  /* Beats the white defaults of @tailwindcss/forms so inputs follow the theme. */
+  html
+    :is(
+      [type='text'],
+      [type='search'],
+      [type='password'],
+      [type='number'],
+      [type='url'],
+      [type='email'],
+      [type='date'],
+      [type='time'],
+      select,
+      textarea
+    ) {
+    color: inherit;
+    background-color: transparent;
+    border-color: var(--app-control-border);
+  }
+
+  select option {
+    background-color: var(--surface-strong-color);
+    color: var(--font-color);
   }
 }
 
@@ -28,6 +95,255 @@
 
   .tap-highlight-transparent {
     -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Shared app chrome, modelled on app.yatsu.moe */
+@layer components {
+  .app-page-shell {
+    min-height: 100vh;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .app-header-surface,
+  .app-chrome-glass-surface {
+    background: transparent;
+    isolation: isolate;
+  }
+
+  .app-header-surface::before,
+  .app-chrome-glass-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: var(--app-header-bg);
+    -webkit-backdrop-filter: blur(var(--app-blur));
+    backdrop-filter: blur(var(--app-blur));
+  }
+
+  .app-header-surface > *,
+  .app-chrome-glass-surface > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .app-surface-card {
+    background: linear-gradient(180deg, var(--surface-strong-color), var(--surface-color));
+    border: 1px solid var(--border-color);
+    box-shadow:
+      0 18px 40px -26px color-mix(in srgb, var(--shadow-color) 100%, transparent),
+      0 10px 22px -18px var(--shadow-color),
+      inset 0 1px var(--app-inset-highlight);
+  }
+
+  .app-header-pill {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    min-height: var(--app-header-pill-height);
+    padding: 0.25rem;
+    border: 1px solid var(--app-header-icon-border);
+    border-radius: calc(1.25rem * var(--app-radius-scale));
+    background: color-mix(in srgb, var(--app-header-icon-bg) 82%, transparent);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .app-header-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-width: var(--app-header-control-height);
+    height: var(--app-header-control-height);
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: calc(1rem * var(--app-radius-scale));
+    color: var(--app-header-icon-fg);
+    font-size: var(--app-header-label-size);
+    font-weight: 700;
+    line-height: 1.18;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease;
+  }
+
+  .app-header-icon:hover,
+  .app-header-icon:focus-visible,
+  .app-header-icon-active {
+    background: var(--app-header-icon-hover-bg);
+    color: var(--app-header-fg);
+    outline: none;
+  }
+
+  .app-header-icon:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .app-header-icon-label {
+    padding-inline: 0.95rem;
+  }
+
+  .app-popover-panel {
+    min-width: 12rem;
+    padding: 0.4rem;
+    border: 1px solid var(--border-color);
+    border-radius: calc(1rem * var(--app-radius-scale));
+    background: var(--surface-strong-color);
+    color: var(--font-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow:
+      0 24px 48px -28px var(--shadow-color),
+      inset 0 1px var(--app-inset-highlight);
+    -webkit-backdrop-filter: blur(calc(var(--app-blur) * 0.75));
+    backdrop-filter: blur(calc(var(--app-blur) * 0.75));
+  }
+
+  .app-popover-heading {
+    padding: 0.45rem 0.7rem 0.25rem;
+    color: var(--app-muted-fg);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .app-popover-item {
+    display: flex;
+    width: 100%;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: calc(0.75rem * var(--app-radius-scale));
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.16s ease;
+  }
+
+  .app-popover-item:hover,
+  .app-popover-item:focus-visible {
+    background: color-mix(in srgb, var(--font-color) 6%, transparent);
+    outline: none;
+  }
+
+  .app-popover-item-active {
+    background: color-mix(in srgb, var(--accent-color) 13%, transparent);
+    color: var(--accent-strong-color);
+  }
+
+  .app-popover-item:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Overlay panels in the reader: read aloud, Ask AI, search, notes, selection toolbar */
+  .reader-panel {
+    background: var(--reader-panel-bg);
+    color: var(--reader-panel-fg);
+    -webkit-backdrop-filter: blur(calc(var(--app-blur) * 0.5));
+    backdrop-filter: blur(calc(var(--app-blur) * 0.5));
+  }
+
+  .reader-panel-divider {
+    border-color: color-mix(in srgb, var(--reader-panel-fg) 12%, transparent);
+  }
+
+  .reader-panel-quote {
+    border-color: color-mix(in srgb, var(--reader-panel-fg) 30%, transparent);
+  }
+
+  .reader-panel-chip {
+    background: color-mix(in srgb, var(--reader-panel-fg) 10%, transparent);
+    transition: background-color 0.15s ease;
+  }
+
+  .reader-panel-chip:hover:not(:disabled),
+  .reader-panel-chip-active {
+    background: color-mix(in srgb, var(--reader-panel-fg) 20%, transparent);
+  }
+
+  .reader-panel-chip:disabled {
+    opacity: 0.5;
+  }
+
+  html .reader-panel-input {
+    border: 0;
+    background: color-mix(in srgb, var(--reader-panel-fg) 9%, transparent);
+    color: inherit;
+  }
+
+  html .reader-panel-input::placeholder {
+    color: color-mix(in srgb, var(--reader-panel-fg) 50%, transparent);
+  }
+
+  .app-skeleton {
+    background:
+      linear-gradient(
+        100deg,
+        color-mix(in srgb, var(--font-color) 7%, transparent),
+        color-mix(in srgb, var(--font-color) 13%, transparent),
+        color-mix(in srgb, var(--font-color) 7%, transparent)
+      ),
+      color-mix(in srgb, var(--font-color) 6%, transparent);
+    background-size: 220% 100%;
+    animation: app-skeleton-shimmer 1.35s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-skeleton {
+      animation: none;
+    }
+  }
+}
+
+/* Reader highlights (lib/functions/book-text/css-highlights.ts) */
+::highlight(ttu-hl-yellow) {
+  background-color: var(--highlight-yellow);
+}
+
+::highlight(ttu-hl-green) {
+  background-color: var(--highlight-green);
+}
+
+::highlight(ttu-hl-blue) {
+  background-color: var(--highlight-blue);
+}
+
+::highlight(ttu-hl-pink) {
+  background-color: var(--highlight-pink);
+}
+
+::highlight(ttu-hl-note) {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, var(--reader-text-color) 55%, transparent);
+  text-underline-offset: 0.25em;
+}
+
+::highlight(ttu-search) {
+  background-color: var(--search-match-color);
+}
+
+::highlight(ttu-reading) {
+  background-color: var(--reading-line-color);
+}
+
+@keyframes app-skeleton-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
   }
 }
 

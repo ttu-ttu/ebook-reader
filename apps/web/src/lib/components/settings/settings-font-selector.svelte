@@ -20,7 +20,7 @@
       <div
         tabindex="0"
         role="button"
-        class="px-4 py-2 hover:bg-gray-900"
+        class="app-popover-item"
         on:click={() => {
           fontValue = font;
           element.toggleOpen();

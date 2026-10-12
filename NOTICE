@@ -1,0 +1,17 @@
+chimimouryou
+Copyright (c) 2026, chimimouryou contributors
+
+This project is a fork of ッツ Ebook Reader
+(https://github.com/ttu-ttu/ebook-reader), Copyright (c) 2024, ッツ Reader
+Authors, licensed under the BSD 3-Clause License (see LICENSE). It is not
+affiliated with or endorsed by the ッツ Ebook Reader authors.
+
+The difficulty estimates (scripts/calibre/jiten/) include material from Jiten
+(https://github.com/Sirush/Jiten), licensed under the Apache License 2.0 (see
+scripts/calibre/jiten/LICENSE):
+- deconjugator.json, Jiten's deconjugation rules;
+- features.py and deconjugator.py, a Python port of Jiten's feature extraction;
+- difficulty_model_jiten_distilled.onnx, a model trained on Jiten's features and
+  on difficulty scores published by jiten.moe.
+These files were modified or derived for this project. Jiten is not affiliated
+with this project.

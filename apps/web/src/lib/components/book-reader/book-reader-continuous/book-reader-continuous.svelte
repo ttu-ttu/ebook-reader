@@ -451,7 +451,15 @@
           if (autoBookmark) {
             fromEvent(window, 'scroll')
               .pipe(skip(1), debounceTime(autoBookmarkTime * 1000), takeUntil(destroy$))
-              .subscribe(() => {
+              .subscribe(async () => {
+                const savedCount = (await bookmarkData)?.exploredCharCount;
+
+                // Keep a bookmark that is still on screen rather than moving it to
+                // the top of the screen.
+                if (savedCount && calculator?.isCharCountOnScreen(savedCount)) {
+                  return;
+                }
+
                 dispatch('bookmark');
               });
           }

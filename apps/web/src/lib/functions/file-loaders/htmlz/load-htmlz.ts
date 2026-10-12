@@ -10,14 +10,18 @@ import extractHtmlz from './extract-htmlz';
 import { getFormattedElementHtmlz } from './generate-htmlz-html';
 import getHtmlzCoverImageFilename from './get-htmlz-cover-image-filename';
 import reduceObjToBlobs from '../utils/reduce-obj-to-blobs';
+import { createInertDocument, sanitizeBookElement } from '../utils/sanitize-book-html';
 
+/** `_document` is unused: the book is built in an inert document, see sanitize-book-html.ts. */
 export default async function loadHtmlz(
   file: File,
-  document: Document,
+  _document: Document,
   lastBookModified: number
 ): Promise<LoadData> {
   const data = await extractHtmlz(file);
-  const element = getFormattedElementHtmlz(data, document);
+  const element = getFormattedElementHtmlz(data, createInertDocument());
+
+  sanitizeBookElement(element);
   const parser = new XMLParser();
   const metadata = parser.parse(data['metadata.opf'])?.package?.metadata;
 

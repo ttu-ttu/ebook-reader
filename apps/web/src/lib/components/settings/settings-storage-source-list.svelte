@@ -247,7 +247,7 @@
       <Ripple />
     </button>
   </div>
-  <hr class="border border-black" />
+  <hr class="border border-[color:var(--border-color)]" />
   <div class="mt-6">
     {#if !listLoading && storageSources}
       <div class="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">

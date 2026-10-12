@@ -1,0 +1,10 @@
+#!/bin/sh
+# docker compose for a stack installed by scripts/deploy.sh: the source in
+# /opt/ebook-reader, the settings in /etc/ebook-reader (env with e.g.
+# COMPOSE_PROFILES, and an optional docker-compose.override.yml).
+APP=/opt/ebook-reader
+CONFIG=/etc/ebook-reader
+if [ -f "$CONFIG/docker-compose.override.yml" ]; then
+  set -- -f "$CONFIG/docker-compose.override.yml" "$@"
+fi
+exec docker compose --project-directory "$APP" --env-file "$CONFIG/env" -f "$APP/docker-compose.yml" "$@"

@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 import { BaseStorageHandler } from '$lib/data/storage/handler/base-handler';
 import buildDummyBookImage from '$lib/functions/file-loaders/utils/build-dummy-book-image';
 import { isElementGaiji } from '$lib/functions/is-element-gaiji';
+import { parseBookHtml } from '$lib/functions/file-loaders/utils/sanitize-book-html';
 import { map } from 'rxjs/operators';
 import {
   readerImageGalleryPictures$,
@@ -24,8 +25,8 @@ export default function formatBookDataHtml(
 ) {
   return getHtmlWithImageSource(bookData, isPaginated).pipe(
     map((elementHtml) => {
-      const element = document.createElement('div');
-      element.innerHTML = elementHtml;
+      // Stored book data may come from the shared sync folder: clean it on every load.
+      const element = parseBookHtml(elementHtml);
 
       addImageContainerClass(element);
       // combineImagePairs(element);

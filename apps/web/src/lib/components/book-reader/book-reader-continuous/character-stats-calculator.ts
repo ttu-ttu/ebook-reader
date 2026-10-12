@@ -112,6 +112,17 @@ export class CharacterStatsCalculator {
     return this.getCharCountByScrollPos(this.scrollPos + customReadingPointScrollOffset);
   }
 
+  /** Whether the character at this count is within the visible screen. */
+  isCharCountOnScreen(charCount: number) {
+    const { scrollPos } = this;
+    const screenSize = this.verticalMode ? this.scrollEl.clientWidth : this.scrollEl.clientHeight;
+
+    return (
+      charCount >= this.getCharCountByScrollPos(scrollPos) &&
+      charCount <= this.getCharCountByScrollPos(scrollPos + screenSize)
+    );
+  }
+
   getCharCountByScrollPos(scrollPos: number) {
     const index = binarySearchNoNegative(this.paragraphPos, scrollPos);
     return this.paragraphPosToAccCharCount.get(this.paragraphPos[index]) || 0;

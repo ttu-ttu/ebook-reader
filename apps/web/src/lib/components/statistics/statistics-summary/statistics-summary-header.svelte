@@ -30,7 +30,7 @@
   }>();
 
   const tableHeaderClasses =
-    'flex items-center py-2.5 px-0 text-sm w-full bg-transparent border-0 md:border-b-2 border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-gray-200 peer lg:text-base';
+    'flex items-center py-2.5 px-0 text-sm w-full bg-transparent border-0 md:border-b-2 border-[color:var(--border-color)] appearance-none focus:outline-none focus:ring-0 focus:border-[color:var(--accent-color)] peer lg:text-base';
 
   let summaryHeaderPopover: Popover;
 

@@ -2,7 +2,7 @@
   import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
   import type { ToggleOption } from '$lib/components/button-toggle-group/toggle-option';
   import Ripple from '$lib/components/ripple.svelte';
-  import { availableThemes } from '$lib/data/theme-option';
+  import { builtInThemeIds } from '$lib/data/theme/themes';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -29,21 +29,18 @@
     <div class="flex">
       <button
         title={option.id}
-        class="m-1 rounded-md border-2 border-gray-400 p-2 text-black text-lg"
+        class="toggle-option m-1 rounded-md border-2 p-2 text-lg"
         class:border-4={option.thickBorders && option.id === selectedOptionId}
-        class:border-blue-300={option.id === selectedOptionId}
-        class:bg-gray-700={option.id === selectedOptionId}
-        class:text-white={(option.id === selectedOptionId && !invertColors) ||
+        class:toggle-option-selected={option.id === selectedOptionId}
+        class:toggle-option-inverted={(option.id === selectedOptionId && invertColors) ||
           (option.id !== selectedOptionId && invertColors)}
-        class:bg-white={(option.id === selectedOptionId && invertColors) ||
-          (option.id !== selectedOptionId && !invertColors)}
         style={mapToStyleString(option.style)}
         on:click={() => (selectedOptionId = option.id)}
       >
         {option.text}
         <Ripple />
       </button>
-      {#if option.showIcons && option.id === selectedOptionId && !availableThemes.has(option.id)}
+      {#if option.showIcons && option.id === selectedOptionId && !builtInThemeIds.has(option.id)}
         <div class="flex flex-col justify-around mr-2">
           <button on:click={() => dispatch('edit', option.id)}>
             <Fa icon={faPen} slot="icon" />
@@ -58,3 +55,21 @@
 
   <slot />
 </div>
+
+<style>
+  .toggle-option {
+    border-color: var(--app-control-border);
+    background-color: var(--app-control-bg);
+    color: var(--font-color);
+  }
+
+  .toggle-option-selected {
+    border-color: var(--accent-color);
+    background-color: color-mix(in srgb, var(--accent-color) 22%, var(--surface-strong-color));
+  }
+
+  .toggle-option-inverted {
+    background-color: var(--font-color);
+    color: var(--background-color);
+  }
+</style>

@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "license": "BSD-3-Clause",
   "private": true,
+  "packageManager": "pnpm@10.34.6",
   "scripts": {
     "dev": "cd apps/web && pnpm dev",
     "build": "cd apps/web && pnpm build",

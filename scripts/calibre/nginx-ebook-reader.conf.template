@@ -1,0 +1,276 @@
+# Upstream's apps/web/nginx/conf.d/default.conf plus the Calibre library, accounts
+# and the helper services. A template: render-nginx.sh fills in the ${...} settings
+# when the web container starts, and the result goes in conf.d.
+# Server-level extras (TLS, resolver, real_ip) come from /etc/nginx/ebook-reader.d/.
+#
+# Who may do what (checked by the account service through auth_request):
+# - reading the library, catalog and shared sync folder needs an account, a
+#   trusted network, or PUBLIC_READS=1;
+# - signed-out readers on a trusted network write the shared sync folder;
+#   elsewhere that needs an account;
+# - adding books to Calibre, starting difficulty jobs and editing series need an
+#   admin or that permission (Settings → Account → Manage accounts).
+# Slows password guessing on top of the account service's own lockouts.
+limit_req_zone $binary_remote_addr zone=account_login:1m rate=10r/m;
+
+# Behind a reverse proxy every client looks like the proxy, so set
+# real_ip_header/set_real_ip_from for it (REAL_IP_FROM in Docker) first.
+geo $trusted_network {
+  default 0;
+${TRUSTED_NETWORKS_GEO}
+}
+
+# Keep the scheme a TLS-terminating proxy in front of this server reports, so
+# the account service's HTTPS check works behind one.
+map $http_x_forwarded_proto $forwarded_proto {
+  default $scheme;
+  https https;
+}
+
+# Service addresses as variables: nginx then starts even when an optional service
+# (import, difficulty) isn't running, and resolves Docker names at request time.
+map $host $account_upstream { default ${ACCOUNT_UPSTREAM}; }
+map $host $import_upstream { default ${IMPORT_UPSTREAM}; }
+map $host $difficulty_upstream { default ${DIFFICULTY_UPSTREAM}; }
+map $host $public_reads { default ${PUBLIC_READS}; }
+
+# HSTS only when the page itself is HTTPS (an empty value sends no header).
+map $forwarded_proto $hsts {
+  default "";
+  https "max-age=31536000";
+}
+
+server_tokens off;
+
+server {
+  listen 80;
+  server_name _;
+
+  include /etc/nginx/ebook-reader.d/*.conf;
+
+  root ${WEB_ROOT};
+
+  # Security headers. nginx drops these in any location with its own add_header,
+  # so the sync locations below repeat them.
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy same-origin always;
+  add_header Content-Security-Policy "frame-ancestors 'self'; object-src 'none'; base-uri 'self'" always;
+  add_header Strict-Transport-Security $hsts always;
+
+  gzip on;
+  gzip_types application/json text/css application/javascript;
+
+  location / {
+    try_files $uri $uri.html $uri/ =404;
+  }
+
+  # Theme guide (themes.md in the repository root, copied by the build).
+  location = /themes.md {
+    default_type text/plain;
+    charset utf-8;
+    expires -1;
+  }
+
+  # Catalog generated from metadata.db by build-catalog.py.
+  location = /calibre/catalog.json {
+    auth_request /_account_shared;
+    alias ${CATALOG_FILE};
+    expires -1;
+  }
+
+  # Difficulty estimates (Jiten's model), computed only when started from the library.
+  location = /calibre/difficulty.json {
+    auth_request /_account_shared;
+    alias ${DIFFICULTY_FILE};
+    expires -1;
+  }
+
+  location /calibre/difficulty/api/ {
+    auth_request /_account_difficulty_writes;
+    rewrite ^/calibre/difficulty/api/(.*)$ /$1 break;
+    proxy_pass http://$difficulty_upstream;
+    proxy_http_version 1.1;
+  }
+
+  # Adding books to the Calibre library (import service).
+  location /calibre/import/api/ {
+    auth_request /_account_import;
+    auth_request_set $account_id $upstream_http_x_account_id;
+    rewrite ^/calibre/import/api/(.*)$ /$1 break;
+    proxy_pass http://$import_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Account-Id $account_id;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_read_timeout 300s;
+    client_max_body_size 300m;
+  }
+
+  # Accounts. The service checks HTTPS, Origin and Host ($http_host keeps the port,
+  # which the browser's Origin has on non-standard ports).
+  location /account/api/ {
+    rewrite ^/account/api/(.*)$ /$1 break;
+    proxy_pass http://$account_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    client_max_body_size 16k;
+  }
+
+  location = /account/api/login {
+    limit_req zone=account_login burst=5 nodelay;
+    limit_req_status 429;
+    proxy_pass http://$account_upstream/login;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    client_max_body_size 16k;
+  }
+
+  # auth_request checks. The subrequest is checked against its own body limit
+  # (default 1m) although the body isn't passed; the protected location sets the
+  # real limit, hence client_max_body_size 0.
+  location = /_account_auth {
+    internal;
+    proxy_pass http://$account_upstream/auth;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-Method $request_method;
+    client_max_body_size 0;
+  }
+
+  location = /_account_import {
+    internal;
+    proxy_pass http://$account_upstream/auth/import;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    client_max_body_size 0;
+  }
+
+  # Reads need an account, a trusted network or public reads; writes need an
+  # account or a trusted network.
+  location = /_account_shared {
+    internal;
+    proxy_pass http://$account_upstream/auth/shared/writes;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-Method $request_method;
+    proxy_set_header X-Trusted-Network $trusted_network;
+    proxy_set_header X-Public-Reads $public_reads;
+    client_max_body_size 0;
+  }
+
+  # Reads as above; writes need the permission.
+  location = /_account_series_writes {
+    internal;
+    proxy_pass http://$account_upstream/auth/series/writes;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-Method $request_method;
+    proxy_set_header X-Trusted-Network $trusted_network;
+    proxy_set_header X-Public-Reads $public_reads;
+    client_max_body_size 0;
+  }
+
+  location = /_account_difficulty_writes {
+    internal;
+    proxy_pass http://$account_upstream/auth/difficulty/writes;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-Method $request_method;
+    proxy_set_header X-Trusted-Network $trusted_network;
+    proxy_set_header X-Public-Reads $public_reads;
+    client_max_body_size 0;
+  }
+
+  # Each signed-in account's own reader data: progress, statistics, highlights
+  # and settings, in the same folder layout as /calibre/sync/.
+  location /account/sync/ {
+    auth_request /_account_auth;
+    auth_request_set $account_id $upstream_http_x_account_id;
+    root ${ACCOUNT_DATA_DIR}/$account_id;
+    dav_methods PUT DELETE MKCOL MOVE;
+    create_full_put_path on;
+    client_max_body_size 100m;
+    client_body_temp_path ${ACCOUNT_DATA_DIR}/.tmp;
+    autoindex on;
+    autoindex_format json;
+    # Stored files are data for the app, never pages: no HTML/SVG on this origin.
+    types { }
+    default_type application/octet-stream;
+    add_header Cache-Control "no-store" always;
+    add_header Content-Disposition attachment always;
+    add_header Content-Security-Policy "sandbox; default-src 'none'" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+    add_header Strict-Transport-Security $hsts always;
+  }
+
+  # Book files and covers only; everything else in the library (metadata.db etc.) is hidden.
+  location ~ ^/calibre/library/(.+\.(?:epub|htmlz|txt|cbz|zip)|.+/cover\.jpg)$ {
+    auth_request /_account_shared;
+    alias ${LIBRARY_DIR}/$1;
+    types { application/epub+zip epub; application/zip htmlz; text/plain txt; application/zip cbz zip; image/jpeg jpg; }
+    charset off;
+    expires 1d;
+  }
+
+  # Synced reader data (processed books, progress, statistics, highlights) for
+  # the Calibre storage source. Plain WebDAV writes plus JSON directory listings.
+  location /calibre/sync/ {
+    auth_request /_account_shared;
+    # series.json needs the series permission; don't let a MOVE get around it.
+    if ($http_destination ~* "/series(\.|%2e)json$") {
+      return 403;
+    }
+    alias ${SYNC_DIR}/;
+    dav_methods PUT DELETE MKCOL MOVE;
+    create_full_put_path on;
+    client_max_body_size 1g;
+    client_body_temp_path ${SYNC_DIR}/.tmp;
+    autoindex on;
+    autoindex_format json;
+    # Stored files are data for the app, never pages: no HTML/SVG on this origin.
+    types { }
+    default_type application/octet-stream;
+    add_header Cache-Control "no-store" always;
+    add_header Content-Disposition attachment always;
+    add_header Content-Security-Policy "sandbox; default-src 'none'" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+    add_header Strict-Transport-Security $hsts always;
+  }
+
+  # Series made by readers apply to everyone, so they need the series permission.
+  location = /calibre/sync/series.json {
+    auth_request /_account_series_writes;
+    alias ${SYNC_DIR}/series.json;
+    dav_methods PUT;
+    client_max_body_size 10m;
+    client_body_temp_path ${SYNC_DIR}/.tmp;
+    types { }
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    add_header Content-Disposition attachment always;
+    add_header Content-Security-Policy "sandbox; default-src 'none'" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+    add_header Strict-Transport-Security $hsts always;
+  }
+
+  location /calibre/ {
+    return 404;
+  }
+
+  error_page 404 /404.html;
+  location ~ /404(\.html)?$ {
+    internal;
+  }
+}

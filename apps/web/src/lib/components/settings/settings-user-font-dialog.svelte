@@ -94,7 +94,7 @@
                 class:after:h-0.5={currentTab === tab}
                 class:after:w-full={currentTab === tab}
                 class:after:bg-blue-700={currentTab === tab}
-                class:text-gray-500={currentTab !== tab}
+                class:opacity-50={currentTab !== tab}
                 on:click={() => (currentTab = tab)}
               >
                 {tab}

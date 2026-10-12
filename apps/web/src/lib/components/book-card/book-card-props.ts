@@ -14,4 +14,16 @@ export interface BookCardProps {
   progress: number;
   lastBookmarkModified: number;
   isPlaceholder: boolean;
+  authors?: string;
+  series?: string;
+  seriesIndex?: number | null;
+  seriesInferred?: boolean;
+  tags?: string[];
+  rating?: number | null;
+  /** Jiten-style difficulty, 0-5 */
+  difficulty?: number;
+  /** CBZ/ZIP read in the manga reader */
+  manga?: boolean;
+  /** Calibre book id, for books from the Calibre source */
+  calibreId?: number;
 }

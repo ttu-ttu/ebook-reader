@@ -430,7 +430,9 @@
     pageChange$
       .pipe(debounceTime(autoBookmarkTime * 1000), takeUntil(destroy$))
       .subscribe((isUser) => {
-        if (isUser) {
+        // A bookmark on this page may point mid-page (selection or reading point);
+        // saving the page start would move it back.
+        if (isUser && !isBookmarkScreen) {
           dispatch('bookmark');
         }
       });

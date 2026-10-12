@@ -1,5 +1,11 @@
 .dockerignore
+.git
 **/Dockerfile
 **/node_modules
 **/build
 **/.svelte-kit
+# Personal build settings; pass VITE_* as build args instead.
+**/.env
+**/.env.*
+**/__pycache__
+data

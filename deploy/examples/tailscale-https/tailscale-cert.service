@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew the Tailscale HTTPS certificate for ebook-reader
+After=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tailscale-cert-renew
+# nginx runs in the web container (layout of scripts/deploy.sh).
+ExecStartPost=-/usr/local/bin/ebook-compose exec -T web nginx -s reload

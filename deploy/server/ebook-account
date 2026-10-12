@@ -1,0 +1,6 @@
+#!/bin/sh
+# Account management in the account container: ebook-account add|passwd|remove|admin|permissions|list
+if [ -t 0 ]; then
+  exec /usr/local/bin/ebook-compose exec account ebook-account "$@"
+fi
+exec /usr/local/bin/ebook-compose exec -T account ebook-account "$@"

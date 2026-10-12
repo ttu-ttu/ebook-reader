@@ -13,6 +13,7 @@
     shareReplay,
     skip,
     startWith,
+    Subject,
     switchMap,
     take,
     takeWhile,
@@ -61,8 +62,8 @@
     textIndentation$,
     textMarginMode$,
     textMarginValue$,
-    theme$,
     trackerAutostartTime$,
+    trackerStartOnOpen$,
     verticalMode$,
     writingMode$,
     viewMode$,
@@ -83,7 +84,6 @@
     statisticsMergeMode$,
     isOnline$,
     manualBookmark$,
-    customThemes$,
     overwriteBookCompletion$,
     startDayHoursForTracker$,
     readingGoalsMergeMode$,
@@ -96,7 +96,42 @@
     verticalTextOrientation$
   } from '$lib/data/store';
   import BookCompletionConfetti from '$lib/components/book-reader/book-completion-confetti/book-completion-confetti.svelte';
+  import ReaderCompanion, {
+    type CompanionTab
+  } from '$lib/components/book-reader/reader-companion.svelte';
+  import AskAiPanel from '$lib/components/book-reader/ask-ai-panel.svelte';
+  import BookSearchPanel from '$lib/components/book-reader/book-search-panel.svelte';
+  import HighlightEditor from '$lib/components/book-reader/highlight-editor.svelte';
+  import SelectionToolbar from '$lib/components/book-reader/selection-toolbar.svelte';
+  import {
+    AnnotationsController,
+    highlightColors,
+    type Highlight,
+    type HighlightColor
+  } from '$lib/data/annotations';
+  import {
+    buildSearchIndex,
+    chapterLabelAt,
+    type SearchIndex,
+    type SearchResult
+  } from '$lib/functions/book-text/book-search';
+  import {
+    clearCssHighlights,
+    cssHighlightsSupported,
+    setCssHighlight
+  } from '$lib/functions/book-text/css-highlights';
+  import {
+    countsForRange,
+    getTextSegments,
+    rangeForCounts
+  } from '$lib/functions/book-text/text-positions';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
+  import ListenPanel, { listenBarRem } from '$lib/components/book-reader/listen-panel.svelte';
+  import { autoUpdateLorebook } from '$lib/data/lorebook';
+  import { enableExtrasSync, syncExtras } from '$lib/data/extras-sync';
+  import { recordKanjiSeen } from '$lib/data/kanji-seen';
+  import type { PassageContext } from '$lib/data/ask-ai';
+  import { openRouterApiKey$ } from '$lib/data/ai-settings';
   import {
     readerImageGalleryPictures$,
     toggleImageGalleryPictureSpoiler$,
@@ -143,7 +178,8 @@
     StorageKey
   } from '$lib/data/storage/storage-types';
   import { storageSource$ } from '$lib/data/storage/storage-view';
-  import { availableThemes } from '$lib/data/theme-option';
+  import { activeTheme$ } from '$lib/data/theme/theme-store';
+  import { toReaderThemeOption } from '$lib/data/theme/themes';
   import { ViewMode } from '$lib/data/view-mode';
   import loadBookData from '$lib/functions/book-data-loader/load-book-data';
   import { formatPageTitle } from '$lib/functions/format-page-title';
@@ -172,7 +208,9 @@
     getWeightedAverage
   } from '$lib/functions/utils';
   import { onKeydownReader } from './on-keydown-reader';
+  import { shouldBookmarkOnLeave } from '$lib/functions/bookmark-on-leave';
   import { onDestroy, onMount, tick } from 'svelte';
+  import { isManga } from '$lib/data/manga';
   import Fa from 'svelte-fa';
   import {
     clearRange,
@@ -198,6 +236,29 @@
     ? $verticalCustomReadingPosition$
     : $horizontalCustomReadingPosition$;
   let customReadingPointScrollOffset = 0;
+  let showTts = false;
+  let showSearch = false;
+  let searchQuery = '';
+  let searchIgnoreKana = true;
+  let searchRegex = false;
+  let searchResults: SearchResult[] = [];
+  let searchActiveIndex = -1;
+  let searchMatch: { start: number; end: number } | undefined;
+  let searchIndexPromise: Promise<SearchIndex> | undefined;
+  let searchIndexHtml = '';
+  let annotations: AnnotationsController | undefined;
+  let editingHighlight: Highlight | undefined;
+  let editingFocusNote = false;
+  let companionTab: CompanionTab | undefined;
+  /** Line being read aloud (audiobook or AI voice) */
+  let readingMatch: { start: number; end: number } | undefined;
+  /** Days since the book was last opened, if long enough to offer a recap */
+  let welcomeBackDays = 0;
+  let highlightRanges: { highlight: Highlight; range: Range }[] = [];
+  let highlightsDirty = true;
+  let ttsStartCharCount = 0;
+  let selectedRange: Range | undefined;
+  let askPassage: PassageContext | undefined;
   let customReadingPointRange: Range | undefined;
   let lastSelectedRange: Range | undefined;
   let lastSelectedRangeWasEmpty = true;
@@ -264,6 +325,11 @@
           return bookData;
         }
 
+        if (isManga(bookData)) {
+          goto(`${pagePath}/m?id=${id}`, { replaceState: true });
+          return new Promise<never>(() => {});
+        }
+
         const currentContext = {
           id: bookData.id,
           title: bookData.title,
@@ -277,6 +343,8 @@
         } else if ($autoReplication$ !== AutoReplicationType.Off) {
           externalStorageHandler = await getStorageHandlerByName($syncTarget$);
         }
+
+        const daysAway = (Date.now() - (bookData.lastBookOpen || Date.now())) / 86_400_000;
 
         bookData.lastBookOpen = new Date().getTime();
 
@@ -297,6 +365,10 @@
 
         if (bookData.language) {
           document.documentElement.lang = bookData.language;
+        }
+
+        if (daysAway >= 7) {
+          welcomeBackDays = Math.floor(daysAway);
         }
       } catch (error: any) {
         const message = `Error loading book: ${error.message}`;
@@ -354,6 +426,24 @@
     reduceToEmptyString()
   );
 
+  const initAnnotations$ = rawBookData$.pipe(
+    switchMap(async (rawBookData) => {
+      if (!rawBookData) return;
+
+      const isCalibreBook = rawBookData.storageSource === StorageSourceDefault.CALIBRE_DEFAULT;
+      const controller = new AnnotationsController(rawBookData.title, isCalibreBook);
+
+      if (isCalibreBook) {
+        // Recaps and lorebook sync like highlights.
+        enableExtrasSync(rawBookData.title);
+      }
+
+      annotations = controller;
+      await controller.load();
+    }),
+    reduceToEmptyString()
+  );
+
   const bookData$ = rawBookData$.pipe(
     switchMap((rawBookData) => {
       if (!rawBookData) return EMPTY;
@@ -387,14 +477,7 @@
     takeWhenBrowser()
   );
 
-  const themeOption$ = theme$.pipe(
-    map(
-      (theme) =>
-        availableThemes.get(theme) || $customThemes$[theme] || availableThemes.get('light-theme')
-    ),
-    filter((o): o is NonNullable<typeof o> => !!o),
-    takeWhenBrowser()
-  );
+  const themeOption$ = activeTheme$.pipe(map(toReaderThemeOption), takeWhenBrowser());
 
   const backgroundColor$ = themeOption$.pipe(map((o) => o.backgroundColor));
 
@@ -490,6 +573,35 @@
     reduceToEmptyString()
   );
 
+  // Starts the tracker once the opened book has settled on its position (1.5 s
+  // without a page change), so the jump to the bookmark isn't counted as reading.
+  // Only while the page is visible and not being left: a tab restored in the
+  // background must not count, and auto-pause only reacts to the page becoming hidden.
+  const bookLoaded$ = new Subject<void>();
+
+  $: if (browser && !showSpinner) {
+    bookLoaded$.next();
+  }
+
+  const startTrackerOnOpen$ = iffBrowser(() =>
+    $statisticsEnabled$ && $trackerStartOnOpen$
+      ? merge(
+          fromEvent(document, PAGE_CHANGE),
+          fromEvent(document, 'visibilitychange'),
+          bookLoaded$
+        ).pipe(startWith(undefined))
+      : NEVER
+  ).pipe(
+    debounceTime(1500),
+    filter(() => !showSpinner && !blockDataUpdates && document.visibilityState === 'visible'),
+    take(1),
+    tap(() => {
+      wasTrackerPaused = false;
+      isTrackerPaused$.next(false);
+    }),
+    reduceToEmptyString()
+  );
+
   $: if ($tocIsOpen$) {
     autoScroller?.off();
   }
@@ -526,6 +638,9 @@
 
   $: isPaginated = $viewMode$ === ViewMode.Paginated;
 
+  // Room kept free above the footer for the Listen bar, so it covers no text.
+  $: listenReserve = browser && showTts ? convertRemToPixels(window, listenBarRem) : 0;
+
   $: firstDimensionMargin =
     browser && $enableTapEdgeToFlip$ && isPaginated && $verticalMode$
       ? limitToRange(convertRemToPixels(window, 0.5), window.innerWidth, $firstDimensionMargin$)
@@ -537,9 +652,12 @@
 
   $: footerChapterProgress = getCurrentChapterProgress($sectionData$);
 
+  // Books from the Calibre source always sync, since the server is their home.
   $: upSyncEnabled =
     externalStorageHandler &&
-    ($autoReplication$ === AutoReplicationType.Up || $autoReplication$ === AutoReplicationType.All);
+    (externalStorageHandler.storageType === StorageKey.CALIBRE ||
+      $autoReplication$ === AutoReplicationType.Up ||
+      $autoReplication$ === AutoReplicationType.All);
 
   $: bookmarkData.then((data) => {
     hasBookmarkData = !!data;
@@ -581,7 +699,14 @@
       document.documentElement.lang = 'ja';
     }
 
+    // Leaving without the close button (browser back) must stop the tracker too;
+    // pausing also saves the session's statistics.
+    isTrackerPaused$.next(true);
     readerImageGalleryPictures$.next([]);
+    clearTimeout(highlightTimer);
+    contentObserver?.disconnect();
+    clearCssHighlights('ttu-');
+    annotations?.flush();
 
     if (dismissDialogs) {
       dialogManager.dialogs$.next([]);
@@ -622,6 +747,371 @@
     dialogManager.dialogs$.next([]);
     wasTrackerPaused = !$isTrackerPaused$;
     isTrackerPaused$.next(wasTrackerPaused);
+  }
+
+  function openTts() {
+    ttsStartCharCount = exploredCharCount;
+    showTts = true;
+    showHeader = false;
+  }
+
+  /** Keep the page in step with what is being read aloud. */
+  function followTts(charCount: number) {
+    if (charCount > exploredCharCount) {
+      scrollToCount(charCount);
+    }
+  }
+
+  function scrollToCount(count: number) {
+    const dataId = getBookIdSync();
+
+    if (!bookmarkManager || !dataId) {
+      return;
+    }
+
+    bookmarkManager.scrollToBookmark(
+      {
+        dataId,
+        exploredCharCount: count,
+        lastBookmarkModified: new Date().getTime(),
+        progress: 0
+      },
+      customReadingPointScrollOffset
+    );
+  }
+
+  function getTextWithoutFurigana(range: Range) {
+    const fragment = range.cloneContents();
+
+    fragment.querySelectorAll('rt, rp').forEach((element) => element.remove());
+
+    return (fragment.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function onSelectionChange() {
+    const selection = document.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : undefined;
+    const content = document.querySelector('.book-content');
+
+    selectedRange =
+      range && !range.collapsed && content?.contains(range.commonAncestorContainer)
+        ? range.cloneRange()
+        : undefined;
+  }
+
+  function openAskAi() {
+    const content = document.querySelector('.book-content');
+
+    if (!selectedRange || !content) {
+      return;
+    }
+
+    const before = document.createRange();
+    const after = document.createRange();
+
+    before.setStart(content, 0);
+    before.setEnd(selectedRange.startContainer, selectedRange.startOffset);
+    after.setStart(selectedRange.endContainer, selectedRange.endOffset);
+    after.setEnd(content, content.childNodes.length);
+
+    askPassage = {
+      bookTitle: $rawBookData$?.title ?? '',
+      before: getTextWithoutFurigana(before).slice(-2000),
+      selection: getTextWithoutFurigana(selectedRange),
+      after: getTextWithoutFurigana(after).slice(0, 600)
+    };
+    selectedRange = undefined;
+    document.getSelection()?.removeAllRanges();
+  }
+
+  $: highlights$ = annotations?.highlights$;
+  $: highlightSyncError$ = annotations?.syncError$;
+
+  $: if (bookmarkManager && $highlights$) {
+    scheduleHighlights(true);
+  }
+
+  let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+  let observedContent: Element | null = null;
+
+  // Paginated mode swaps the section's DOM, which invalidates the ranges.
+  const contentObserver = browser
+    ? new MutationObserver(() => scheduleHighlights(true))
+    : undefined;
+
+  function scheduleHighlights(force = false) {
+    if (force) {
+      highlightsDirty = true;
+    }
+
+    if (!highlightsDirty || !cssHighlightsSupported) {
+      return;
+    }
+
+    clearTimeout(highlightTimer);
+    highlightTimer = setTimeout(() => {
+      const content = document.querySelector('.book-content');
+
+      if (content && content !== observedContent) {
+        contentObserver?.disconnect();
+        contentObserver?.observe(content, { childList: true, subtree: true });
+        observedContent = content;
+      }
+
+      applyHighlights();
+    }, 200);
+  }
+
+  /** Colours highlights and the current search match in the rendered text. */
+  function applyHighlights() {
+    const content = document.querySelector('.book-content');
+
+    if (!content || !bookmarkManager) {
+      return;
+    }
+
+    const base = bookmarkManager.getRenderedStartCount();
+    const segments = getTextSegments(content);
+    const lastSegment = segments[segments.length - 1];
+    const end = base + (lastSegment ? lastSegment.startCount + lastSegment.count : 0);
+    const byColor = new Map<HighlightColor, Range[]>(highlightColors.map((color) => [color, []]));
+    const withNotes: Range[] = [];
+
+    highlightRanges = [];
+
+    ($highlights$ || []).forEach((highlight) => {
+      if (highlight.end <= base || highlight.start >= end) {
+        return;
+      }
+
+      const range = rangeForCounts(
+        document,
+        segments,
+        Math.max(highlight.start, base),
+        Math.min(highlight.end, end),
+        base
+      );
+
+      if (!range) {
+        return;
+      }
+
+      byColor.get(highlight.color)?.push(range);
+
+      if (highlight.note) {
+        withNotes.push(range);
+      }
+
+      highlightRanges.push({ highlight, range });
+    });
+
+    byColor.forEach((ranges, color) => setCssHighlight(`ttu-hl-${color}`, ranges));
+    setCssHighlight('ttu-hl-note', withNotes);
+
+    const searchRange =
+      searchMatch && searchMatch.end > base && searchMatch.start < end
+        ? rangeForCounts(document, segments, searchMatch.start, searchMatch.end, base)
+        : undefined;
+
+    setCssHighlight('ttu-search', searchRange ? [searchRange] : []);
+
+    const readingRange =
+      readingMatch && readingMatch.end > base && readingMatch.start < end
+        ? rangeForCounts(document, segments, readingMatch.start, readingMatch.end, base)
+        : undefined;
+
+    setCssHighlight('ttu-reading', readingRange ? [readingRange] : []);
+    highlightsDirty = false;
+
+    return readingRange;
+  }
+
+  /** Highlights the line being read and turns the page or scrolls when it isn't visible. */
+  function showReading(match: { start: number; end: number } | undefined) {
+    readingMatch = match;
+    highlightsDirty = true;
+
+    if (!cssHighlightsSupported) {
+      // Without highlights, at least keep the page with the voice.
+      if (match) {
+        followTts(match.start);
+      }
+      return;
+    }
+
+    const range = applyHighlights();
+
+    if (!match) {
+      return;
+    }
+
+    const rect = range?.getBoundingClientRect();
+    const visible =
+      rect &&
+      rect.width + rect.height > 0 &&
+      rect.right > 0 &&
+      rect.bottom > 0 &&
+      rect.left < window.innerWidth &&
+      rect.bottom <= window.innerHeight - listenReserve;
+
+    if (!visible) {
+      scrollToCount(match.start);
+      scheduleHighlights(true);
+    }
+  }
+
+  // Background work that follows the reading position: kanji seen (Home tab)
+  // and the automatic lorebook update.
+  let readingWorkTimer: ReturnType<typeof setTimeout> | undefined;
+
+  $: if (exploredCharCount && $rawBookData$ && $bookData$) {
+    clearTimeout(readingWorkTimer);
+    readingWorkTimer = setTimeout(
+      (title: string, position: number) => {
+        getSearchIndex()
+          .then((index) => recordKanjiSeen(title, index, position))
+          .catch(() => {});
+        // Start from another device's progress, if newer.
+        syncExtras('lorebook', title).then(() =>
+          autoUpdateLorebook(title, getSearchIndex, position)
+        );
+      },
+      15_000,
+      $rawBookData$.title,
+      exploredCharCount
+    );
+  }
+
+  onDestroy(() => clearTimeout(readingWorkTimer));
+
+  function createHighlight(color: HighlightColor, withNote = false) {
+    const content = document.querySelector('.book-content');
+    const range = selectedRange;
+
+    selectedRange = undefined;
+    document.getSelection()?.removeAllRanges();
+
+    if (!range || !content || !bookmarkManager || !annotations) {
+      return;
+    }
+
+    const { start, end } = countsForRange(
+      getTextSegments(content),
+      range,
+      bookmarkManager.getRenderedStartCount()
+    );
+    const text = getTextWithoutFurigana(range);
+
+    if (end <= start || !text) {
+      return;
+    }
+
+    const created = annotations.add({
+      start,
+      end,
+      text,
+      note: '',
+      color,
+      chapter: chapterLabelAt(sectionList$.getValue(), start)
+    });
+
+    if (withNote) {
+      editingHighlight = created;
+      editingFocusNote = true;
+    }
+  }
+
+  function caretAt(x: number, y: number) {
+    const doc = document as any;
+
+    if (doc.caretPositionFromPoint) {
+      const position = doc.caretPositionFromPoint(x, y);
+
+      return position && { node: position.offsetNode as Node, offset: position.offset as number };
+    }
+
+    const range: Range | null = doc.caretRangeFromPoint?.(x, y);
+
+    return range && { node: range.startContainer, offset: range.startOffset };
+  }
+
+  /** Clicking a highlight opens it for editing. */
+  function onDocumentClick(event: MouseEvent) {
+    if (!highlightRanges.length || document.getSelection()?.toString()) {
+      return;
+    }
+
+    const content = document.querySelector('.book-content');
+
+    if (!(event.target instanceof Node) || !content?.contains(event.target)) {
+      return;
+    }
+
+    const caret = caretAt(event.clientX, event.clientY);
+
+    if (!caret) {
+      return;
+    }
+
+    const hit = highlightRanges.find(({ range }) => {
+      try {
+        return range.isPointInRange(caret.node, caret.offset);
+      } catch (_) {
+        return false;
+      }
+    });
+
+    if (hit) {
+      editingHighlight = hit.highlight;
+      editingFocusNote = false;
+    }
+  }
+
+  function jumpToCount(count: number) {
+    if (!bookmarkManager || !getBookIdSync()) {
+      return;
+    }
+
+    pauseTracker(true);
+    scrollToCount(count);
+    scheduleHighlights(true);
+  }
+
+  function jumpToSearchResult(result: SearchResult) {
+    searchMatch = { start: result.start, end: result.end };
+    jumpToCount(result.start);
+  }
+
+  function closeSearch() {
+    showSearch = false;
+    searchMatch = undefined;
+    scheduleHighlights(true);
+  }
+
+  function getSearchIndex() {
+    const html = $bookData$?.htmlContent ?? '';
+
+    // Rebuilt when the book's HTML changes (e.g. another book opened).
+    if (!searchIndexPromise || searchIndexHtml !== html) {
+      searchIndexHtml = html;
+      searchIndexPromise = new Promise((resolve) => {
+        // Let the panel render before the (synchronous) indexing.
+        setTimeout(() => resolve(buildSearchIndex(html)), 50);
+      });
+    }
+
+    return searchIndexPromise;
+  }
+
+  function openPanel(panel: 'search' | CompanionTab) {
+    showHeader = false;
+    showSearch = panel === 'search';
+    companionTab = panel === 'search' ? undefined : panel;
+    welcomeBackDays = 0;
+
+    if (panel === 'recap') {
+      pauseTracker();
+    }
   }
 
   async function handleJump() {
@@ -904,6 +1394,18 @@
       return undefined;
     }
 
+    if (storageSourceName === StorageSourceDefault.CALIBRE_DEFAULT) {
+      return getStorageHandler(
+        window,
+        StorageKey.CALIBRE,
+        storageSourceName,
+        true,
+        $cacheStorageData$,
+        $replicationSaveBehavior$,
+        $statisticsMergeMode$,
+        $readingGoalsMergeMode$
+      );
+    }
     if (storageSourceName === StorageSourceDefault.GDRIVE_DEFAULT) {
       if (!$isOnline$) {
         dialogManager.dialogs$.next([
@@ -1071,7 +1573,8 @@
     if (
       localStorageHandler &&
       storageHandler &&
-      ($autoReplication$ === AutoReplicationType.Down ||
+      (storageHandler.storageType === StorageKey.CALIBRE ||
+        $autoReplication$ === AutoReplicationType.Down ||
         $autoReplication$ === AutoReplicationType.All)
     ) {
       const error = await replicateData(
@@ -1096,7 +1599,19 @@
 
   function onKeydown(ev: KeyboardEvent) {
     if (
+      (ev.ctrlKey || ev.metaKey) &&
+      ev.key.toLowerCase() === 'f' &&
+      !$skipKeyDownListener$ &&
+      bookCharCount
+    ) {
+      ev.preventDefault();
+      openPanel('search');
+      return;
+    }
+
+    if (
       $skipKeyDownListener$ ||
+      (ev.target instanceof HTMLElement && ev.target.closest('input, textarea, select')) ||
       ev.altKey ||
       ev.ctrlKey ||
       ev.shiftKey ||
@@ -1383,7 +1898,13 @@
         await database.deleteLastItem();
       }
 
-      if (!$manualBookmark$) {
+      if (
+        shouldBookmarkOnLeave(
+          $manualBookmark$,
+          (await bookmarkData)?.exploredCharCount,
+          (count) => !!bookmarkManager?.isCharCountOnScreen(count)
+        )
+      ) {
         await bookmarkPage();
       }
 
@@ -1404,6 +1925,8 @@
       if (upSyncEnabled) {
         await executeReplication(false);
       }
+
+      await annotations?.flush();
     } catch (error: any) {
       message = error.message;
     }
@@ -1579,6 +2102,7 @@
 </svelte:head>
 
 {$collectReaderImageGallerySpoilerToggles$ ?? ''}
+{$initAnnotations$ ?? ''}
 {$handleUpdateImageGalleryPictureSpoilers$ ?? ''}
 <button class="fixed inset-x-0 top-0 z-10 h-8 w-full" on:click={() => (showHeader = true)} />
 {#if showHeader}
@@ -1653,6 +2177,9 @@
       on:settingsClick={() => leaveReader(mergeEntries.SETTINGS.routeId, false)}
       on:domainHintClick={onDomainHintClick}
       on:bookManagerClick={() => leaveReader(mergeEntries.MANAGE.routeId)}
+      on:ttsClick={openTts}
+      on:searchClick={() => openPanel('search')}
+      on:companionClick={() => openPanel(companionTab ?? 'highlights')}
     />
   </div>
 {/if}
@@ -1693,7 +2220,7 @@
   <BookReader
     htmlContent={$bookData$.htmlContent}
     width={$containerViewportWidth$ ?? 0}
-    height={$containerViewportHeight$ ?? 0}
+    height={Math.max(0, ($containerViewportHeight$ ?? 0) - listenReserve)}
     {fontFeatureSettings}
     {verticalTextOrientation}
     prioritizeReaderStyles={$prioritizeReaderStyles$}
@@ -1746,6 +2273,7 @@
   {$textSelector$ ?? ''}
   {$replicator$ ?? ''}
   {$autoStartTracker$ ?? ''}
+  {$startTrackerOnOpen$ ?? ''}
 {:else}
   {$leaveIfBookMissing$ ?? ''}
 {/if}
@@ -1861,8 +2389,14 @@
   </div>
   {#if showFooter && bookCharCount}
     {@const currentProgress = [
-      $showCharacterCounter$ ? `${exploredCharCount} / ${bookCharCount}` : '',
-      $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : '',
+      [
+        $showCharacterCounter$
+          ? `${exploredCharCount.toLocaleString('en-US')} / ${bookCharCount.toLocaleString('en-US')} Ch`
+          : '',
+        $showPercentage$ ? `${((exploredCharCount / bookCharCount) * 100).toFixed(2)}%` : ''
+      ]
+        .filter(Boolean)
+        .join(' | '),
       $showFooterChapterCharacterCounter$ || $showFooterChapterPercentage$ ? 'T' : ''
     ]
       .filter(Boolean)
@@ -1896,13 +2430,119 @@
   {/if}
 </div>
 
+{#if showTts && $rawBookData$ && $bookData$}
+  <ListenPanel
+    title={$rawBookData$.title}
+    elementHtml={$rawBookData$.elementHtml}
+    getIndex={getSearchIndex}
+    position={exploredCharCount}
+    startCharCount={ttsStartCharCount}
+    on:position={(ev) => {
+      if (!cssHighlightsSupported) {
+        followTts(ev.detail);
+      }
+    }}
+    on:reading={(ev) => showReading(ev.detail)}
+    on:jump={(ev) => jumpToCount(ev.detail)}
+    on:close={() => {
+      showTts = false;
+      showReading(undefined);
+    }}
+  />
+{/if}
+
+{#if selectedRange && !askPassage && !editingHighlight}
+  <SelectionToolbar
+    raised={showTts}
+    on:highlight={({ detail }) => createHighlight(detail)}
+    on:note={() => createHighlight('yellow', true)}
+    on:askAi={openAskAi}
+  />
+{/if}
+
+{#if editingHighlight && annotations}
+  {#key editingHighlight.id}
+    <HighlightEditor
+      highlight={editingHighlight}
+      focusNote={editingFocusNote}
+      on:change={({ detail }) =>
+        editingHighlight && annotations?.update(editingHighlight.id, detail)}
+      on:delete={() => {
+        if (editingHighlight) {
+          annotations?.remove(editingHighlight.id);
+        }
+        editingHighlight = undefined;
+      }}
+      on:close={() => (editingHighlight = undefined)}
+    />
+  {/key}
+{/if}
+
+{#if showSearch && $bookData$}
+  <BookSearchPanel
+    getIndex={getSearchIndex}
+    sections={$sectionList$}
+    bind:query={searchQuery}
+    bind:ignoreKana={searchIgnoreKana}
+    bind:regex={searchRegex}
+    bind:results={searchResults}
+    bind:activeIndex={searchActiveIndex}
+    on:jump={({ detail }) => jumpToSearchResult(detail)}
+    on:close={closeSearch}
+  />
+{/if}
+
+{#if companionTab && $rawBookData$ && $bookData$}
+  <ReaderCompanion
+    bind:tab={companionTab}
+    title={$rawBookData$.title}
+    highlights={$highlights$ ?? []}
+    syncError={$highlightSyncError$ ?? ''}
+    getIndex={getSearchIndex}
+    sections={$sectionList$}
+    position={exploredCharCount}
+    bookCharacters={bookCharCount}
+    on:jump={({ detail }) => jumpToCount(detail.start)}
+    on:edit={({ detail }) => {
+      editingHighlight = detail;
+      editingFocusNote = true;
+    }}
+    on:close={() => (companionTab = undefined)}
+  />
+{/if}
+
+{#if welcomeBackDays && storedExploredCharacter > 0 && $openRouterApiKey$ && companionTab !== 'recap'}
+  <div
+    class="reader-panel writing-horizontal-tb fixed left-1/2 top-10 z-20 flex -translate-x-1/2 items-center gap-3 rounded-full py-1.5 pl-4 pr-1.5 text-sm shadow-lg"
+    role="status"
+  >
+    <span>Welcome back - it's been {welcomeBackDays} days.</span>
+    <button
+      class="reader-panel-chip rounded-full px-3 py-1 font-semibold"
+      on:click={() => openPanel('recap')}
+    >
+      Story so far
+    </button>
+    <button class="px-2 opacity-70" title="Dismiss" on:click={() => (welcomeBackDays = 0)}>
+      ✕
+    </button>
+  </div>
+{/if}
+
+{#if askPassage}
+  <AskAiPanel passage={askPassage} on:close={() => (askPassage = undefined)} />
+{/if}
+
 {#if bookCompleted}
   <BookCompletionConfetti {confettiWidthModifier} {confettiMaxRuns} {window} />
 {/if}
 
+<svelte:document on:selectionchange={onSelectionChange} on:click={onDocumentClick} />
+
 <svelte:window
   on:keydown={onKeydown}
   on:beforeunload={handleUnload}
+  on:pagehide={() => isTrackerPaused$.next(true)}
   on:resize={() => {
     if ($statisticsEnabled$ && !$isTrackerPaused$) {
       pauseTracker();

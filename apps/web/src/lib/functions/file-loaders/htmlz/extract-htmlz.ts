@@ -45,7 +45,7 @@ export default async function extract(blob: Blob) {
   return result;
 }
 
-function getMimeTypeFromName(filename: string): string | undefined {
+export function getMimeTypeFromName(filename: string): string | undefined {
   // image/gif, image/png, image/jpeg, image/bmp, image/webp
   const regexResult = /.*\.([^.]+)$/.exec(filename);
   if (regexResult) {

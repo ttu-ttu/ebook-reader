@@ -1,0 +1,4 @@
+numpy==2.5.4
+onnxruntime==1.31.0
+SudachiDict-full==20260723.1
+SudachiPy==0.7.0

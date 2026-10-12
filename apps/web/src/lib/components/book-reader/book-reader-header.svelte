@@ -3,26 +3,34 @@
   import { faBookmark as farBookmark } from '@fortawesome/free-regular-svg-icons';
   import {
     faBookmark as fasBookmark,
-    faCrosshairs,
+    faBookAtlas,
+    faEllipsisVertical,
     faExpand,
     faFlag,
+    faHeadphones,
     faList,
+    faLocationDot,
+    faMagnifyingGlass,
+    faMinus,
+    faPalette,
+    faPlus,
     faRotateLeft,
     type IconDefinition
   } from '@fortawesome/free-solid-svg-icons';
+  import AppHeader from '$lib/components/app-header/app-header.svelte';
   import { readerImageGalleryPictures$ } from '$lib/components/book-reader/book-reader-image-gallery/book-reader-image-gallery';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
-  import MergedHeaderIcon from '$lib/components/merged-header-icon/merged-header-icon.svelte';
   import Popover from '$lib/components/popover/popover.svelte';
+  import { customReadingPointEnabled$, fontSize$, viewMode$ } from '$lib/data/store';
   import {
-    baseHeaderClasses,
-    baseIconClasses,
-    nTranslateXHeaderFa,
-    translateXHeaderFa
-  } from '$lib/css-classes';
-  import { customReadingPointEnabled$, viewMode$ } from '$lib/data/store';
+    customAppThemes$,
+    selectedThemeId$,
+    selectTheme,
+    themeDefinitions$
+  } from '$lib/data/theme/theme-store';
+  import { resolveTheme } from '$lib/data/theme/themes';
   import { ViewMode } from '$lib/data/view-mode';
-  import { dummyFn, isMobile$, isOnOldUrl } from '$lib/functions/utils';
+  import { isMobile$, isOnOldUrl } from '$lib/functions/utils';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -49,6 +57,9 @@
     settingsClick: void;
     domainHintClick: void;
     bookManagerClick: void;
+    ttsClick: void;
+    searchClick: void;
+    companionClick: void;
   }>();
 
   const customReadingPointMenuItems: {
@@ -60,37 +71,85 @@
     ...(hasCustomReadingPoint ? [{ label: 'Reset Point', action: 'resetCustomReadingPoint' }] : [])
   ];
 
-  let customReadingPointMenuElm: Popover;
+  const panelClasses = 'app-popover-panel';
 
-  let menuItems: {
-    routeId: string;
+  let customReadingPointMenuElm: Popover;
+  let moreMenuElm: Popover;
+
+  type HeaderAction = Parameters<typeof dispatch>[0];
+
+  let moreMenuItems: {
     label: string;
     icon: IconDefinition;
-    title: string;
+    action: HeaderAction;
+    classes: string;
   }[] = [];
 
   $: isOldUrl = browser && isOnOldUrl(window);
 
+  $: themes = ($themeDefinitions$ ?? []).map((definition) =>
+    resolveTheme(definition.id, $customAppThemes$)
+  );
+
   $: {
+    const item = (
+      entry: { label: string; icon: IconDefinition },
+      action: HeaderAction,
+      classes = ''
+    ) => ({
+      label: entry.label,
+      icon: entry.icon,
+      action,
+      classes: `app-popover-item ${classes}`
+    });
     const items = [];
 
-    if (isOldUrl) {
-      items.push(mergeEntries.DOMAIN_HINT);
-    } else {
-      items.push(mergeEntries.STATISTICS);
+    // Shown in the bar on larger screens.
+    if (hasBookmarkData) {
+      items.push(
+        item(
+          { label: 'Return to Bookmark', icon: faRotateLeft },
+          'scrollToBookmarkClick',
+          'md:hidden'
+        )
+      );
     }
+    if (showFullscreenButton) {
+      items.push(item({ label: 'Fullscreen', icon: faExpand }, 'fullscreenClick', 'md:hidden'));
+    }
+    // Phones: the bar would push its icons over the back button.
+    if (hasText) {
+      items.push(
+        item({ label: 'Search in Book', icon: faMagnifyingGlass }, 'searchClick', 'sm:hidden')
+      );
+    }
+    items.push(item({ label: 'Listen', icon: faHeadphones }, 'ttsClick', 'sm:hidden'));
+
+    items.push(item({ label: 'Complete Book', icon: faFlag }, 'completeBook'));
 
     if (hasText) {
-      items.push(mergeEntries.JUMP_TO_POSITION);
+      items.push(item(mergeEntries.JUMP_TO_POSITION, 'jumpClick'));
     }
 
     if ($readerImageGalleryPictures$.length) {
-      items.push(mergeEntries.READER_IMAGE_GALLERY);
+      items.push(item(mergeEntries.READER_IMAGE_GALLERY, 'readerImageGalleryClick'));
     }
 
-    items.push(mergeEntries.SETTINGS, mergeEntries.MANAGE);
+    // Larger screens have these in the section navigation.
+    items.push(
+      isOldUrl
+        ? item(mergeEntries.DOMAIN_HINT, 'domainHintClick')
+        : item(mergeEntries.STATISTICS, 'statisticsClick', 'sm:hidden'),
+      item(mergeEntries.SETTINGS, 'settingsClick', 'sm:hidden'),
+      item({ label: 'Library', icon: mergeEntries.MANAGE.icon }, 'bookManagerClick', 'sm:hidden')
+    );
 
-    menuItems = items;
+    moreMenuItems = items;
+  }
+
+  function runMoreAction(action: HeaderAction) {
+    moreMenuElm.toggleOpen();
+    dispatch(action);
   }
 
   function dispatchCustomReadingPointAction(action: any) {
@@ -99,120 +158,196 @@
   }
 </script>
 
-<div class="flex justify-between bg-gray-700 px-4 md:px-8 {baseHeaderClasses}">
-  <div class="flex transform-gpu {nTranslateXHeaderFa}">
-    {#if hasChapterData}
-      <div
-        tabindex="0"
-        role="button"
-        title="Open Table of Contents"
-        class={baseIconClasses}
-        on:click={() => dispatch('tocClick')}
-        on:keyup={dummyFn}
-      >
-        <Fa icon={faList} />
-      </div>
-    {/if}
-    <div
-      tabindex="0"
-      role="button"
-      title="Create Bookmark"
-      class={baseIconClasses}
-      on:click={() => dispatch('bookmarkClick')}
-      on:keyup={dummyFn}
+<AppHeader
+  active={undefined}
+  onNavigate={(section) => {
+    if (section === 'statistics') {
+      dispatch('statisticsClick');
+    } else if (section === 'settings') {
+      dispatch('settingsClick');
+    } else {
+      dispatch('bookManagerClick');
+    }
+  }}
+  onBack={() => dispatch('bookManagerClick')}
+>
+  {#if hasChapterData}
+    <button
+      type="button"
+      class="app-header-icon"
+      title="Open Table of Contents"
+      on:click={() => dispatch('tocClick')}
     >
-      <Fa icon={isBookmarkScreen ? fasBookmark : farBookmark} />
-    </div>
-    {#if hasBookmarkData}
-      <div
-        tabindex="0"
-        role="button"
-        title="Return to Bookmark"
-        class={baseIconClasses}
-        on:click={() => dispatch('scrollToBookmarkClick')}
-        on:keyup={dummyFn}
-      >
-        <Fa icon={faRotateLeft} />
-      </div>
-    {/if}
-    {#if $viewMode$ === ViewMode.Continuous && !$isMobile$}
-      <div
-        class="flex items-center px-4 text-xl xl:px-3 xl:text-lg"
-        title="Current Autoscroll Speed"
-      >
-        {autoScrollMultiplier}x
-      </div>
-    {/if}
-  </div>
-
-  <div class="flex transform-gpu {translateXHeaderFa}">
-    <div
-      tabindex="0"
-      role="button"
-      title="Complete Book"
-      class={baseIconClasses}
-      on:click={() => dispatch('completeBook')}
-      on:keyup={dummyFn}
+      <Fa icon={faList} />
+    </button>
+  {/if}
+  <button
+    type="button"
+    class="app-header-icon"
+    title="Create Bookmark"
+    on:click={() => dispatch('bookmarkClick')}
+  >
+    <Fa icon={isBookmarkScreen ? fasBookmark : farBookmark} />
+  </button>
+  {#if hasBookmarkData}
+    <button
+      type="button"
+      class="app-header-icon hidden md:inline-flex"
+      title="Return to Bookmark"
+      on:click={() => dispatch('scrollToBookmarkClick')}
     >
-      <Fa icon={faFlag} />
+      <Fa icon={faRotateLeft} />
+    </button>
+  {/if}
+  {#if hasText}
+    <button
+      type="button"
+      class="app-header-icon hidden sm:inline-flex"
+      title="Search in Book"
+      on:click={() => dispatch('searchClick')}
+    >
+      <Fa icon={faMagnifyingGlass} />
+    </button>
+  {/if}
+  <button
+    type="button"
+    class="app-header-icon hidden sm:inline-flex"
+    title="Listen: audiobook or AI voice"
+    on:click={() => dispatch('ttsClick')}
+  >
+    <Fa icon={faHeadphones} />
+  </button>
+  <button
+    type="button"
+    class="app-header-icon"
+    title="Highlights, story so far and lorebook"
+    on:click={() => dispatch('companionClick')}
+  >
+    <Fa icon={faBookAtlas} />
+  </button>
+  {#if $customReadingPointEnabled$ || $viewMode$ === ViewMode.Paginated}
+    <Popover
+      placement="bottom"
+      fallbackPlacements={['bottom-end', 'bottom-start']}
+      yOffset={10}
+      {panelClasses}
+      bind:this={customReadingPointMenuElm}
+    >
+      <div slot="icon" class="app-header-icon hidden md:inline-flex" title="Custom Reading Point">
+        <Fa icon={faLocationDot} />
+      </div>
+      <div slot="content" class="flex flex-col">
+        {#each customReadingPointMenuItems as actionItem (actionItem.label)}
+          <button
+            type="button"
+            class="app-popover-item"
+            on:click={() => dispatchCustomReadingPointAction(actionItem.action)}
+          >
+            {actionItem.label}
+          </button>
+        {/each}
+      </div>
+    </Popover>
+  {/if}
+  {#if showFullscreenButton}
+    <button
+      type="button"
+      class="app-header-icon hidden md:inline-flex"
+      title="Toggle Fullscreen"
+      on:click={() => dispatch('fullscreenClick')}
+    >
+      <Fa icon={faExpand} />
+    </button>
+  {/if}
+  <Popover
+    placement="bottom-end"
+    fallbackPlacements={['bottom', 'bottom-start']}
+    yOffset={10}
+    {panelClasses}
+  >
+    <div slot="icon" class="app-header-icon" title="Quick Settings">
+      <Fa icon={faPalette} />
     </div>
-    {#if $customReadingPointEnabled$ || $viewMode$ === ViewMode.Paginated}
-      <div class="flex">
-        <Popover
-          placement="bottom"
-          fallbackPlacements={['bottom-end', 'bottom-start']}
-          yOffset={0}
-          bind:this={customReadingPointMenuElm}
+    <div slot="content" class="flex w-64 flex-col gap-3 p-2">
+      <div class="app-popover-heading">Theme</div>
+      <div class="flex flex-wrap gap-2 px-2">
+        {#each themes as option (option.id)}
+          <button
+            type="button"
+            class="h-9 w-9 rounded-lg border-2 text-sm"
+            style:border-color={option.id === $selectedThemeId$
+              ? 'var(--accent-color)'
+              : 'var(--app-control-border)'}
+            style:color={option.colors.readerText}
+            style:background-color={option.colors.readerBackground}
+            title={option.name}
+            on:click={() => selectTheme(option.id)}
+          >
+            あ
+          </button>
+        {/each}
+      </div>
+      <div class="app-popover-heading">Font size</div>
+      <div class="flex items-center justify-between px-2 pb-1">
+        <button
+          type="button"
+          class="font-size-button"
+          title="Smaller"
+          on:click={() => fontSize$.next(Math.max(8, $fontSize$ - 1))}
         >
-          <div slot="icon" title="Open Custom Point Actions" class={baseIconClasses}>
-            <Fa icon={faCrosshairs} />
-          </div>
-          <div class="w-40 bg-gray-700 md:w-32" slot="content">
-            {#each customReadingPointMenuItems as actionItem (actionItem.label)}
-              <div
-                tabindex="0"
-                role="button"
-                class="px-4 py-2 text-sm hover:bg-white hover:text-gray-700"
-                on:click={() => dispatchCustomReadingPointAction(actionItem.action)}
-                on:keyup={dummyFn}
-              >
-                {actionItem.label}
-              </div>
-            {/each}
-          </div>
-        </Popover>
+          <Fa icon={faMinus} />
+        </button>
+        <span class="font-semibold">{$fontSize$}px</span>
+        <button
+          type="button"
+          class="font-size-button"
+          title="Larger"
+          on:click={() => fontSize$.next($fontSize$ + 1)}
+        >
+          <Fa icon={faPlus} />
+        </button>
       </div>
-    {/if}
-    {#if showFullscreenButton}
-      <div
-        tabindex="0"
-        role="button"
-        title="Toggle Fullscreen"
-        class={baseIconClasses}
-        on:click={() => dispatch('fullscreenClick')}
-        on:keyup={dummyFn}
-      >
-        <Fa icon={faExpand} />
-      </div>
-    {/if}
-    <MergedHeaderIcon
-      disableRouteNavigation
-      items={menuItems}
-      on:action={({ detail }) => {
-        if (detail === mergeEntries.STATISTICS.label) {
-          dispatch('statisticsClick');
-        } else if (detail === mergeEntries.JUMP_TO_POSITION.label) {
-          dispatch('jumpClick');
-        } else if (detail === mergeEntries.READER_IMAGE_GALLERY.label) {
-          dispatch('readerImageGalleryClick');
-        } else if (detail === mergeEntries.SETTINGS.label) {
-          dispatch('settingsClick');
-        } else if (detail === mergeEntries.DOMAIN_HINT.label) {
-          dispatch('domainHintClick');
-        } else if (detail === mergeEntries.MANAGE.label) {
-          dispatch('bookManagerClick');
-        }
-      }}
-    />
-  </div>
-</div>
+    </div>
+  </Popover>
+  <Popover
+    placement="bottom-end"
+    fallbackPlacements={['bottom', 'bottom-start']}
+    yOffset={10}
+    {panelClasses}
+    bind:this={moreMenuElm}
+  >
+    <div slot="icon" class="app-header-icon" title="More reader actions">
+      <Fa icon={faEllipsisVertical} />
+    </div>
+    <div slot="content" class="flex flex-col">
+      {#each moreMenuItems as item (item.label)}
+        <button type="button" class={item.classes} on:click={() => runMoreAction(item.action)}>
+          <Fa icon={item.icon} fw />
+          {item.label}
+        </button>
+      {/each}
+    </div>
+  </Popover>
+  {#if $viewMode$ === ViewMode.Continuous && !$isMobile$}
+    <span class="px-2 text-sm font-semibold" title="Current Autoscroll Speed">
+      {autoScrollMultiplier}x
+    </span>
+  {/if}
+</AppHeader>
+
+<style>
+  .font-size-button {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid currentColor;
+    border-radius: 0.75rem;
+    opacity: 0.8;
+  }
+
+  .font-size-button:hover {
+    opacity: 1;
+  }
+</style>

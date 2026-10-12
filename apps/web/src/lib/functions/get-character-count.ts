@@ -13,9 +13,22 @@ export function getCharacterCount(node: Node) {
 const isNotJapaneseRegex =
   /[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]+/gimu;
 
+const isJapaneseCharRegex =
+  /^[0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]$/iu;
+
 function getRawCharacterCount(node: Node) {
   if (!node.textContent) return 0;
-  return countUnicodeCharacters(node.textContent.replace(isNotJapaneseRegex, ''));
+  return countTextCharacters(node.textContent);
+}
+
+/** Characters of a string as counted for bookmarks and statistics. */
+export function countTextCharacters(text: string) {
+  return countUnicodeCharacters(text.replace(isNotJapaneseRegex, ''));
+}
+
+/** Whether a single character (code point) counts towards character counts. */
+export function isCountedCharacter(char: string) {
+  return isJapaneseCharRegex.test(char);
 }
 
 /**

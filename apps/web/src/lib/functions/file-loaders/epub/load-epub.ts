@@ -11,14 +11,18 @@ import generateEpubStyleSheet from './generate-epub-style-sheet';
 import getEpubCoverImageFilename from './get-epub-cover-image-filename';
 import { isOPFType } from './types';
 import reduceObjToBlobs from '../utils/reduce-obj-to-blobs';
+import { createInertDocument, sanitizeBookElement } from '../utils/sanitize-book-html';
 
+/** `_document` is unused: the book is built in an inert document, see sanitize-book-html.ts. */
 export default async function loadEpub(
   file: File,
-  document: Document,
+  _document: Document,
   lastBookModified: number
 ): Promise<LoadData> {
   const { contents, result: data, contentsDirectory } = await extractEpub(file);
-  const result = generateEpubHtml(data, contents, document, contentsDirectory);
+  const result = generateEpubHtml(data, contents, createInertDocument(), contentsDirectory);
+
+  sanitizeBookElement(result.element);
 
   const displayData = {
     title: file.name,

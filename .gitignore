@@ -1,2 +1,9 @@
 .DS_Store
 node_modules
+
+__pycache__/
+
+# Notes about one deployment, loaded by Claude Code next to CLAUDE.md
+CLAUDE.local.md
+# One deployment's private config and notes (deploy.sh reads local/deploy.env)
+local/
