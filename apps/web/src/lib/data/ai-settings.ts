@@ -28,7 +28,7 @@ export const elevenLabsModel$ = writableStringLocalStorageSubject()(
 );
 export const ttsVoiceId$ = writableStringLocalStorageSubject()('ttsVoiceId', '');
 
-export const defaultOpenRouterModel = 'anthropic/claude-opus-5.5';
+export const defaultOpenRouterModel = '~google/gemini-flash-latest';
 
 export const openRouterApiKey$ = writableStringLocalStorageSubject()('openRouterApiKey', '');
 export const openRouterModel$ = writableStringLocalStorageSubject()(
@@ -36,10 +36,10 @@ export const openRouterModel$ = writableStringLocalStorageSubject()(
   defaultOpenRouterModel
 );
 
-/** Optional cheaper model for "Story so far" recaps; empty means the Ask AI model. */
+/** Model for "Story so far" recaps and the lorebook; empty means the Ask AI model. */
 export const openRouterRecapModel$ = writableStringLocalStorageSubject()(
   'openRouterRecapModel',
-  ''
+  '~deepseek/deepseek-flash-latest'
 );
 
 /** Language of the AI prompts and answers (Ask AI, recaps, lorebook): 'en' or 'ja'. */

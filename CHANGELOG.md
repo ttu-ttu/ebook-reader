@@ -45,7 +45,9 @@ First public release. Compared with upstream ッツ Ebook Reader:
 - **Ask AI** about a selection (OpenRouter, presets, English or Japanese prompts),
   **Story so far** spoiler-free recaps, a **Lorebook** of characters and places
   (SillyTavern format), an **AI voice** (ElevenLabs) that highlights the line being
-  read, and **audiobooks** matched to the text by their subtitles.
+  read, and **audiobooks** matched to the text by their subtitles. Default models:
+  `~google/gemini-flash-latest` for Ask AI, `~deepseek/deepseek-flash-latest` for
+  recaps and the lorebook.
 - **Themes** for the whole app, following the system's light and dark mode, with
   a theme editor and import/export (`themes.md`).
 - A settings page with sidebar sections and search.
