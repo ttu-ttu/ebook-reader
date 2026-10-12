@@ -168,7 +168,7 @@ export const themeTokenGroups = {
     headerBackground: {
       label: 'Header background',
       cssVar: '--app-header-bg',
-      description: 'Top bar and library sidebar (glass, keep it slightly transparent)'
+      description: 'Top bar, mobile tab bar and library sidebar'
     },
     headerText: {
       label: 'Header text',
@@ -188,12 +188,12 @@ export const themeTokenGroups = {
     headerIconBackground: {
       label: 'Header icon background',
       cssVar: '--app-header-icon-bg',
-      description: 'Pill behind grouped icon buttons'
+      description: 'Icon buttons at rest (transparent in Washi)'
     },
     headerIconBorder: {
       label: 'Header icon border',
       cssVar: '--app-header-icon-border',
-      description: 'Outline of the icon pill'
+      description: 'Outline of icon buttons at rest'
     },
     headerIconHover: {
       label: 'Header icon hover',

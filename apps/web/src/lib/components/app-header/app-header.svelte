@@ -36,198 +36,184 @@
     label: string;
     icon: typeof faBook;
     href: string;
-    accent: string;
   }[] = [
-    {
-      key: 'library',
-      label: 'Library',
-      icon: faBook,
-      href: `${pagePath}/manage`,
-      accent: 'color-mix(in srgb, var(--accent-color) 26%, #8b5cf6)'
-    },
-    {
-      key: 'statistics',
-      label: 'Statistics',
-      icon: faChartLine,
-      href: `${pagePath}/statistics`,
-      accent: 'color-mix(in srgb, var(--accent-color) 36%, #22c55e)'
-    },
-    {
-      key: 'settings',
-      label: 'Settings',
-      icon: faGear,
-      href: `${pagePath}/settings`,
-      accent: 'color-mix(in srgb, var(--accent-color) 34%, #3b82f6)'
-    },
-    {
-      key: 'notes',
-      label: 'Notes',
-      icon: faNoteSticky,
-      href: '',
-      accent: 'color-mix(in srgb, var(--accent-color) 18%, #f59e0b)'
-    }
+    { key: 'library', label: 'Library', icon: faBook, href: `${pagePath}/manage` },
+    { key: 'statistics', label: 'Statistics', icon: faChartLine, href: `${pagePath}/statistics` },
+    { key: 'settings', label: 'Settings', icon: faGear, href: `${pagePath}/settings` },
+    { key: 'notes', label: 'Notes', icon: faNoteSticky, href: '' }
   ];
 </script>
 
 <header class="fixed inset-x-0 top-0 z-40">
   <div
-    class="app-header-surface relative h-16 border-b border-[color:var(--app-header-border)] text-[color:var(--app-header-fg)] shadow-[inset_0_-1px_0_var(--app-header-border)] xl:h-[3.25rem]"
+    class="app-header-surface relative h-16 border-b border-[color:var(--app-header-border)] text-[color:var(--app-header-fg)] xl:h-[3.25rem]"
   >
-    <div
-      class="mx-auto flex h-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:px-8 xl:px-10"
-    >
-      <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-        <a
-          href="{pagePath}/manage"
-          class="hidden shrink-0 items-center opacity-95 transition-opacity hover:opacity-100 sm:flex"
-          title="Chimimouryou"
-          on:click={(event) => navigate(event, 'library', `${pagePath}/manage`)}
+    <div class="flex h-full items-center gap-2 px-3 sm:gap-6 sm:px-5 xl:px-8">
+      {#if onBack}
+        <button
+          type="button"
+          class="app-header-icon sm:hidden"
+          title="Back"
+          aria-label="Back"
+          on:click={onBack}
         >
-          <AppHeaderLogo />
-        </a>
+          <Fa icon={faArrowLeft} />
+        </button>
+      {/if}
 
-        {#if onBack}
-          <div class="app-header-pill sm:hidden">
-            <button
-              type="button"
-              class="app-header-icon"
-              title="Back"
-              aria-label="Back"
-              on:click={onBack}
-            >
-              <Fa icon={faArrowLeft} />
-            </button>
-          </div>
-        {/if}
+      <a
+        href="{pagePath}/manage"
+        class="app-brand {onBack ? 'hidden sm:flex' : 'flex'}"
+        title="Chimimouryou"
+        on:click={(event) => navigate(event, 'library', `${pagePath}/manage`)}
+      >
+        <AppHeaderLogo label="Chimimouryou" />
+      </a>
 
-        <nav
-          class="section-nav app-header-pill min-w-0"
-          class:section-nav-backable={!!onBack}
-          aria-label="Section navigation"
-        >
-          {#if currentBookId}
+      <nav class="section-nav hidden sm:flex" aria-label="Sections">
+        {#each sections as section (section.key)}
+          {#if section.href}
             <a
-              href="{pagePath}/b?id={currentBookId}"
-              class="section-nav-item section-nav-item-return"
-              title="Continue reading"
+              href={section.href}
+              class="section-nav-item"
+              class:section-nav-item-active={section.key === active}
+              aria-current={section.key === active ? 'page' : undefined}
+              title={section.label}
+              on:click={(event) => navigate(event, section.key, section.href)}
             >
-              <Fa icon={faBookOpenReader} />
-              <span class="hidden lg:inline">Continue</span>
+              <Fa icon={section.icon} class="md:hidden" />
+              <span class="hidden md:inline">{section.label}</span>
             </a>
+          {:else}
+            <span
+              class="section-nav-item section-nav-item-disabled"
+              aria-disabled="true"
+              title="{section.label} are not available in this reader yet"
+            >
+              <Fa icon={section.icon} class="md:hidden" />
+              <span class="hidden md:inline">{section.label}</span>
+            </span>
           {/if}
-          {#each sections as section (section.key)}
-            {#if section.href}
-              <a
-                href={section.href}
-                class="section-nav-item"
-                class:section-nav-item-active={section.key === active}
-                aria-current={section.key === active ? 'page' : undefined}
-                title={section.label}
-                style:--section-nav-item-accent={section.accent}
-                on:click={(event) => navigate(event, section.key, section.href)}
-              >
-                <Fa icon={section.icon} />
-                <span class="hidden md:inline">{section.label}</span>
-              </a>
-            {:else}
-              <span
-                class="section-nav-item section-nav-item-disabled"
-                aria-disabled="true"
-                title="{section.label} are not available in this reader yet"
-                style:--section-nav-item-accent={section.accent}
-              >
-                <Fa icon={section.icon} />
-                <span class="hidden md:inline">{section.label}</span>
-              </span>
-            {/if}
-          {/each}
-        </nav>
-      </div>
+        {/each}
+      </nav>
 
-      <div class="flex shrink-0 items-center gap-2">
+      <div class="ml-auto flex min-w-0 items-center gap-1">
+        {#if currentBookId}
+          <a
+            href="{pagePath}/b?id={currentBookId}"
+            class="app-header-icon app-header-continue"
+            title="Continue reading"
+          >
+            <Fa icon={faBookOpenReader} />
+            <span class="hidden lg:inline">Continue</span>
+          </a>
+        {/if}
         {#if $$slots.default}
           <div class="app-header-pill">
             <slot />
           </div>
         {/if}
-        <div class="app-header-pill">
-          <a
-            href="{pagePath}/settings?section=general#general-account"
-            class="app-header-icon"
-            title={$account$ ? `Signed in as ${$account$.username}` : 'Sign in'}
-            aria-label={$account$ ? `Account: ${$account$.username}` : 'Sign in'}
-          >
-            {#if $account$}
-              <span class="account-initial">{$account$.username.charAt(0)}</span>
-            {:else}
-              <Fa icon={faUser} />
-            {/if}
-          </a>
-        </div>
+        <a
+          href="{pagePath}/settings?section=general#general-account"
+          class="app-header-icon"
+          title={$account$ ? `Signed in as ${$account$.username}` : 'Sign in'}
+          aria-label={$account$ ? `Account: ${$account$.username}` : 'Sign in'}
+        >
+          {#if $account$}
+            <span class="account-initial">{$account$.username.charAt(0)}</span>
+          {:else}
+            <Fa icon={faUser} />
+          {/if}
+        </a>
       </div>
     </div>
   </div>
 </header>
 
+{#if !onBack}
+  <nav class="app-bottom-nav" aria-label="Sections">
+    {#each sections as section (section.key)}
+      {#if section.href}
+        <a
+          href={section.href}
+          class="bottom-nav-item"
+          class:bottom-nav-item-active={section.key === active}
+          aria-current={section.key === active ? 'page' : undefined}
+          on:click={(event) => navigate(event, section.key, section.href)}
+        >
+          <Fa icon={section.icon} />
+          <span>{section.label}</span>
+        </a>
+      {/if}
+    {/each}
+  </nav>
+{/if}
+
 <style>
+  .app-brand {
+    flex-shrink: 0;
+    align-items: center;
+    color: var(--accent-color);
+  }
+
   .account-initial {
     display: inline-flex;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
     align-items: center;
     justify-content: center;
+    border: 1px solid var(--app-header-border);
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--accent-color) 24%, var(--surface-strong-color));
-    font-size: 0.8rem;
-    font-weight: 800;
+    color: var(--app-header-fg);
+    font-family: var(--app-font-display);
+    font-size: 0.85rem;
     text-transform: uppercase;
   }
 
   .section-nav {
-    /* Shrink and scroll instead of sliding under the actions on narrow screens. */
-    flex-shrink: 1;
-    overflow-x: auto;
-    scrollbar-width: none;
+    height: 100%;
+    min-width: 0;
+    align-items: stretch;
+    gap: 0.25rem;
   }
 
   .section-nav-item {
     position: relative;
     display: inline-flex;
-    flex: 0 0 auto;
     align-items: center;
-    justify-content: center;
-    gap: 0.55rem;
-    min-height: var(--app-header-control-height);
-    padding: 0.55rem 0.85rem;
-    border-radius: 1rem;
+    gap: 0.5rem;
+    padding: 0 0.7rem;
     color: var(--app-header-icon-fg);
     font-size: var(--app-header-label-size);
-    font-weight: 700;
-    line-height: 1.18;
+    font-weight: 500;
     white-space: nowrap;
-    transition:
-      background-color 0.18s ease,
-      color 0.18s ease,
-      box-shadow 0.18s ease;
+    transition: color 0.15s var(--app-ease);
   }
 
-  .section-nav-item:hover:not(.section-nav-item-active):not(.section-nav-item-disabled) {
-    background: color-mix(in srgb, var(--section-nav-item-accent) 14%, transparent);
-    color: color-mix(in srgb, var(--section-nav-item-accent) 72%, var(--app-header-fg));
+  .section-nav-item::after {
+    content: '';
+    position: absolute;
+    inset: auto 0.7rem -1px;
+    height: 2px;
+    background: transparent;
+  }
+
+  .section-nav-item:hover:not(.section-nav-item-disabled),
+  .section-nav-item-active {
+    color: var(--app-header-fg);
   }
 
   .section-nav-item-active {
-    background: color-mix(in srgb, var(--section-nav-item-accent) 16%, var(--surface-strong-color));
-    box-shadow:
-      inset 0 1px rgba(255, 255, 255, 0.24),
-      0 16px 30px -28px var(--shadow-color);
-    color: color-mix(in srgb, var(--section-nav-item-accent) 76%, var(--font-color));
-    cursor: default;
+    font-weight: 650;
   }
 
-  .section-nav-item-return {
-    --section-nav-item-accent: color-mix(in srgb, var(--accent-color) 58%, #14b8a6);
-    margin-right: 0.35rem;
+  .section-nav-item-active::after {
+    background: var(--accent-color);
+  }
+
+  .section-nav-item:focus-visible {
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: -4px;
   }
 
   .section-nav-item-disabled {
@@ -235,23 +221,50 @@
     opacity: 0.5;
   }
 
-  @media (max-width: 767px) {
-    .section-nav-item {
-      padding-inline: 0.7rem;
-    }
+  .app-bottom-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 40;
+    display: none;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--app-header-border);
+    background: var(--app-header-bg);
+    -webkit-backdrop-filter: blur(var(--app-blur));
+    backdrop-filter: blur(var(--app-blur));
   }
 
   @media (max-width: 639px) {
-    .section-nav-backable {
-      display: none;
+    .app-bottom-nav {
+      display: grid;
     }
+  }
 
-    .section-nav-item {
-      padding-inline: 0.55rem;
-    }
+  .bottom-nav-item {
+    position: relative;
+    display: flex;
+    min-height: 3.5rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    color: var(--app-header-icon-fg);
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
 
-    .section-nav-item-disabled {
-      display: none;
-    }
+  .bottom-nav-item-active {
+    color: var(--accent-strong-color);
+    font-weight: 650;
+  }
+
+  .bottom-nav-item-active::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    width: 1.5rem;
+    height: 2px;
+    background: var(--accent-color);
   }
 </style>

@@ -136,12 +136,12 @@ contrast (4.5:1); built-in themes are checked by `themes.test.ts`.
 
 | Key | CSS variable | Used for |
 | --- | --- | --- |
-| `headerBackground` | `--app-header-bg` | Top bar and library sidebar (glass, keep it slightly transparent) |
+| `headerBackground` | `--app-header-bg` | Top bar, mobile tab bar and library sidebar |
 | `headerText` | `--app-header-fg` | Titles in the top bar |
 | `headerBorder` | `--app-header-border` | Line below the top bar |
 | `headerIcon` | `--app-header-icon-fg` | Icon buttons |
-| `headerIconBackground` | `--app-header-icon-bg` | Pill behind grouped icon buttons |
-| `headerIconBorder` | `--app-header-icon-border` | Outline of the icon pill |
+| `headerIconBackground` | `--app-header-icon-bg` | Icon buttons at rest (transparent in Washi) |
+| `headerIconBorder` | `--app-header-icon-border` | Outline of icon buttons at rest |
 | `headerIconHover` | `--app-header-icon-hover-bg` | Icon button hover and active state |
 
 ### Reader

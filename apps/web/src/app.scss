@@ -59,6 +59,13 @@
   scrollbar-color: var(--app-scrollbar-color) transparent;
 }
 
+/* Room for the mobile tab bar (app-header.svelte) */
+@media (max-width: 639px) {
+  body:has(.app-bottom-nav) {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+}
+
 @media (min-width: 1280px) {
   :root {
     --app-header-control-height: 2.35rem;
@@ -157,14 +164,8 @@
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.125rem;
     min-width: 0;
-    min-height: var(--app-header-pill-height);
-    padding: 0.25rem;
-    border: 1px solid var(--app-header-icon-border);
-    border-radius: calc(1.25rem * var(--app-radius-scale));
-    background: color-mix(in srgb, var(--app-header-icon-bg) 82%, transparent);
-    box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
   }
 
   .app-header-icon {
@@ -176,8 +177,9 @@
     min-width: var(--app-header-control-height);
     height: var(--app-header-control-height);
     padding: 0;
-    border: 1px solid transparent;
-    border-radius: calc(1rem * var(--app-radius-scale));
+    border: 1px solid var(--app-header-icon-border);
+    border-radius: calc(0.75rem * var(--app-radius-scale));
+    background: var(--app-header-icon-bg);
     color: var(--app-header-icon-fg);
     font-size: var(--app-header-label-size);
     font-weight: 700;
@@ -190,11 +192,9 @@
   }
 
   .app-header-icon:hover,
-  .app-header-icon:focus-visible,
   .app-header-icon-active {
     background: var(--app-header-icon-hover-bg);
     color: var(--app-header-fg);
-    outline: none;
   }
 
   .app-header-icon:disabled {
