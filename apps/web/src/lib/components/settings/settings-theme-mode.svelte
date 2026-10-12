@@ -10,7 +10,6 @@
 <SettingsItemGroup
   title="Follow system theme"
   tooltip="Switch between a light and a dark theme together with your device's dark mode."
-  wide
 >
   <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={$followSystemTheme$} />
 </SettingsItemGroup>
@@ -19,17 +18,25 @@
   <SettingsItemGroup
     title="Light theme"
     tooltip={$systemDark$ ? 'Used when the device is in light mode.' : 'In use now (light mode).'}
+    wide
   >
-    <SettingsThemePicker bind:value={$theme$} />
+    <SettingsThemePicker bind:value={$theme$} label="Light theme" />
   </SettingsItemGroup>
   <SettingsItemGroup
     title="Dark theme"
     tooltip={$systemDark$ ? 'In use now (dark mode).' : 'Used when the device is in dark mode.'}
+    wide
   >
-    <SettingsThemePicker bind:value={$darkTheme$} preferDark />
+    <SettingsThemePicker bind:value={$darkTheme$} label="Dark theme" preferDark />
   </SettingsItemGroup>
 {:else}
-  <SettingsItemGroup title="Theme" tooltip="Applies to the library, settings and the book.">
+  <SettingsItemGroup title="Theme" tooltip="Applies to the library, settings and the book." wide>
     <SettingsThemePicker bind:value={$theme$} />
   </SettingsItemGroup>
 {/if}
+
+<p class="pt-3 text-sm">
+  <a class="app-button app-button-quiet" href="?section=general#general-custom-themes">
+    Make or import your own theme in Custom Themes
+  </a>
+</p>

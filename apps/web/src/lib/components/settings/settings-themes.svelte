@@ -19,7 +19,10 @@
     selectTheme,
     themeDefinitions$
   } from '$lib/data/theme/theme-store';
-  import { themeTokensByGroup, type ThemeToken } from '$lib/data/theme/theme-tokens';
+  import { parseCssColor } from '$lib/data/theme/color-utils';
+  import { contrastIssues, minimumContrast } from '$lib/data/theme/contrast';
+  import { themeTokens, themeTokensByGroup, type ThemeToken } from '$lib/data/theme/theme-tokens';
+  import DifficultyBadge from '$lib/components/book-card/difficulty-badge.svelte';
   import {
     builtInThemeIds,
     defaultDarkThemeId,
@@ -62,6 +65,14 @@
       )
     : undefined;
   $: previewTheme$.next(editing ? { ...editing } : undefined);
+  // Contrast of the theme being edited; a hint only, saving is never blocked.
+  $: editedColors = editing
+    ? resolveTheme(editing.id, { ...$customAppThemes$, [editing.id]: editing }).colors
+    : undefined;
+  $: lowContrast = editedColors ? contrastIssues(editedColors, parseCssColor) : [];
+  const tokenLabel = (token: ThemeToken) =>
+    themeTokens.find((entry) => entry.token === token)?.label ?? token;
+  let previewOn = true;
 
   onDestroy(() => previewTheme$.next(undefined));
 
@@ -228,7 +239,7 @@
     </div>
 
     {#if showImport}
-      <SettingsItemGroup title="Import a theme">
+      <SettingsItemGroup title="Import a theme" wide>
         <p class="mb-2 text-sm text-[color:var(--app-muted-fg)]">
           Paste theme JSON or choose a .json file.
         </p>
@@ -339,8 +350,60 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <SettingsItemGroup title="General">
+    <div class="theme-live-preview" aria-label="Preview">
+      <div class="theme-live-card">
+        <span class="theme-live-cover" />
+        <span class="theme-live-title" lang="ja">吾輩は猫である</span>
+        <span class="theme-live-author" lang="ja">夏目漱石</span>
+        <DifficultyBadge difficulty={2.6} compact />
+        <span class="theme-live-progress"><span /></span>
+      </div>
+      <div class="theme-live-settings">
+        <div class="theme-live-row">
+          <span>
+            <span class="block text-sm font-semibold">A settings row</span>
+            <span class="block text-xs text-[color:var(--app-muted-fg)]">Muted description</span>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            class="app-switch"
+            aria-checked={previewOn}
+            aria-label="Preview switch"
+            on:click={() => (previewOn = !previewOn)}
+          >
+            <span class="app-switch-thumb" />
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2 pt-3">
+          <button type="button" class="app-button app-button-primary">Primary</button>
+          <button type="button" class="app-button">Secondary</button>
+          <button type="button" class="app-button app-button-danger">Delete</button>
+        </div>
+      </div>
+      <p class="theme-live-page" lang="ja">
+        吾輩は<ruby>猫<rt>ねこ</rt></ruby>である。名前はまだ無い。<mark
+          style:background="var(--highlight-yellow)"
+          style:color="inherit">どこで生れたか</mark
+        >とんと見当がつかぬ。
+      </p>
+    </div>
+
+    {#if lowContrast.length}
+      <div class="theme-contrast-warning" role="status">
+        <strong>Low contrast</strong> (below {minimumContrast}:1, WCAG AA). Text may be hard to read:
+        <ul>
+          {#each lowContrast as issue (issue.foreground + issue.background)}
+            <li>
+              {tokenLabel(issue.foreground)} on {tokenLabel(issue.background)}: {issue.ratio.toFixed(1)}:1
+            </li>
+          {/each}
+        </ul>
+      </div>
+    {/if}
+
+    <div class="flex flex-col">
+      <SettingsItemGroup title="General" wide>
         <div class="flex flex-col gap-3 text-sm">
           <label class="theme-field">
             <span>Name</span>
@@ -409,6 +472,7 @@
       </SettingsItemGroup>
 
       <SettingsItemGroup
+        wide
         title="Custom CSS"
         tooltip="Added after the theme variables. Use the CSS variables listed in themes.md, e.g. .app-surface-card {'{'} border-width: 2px; {'}'}"
       >
@@ -425,7 +489,7 @@
     </div>
 
     {#each themeTokensByGroup as { group, tokens } (group)}
-      <SettingsItemGroup title={group}>
+      <SettingsItemGroup title={group} wide>
         {#each tokens as info (info.token)}
           <SettingsThemeColor
             label={info.label}
@@ -442,6 +506,111 @@
 </div>
 
 <style>
+  .theme-live-preview {
+    position: sticky;
+    top: 4rem;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr) minmax(0, 12rem);
+    gap: 1.25rem;
+    align-items: start;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: calc(0.6rem * var(--app-radius-scale));
+    background: var(--background-color);
+  }
+
+  @media (max-width: 639px) {
+    .theme-live-preview {
+      position: static;
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+    }
+
+    .theme-live-page {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .theme-live-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .theme-live-cover {
+    aspect-ratio: 375 / 529;
+    margin-bottom: 0.3rem;
+    border-radius: calc(4px * var(--app-radius-scale));
+    background: linear-gradient(160deg, var(--accent-color), var(--surface-strong-color));
+    box-shadow:
+      0 1px 2px var(--app-cover-shadow),
+      0 10px 22px -12px var(--app-cover-shadow);
+  }
+
+  .theme-live-title {
+    font-family: var(--app-font-display);
+    font-size: 0.8rem;
+  }
+
+  .theme-live-author {
+    color: var(--app-muted-fg);
+    font-size: 0.7rem;
+  }
+
+  .theme-live-progress {
+    height: 3px;
+    margin-top: 0.3rem;
+    border-radius: 999px;
+    background: var(--app-progress-track);
+  }
+
+  .theme-live-progress > span {
+    display: block;
+    width: 40%;
+    height: 100%;
+    background: var(--app-progress-fill);
+  }
+
+  .theme-live-settings {
+    min-width: 0;
+    color: var(--font-color);
+  }
+
+  .theme-live-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .theme-live-page {
+    padding: 0.75rem;
+    border-radius: calc(0.4rem * var(--app-radius-scale));
+    background: var(--reader-background-color);
+    color: var(--reader-text-color);
+    font-family: var(--app-font-display);
+    font-size: 0.95rem;
+    line-height: 1.9;
+  }
+
+  .theme-contrast-warning {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--app-warning-color) 55%, transparent);
+    border-radius: calc(0.5rem * var(--app-radius-scale));
+    background: color-mix(in srgb, var(--app-warning-color) 12%, transparent);
+    font-size: 0.85rem;
+  }
+
+  .theme-contrast-warning ul {
+    margin-top: 0.25rem;
+    padding-left: 1.1rem;
+    list-style: disc;
+  }
+
   .theme-action {
     display: inline-flex;
     min-height: 2.4rem;
