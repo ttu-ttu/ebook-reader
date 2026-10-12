@@ -280,6 +280,10 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | MAN-1 | Open a CBZ from the catalog (Type → Manga) | Opens in `/m`, right to left; tap sides or swipe to turn; middle tap shows the slider and reading mode |
 | MAN-2 | Switch to left to right and vertical strip | Both work; the mode is remembered per browser |
 | MAN-3 | Reopen the manga | Same page; progress syncs like books |
+| VN-1 | Open テストノベル (test stack) or import a ZIP of an ONScripter game | Opens in `/v`; the game runs; Enter or a click advances; each page's text appears below the game (Yomitan works there) |
+| VN-2 | With statistics on, advance a few pages, reopen and replay them | Home shows the characters read once; reread pages add nothing; progress in Continue reading |
+| VN-3 | Save in the game; open the same Calibre game in another browser, same account | The save is there |
+| VN-4 | Library Type filter | Calibre games are not listed as Manga |
 
 ## 16. Import and covers
 

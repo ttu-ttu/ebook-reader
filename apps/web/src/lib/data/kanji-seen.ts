@@ -51,6 +51,14 @@ export async function recordKanjiSeen(title: string, index: SearchIndex, positio
   await db.put('kanji', { ...seen, upTo: position });
 }
 
+/** Adds the kanji of text read in a visual novel, which has no search index. */
+export async function recordKanjiText(title: string, text: string, upTo: number) {
+  const db = await readerDb();
+  const seen = (await db.get('kanji', title)) ?? { title, upTo: 0, counts: {} };
+
+  await db.put('kanji', { ...seen, upTo, counts: countKanji(text, { ...seen.counts }) });
+}
+
 export interface KanjiSummary {
   /** Different kanji met across all books */
   unique: number;

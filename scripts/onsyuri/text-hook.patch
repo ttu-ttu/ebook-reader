@@ -1,0 +1,49 @@
+diff --git a/src/onsyuri/ONScripter_text.cpp b/src/onsyuri/ONScripter_text.cpp
+index 32615ce..86aebc8 100644
+--- a/src/onsyuri/ONScripter_text.cpp
++++ b/src/onsyuri/ONScripter_text.cpp
+@@ -26,6 +26,19 @@
+ #include "coding2utf16.h"
+ #include "Utils.h"
+ 
++#if defined(WEB)
++#include <emscripten.h>
++#endif
++
++// chimimouryou: hand the page shown so far (raw script bytes) to the web page, for its
++// text panel and reading statistics. skipped is set while the reader skips text.
++static void textHook(const char *text, int len, int skipped)
++{
++#if defined(WEB)
++    EM_ASM({ if (self.onsyuriText) self.onsyuriText(HEAPU8.slice($0, $0 + $1), $2); }, text, len, skipped);
++#endif
++}
++
+ extern Coding2UTF16 *coding2utf16;
+ 
+ #define IS_ROTATION_REQUIRED(x)	\
+@@ -528,6 +541,7 @@ bool ONScripter::clickWait( char *out_text )
+         else{ // called on '@'
+             flush(refreshMode());
+         }
++        textHook(current_page->text, current_page->text_count, 1);
+         num_chars_in_sentence = 0;
+ 
+         event_mode = IDLE_EVENT_MODE;
+@@ -538,6 +552,7 @@ bool ONScripter::clickWait( char *out_text )
+             drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
+             num_chars_in_sentence++;
+         }
++        textHook(current_page->text, current_page->text_count, 0);
+ 
+         while( (!(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) &&
+                 script_h.getStringBuffer()[ string_buffer_offset ] == ' ') ||
+@@ -579,6 +594,8 @@ bool ONScripter::clickNewPage( char *out_text )
+         drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
+         num_chars_in_sentence++;
+     }
++    textHook(current_page->text, current_page->text_count,
++             (skip_mode & SKIP_NORMAL || ctrl_pressed_status) ? 1 : 0);
+ 
+     flush( REFRESH_NONE_MODE );
+     skip_mode &= ~SKIP_TO_EOL;

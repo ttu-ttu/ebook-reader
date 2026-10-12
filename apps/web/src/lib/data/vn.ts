@@ -1,0 +1,213 @@
+/**
+ * @license BSD-3-Clause
+ * Copyright (c) 2026, ッツ Reader Authors
+ * All rights reserved.
+ */
+
+/**
+ * Visual novels for ONScripter (a zip of the game folder), stored like a book as manga is:
+ * the game files are its blobs and elementHtml holds a marker plus the file list. They run
+ * in the ONScripter-yuri engine (static/vn/), whose text hook hands each page's text to
+ * the player for the text panel (Yomitan), statistics and progress. Not upstream.
+ */
+
+import type { BooksDbBookmarkData } from '$lib/data/database/books-db/versions/books-db';
+import { readerDb } from '$lib/data/reader-db';
+import { countTextCharacters } from '$lib/functions/get-character-count';
+
+const marker = '<!--ttu-vn-->';
+
+/** Script files in the order the engine looks for them (ScriptHandler::readScriptSub). */
+const scriptNames = [
+  '0.txt',
+  '00.txt',
+  'nscr_sec.dat',
+  'nscript.___',
+  'nscript.dat',
+  'onscript.nt2',
+  'onscript.nt3'
+];
+
+export type VnEncoding = 'sjis' | 'utf8';
+
+export interface VnInfo {
+  encoding: VnEncoding;
+  files: string[];
+}
+
+export interface VnRead {
+  title: string;
+  /** Hashes of the page texts already counted */
+  pages: string[];
+  /** Characters counted, the reading position */
+  characters: number;
+}
+
+export type VnLine = { text: string; ruby?: string }[];
+
+/** The folder holding the game's script ('' or 'Game/'), the shallowest if several. */
+export function findVnRoot(paths: string[]): string | undefined {
+  const roots = paths
+    .filter((path) => scriptNames.includes(path.split('/').pop()!.toLowerCase()))
+    .map((path) => path.slice(0, path.lastIndexOf('/') + 1))
+    .sort((a, b) => a.split('/').length - b.split('/').length);
+
+  return roots[0];
+}
+
+export function vnElementHtml(info: VnInfo) {
+  return `${marker}${JSON.stringify(info)}`;
+}
+
+export function isVn(book: { elementHtml: string }) {
+  return book.elementHtml.startsWith(marker);
+}
+
+export function vnInfo(book: { elementHtml: string }): VnInfo {
+  return JSON.parse(book.elementHtml.slice(marker.length));
+}
+
+/** The script as plain bytes: numbered .txt files as they are, nscript.dat XORed with 0x84. */
+export function decodeScript(name: string, bytes: Uint8Array): Uint8Array | undefined {
+  const lower = name.toLowerCase();
+
+  if (/^\d+\.txt$/.test(lower)) return bytes;
+  if (lower === 'nscript.dat') return bytes.map((byte) => byte ^ 0x84);
+
+  return undefined;
+}
+
+export function detectEncoding(bytes: Uint8Array): VnEncoding {
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+
+    return 'utf8';
+  } catch {
+    return 'sjis';
+  }
+}
+
+export function decodeText(bytes: Uint8Array, encoding: VnEncoding) {
+  // Indents are written as a Shift JIS space even in UTF-8 games.
+  return new TextDecoder(encoding === 'utf8' ? 'utf-8' : 'shift_jis')
+    .decode(bytes)
+    .replace(/�@?/g, '　');
+}
+
+/**
+ * Characters in the script's text lines: lines starting with a non-ASCII character or a
+ * name tag, as commands start with ASCII.
+ * shortcut: counts choices and Japanese string arguments too, fine for a progress bar;
+ * use the engine's own parser if exact counts are needed.
+ */
+export function scriptCharacters(script: string) {
+  return script
+    .split(/\r?\n/)
+    .filter((line) => /^\s*(?:\P{ASCII}|\[)/u.test(line))
+    .reduce((sum, line) => sum + countTextCharacters(pageText(line)), 0);
+}
+
+/** A page from the engine: lines, with ONScripter ruby `(base/reading)` split out. */
+export function parseVnPage(text: string): VnLine[] {
+  return text.split('\n').map((line) => {
+    // Split keeps the captures: text, base, reading, text, base, reading, text…
+    const pieces = line.split(/\(([^/)]*)\/([^)]*)\)/);
+    const parts: VnLine = [];
+
+    for (let index = 0; index < pieces.length; index += 3) {
+      if (pieces[index]) parts.push({ text: pieces[index] });
+      if (index + 1 < pieces.length)
+        parts.push({ text: pieces[index + 1], ruby: pieces[index + 2] });
+    }
+
+    return parts;
+  });
+}
+
+/** The page's text without ruby readings, as counted for statistics. */
+export function pageText(text: string) {
+  return text.replace(/\(([^/)]*)\/[^)]*\)/g, '$1');
+}
+
+/** FNV-1a, enough to recognise a page seen before. */
+export function hashPage(text: string) {
+  let hash = 0x811c9dc5;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash = Math.imul(hash ^ text.charCodeAt(index), 0x01000193);
+  }
+
+  return (hash >>> 0).toString(36);
+}
+
+/**
+ * The text newly read when the engine shows `page` after `previous`: the engine sends
+ * the whole page at every click, so only what was added counts, and pages seen before
+ * (reread, loaded from a save) add nothing.
+ */
+export function newText(previous: string, page: string, seen: Set<string>) {
+  const hash = hashPage(page);
+
+  if (seen.has(hash)) return '';
+
+  seen.add(hash);
+
+  const before = pageText(previous);
+  const now = pageText(page);
+
+  return now.startsWith(before) ? now.slice(before.length) : now;
+}
+
+export async function loadVnRead(title: string): Promise<VnRead> {
+  return (await (await readerDb()).get('vnRead', title)) ?? { title, pages: [], characters: 0 };
+}
+
+export async function saveVnRead(read: VnRead) {
+  await (await readerDb()).put('vnRead', read);
+}
+
+export function vnBookmark(dataId: number, read: number, total: number): BooksDbBookmarkData {
+  return {
+    dataId,
+    exploredCharCount: read,
+    progress: total ? Math.min(read / total, 1) : 0,
+    lastBookmarkModified: Date.now()
+  };
+}
+
+/** The engine's save files (save1.dat, gloval.sav…) as synced in vnsaves.json. */
+export type VnSaves = Record<string, { modified: number; data: string }>;
+
+/** Per file, the newer copy wins; nothing is ever deleted (the engine doesn't delete saves). */
+export function mergeVnSaves(local: VnSaves, remote: VnSaves): VnSaves {
+  const merged = { ...remote };
+
+  Object.entries(local).forEach(([name, file]) => {
+    if (!merged[name] || merged[name].modified < file.modified) merged[name] = file;
+  });
+
+  return merged;
+}
+
+export function sameVnSaves(a: VnSaves, b: VnSaves) {
+  const names = Object.keys(a);
+
+  return (
+    names.length === Object.keys(b).length &&
+    names.every((name) => b[name]?.modified === a[name].modified)
+  );
+}
+
+export function toBase64(bytes: Uint8Array) {
+  let binary = '';
+
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+
+  return btoa(binary);
+}
+
+export function fromBase64(text: string) {
+  return Uint8Array.from(atob(text), (char) => char.charCodeAt(0));
+}

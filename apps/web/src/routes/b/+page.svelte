@@ -211,6 +211,7 @@
   import { shouldBookmarkOnLeave } from '$lib/functions/bookmark-on-leave';
   import { onDestroy, onMount, tick } from 'svelte';
   import { isManga } from '$lib/data/manga';
+  import { isVn } from '$lib/data/vn';
   import Fa from 'svelte-fa';
   import {
     clearRange,
@@ -325,8 +326,8 @@
           return bookData;
         }
 
-        if (isManga(bookData)) {
-          goto(`${pagePath}/m?id=${id}`, { replaceState: true });
+        if (isManga(bookData) || isVn(bookData)) {
+          goto(`${pagePath}/${isVn(bookData) ? 'v' : 'm'}?id=${id}`, { replaceState: true });
           return new Promise<never>(() => {});
         }
 
@@ -364,8 +365,8 @@
         bookData = await saveExternalLastRead(externalStorageHandler, bookData);
 
         // A synced book not cached here yet only gets its data above.
-        if (isManga(bookData)) {
-          goto(`${pagePath}/m?id=${id}`, { replaceState: true });
+        if (isManga(bookData) || isVn(bookData)) {
+          goto(`${pagePath}/${isVn(bookData) ? 'v' : 'm'}?id=${id}`, { replaceState: true });
           return new Promise<never>(() => {});
         }
 

@@ -89,7 +89,8 @@ COMMIT_PATTERN = re.compile(r'[0-9a-f]{7,40}')
 # nginx serves DATA_DIR/<account id> with `root`, so files live under the URI path.
 SYNC_PATH = os.path.join('account', 'sync')
 # Files that belong to a reader rather than to the book (see calibre-handler.ts).
-PERSONAL_PREFIXES = ('progress_', 'statistics_', 'annotations.json', 'recaps.json', 'lorebook.json')
+PERSONAL_PREFIXES = ('progress_', 'statistics_', 'annotations.json', 'recaps.json', 'lorebook.json',
+                     'vnsaves.json')
 READING_GOALS_PREFIX = 'ttu-user-goals_'
 
 COOKIE = '__Host-ttu_session'

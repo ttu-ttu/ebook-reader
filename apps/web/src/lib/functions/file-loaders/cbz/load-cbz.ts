@@ -9,13 +9,31 @@ import type { LoadData } from '../types';
 import initZipSettings from '../utils/init-zip-settings';
 import { getMimeTypeFromName } from '../htmlz/extract-htmlz';
 import { mangaElementHtml, sortPages } from '$lib/data/manga';
+import { findVnRoot } from '$lib/data/vn';
+import loadVn from '../vn/load-vn';
 
 initZipSettings();
 
-/** Manga as a book: the pages are its blobs, in reading order in elementHtml. */
+/**
+ * Manga as a book: the pages are its blobs, in reading order in elementHtml. A zip holding
+ * an ONScripter script is a visual novel instead.
+ */
 export default async function loadCbz(file: File, lastBookModified: number): Promise<LoadData> {
   const reader = new ZipReader(new BlobReader(file));
-  const entries = (await reader.getEntries()).filter(
+  const allEntries = await reader.getEntries();
+  const vnRoot = findVnRoot(
+    allEntries.filter((entry) => !entry.directory).map((entry) => entry.filename)
+  );
+
+  if (vnRoot !== undefined) {
+    try {
+      return await loadVn(file.name, allEntries, vnRoot, lastBookModified);
+    } finally {
+      await reader.close();
+    }
+  }
+
+  const entries = allEntries.filter(
     (entry) =>
       !entry.directory &&
       entry.getData &&

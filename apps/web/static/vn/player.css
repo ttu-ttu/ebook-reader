@@ -1,0 +1,20 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+#canvas,
+#video {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: block;
+  outline: none;
+}
+
+#video {
+  display: none;
+}

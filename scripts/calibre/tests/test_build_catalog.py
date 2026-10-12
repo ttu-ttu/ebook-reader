@@ -114,6 +114,12 @@ class MangaTest(unittest.TestCase):
         self.assertTrue(catalog.is_valid_book(self.archive(['1.jpg', '2.jpg', 'a.txt']), 'ZIP'))
         self.assertFalse(catalog.is_valid_book(self.archive(['book.epub']), 'ZIP'))
 
+    def test_onscripter_games_are_listed(self):
+        game = self.archive(['Game/0.txt', 'Game/arc.nsa', 'Game/arc1.nsa'])
+        self.assertTrue(catalog.is_valid_book(game, 'ZIP'))
+        self.assertTrue(catalog.is_vn_file(game))
+        self.assertFalse(catalog.is_vn_file(self.archive(['1.jpg'])))
+
 
 class BuildTest(unittest.TestCase):
     """A whole build from a minimal Calibre library."""

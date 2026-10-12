@@ -26,6 +26,8 @@ export interface CalibreBook {
   /** Epoch milliseconds */
   added: number;
   format: string;
+  /** A CBZ/ZIP holding an ONScripter game rather than manga */
+  vn?: boolean;
   size: number;
   file: string;
   cover: string;

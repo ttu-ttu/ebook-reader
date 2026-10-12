@@ -24,6 +24,15 @@ scripts/calibre/jiten/goshu.json.gz holds word origins (語種) from UniDic
 (https://clrd.ninjal.ac.jp/unidic/, via unidic-lite), Copyright (c) 2011-2013,
 The UniDic Consortium, used under its BSD licence.
 
+The visual novel player (apps/web/static/vn/onsyuri.js and onsyuri.wasm) is
+ONScripter-yuri (https://github.com/YuriSizuku/OnscripterYuri), based on
+ONScripter-Jh and ONScripter by Ogapee, licensed under the GNU General Public
+License version 2. It is built by scripts/onsyuri/build.sh from the pinned
+upstream commit plus scripts/onsyuri/text-hook.patch, which is its complete
+corresponding source together with the upstream repository. Its fallback font
+(apps/web/static/vn/default.ttf) is Noto Sans JP, licensed under the SIL Open
+Font License 1.1.
+
 The ち icon (apps/web/static/ icons, favicons and the header logo) is drawn
 from the glyph in Noto Sans CJK JP Bold, Copyright 2014-2021 Adobe
 (http://www.adobe.com/), licensed under the SIL Open Font License 1.1.

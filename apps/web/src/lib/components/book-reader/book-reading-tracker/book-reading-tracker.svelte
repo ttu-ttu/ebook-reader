@@ -5,7 +5,8 @@
     type TrackingHistory,
     isTrackerMenuOpen$,
     TrackerSkipThresholdAction,
-    TrackerAutoPause
+    TrackerAutoPause,
+    updateStatistic
   } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
   import BookTimerMenu from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker-menu.svelte';
   import type { SectionWithProgress } from '$lib/components/book-reader/book-toc/book-toc';
@@ -717,34 +718,6 @@
       statistic.lastStatisticModified,
       entry.lastStatisticModified
     );
-  }
-
-  function updateStatistic(
-    statisticObject: BooksDbStatistic,
-    timeDiff: number,
-    characterDiff: number,
-    lastStatisticModified: number
-  ) {
-    const statistic = statisticObject;
-
-    statistic.readingTime = Math.max(0, statistic.readingTime + timeDiff);
-    statistic.charactersRead = Math.max(0, statistic.charactersRead + characterDiff);
-    statistic.lastReadingSpeed = statistic.readingTime
-      ? Math.ceil((3600 * statistic.charactersRead) / statistic.readingTime)
-      : 0;
-    statistic.minReadingSpeed = statistic.minReadingSpeed
-      ? Math.min(statistic.minReadingSpeed, statistic.lastReadingSpeed)
-      : statistic.lastReadingSpeed;
-    statistic.maxReadingSpeed = Math.max(statistic.maxReadingSpeed, statistic.lastReadingSpeed);
-    statistic.lastStatisticModified = lastStatisticModified;
-
-    if (characterDiff) {
-      statistic.altMinReadingSpeed = statistic.altMinReadingSpeed
-        ? Math.min(statistic.altMinReadingSpeed, statistic.lastReadingSpeed)
-        : statistic.lastReadingSpeed;
-    }
-
-    return statistic;
   }
 
   function updateTimeToFinishBook() {

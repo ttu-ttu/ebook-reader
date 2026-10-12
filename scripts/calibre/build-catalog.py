@@ -34,6 +34,8 @@ FORMATS = ['EPUB', 'HTMLZ', 'TXT', 'CBZ', 'ZIP']
 # Image archives, read as manga. Many ZIPs in the library hold EPUBs instead; those are skipped.
 MANGA_FORMATS = ('CBZ', 'ZIP')
 PAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')
+# ONScripter scripts: a CBZ/ZIP holding one is a visual novel (lib/data/vn.ts in the app).
+VN_SCRIPTS = ('0.txt', '00.txt', 'nscr_sec.dat', 'nscript.___', 'nscript.dat', 'onscript.nt2', 'onscript.nt3')
 
 
 def added_ms(timestamp: str | None) -> int:
@@ -109,13 +111,27 @@ def manga_pages(archive: zipfile.ZipFile) -> list[str]:
                    and not posixpath.basename(name).startswith('.')), key=key)
 
 
+def is_vn(archive: zipfile.ZipFile) -> bool:
+    return any(posixpath.basename(name).lower() in VN_SCRIPTS for name in archive.namelist())
+
+
+def is_vn_file(file_path: str) -> bool:
+    try:
+        with zipfile.ZipFile(file_path) as archive:
+            return is_vn(archive)
+    except (OSError, zipfile.BadZipFile):
+        return False
+
+
 def is_valid_book(file_path: str, fmt: str) -> bool:
     """Skip missing files and non-zip EPUB/HTMLZ, e.g. macOS '._' resource forks,
-    and CBZ/ZIP files that are not mostly images."""
+    and CBZ/ZIP files that are neither mostly images nor an ONScripter game."""
     try:
         if fmt in MANGA_FORMATS:
             with zipfile.ZipFile(file_path) as archive:
                 files = [name for name in archive.namelist() if not name.endswith('/')]
+                if is_vn(archive):
+                    return True
                 return len(manga_pages(archive)) * 2 > len(files)
         with open(file_path, 'rb') as f:
             return fmt == 'TXT' or f.read(2) == b'PK'
@@ -338,6 +354,7 @@ def build(library: str, output: str) -> None:
             'published': added_ms(pubdate) if pubdate and not pubdate.startswith('0101') else None,
             'added': added_ms(added),
             'format': fmt,
+            'vn': fmt in MANGA_FORMATS and is_vn_file(os.path.join(library, file)),
             'size': size,
             'file': file,
             'cover': '',

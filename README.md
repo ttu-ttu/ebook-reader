@@ -30,6 +30,8 @@ itself, and its Yomitan support, are upstream's (see [Using the reader](#using-t
   reads aloud with the current line highlighted. Audiobooks with subtitles follow
   the text too.
 - **Manga** (CBZ/ZIP) in a page-turning reader.
+- **Visual novels** for ONScripter, played in the browser with their text shown
+  for Yomitan and counted in reading statistics.
 - **Difficulty estimates** with [Jiten](https://github.com/Sirush/Jiten)'s
   features and a model trained on jiten.moe's scores, computed on your server.
 - **App-wide themes** that follow the system's light and dark mode.

@@ -58,7 +58,7 @@ server {
   add_header Strict-Transport-Security $hsts always;
 
   gzip on;
-  gzip_types application/json text/css application/javascript;
+  gzip_types application/json text/css application/javascript application/wasm;
 
   location / {
     try_files $uri $uri.html $uri/ =404;
