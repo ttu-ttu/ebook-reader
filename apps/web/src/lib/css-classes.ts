@@ -12,8 +12,8 @@ export const opacityHeaderIcon = 'opacity-60 hover:opacity-100 transition-opacit
 export const pHeaderFa = 'p-4 xl:p-3';
 export const nTranslateXHeaderFa = '-translate-x-4 xl:-translate-x-3';
 export const translateXHeaderFa = 'translate-x-4 xl:translate-x-3';
-export const inputClasses =
-  'mt-1 block w-full px-0.5 bg-background-color border-0 border-b-2 border-[color:var(--app-control-border)] focus:ring-0 focus:border-[color:var(--accent-color)] transition';
-export const buttonClasses =
-  'inline-block no-underline font-medium rounded min-w-[32px] sm:min-w-[64px] px-4 leading-9 cursor-pointer text-[color:var(--accent-strong-color)]';
+/** Styles in app.scss (.app-input, .app-button) */
+export const inputClasses = 'app-input mt-1 block w-full';
+export const buttonClasses = 'app-button';
+export const primaryButtonClasses = 'app-button app-button-primary';
 export const baseIconClasses = `flex justify-center select-none items-center h-12 w-12 cursor-pointer text-xl xl:h-10 xl:w-10 xl:text-lg ${pHeaderMat} ${opacityHeaderIcon}`;

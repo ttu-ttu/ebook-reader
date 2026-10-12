@@ -101,6 +101,51 @@
     color: inherit;
     background-color: transparent;
     border-color: var(--app-control-border);
+    border-radius: calc(0.45rem * var(--app-radius-scale));
+    /* @tailwindcss/forms draws a blue focus ring by default */
+    --tw-ring-color: var(--app-focus-ring);
+  }
+
+  html
+    :is(
+      [type='text'],
+      [type='search'],
+      [type='password'],
+      [type='number'],
+      [type='url'],
+      [type='email'],
+      [type='date'],
+      [type='time'],
+      select,
+      textarea
+    ):focus {
+    border-color: var(--app-focus-ring);
+  }
+
+  html [type='range'] {
+    accent-color: var(--accent-color);
+  }
+
+  html [type='checkbox'],
+  html [type='radio'] {
+    color: var(--accent-color);
+    --tw-ring-color: var(--app-focus-ring);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   select option {
@@ -152,12 +197,165 @@
   }
 
   .app-surface-card {
-    background: linear-gradient(180deg, var(--surface-strong-color), var(--surface-color));
+    background: var(--surface-color);
     border: 1px solid var(--border-color);
-    box-shadow:
-      0 18px 40px -26px color-mix(in srgb, var(--shadow-color) 100%, transparent),
-      0 10px 22px -18px var(--shadow-color),
-      inset 0 1px var(--app-inset-highlight);
+    box-shadow: inset 0 1px var(--app-inset-highlight);
+  }
+
+  /* Settings primitives (also used in dialogs and the admin panel) */
+  .app-input {
+    min-height: 2.4rem;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--app-control-border);
+    border-radius: calc(0.45rem * var(--app-radius-scale));
+    background-color: var(--app-control-bg);
+    color: var(--font-color);
+    font-size: 0.9rem;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .app-input:focus {
+    border-color: var(--app-focus-ring);
+    box-shadow: 0 0 0 1px var(--app-focus-ring);
+    outline: none;
+  }
+
+  .app-button {
+    display: inline-flex;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--app-control-border);
+    border-radius: calc(0.5rem * var(--app-radius-scale));
+    background: var(--app-control-bg);
+    color: var(--font-color);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .app-button:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--font-color) 35%, var(--app-control-border));
+  }
+
+  .app-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .app-button-primary {
+    border-color: var(--accent-color);
+    background: var(--accent-color);
+    color: var(--app-accent-fg);
+  }
+
+  .app-button-primary:hover:not(:disabled) {
+    border-color: var(--app-accent-hover);
+    background: var(--app-accent-hover);
+  }
+
+  .app-button-quiet {
+    min-height: 0;
+    padding: 0.15rem 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--accent-strong-color);
+  }
+
+  .app-button-quiet:hover:not(:disabled) {
+    border-color: transparent;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .app-button-danger {
+    border-color: color-mix(in srgb, var(--app-danger-color) 45%, var(--app-control-border));
+    color: var(--app-danger-color);
+  }
+
+  .app-button-danger:hover:not(:disabled) {
+    border-color: var(--app-danger-color);
+    background: color-mix(in srgb, var(--app-danger-color) 8%, transparent);
+  }
+
+  .settings-danger-zone {
+    margin-top: 1.5rem;
+    padding: 0 1rem;
+    border: 1px solid color-mix(in srgb, var(--app-danger-color) 35%, var(--border-color));
+    border-radius: calc(0.6rem * var(--app-radius-scale));
+  }
+
+  .settings-danger-zone-label {
+    padding-top: 0.75rem;
+    color: var(--app-danger-color);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .settings-danger-zone > [data-settings-item]:last-child {
+    border-bottom: 0;
+  }
+
+  .app-switch {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    gap: 0.6rem;
+    border-radius: 999px;
+    color: var(--app-muted-fg);
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  .app-switch-thumb {
+    position: relative;
+    width: 2.4rem;
+    height: 1.4rem;
+    flex: none;
+    border-radius: 999px;
+    background: var(--app-toggle-off);
+    transition: background-color 0.18s var(--app-ease);
+  }
+
+  .app-switch-thumb::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(1.4rem - 6px);
+    height: calc(1.4rem - 6px);
+    border-radius: 999px;
+    background: var(--surface-strong-color);
+    box-shadow: 0 1px 2px var(--shadow-color);
+    transition: transform 0.18s var(--app-ease);
+  }
+
+  .theme-dark .app-switch-thumb::after {
+    background: color-mix(in srgb, var(--font-color) 85%, var(--background-color));
+  }
+
+  .app-switch[aria-checked='true'] {
+    color: var(--font-color);
+  }
+
+  .app-switch[aria-checked='true'] .app-switch-thumb {
+    background: var(--app-toggle-on);
+  }
+
+  .app-switch[aria-checked='true'] .app-switch-thumb::after {
+    background: var(--app-accent-fg);
+    transform: translateX(1rem);
   }
 
   .app-header-pill {
