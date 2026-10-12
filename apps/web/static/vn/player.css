@@ -29,7 +29,18 @@ body {
   overflow: hidden;
 }
 
-#overlay div {
+#page-text,
+#choices {
+  position: absolute;
+  inset: 0;
+}
+
+#page-text[hidden] {
+  display: none;
+}
+
+#page-text div,
+#choices div {
   position: absolute;
   white-space: pre;
   line-height: 1;
@@ -38,6 +49,6 @@ body {
   cursor: default;
 }
 
-#overlay div::selection {
+#overlay div div::selection {
   background: rgba(255, 220, 120, 0.35);
 }

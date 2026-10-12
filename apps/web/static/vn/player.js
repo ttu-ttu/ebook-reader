@@ -1,7 +1,8 @@
 /**
  * Shell for the ONScripter-yuri web engine (onsyuri.js, GPL-2.0, built by scripts/onsyuri/),
  * loaded by the reader's /v page in a same-origin iframe. The engine calls the globals below
- * (g_onsyuri_*, fetch_file, flush_save, playVideo, scale_full, onsyuriText) from its C code.
+ * (g_onsyuri_*, fetch_file, flush_save, playVideo, scale_full, onsyuriText, onsyuriChoice,
+ * onsyuriOverlay) from its C code.
  * The page calls startGame() once the frame has loaded.
  */
 
@@ -12,6 +13,7 @@ var g_screen_width = 640;
 var g_screen_height = 480;
 var onsyuriText;
 var onSave = function () {};
+var textEncoding = 'shift_jis';
 
 function mkdirs(FS, path) {
   var dir = '';
@@ -42,34 +44,65 @@ function scale_full(canvas, ratio) {
   overlay.style.setProperty('--scale', w / g_screen_width);
 }
 
+function overlayLine(line) {
+  var div = document.createElement('div');
+
+  div.textContent = line.text;
+  div.style.left = (100 * line.x) / g_screen_width + '%';
+  div.style.top = (100 * line.y) / g_screen_height + '%';
+  div.style.fontSize = 'calc(var(--scale) * ' + line.size + 'px)';
+  div.style.letterSpacing = 'calc(var(--scale) * ' + (line.pitch - line.size) + 'px)';
+  return div;
+}
+
 /** lines: [{ text, x, y, size, pitch }] in screen pixels (overlayLines in lib/data/vn.ts). */
 function showText(lines) {
-  var overlay = document.getElementById('overlay');
-
-  overlay.textContent = '';
-  lines.forEach(function (line) {
-    var div = document.createElement('div');
-
-    div.textContent = line.text;
-    div.style.left = (100 * line.x) / g_screen_width + '%';
-    div.style.top = (100 * line.y) / g_screen_height + '%';
-    div.style.fontSize = 'calc(var(--scale) * ' + line.size + 'px)';
-    div.style.letterSpacing = 'calc(var(--scale) * ' + (line.pitch - line.size) + 'px)';
-    overlay.appendChild(div);
-  });
+  document
+    .getElementById('page-text')
+    .replaceChildren.apply(document.getElementById('page-text'), lines.map(overlayLine));
 }
 
-// The text on screen changes once the game goes on: drop the overlay until the next page
-// arrives. Modifier keys don't count (Yomitan's scan key is often Shift).
-function clearText(event) {
-  if (event.key && /^(Shift|Alt|Meta|Control|OS)$/.test(event.key)) return;
-  document.getElementById('overlay').textContent = '';
+/** A choice (or system menu item) drawn by the engine: its text in script bytes. */
+function onsyuriChoice(bytes, x, y, size, pitch) {
+  document
+    .getElementById('choices')
+    .appendChild(
+      overlayLine({
+        text: new TextDecoder(textEncoding).decode(bytes),
+        x: x,
+        y: y,
+        size: size,
+        pitch: pitch
+      })
+    );
 }
 
-['mousedown', 'wheel', 'touchstart'].forEach(function (type) {
-  document.addEventListener(type, clearText, true);
-});
-document.addEventListener('keydown', clearText, true);
+var stashedChoices = [];
+
+/**
+ * The engine says when text leaves the screen, so the overlay never outlives it (clicks
+ * elsewhere, e.g. to close Yomitan, leave it alone): 'page' (new page, text window hidden),
+ * 'choices' (buttons removed), 'enter'/'leave' (system menu or backlog over the page and
+ * back), 'reset' (left the system menu elsewhere, e.g. a loaded game).
+ */
+function onsyuriOverlay(event) {
+  var page = document.getElementById('page-text');
+  var choices = document.getElementById('choices');
+
+  if (event === 'page') page.textContent = '';
+  else if (event === 'choices') choices.textContent = '';
+  else if (event === 'enter') {
+    stashedChoices = Array.prototype.slice.call(choices.children);
+    choices.textContent = '';
+    page.hidden = true;
+  } else if (event === 'leave') {
+    choices.replaceChildren.apply(choices, stashedChoices);
+    page.hidden = false;
+  } else if (event === 'reset') {
+    page.textContent = choices.textContent = '';
+    page.hidden = false;
+  }
+}
 
 // Clicks on the overlay's text go to the game, as if the text weren't there.
 [
@@ -195,6 +228,7 @@ async function startGame(options) {
 
   onsyuriText = options.onText;
   onSave = options.onSave || onSave;
+  textEncoding = options.encoding === 'utf8' ? 'utf-8' : 'shift_jis';
   g_onsyuri_index = { gamedir: gameDir, savedir: options.saveDir };
   Object.keys(options.files).forEach(function (path) {
     g_onsyuri_filemap[(gameDir + '/' + path).toLowerCase()] = {

@@ -282,6 +282,7 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | MAN-3 | Reopen the manga | Same page; progress syncs like books |
 | VN-1 | Open テストノベル (test stack) or import a ZIP of an ONScripter game | Opens in `/v`; the game runs; Enter or a click advances, also on the text |
 | VN-1b | With Yomitan, hover words in the game's text window; select text with the mouse | Popups for the hovered word; the selection covers the drawn characters, over wrapped lines too; the A button shows the text below the game |
+| VN-1c | At a choice (テストノベル's last page), hover and click a choice; click the black area beside the game | Choices look up and clicking one picks it; the black-area click leaves the page text hoverable; right-click menu items can be hovered, and the page text is back after closing it |
 | VN-2 | With statistics on, advance a few pages, reopen and replay them | Home shows the characters read once; reread pages add nothing; progress in Continue reading |
 | VN-3 | Save in the game; open the same Calibre game in another browser, same account | The save is there |
 | VN-4 | Library Type filter | Games are under Visual novels, not Books or Manga |

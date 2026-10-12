@@ -12,6 +12,9 @@ anything a reader or a server operator would notice.
   new player (`/v`) that runs the game in the browser (ONScripter-yuri, WebAssembly).
   Hover the game's own text to look words up with Yomitan: the player lays the page's
   text, invisible, over the characters the engine drew (clicks still go to the game).
+  Choices and the system menu's items can be hovered too. The overlay follows the
+  engine: it goes when the text does (new page, hidden window, menu or backlog), not on
+  clicks, so clicking beside the game to close Yomitan keeps it.
   A panel below the game can show the text too (A button), with ruby as furigana.
   Import them like manga, or add them to Calibre: the catalog now lists them.
 - Reading statistics, progress and "Kanji met" count the text as it is read (pages
