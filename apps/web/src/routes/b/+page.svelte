@@ -2405,7 +2405,7 @@
       tabindex="0"
       role="button"
       title="Click to copy Progress"
-      class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none select-none whitespace-pre"
+      class="writing-horizontal-tb fixed bottom-2 right-2 z-10 text-xs leading-none tabular-nums select-none whitespace-pre"
       class:invisible={!$showCharacterCounter$ &&
         !$showPercentage$ &&
         !$showFooterChapterCharacterCounter$ &&
@@ -2427,6 +2427,11 @@
       <span class="mr-4" class:invisible={!footerChapterProgress}>{footerChapterProgress}</span>
       <span class:invisible={!$showCharacterCounter$ && !$showPercentage$}>{currentProgress}</span>
     </div>
+    <div
+      class="reader-progress-line"
+      style:width="{Math.min(100, (exploredCharCount / bookCharCount) * 100)}%"
+      aria-hidden="true"
+    />
   {/if}
 </div>
 

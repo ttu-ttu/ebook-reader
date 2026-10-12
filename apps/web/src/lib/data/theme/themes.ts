@@ -211,7 +211,7 @@ export const builtInThemes: ThemeDefinition[] = [
       difficulty5: '#a3201b',
       heatmapEmpty: '#ebe3d4',
       heatmapLow: '#ecc3b4',
-      headerBackground: 'rgba(245, 240, 230, 0.94)',
+      headerBackground: '#f5f0e6',
       headerText: '#1f1b16',
       headerBorder: '#e2d9c8',
       headerIcon: '#5f574b',
@@ -225,8 +225,8 @@ export const builtInThemes: ThemeDefinition[] = [
       furiganaHintText: 'rgba(42, 36, 29, 0.35)',
       furiganaHintShadow: 'rgba(42, 36, 29, 0.3)',
       footerText: 'rgba(42, 36, 29, 0.6)',
-      panelBackground: 'rgba(31, 27, 22, 0.96)',
-      panelText: '#f5f0e6'
+      panelBackground: '#fffdf8',
+      panelText: '#1f1b16'
     }
   },
   {
@@ -267,7 +267,7 @@ export const builtInThemes: ThemeDefinition[] = [
       difficulty5: '#f0675a',
       heatmapEmpty: '#2a2621',
       heatmapLow: '#5a3329',
-      headerBackground: 'rgba(26, 23, 20, 0.94)',
+      headerBackground: '#1a1714',
       headerText: '#ece5d8',
       headerBorder: '#3a342d',
       headerIcon: '#a89f90',
@@ -281,7 +281,7 @@ export const builtInThemes: ThemeDefinition[] = [
       furiganaHintText: 'rgba(236, 229, 216, 0.3)',
       furiganaHintShadow: 'rgba(236, 229, 216, 0.25)',
       footerText: 'rgba(236, 229, 216, 0.55)',
-      panelBackground: 'rgba(14, 12, 10, 0.96)',
+      panelBackground: '#24201b',
       panelText: '#ece5d8'
     }
   },

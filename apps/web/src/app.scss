@@ -19,7 +19,7 @@
   --app-text-subtle: #857c6f;
   --app-accent-hover: #9a2f1c;
   --app-focus-ring: #b23a24;
-  --app-header-bg: rgba(245, 240, 230, 0.94);
+  --app-header-bg: #f5f0e6;
   --app-header-fg: #1f1b16;
   --app-header-border: #e2d9c8;
   --app-header-icon-bg: transparent;
@@ -39,8 +39,8 @@
   --app-progress-track: #e8dfcf;
   --app-progress-fill: var(--accent-color);
   --app-cover-shadow: rgba(60, 40, 20, 0.24);
-  --reader-panel-bg: rgba(31, 27, 22, 0.96);
-  --reader-panel-fg: #f5f0e6;
+  --reader-panel-bg: #fffdf8;
+  --reader-panel-fg: #1f1b16;
   --highlight-yellow: rgba(250, 204, 21, 0.4);
   --highlight-green: rgba(74, 222, 128, 0.38);
   --highlight-blue: rgba(96, 165, 250, 0.38);
@@ -262,10 +262,22 @@
 
   /* Overlay panels in the reader: read aloud, Ask AI, search, notes, selection toolbar */
   .reader-panel {
+    border: 1px solid color-mix(in srgb, var(--reader-panel-fg) 12%, transparent);
     background: var(--reader-panel-bg);
+    box-shadow: 0 18px 48px -20px var(--shadow-color);
     color: var(--reader-panel-fg);
     -webkit-backdrop-filter: blur(calc(var(--app-blur) * 0.5));
     backdrop-filter: blur(calc(var(--app-blur) * 0.5));
+  }
+
+  .reader-panel :is(h2, h3) {
+    font-family: var(--app-font-display);
+    font-weight: 400;
+  }
+
+  .reader-panel :focus-visible:not(input, textarea) {
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: 1px;
   }
 
   .reader-panel-divider {
@@ -277,13 +289,20 @@
   }
 
   .reader-panel-chip {
-    background: color-mix(in srgb, var(--reader-panel-fg) 10%, transparent);
-    transition: background-color 0.15s ease;
+    border: 1px solid color-mix(in srgb, var(--reader-panel-fg) 18%, transparent);
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
   }
 
-  .reader-panel-chip:hover:not(:disabled),
-  .reader-panel-chip-active {
-    background: color-mix(in srgb, var(--reader-panel-fg) 20%, transparent);
+  .reader-panel-chip:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--reader-panel-fg) 8%, transparent);
+  }
+
+  .reader-panel-chip-active,
+  .reader-panel-chip-active:hover:not(:disabled) {
+    border-color: var(--accent-color);
+    background: color-mix(in srgb, var(--accent-color) 14%, transparent);
   }
 
   .reader-panel-chip:disabled {
@@ -291,9 +310,16 @@
   }
 
   html .reader-panel-input {
-    border: 0;
-    background: color-mix(in srgb, var(--reader-panel-fg) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--reader-panel-fg) 22%, transparent);
+    background: color-mix(in srgb, var(--reader-panel-fg) 4%, transparent);
     color: inherit;
+  }
+
+  html .reader-panel-input:focus-within,
+  html .reader-panel-input:focus {
+    border-color: var(--app-focus-ring);
+    box-shadow: none;
+    outline: none;
   }
 
   html .reader-panel-input::placeholder {
@@ -318,6 +344,18 @@
       animation: none;
     }
   }
+}
+
+/* Reader footer: a hairline of the book's progress (routes/b/+page.svelte) */
+.reader-progress-line {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  height: 2px;
+  background: var(--app-progress-fill);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 /* Reader highlights (lib/functions/book-text/css-highlights.ts) */
