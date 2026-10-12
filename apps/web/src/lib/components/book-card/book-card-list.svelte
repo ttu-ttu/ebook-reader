@@ -5,6 +5,7 @@
   import DifficultyBadge from '$lib/components/book-card/difficulty-badge.svelte';
   import { isFinished, isReading } from '$lib/components/book-card/library-filters';
   import { formatSeries } from '$lib/components/book-card/library-sort';
+  import { longPress } from '$lib/functions/use-long-press';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -18,6 +19,8 @@
     bookClick: {
       id: number;
     };
+    /** Long press: select the book */
+    bookSelect: { id: number };
     removeBookClick: {
       id: number;
     };
@@ -40,6 +43,7 @@
         title={bookCard.title}
         aria-pressed={selectMode ? selected : undefined}
         on:click={() => dispatch('bookClick', { id: bookCard.id })}
+        use:longPress={() => dispatch('bookSelect', { id: bookCard.id })}
       >
         <span class="library-card-cover">
           <BookCard imagePath={bookCard.imagePath} title={bookCard.title} />

@@ -6,6 +6,17 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Book pages
+
+- Clicking a book in the Store or a cover on Home opens its page instead of reading or
+  selecting it: length (with reading time at your speed), progress, difficulty and kanji
+  met, publisher, dates, tags and the other books of its series. "Resume" and "Read"
+  open the book; a long press or right-click still selects.
+- "Find details" on the page searches AniList (books, manga) or VNDB (visual novels)
+  and saves the description, genres, score and optionally the cover for everyone
+  (`/calibre/sync/metadata.json`). It needs the series permission, now called "Edit
+  series and details". Server: the nginx template has a new location for that file.
+
 ### Visual novels (ONScripter)
 
 - Games from the server's VN folder over 10 MB offer to keep their files in the browser

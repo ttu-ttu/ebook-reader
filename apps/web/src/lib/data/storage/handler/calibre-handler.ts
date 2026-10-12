@@ -33,6 +33,7 @@ import type { BooksDbBookData } from '$lib/data/database/books-db/versions/books
 import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
 import { StorageKey, StorageSourceDefault } from '$lib/data/storage/storage-types';
 import { applySeriesOverride, loadSeriesOverrides } from '$lib/data/series-overrides';
+import { applyMetadataCover, loadBookMetadata } from '$lib/data/book-metadata';
 import { database } from '$lib/data/store';
 import { storage } from '$lib/data/window/navigator/storage';
 import loadEpub from '$lib/functions/file-loaders/epub/load-epub';
@@ -115,9 +116,10 @@ export class CalibreStorageHandler extends ApiStorageHandler {
       database.listLoading$.next(true);
 
       try {
-        const [books, , difficulty, personalTitles] = await Promise.all([
+        const [books, , , difficulty, personalTitles] = await Promise.all([
           loadCalibreCatalog(true),
           loadSeriesOverrides(true).catch(() => ({})),
+          loadBookMetadata(true).catch(() => ({})),
           loadCalibreDifficulty().catch(
             () => ({}) as Awaited<ReturnType<typeof loadCalibreDifficulty>>
           ),
@@ -178,9 +180,14 @@ export class CalibreStorageHandler extends ApiStorageHandler {
     }
 
     // Applied on every call, so a saved series shows without refetching the catalog.
-    const overrides = await loadSeriesOverrides().catch(() => ({}));
+    const [overrides, metadata] = await Promise.all([
+      loadSeriesOverrides().catch(() => ({})),
+      loadBookMetadata().catch(() => ({}))
+    ]);
 
-    return [...this.titleToBookCard.values()].map((card) => applySeriesOverride(card, overrides));
+    return [...this.titleToBookCard.values()].map((card) =>
+      applySeriesOverride(applyMetadataCover(card, metadata), overrides)
+    );
   }
 
   async prepareBookForReading() {

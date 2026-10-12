@@ -10,6 +10,12 @@ declare namespace App {
 }
 
 declare global {
+  namespace App {
+    interface PageState {
+      /** Library: id of the book whose page is shown */
+      bookDetails?: number;
+    }
+  }
   interface HTMLElement {
     scrollIntoViewIfNeeded(arg?: boolean): void;
   }

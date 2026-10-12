@@ -27,7 +27,11 @@ export interface AccountUser {
 /** What admins can grant (account/service.py PERMISSIONS). */
 export const accountPermissions = [
   { id: 'import', label: 'Add books', description: 'Add books to the Calibre library' },
-  { id: 'series', label: 'Edit series', description: 'Change series for everyone' },
+  {
+    id: 'series',
+    label: 'Edit series and details',
+    description: 'Change series, book details and covers for everyone'
+  },
   { id: 'difficulty', label: 'Difficulty', description: 'Start difficulty estimates' }
 ] as const;
 

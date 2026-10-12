@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, pushState } from '$app/navigation';
+  import { page } from '$app/stores';
   import {
     faCalendarXmark,
     faChartLine,
@@ -20,6 +21,7 @@
   } from '@fortawesome/free-solid-svg-icons';
   import BookCardList from '$lib/components/book-card/book-card-list.svelte';
   import BookCardTable from '$lib/components/book-card/book-card-table.svelte';
+  import BookDetails from '$lib/components/book-card/book-details.svelte';
   import ContinueReadingShelf from '$lib/components/book-card/continue-reading-shelf.svelte';
   import LearnerDashboard from '$lib/components/book-card/learner-dashboard.svelte';
   import SeriesGrid from '$lib/components/book-card/series-grid.svelte';
@@ -337,11 +339,26 @@
     });
   }
 
-  // Store clicks select books (opened with "Read"); Home clicks open them, and a long press selects.
-  function onStoreBookClick(bookId: number) {
-    selectMode = true;
-    onBookClick(bookId);
+  // Cover clicks show the book's page (Resume buttons open the book); a long press selects.
+  function onCoverClick(bookId: number) {
+    if (selectMode) {
+      onBookClick(bookId);
+    } else {
+      // A history entry, so Back (also on phones) closes the page.
+      pushState('', { bookDetails: bookId });
+    }
   }
+
+  function showSeriesFromDetails(series: string) {
+    history.back();
+    $libraryTab$ = 'store';
+    showSeries(series);
+  }
+
+  $: detailsBook =
+    $page.state.bookDetails === undefined
+      ? undefined
+      : $bookCards$?.find((card) => card.id === $page.state.bookDetails);
 
   /** Selects a book without toggling (long press can fire twice). */
   function selectBook(bookId: number) {
@@ -1265,7 +1282,8 @@
           bookCards={$bookCards$}
           currentBookId={$currentBookId$}
           selectedBookIds={selectMode ? selectedBookIds : undefined}
-          on:bookClick={(ev) => onBookClick(ev.detail.id)}
+          on:bookClick={(ev) => onCoverClick(ev.detail.id)}
+          on:bookRead={(ev) => onBookClick(ev.detail.id)}
           on:bookSelect={(ev) => selectBook(ev.detail.id)}
         />
         <ContinueReadingShelf
@@ -1276,7 +1294,7 @@
           removeTitle="Remove from Home"
           currentBookId={$currentBookId$}
           selectedBookIds={selectMode ? selectedBookIds : undefined}
-          on:bookClick={(ev) => onBookClick(ev.detail.id)}
+          on:bookClick={(ev) => onCoverClick(ev.detail.id)}
           on:bookSelect={(ev) => selectBook(ev.detail.id)}
           on:remove={(ev) => removeFromHome(ev.detail.title)}
         />
@@ -1317,7 +1335,8 @@
             {selectMode}
             sortOption={$booklistSortOptions$[$storageSource$]}
             bookCards={renderedBookCards}
-            on:bookClick={(ev) => onStoreBookClick(ev.detail.id)}
+            on:bookClick={(ev) => onCoverClick(ev.detail.id)}
+            on:bookSelect={(ev) => selectBook(ev.detail.id)}
             on:removeBookClick={(ev) => removeBooks([ev.detail.id])}
             on:sort={(ev) => onSortChange(ev.detail)}
           />
@@ -1328,7 +1347,8 @@
             {selectMode}
             compact={$libraryDisplayMode$ === 'covers-compact'}
             bookCards={renderedBookCards}
-            on:bookClick={(ev) => onStoreBookClick(ev.detail.id)}
+            on:bookClick={(ev) => onCoverClick(ev.detail.id)}
+            on:bookSelect={(ev) => selectBook(ev.detail.id)}
             on:removeBookClick={(ev) => removeBooks([ev.detail.id])}
           />
         {/if}
@@ -1370,6 +1390,20 @@
     </main>
   </div>
 </div>
+
+{#if detailsBook}
+  <BookDetails
+    book={detailsBook}
+    bookCards={$bookCards$}
+    isCalibre={$storageSource$ === StorageKey.CALIBRE}
+    on:close={() => history.back()}
+    on:read={(ev) => onBookClick(ev.detail.id)}
+    on:showBook={(ev) => pushState('', { bookDetails: ev.detail.id })}
+    on:showSeries={(ev) => showSeriesFromDetails(ev.detail)}
+    on:changed={() =>
+      database.dataListChanged$.next(getStorageHandler(window, $storageSource$, ''))}
+  />
+{/if}
 
 <style>
   .library-layout {

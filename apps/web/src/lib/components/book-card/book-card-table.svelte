@@ -4,6 +4,7 @@
   import DifficultyBadge from '$lib/components/book-card/difficulty-badge.svelte';
   import { formatSeries } from '$lib/components/book-card/library-sort';
   import { SortDirection, type SortOption } from '$lib/data/sort-types';
+  import { longPress } from '$lib/functions/use-long-press';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -15,6 +16,8 @@
 
   const dispatch = createEventDispatcher<{
     bookClick: { id: number };
+    /** Long press: select the book */
+    bookSelect: { id: number };
     removeBookClick: { id: number };
     sort: SortOption['property'];
   }>();
@@ -122,6 +125,7 @@
         type="button"
         class="library-list-cells library-list-row-main"
         on:click={() => dispatch('bookClick', { id: bookCard.id })}
+        use:longPress={() => dispatch('bookSelect', { id: bookCard.id })}
       >
         <span class="library-list-title" title={bookCard.title}>{bookCard.title}</span>
         <span class="library-list-secondary truncate" title={formatSeries(bookCard)}>

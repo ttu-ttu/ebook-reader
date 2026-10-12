@@ -8,7 +8,7 @@
 #   trusted network, or PUBLIC_READS=1;
 # - signed-out readers on a trusted network write the shared sync folder;
 #   elsewhere that needs an account;
-# - adding books to Calibre, starting difficulty jobs and editing series need an
+# - adding books to Calibre, starting difficulty jobs and editing series or book details need an
 #   admin or that permission (Settings → Account → Manage accounts).
 # Slows password guessing on top of the account service's own lockouts.
 limit_req_zone $binary_remote_addr zone=account_login:1m rate=10r/m;
@@ -284,8 +284,8 @@ server {
   # the Calibre storage source. Plain WebDAV writes plus JSON directory listings.
   location /calibre/sync/ {
     auth_request /_account_shared;
-    # series.json needs the series permission; don't let a MOVE get around it.
-    if ($http_destination ~* "/series(\.|%2e)json$") {
+    # series.json and metadata.json need the series permission; don't let a MOVE get around it.
+    if ($http_destination ~* "/(series|metadata)(\.|%2e)json$") {
       return 403;
     }
     alias ${SYNC_DIR}/;
@@ -310,6 +310,23 @@ server {
   location = /calibre/sync/series.json {
     auth_request /_account_series_writes;
     alias ${SYNC_DIR}/series.json;
+    dav_methods PUT;
+    client_max_body_size 10m;
+    client_body_temp_path ${SYNC_DIR}/.tmp;
+    types { }
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    add_header Content-Disposition attachment always;
+    add_header Content-Security-Policy "sandbox; default-src 'none'" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+    add_header Strict-Transport-Security $hsts always;
+  }
+
+  # Book details and covers fetched on a book's page apply to everyone too.
+  location = /calibre/sync/metadata.json {
+    auth_request /_account_series_writes;
+    alias ${SYNC_DIR}/metadata.json;
     dav_methods PUT;
     client_max_body_size 10m;
     client_body_temp_path ${SYNC_DIR}/.tmp;

@@ -24,7 +24,10 @@
   export let selectedBookIds: ReadonlySet<number> | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
+    /** Cover click: the book's page, or toggling it in select mode */
     bookClick: { id: number };
+    /** The Resume button */
+    bookRead: { id: number };
     /** Long press: select the book */
     bookSelect: { id: number };
     remove: BookCardProps;
@@ -81,7 +84,7 @@
               type="button"
               class="shelf-resume"
               aria-label="Resume {book.title}"
-              on:click={() => dispatch('bookClick', { id: book.id })}
+              on:click={() => dispatch('bookRead', { id: book.id })}
             >
               <Fa icon={faBookOpenReader} /> Resume
             </button>
