@@ -9,13 +9,12 @@ import zipfile
 TOP_SHARE = 0.065
 
 
-def load_yomitan_ranks(path: str) -> dict:
-    """term -> best (lowest) rank from a rank-based Yomitan frequency dictionary."""
+def _yomitan_entries(path: str):
+    """(term, reading or None, rank) from a rank-based Yomitan frequency dictionary."""
     with zipfile.ZipFile(path) as archive:
         index = json.loads(archive.read('index.json'))
         if index.get('frequencyMode') != 'rank-based':
             raise ValueError(f"{path}: not a rank-based frequency dictionary")
-        ranks = {}
         for name in archive.namelist():
             if not name.startswith('term_meta_bank'):
                 continue
@@ -24,24 +23,40 @@ def load_yomitan_ranks(path: str) -> dict:
                 frequency = data.get('frequency', data) if isinstance(data, dict) else data
                 value = frequency.get('value') if isinstance(frequency, dict) else frequency
                 if kind == 'freq' and isinstance(value, (int, float)) and value > 0:
-                    ranks[term] = min(value, ranks.get(term, value))
+                    yield term, data.get('reading') if isinstance(data, dict) else None, value
+
+
+def load_yomitan_ranks(path: str) -> dict:
+    """term -> best (lowest) rank from a rank-based Yomitan frequency dictionary."""
+    ranks = {}
+    for term, _, value in _yomitan_entries(path):
+        ranks[term] = min(value, ranks.get(term, value))
     return ranks
 
 
 class FrequencyTable:
     """word(key) -> (rank, share of occurrences); form(key, spelling) -> (rank, share, percentage).
     Keys are Sudachi's normalised form plus a part of speech ('有る\\tverb'), looked up by
-    the normalised form; a spelling's percentage is how close its rank is to the word's."""
+    the normalised form, and by its reading when known (事: こと is common, じ rare); a
+    spelling's percentage is how close its rank is to the word's."""
 
-    def __init__(self, ranks: dict):
+    def __init__(self, ranks: dict, reading_ranks: dict | None = None):
         self.ranks = ranks
+        self.reading_ranks = reading_ranks or {}
 
     @classmethod
     def load(cls, path: str) -> 'FrequencyTable':
-        return cls(load_yomitan_ranks(path))
+        ranks, reading_ranks = {}, {}
+        for term, reading, value in _yomitan_entries(path):
+            ranks[term] = min(value, ranks.get(term, value))
+            if reading:
+                reading_ranks[term, reading] = min(value, reading_ranks.get((term, reading), value))
+        return cls(ranks, reading_ranks)
 
-    def word(self, key):
-        rank = self.ranks.get(key.split('\t')[0])
+    def word(self, key, reading=None):
+        term = key.split('\t')[0]
+        rank = self.reading_ranks.get((term, reading)) if reading else None
+        rank = rank or self.ranks.get(term)
         return (rank, TOP_SHARE / rank) if rank else None
 
     def form(self, key, form):

@@ -6,6 +6,28 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Name and icon
+
+- The app is called Chimimouryou in the tab title, header and installed app, with
+  a ち icon in place of ッツ's. "Open Repository" in bug reports links to this fork.
+
+### Difficulty estimates
+
+- New model inputs from the Japanese readability research: the number of common
+  words needed for 90/95/98% of a book's words, moving-average type/token ratio,
+  relative clauses and predicates per sentence, hiragana share, kanji outside
+  常用 and above 教育漢字, and furigana (how much of the kanji has ruby, and
+  katakana readings like 本気→マジ). Word origins (和語/漢語) now come from
+  UniDic, homographs (事 こと/じ) are looked up by reading, and tables of
+  contents, colophons and ads are left out of the text.
+- Estimates show a likely range and how many common words cover 95% of the book.
+- The library's gauge button is open to every reader: it shows the selected
+  books' estimates and how much of their kanji you have already met while
+  reading in this browser. Starting estimates still needs the `difficulty`
+  permission.
+- Estimates made by the previous model are redone by "Run" (`MODEL_VERSION`
+  `jiten-distilled-3`).
+
 First public release. Compared with upstream ッツ Ebook Reader:
 
 ### Library and server

@@ -63,3 +63,36 @@ export function summarizeKanji(books: KanjiSeen[]): KanjiSummary {
 export async function getKanjiSummary() {
   return summarizeKanji(await (await readerDb()).getAll('kanji'));
 }
+
+export interface KanjiCoverage {
+  /** Share of the book's kanji occurrences already met, 0-1 */
+  coverage: number;
+  /** Different kanji in the book not met yet */
+  newKanji: number;
+}
+
+/** How much of a book's kanji (its counts from the difficulty service) a reader has met. */
+export function kanjiCoverage(
+  bookCounts: Record<string, number>,
+  books: KanjiSeen[]
+): KanjiCoverage | undefined {
+  const met = new Set(books.flatMap((book) => Object.keys(book.counts)));
+  let total = 0;
+  let known = 0;
+  let newKanji = 0;
+
+  for (const [kanji, count] of Object.entries(bookCounts)) {
+    total += count;
+    if (met.has(kanji)) {
+      known += count;
+    } else {
+      newKanji += 1;
+    }
+  }
+
+  return total ? { coverage: known / total, newKanji } : undefined;
+}
+
+export async function getKanjiSeen() {
+  return (await readerDb()).getAll('kanji');
+}

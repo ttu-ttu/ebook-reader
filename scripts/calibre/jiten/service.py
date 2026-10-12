@@ -7,6 +7,7 @@ Nothing runs until asked: the reader (or the CLI) requests difficulty for chosen
 
 HTTP API (bound to localhost, proxied by nginx at /calibre/difficulty/api/):
   GET  status                       progress of the current job
+  GET  kanji/ID                     kanji counts of an estimated book (for each reader's own kanji coverage)
   POST compute    {"ids": [...]}    estimate difficulty for these books ({"all": true} for all without a current estimate)
   POST cancel                       stop the running job
   POST dictionary   body: the zip    install Jiten's frequency list (jiten_freq_global.zip)
@@ -14,8 +15,8 @@ Results are written to RESULTS_PATH, which nginx serves as /calibre/difficulty.j
 
 CLI: service.py serve | compute ID...
 """
+import gzip
 import json
-import math
 import os
 import shutil
 import sys
@@ -37,10 +38,18 @@ FREQUENCY_DICTIONARY = os.environ.get('JITEN_FREQUENCY_DICTIONARY',
 RESULTS_PATH = os.path.join(STATE_DIR, 'difficulty.json')
 MAX_DICTIONARY_BYTES = 64 * 1024 * 1024
 # Jiten's model retrained on jiten.moe's own scores (distil/, README there): their scale directly,
-# adjustment included, from the 55 features plus log characters and log unique kanji.
-MODEL_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'difficulty_model_jiten_distilled.onnx')
+# adjustment included, from Jiten's 55 features plus EXTRA_FEATURES. The _low/_high models
+# are its 10th and 90th percentiles, shown as a range.
+MODEL_DIR = os.path.dirname(os.path.realpath(__file__))
+MODEL_PATHS = {name: os.path.join(MODEL_DIR, f'difficulty_model_jiten_distilled{suffix}.onnx')
+               for name, suffix in (('difficulty', ''), ('low', '_low'), ('high', '_high'))}
+# Added to both sides of the range so it holds 80% of books (written by distil/train.py).
+with open(os.path.join(MODEL_DIR, 'difficulty_model_range.json'), encoding='utf-8') as _f:
+    RANGE_WIDEN = json.load(_f)['widen']
 # Stored with each estimate; whole-library runs redo estimates made by another model.
-MODEL_VERSION = 'jiten-distilled-2'
+MODEL_VERSION = 'jiten-distilled-3'
+# Per-book kanji counts, gzipped JSON, for the reader's own coverage.
+KANJI_DIR = os.path.join(STATE_DIR, 'kanji')
 WORKERS = int(os.environ.get('JITEN_WORKERS', os.cpu_count() or 1))
 PORT = int(os.environ.get('JITEN_PORT', '8765'))
 HOST = os.environ.get('JITEN_HOST', '127.0.0.1')
@@ -53,11 +62,11 @@ BOOKS_PER_POOL = 300
 
 _analyzer = None
 _frequency = None
-_session = None
+_sessions = None
 
 
 def _init_worker():
-    global _analyzer, _frequency, _session
+    global _analyzer, _frequency, _sessions
     import warnings
     warnings.filterwarnings('ignore')
     import onnxruntime
@@ -68,29 +77,46 @@ def _init_worker():
     options = onnxruntime.SessionOptions()
     options.intra_op_num_threads = 1
     options.inter_op_num_threads = 1
-    _session = onnxruntime.InferenceSession(MODEL_PATH, options)
+    _sessions = {name: onnxruntime.InferenceSession(path, options) for name, path in MODEL_PATHS.items()}
+
+
+def save_kanji(book_id: int, text: str):
+    from collections import Counter
+    from features import is_kanji
+    os.makedirs(KANJI_DIR, exist_ok=True)
+    path = os.path.join(KANJI_DIR, f'{book_id}.json.gz')
+    with gzip.open(path + '.tmp', 'wt', encoding='utf-8') as f:
+        json.dump(dict(Counter(c for c in text if is_kanji(c))), f, ensure_ascii=False, separators=(',', ':'))
+    os.replace(path + '.tmp', path)
 
 
 def _estimate(book: dict):
     import numpy
-    from features import FEATURE_ORDER, TOKEN_CLEAN, book_text, compute_features, is_kanji
-    text = book_text(os.path.join(LIBRARY, book['file']), book['format'])
+    from features import (EXTRA_FEATURES, FEATURE_ORDER, TOKEN_CLEAN, book_text, compute_extra_features,
+                          compute_features, is_kanji, words_for_coverage)
+    ruby = {}
+    text = book_text(os.path.join(LIBRARY, book['file']), book['format'], ruby)
     characters = len(TOKEN_CLEAN.sub('', text))
     if characters < 1000:
         return book['id'], None
     analysis = _analyzer.analyse(text)
     features = compute_features(analysis, _frequency)
-    unique_kanji = len({c for c in text if is_kanji(c)})
-    row = [features[name] for name in FEATURE_ORDER] + [math.log(characters), math.log(max(unique_kanji, 10))]
-    model = float(_session.run(None, {'float_input': numpy.array([row], dtype=numpy.float32)})[0][0][0])
-    score = round(min(max(model, 0.0), 5.0), 2)
+    extra = compute_extra_features(analysis, _frequency, ruby)
+    row = numpy.array([[features[name] for name in FEATURE_ORDER] + [extra[name] for name in EXTRA_FEATURES]],
+                      dtype=numpy.float32)
+    scores = {name: round(min(max(float(session.run(None, {'float_input': row})[0][0][0]), 0.0), 5.0), 2)
+              for name, session in _sessions.items()}
+    save_kanji(book['id'], text)
     # 'adjusted' is kept for older readers; the model includes jiten.moe's adjustment.
     return book['id'], {
-        'difficulty': score,
-        'adjusted': score,
+        'difficulty': scores['difficulty'],
+        'adjusted': scores['difficulty'],
+        'low': round(max(min(scores['low'], scores['difficulty']) - RANGE_WIDEN, 0.0), 2),
+        'high': round(min(max(scores['high'], scores['difficulty']) + RANGE_WIDEN, 5.0), 2),
+        'words95': words_for_coverage(extra) if extra['CoverageRank95'] == extra['CoverageRank95'] else None,
         'model': MODEL_VERSION,
         'characters': characters,
-        'uniqueKanji': unique_kanji,
+        'uniqueKanji': len({c for c in text if is_kanji(c)}),
         'computedAt': int(time.time() * 1000),
     }
 
@@ -283,8 +309,22 @@ class Handler(BaseHTTPRequestHandler):
         return self.path.rstrip('/').rsplit('/', 1)[-1]
 
     def do_GET(self):
-        if self._action() == 'status':
+        parts = self.path.split('?')[0].strip('/').split('/')
+        if parts == ['status']:
             self._send(200, runner.status())
+        elif len(parts) == 2 and parts[0] == 'kanji' and parts[1].isdigit():
+            try:
+                with open(os.path.join(KANJI_DIR, f'{int(parts[1])}.json.gz'), 'rb') as f:
+                    data = f.read()
+            except OSError:
+                return self._send(404, {'error': 'no estimate for this book'})
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Encoding', 'gzip')
+            self.send_header('Content-Length', str(len(data)))
+            self.send_header('Cache-Control', 'no-cache')
+            self.end_headers()
+            self.wfile.write(data)
         else:
             self._send(404, {'error': 'not found'})
 

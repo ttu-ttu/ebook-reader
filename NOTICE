@@ -11,7 +11,19 @@ The difficulty estimates (scripts/calibre/jiten/) include material from Jiten
 scripts/calibre/jiten/LICENSE):
 - deconjugator.json, Jiten's deconjugation rules;
 - features.py and deconjugator.py, a Python port of Jiten's feature extraction;
-- difficulty_model_jiten_distilled.onnx, a model trained on Jiten's features and
+- difficulty_model_jiten_distilled*.onnx, models trained on Jiten's features and
   on difficulty scores published by jiten.moe.
 These files were modified or derived for this project. Jiten is not affiliated
 with this project.
+
+scripts/calibre/jiten/kanji-grades.json is derived from KANJIDIC2 by the
+Electronic Dictionary Research and Development Group
+(https://www.edrdg.org/kanjidic/), licensed under CC BY-SA 4.0; it is
+distributed under the same licence.
+scripts/calibre/jiten/goshu.json.gz holds word origins (語種) from UniDic
+(https://clrd.ninjal.ac.jp/unidic/, via unidic-lite), Copyright (c) 2011-2013,
+The UniDic Consortium, used under its BSD licence.
+
+The ち icon (apps/web/static/ icons, favicons and the header logo) is drawn
+from the glyph in Noto Sans CJK JP Bold, Copyright 2014-2021 Adobe
+(http://www.adobe.com/), licensed under the SIL Open Font License 1.1.

@@ -54,7 +54,13 @@
                   >
                 {/if}
                 {#if bookCard.difficulty !== undefined}
-                  <DifficultyBadge difficulty={bookCard.difficulty} compact />
+                  <DifficultyBadge
+                    difficulty={bookCard.difficulty}
+                    low={bookCard.difficultyLow}
+                    high={bookCard.difficultyHigh}
+                    words95={bookCard.words95}
+                    compact
+                  />
                 {/if}
               </span>
             {/if}

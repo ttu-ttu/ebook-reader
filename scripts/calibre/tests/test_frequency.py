@@ -22,13 +22,15 @@ def dictionary(mode='rank-based'):
             ['有る', 'freq', {'reading': 'ある', 'frequency': {'value': 18}}],
             ['在る', 'freq', {'reading': 'ある', 'frequency': 10382}],
             ['魔法', 'freq', {'reading': 'まほう', 'frequency': 1986}],
+            ['事', 'freq', {'reading': 'こと', 'frequency': 30}],
+            ['事', 'freq', {'reading': 'じ', 'frequency': 9000}],
         ]))
     return path
 
 
 class YomitanRanksTest(unittest.TestCase):
     def test_best_rank_per_term(self):
-        self.assertEqual(load_yomitan_ranks(dictionary()), {'ある': 18, '有る': 18, '在る': 10382, '魔法': 1986})
+        self.assertEqual(load_yomitan_ranks(dictionary()), {'ある': 18, '有る': 18, '在る': 10382, '魔法': 1986, '事': 30})
 
     def test_rejects_occurrence_based(self):
         with self.assertRaises(ValueError):
@@ -44,9 +46,13 @@ class YomitanRanksTest(unittest.TestCase):
         self.assertAlmostEqual(percentage, 100 * 18 / 10382)
         self.assertIsNone(table.form('有る\tverb', 'アル'))
 
+    def test_reading_tells_homographs_apart(self):
+        table = FrequencyTable.load(dictionary())
+        self.assertEqual(table.word('事\tnoun', 'じ')[0], 9000)
+        self.assertEqual(table.word('事\tnoun', 'こと')[0], 30)
+        self.assertEqual(table.word('事\tnoun')[0], 30)  # unknown reading: the most common one
+        self.assertEqual(table.word('魔法\tnoun', 'まじっく')[0], 1986)  # reading not listed: the spelling's rank
 
-if __name__ == '__main__':
-    unittest.main()
 
 
 class InstallDictionaryTest(unittest.TestCase):
@@ -64,7 +70,7 @@ class InstallDictionaryTest(unittest.TestCase):
 
     def test_installs_a_rank_based_list(self):
         with open(dictionary(), 'rb') as f:
-            self.assertEqual(self.install(f.read()), 4)
+            self.assertEqual(self.install(f.read()), 5)
         self.assertTrue(os.path.exists(self.service.FREQUENCY_DICTIONARY))
 
     def test_rejects_other_files_and_keeps_the_current_one(self):
@@ -73,3 +79,36 @@ class InstallDictionaryTest(unittest.TestCase):
                 self.install(data)
         self.assertFalse(os.path.exists(self.service.FREQUENCY_DICTIONARY))
         self.assertEqual(os.listdir(os.path.dirname(self.service.FREQUENCY_DICTIONARY)), [])
+
+
+class KanjiEndpointTest(unittest.TestCase):
+    def test_saved_counts_are_served(self):
+        import importlib.util
+        import threading
+        import urllib.error
+        import urllib.request
+        from http.server import ThreadingHTTPServer
+        spec = importlib.util.spec_from_file_location(
+            'jiten_service_kanji', os.path.join(os.path.dirname(__file__), '..', 'jiten', 'service.py'))
+        service = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(service)
+        service.KANJI_DIR = tempfile.mkdtemp()
+        service.save_kanji(7, '魔法の魔女')
+        server = ThreadingHTTPServer(('127.0.0.1', 0), service.Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            base = f'http://127.0.0.1:{server.server_port}'
+            with urllib.request.urlopen(f'{base}/kanji/7') as response:
+                import gzip
+                self.assertEqual(json.loads(gzip.decompress(response.read())), {'魔': 2, '法': 1, '女': 1})
+            for path in ('/kanji/8', '/kanji/..%2Fx'):
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    urllib.request.urlopen(base + path)
+                self.assertEqual(error.exception.code, 404)
+        finally:
+            server.shutdown()
+            server.server_close()
+
+
+if __name__ == '__main__':
+    unittest.main()

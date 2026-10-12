@@ -22,6 +22,11 @@ export interface BookCardProps {
   rating?: number | null;
   /** Jiten-style difficulty, 0-5 */
   difficulty?: number;
+  /** 10th-90th percentile range of the estimate */
+  difficultyLow?: number;
+  difficultyHigh?: number;
+  /** Top-N words a reader needs to know for 95% of the book's words */
+  words95?: number;
   /** CBZ/ZIP read in the manga reader */
   manga?: boolean;
   /** Calibre book id, for books from the Calibre source */

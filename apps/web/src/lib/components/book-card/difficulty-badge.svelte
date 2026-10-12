@@ -2,16 +2,28 @@
   import { difficultyColor, difficultyName } from '$lib/data/difficulty';
 
   export let difficulty: number;
+  export let low: number | undefined = undefined;
+  export let high: number | undefined = undefined;
+  export let words95: number | undefined = undefined;
   export let compact = false;
+
+  $: range =
+    low !== undefined && high !== undefined ? `, likely ${low.toFixed(1)}-${high.toFixed(1)}` : '';
+  $: words = words95
+    ? `\nKnowing the ${words95.toLocaleString()} most common words covers 95% of its words`
+    : '';
 </script>
 
 <span
   class="difficulty-badge"
   style:--difficulty-color={difficultyColor(difficulty)}
-  title="Difficulty {difficulty.toFixed(2)} of 5 ({difficultyName(difficulty)}), estimated locally with Jiten's model"
+  title="Difficulty {difficulty.toFixed(2)} of 5 ({difficultyName(
+    difficulty
+  )}){range}, estimated locally with Jiten's features{words}"
 >
   <span class="difficulty-dot" />
-  {difficulty.toFixed(1)}{#if !compact}<span class="difficulty-label">{difficultyName(difficulty)}</span
+  {difficulty.toFixed(1)}{#if !compact}<span class="difficulty-label"
+      >{difficultyName(difficulty)}</span
     >{/if}
 </span>
 

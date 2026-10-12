@@ -16,16 +16,15 @@ def init():
     _table = FrequencyTable.load(os.path.join(HERE, 'frequency-dictionary.zip'))
 
 def work(book):
-    from features import TOKEN_CLEAN, book_text, compute_features, is_kanji
+    from features import TOKEN_CLEAN, book_text, compute_extra_features, compute_features
     try:
-        text = book_text(os.path.join(LIBRARY, book['file']), book['format'])
-        chars = len(TOKEN_CLEAN.sub('', text))
-        if chars < 1000:
+        ruby = {}
+        text = book_text(os.path.join(LIBRARY, book['file']), book['format'], ruby)
+        if len(TOKEN_CLEAN.sub('', text)) < 1000:
             return None
         a = _a.analyse(text)
-        return {'id': book['id'], 'characters': chars, 'uniqueKanji': len({c for c in text if is_kanji(c)}),
-                'words': a.word_count, 'uniqueWords': len(a.words),
-                'features': compute_features(a, _table)}
+        return {'id': book['id'], 'words': a.word_count, 'uniqueWords': len(a.words),
+                'features': compute_features(a, _table), 'extra': compute_extra_features(a, _table, ruby)}
     except Exception as error:  # noqa: BLE001
         return {'id': book['id'], 'error': str(error)[:200]}
 

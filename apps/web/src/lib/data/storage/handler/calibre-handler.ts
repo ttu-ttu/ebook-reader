@@ -158,6 +158,9 @@ export class CalibreStorageHandler extends ApiStorageHandler {
             tags: book.tags,
             rating: book.rating,
             difficulty: difficulty[book.id]?.difficulty,
+            difficultyLow: difficulty[book.id]?.low,
+            difficultyHigh: difficulty[book.id]?.high,
+            words95: difficulty[book.id]?.words95 ?? undefined,
             manga: book.format === 'CBZ' || book.format === 'ZIP',
             calibreId: book.id
           });

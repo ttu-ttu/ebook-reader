@@ -129,7 +129,12 @@
         </span>
         <span class="library-list-secondary">
           {#if bookCard.difficulty !== undefined}
-            <DifficultyBadge difficulty={bookCard.difficulty} />
+            <DifficultyBadge
+              difficulty={bookCard.difficulty}
+              low={bookCard.difficultyLow}
+              high={bookCard.difficultyHigh}
+              words95={bookCard.words95}
+            />
           {:else}
             —
           {/if}
@@ -170,8 +175,7 @@
 <style>
   .library-list {
     --library-list-columns: minmax(16rem, 3.6fr) minmax(8rem, 1.2fr) minmax(7rem, 0.6fr)
-      minmax(8.5rem, 0.82fr) minmax(6.5rem, 0.55fr)
-      minmax(7rem, 0.62fr) minmax(7rem, 0.62fr);
+      minmax(8.5rem, 0.82fr) minmax(6.5rem, 0.55fr) minmax(7rem, 0.62fr) minmax(7rem, 0.62fr);
 
     display: flex;
     flex-direction: column;

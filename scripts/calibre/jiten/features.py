@@ -5,19 +5,24 @@ Jiten parses text into JMdict words with its own Sudachi-based parser and looks 
 frequencies up in its database. Here, Sudachi tokens are grouped into words the same
 way (a verb or adjective together with its auxiliaries is one conjugated word, suru
 verbs are merged), words are identified by Sudachi's normalised form, and frequencies
-come from a table built from the local library (see frequency.py).
+come from Jiten's Yomitan frequency list (see frequency.py).
+
+EXTRA_FEATURES are not Jiten's: known-word coverage, syntax, kanji and furigana
+measures from the Japanese readability literature (distil/README.md).
 """
+import gzip
+import json
+import os
 import html
 import math
 import posixpath
 import re
 import statistics
 import zipfile
+from collections import Counter, deque
 from dataclasses import dataclass, field
 from functools import lru_cache
 from xml.etree import ElementTree
-
-from sudachipy import Dictionary, SplitMode
 
 from deconjugator import Deconjugator
 
@@ -38,6 +43,25 @@ FEATURE_ORDER = [
     'ratio_adj_pos', 'ratio_adv_pos', 'ratio_conjunc_pos', 'ratio_aux_pos', 'ratio_inter_pos',
     'ratio_fix_pos', 'ratio_pn_pos', 'ratio_exp_pos', 'ratio_other_pos',
 ]
+
+# Not Jiten's; appended to FEATURE_ORDER as model inputs (compute_extra_features).
+EXTRA_FEATURES = [
+    'LogCharacters', 'LogUniqueKanji',
+    'CoverageRank90', 'CoverageRank95', 'CoverageRank98', 'Mattr',
+    'LineSentenceLength', 'PredicatesPerSentence', 'RelativeClausesPerSentence', 'HiraganaRatio',
+    'NonJoyoKanjiShare', 'UpperJoyoKanjiShare', 'RubyKanjiShare', 'RubyKatakanaShare',
+]
+# Moving-average type/token ratio window (Covington & McFall 2010).
+MATTR_WINDOW = 500
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+# 常用 kanji -> school grade (1-6 教育漢字, 8 the rest), from KANJIDIC2 (distil/make_tables.py).
+with open(os.path.join(HERE, 'kanji-grades.json'), encoding='utf-8') as _f:
+    KANJI_GRADES = json.load(_f)
+# 語種 of kanji-spelled words from UniDic (distil/make_tables.py): 和, 漢, 外 or 混.
+with gzip.open(os.path.join(HERE, 'goshu.json.gz'), 'rt', encoding='utf-8') as _f:
+    GOSHU = json.load(_f)
+GOSHU_ORIGIN = {'和': 'wago', '漢': 'kango', '外': 'gairaigo', '混': 'unknown'}
 
 # MLConfig.cs
 LOW_FREQ_RANK_THRESHOLD = 30000
@@ -89,6 +113,8 @@ SENTENCE_ENDERS = set('。！？」')
 KATAKANA_WORD = re.compile(r'^[゠-ヿー・]+$')
 KANJI_ONLY = re.compile(r'^[㐀-䶿一-鿿豈-﫿々]+$')
 HAS_KANJI = re.compile(r'[㐀-䶿一-鿿豈-﫿]')
+HIRAGANA = re.compile(r'[ぁ-ゖ]')
+KATAKANA_READING = re.compile(r'^[ァ-ヺー・]+$')
 HAS_CONTENT = re.compile(r'[0-9A-Za-z぀-ヿ㐀-䶿一-鿿豈-﫿０-ｚ々]')
 
 # Auxiliaries that are part of a conjugated word in Jiten (anything the deconjugator handles).
@@ -119,8 +145,33 @@ _SKIP = re.compile(r'<(head|script|style)[\s>].*?</\1>', re.S | re.I)
 _TAG = re.compile(r'<[^>]+>')
 
 
-def _markup_to_text(markup: str) -> str:
+_RUBY = re.compile(r'<ruby[\s>](.*?)</ruby>', re.S | re.I)
+_RT_TEXT = re.compile(r'<rt[\s>](.*?)</rt>', re.S | re.I)
+# Aozora-style ruby in TXT: ｜base《reading》, or a run of kanji followed by 《reading》.
+_AOZORA_RUBY = re.compile(r'(?:｜([^《｜\n]+)|([㐀-䶿一-鿿豈-﫿々〆ヶ]+))《([^》]*)》')
+# Spine documents that aren't the story: tables of contents, colophons (奥付), store notices, ads.
+_FRONT_MATTER = re.compile(r'^(?:toc|nav|navdoc|contents|colophon|okuduke|okuzuke|caution|copyright'
+                           r'|ad|ads|advert|advertisement)[-_]?\d*$', re.I)
+
+
+def _count_ruby(ruby: dict, base: str, reading: str):
+    """Furigana statistics: kanji under ruby, and readings in katakana (マジ over 本気)."""
+    kanji = sum(1 for c in base if is_kanji(c))
+    if not kanji:
+        return
+    ruby['ruby'] = ruby.get('ruby', 0) + 1
+    ruby['kanji'] = ruby.get('kanji', 0) + kanji
+    if KATAKANA_READING.match(reading.strip()):
+        ruby['katakana'] = ruby.get('katakana', 0) + 1
+
+
+def _markup_to_text(markup: str, ruby: dict | None = None) -> str:
     markup = _SKIP.sub('', markup)
+    if ruby is not None:
+        for match in _RUBY.finditer(markup):
+            inner = match.group(1)
+            reading = ''.join(_TAG.sub('', r) for r in _RT_TEXT.findall(inner))
+            _count_ruby(ruby, html.unescape(_TAG.sub('', _RT.sub('', inner))), html.unescape(reading))
     markup = _RT.sub('', markup)
     markup = _BLOCK_END.sub('\n', markup)
     text = html.unescape(_TAG.sub('', markup))
@@ -134,13 +185,20 @@ def _epub_documents(archive: zipfile.ZipFile):
     base = posixpath.dirname(rootfile)
     manifest = {el.get('id'): el.get('href') for el in opf.iter()
                 if el.tag.endswith('}item') and 'html' in (el.get('media-type') or '')}
-    for el in opf.iter():
-        if el.tag.endswith('}itemref') and el.get('idref') in manifest:
-            yield posixpath.normpath(posixpath.join(base, manifest[el.get('idref')]))
+    skip = {el.get('id') for el in opf.iter() if el.tag.endswith('}item') and 'nav' in (el.get('properties') or '')}
+    skip_hrefs = {(el.get('href') or '').split('#')[0] for el in opf.iter()
+                  if el.tag.endswith('}reference') and el.get('type') in ('toc', 'copyright-page', 'colophon')}
+    spine = [el for el in opf.iter() if el.tag.endswith('}itemref') and el.get('idref') in manifest]
+    story = [el for el in spine if el.get('linear') != 'no' and el.get('idref') not in skip
+             and manifest[el.get('idref')] not in skip_hrefs
+             and not _FRONT_MATTER.match(posixpath.splitext(posixpath.basename(manifest[el.get('idref')]))[0])]
+    for el in story or spine:
+        yield posixpath.normpath(posixpath.join(base, manifest[el.get('idref')]))
 
 
-def book_text(path: str, fmt: str) -> str:
-    """Plain text of a book, one paragraph per line, without furigana."""
+def book_text(path: str, fmt: str, ruby: dict | None = None) -> str:
+    """Plain text of a book, one paragraph per line, without furigana (counted into `ruby`
+    if given), tables of contents, colophons or ads."""
     if fmt == 'TXT':
         raw = open(path, 'rb').read()
         for encoding in ('utf-8-sig', 'shift_jis', 'cp932', 'euc_jp', 'utf-16'):
@@ -152,6 +210,9 @@ def book_text(path: str, fmt: str) -> str:
         else:
             text = raw.decode('utf-8', 'replace')
         # Aozora-style ruby: 漢字《かんじ》 and ｜ markers.
+        if ruby is not None:
+            for match in _AOZORA_RUBY.finditer(text):
+                _count_ruby(ruby, match.group(1) or match.group(2), match.group(3))
         text = re.sub(r'《[^》]*》|｜', '', text)
         return '\n'.join(line.strip() for line in text.splitlines() if line.strip())
 
@@ -163,7 +224,7 @@ def book_text(path: str, fmt: str) -> str:
         parts = []
         for name in names:
             try:
-                parts.append(_markup_to_text(archive.read(name).decode('utf-8', 'replace')))
+                parts.append(_markup_to_text(archive.read(name).decode('utf-8', 'replace'), ruby))
             except KeyError:
                 continue
     return '\n'.join(p for p in parts if p)
@@ -180,6 +241,7 @@ class Word:
     origin: str  # wago / kango / gairaigo / unknown
     conjugations: tuple[str, ...]
     surface: str
+    reading: str | None = None  # hiragana reading of an unconjugated word, to tell homographs apart
 
 
 @dataclass
@@ -191,11 +253,19 @@ class Analysis:
     word_count: int = 0
     sentence_count: int = 0
     markers: dict = field(default_factory=dict)
+    # Not Jiten's (EXTRA_FEATURES)
+    line_sentence_count: int = 0
+    predicates: int = 0
+    relative_clauses: int = 0
+    mattr: float = 0.0
 
 
-def _origin(text: str, pos: str) -> str:
+def _origin(text: str, pos: str, normalized: str = '') -> str:
     if pos == 'name':
         return 'unknown'
+    goshu = GOSHU.get(text) or GOSHU.get(normalized)
+    if goshu:
+        return GOSHU_ORIGIN[goshu]
     if KATAKANA_WORD.match(text):
         return 'gairaigo'
     if KANJI_ONLY.match(text):
@@ -221,13 +291,14 @@ def _coarse_pos(pos: tuple) -> str:
 class Token:
     """The parts of a Sudachi morpheme the analysis uses. Morphemes keep their whole
     tokenizer result alive, which on very long books ran workers out of memory."""
-    __slots__ = ('_surface', '_dictionary_form', '_normalized_form', '_pos')
+    __slots__ = ('_surface', '_dictionary_form', '_normalized_form', '_pos', '_reading')
 
-    def __init__(self, surface: str, dictionary_form: str, normalized_form: str, pos: tuple):
+    def __init__(self, surface: str, dictionary_form: str, normalized_form: str, pos: tuple, reading: str = ''):
         self._surface = surface
         self._dictionary_form = dictionary_form
         self._normalized_form = normalized_form
         self._pos = pos
+        self._reading = reading
 
     def surface(self) -> str:
         return self._surface
@@ -241,9 +312,18 @@ class Token:
     def part_of_speech(self) -> tuple:
         return self._pos
 
+    def reading_form(self) -> str:
+        return self._reading
+
+
+def to_hiragana(text: str) -> str:
+    return ''.join(chr(ord(c) - 0x60) if 'ァ' <= c <= 'ヶ' else c for c in text)
+
 
 class Analyzer:
     def __init__(self):
+        # Imported here so the rest of the module works without Sudachi (tests).
+        from sudachipy import Dictionary, SplitMode
         self.tokenizer = Dictionary(dict='full').create(SplitMode.C)
         self._pos_by_id: dict[int, tuple] = {}
         self.deconjugator = Deconjugator()
@@ -274,7 +354,8 @@ class Analyzer:
                     pos = self._pos_by_id.get(pos_id) or self._pos_by_id.setdefault(pos_id, morpheme.part_of_speech())
                     surface = morpheme.surface()
                     if pos[0] not in ('補助記号', '空白') and HAS_CONTENT.search(surface):
-                        yield Token(surface, morpheme.dictionary_form(), morpheme.normalized_form(), pos)
+                        yield Token(surface, morpheme.dictionary_form(), morpheme.normalized_form(), pos,
+                                    morpheme.reading_form())
 
     @lru_cache(maxsize=100_000)
     def _conjugations(self, surface: str, target: str, conj_type: str) -> tuple[str, ...]:
@@ -293,6 +374,15 @@ class Analyzer:
         surfaces = [t.surface() for t in tokens]
         dictionary_forms = [t.dictionary_form() for t in tokens]
 
+        # Relative clauses: Japanese marks them only by position, a verb or auxiliary in its
+        # 連体形 right before a noun (昨日買った本). な after 形状詞 (静かな部屋) is a plain modifier.
+        for i in range(len(tokens) - 1):
+            pos = tokens[i].part_of_speech()
+            if (pos[0] in ('動詞', '助動詞') and pos[5].startswith('連体形') and surfaces[i] != 'な'
+                    and tokens[i + 1].part_of_speech()[0] in ('名詞', '代名詞')):
+                result.relative_clauses += 1
+
+        window, window_counts, distinct, ttr_sum, windows = deque(), Counter(), 0, 0.0, 0
         index = 0
         while index < len(tokens):
             head = tokens[index]
@@ -344,15 +434,30 @@ class Analyzer:
                     end += 1
 
             coarse = _coarse_pos(pos)
+            # Predicates per sentence (柴崎・原 2010): verbs, adjectives and the copula.
+            if pos[0] in ('動詞', '形容詞') or (pos[0] == '助動詞' and head.dictionary_form() in ('だ', 'です')):
+                result.predicates += 1
             word = Word(
                 key=f'{head.normalized_form()}\t{coarse}',
                 form=head.surface() if suru else head.dictionary_form(),
                 pos=coarse,
-                origin=_origin(head.surface() if pos[0] == '名詞' else head.dictionary_form(), coarse),
+                origin=_origin(head.surface() if pos[0] == '名詞' else head.dictionary_form(), coarse,
+                               head.normalized_form()),
                 conjugations=self._conjugations(surface, target, conj_type) if pos_inflects else (),
                 surface=surface,
+                reading=to_hiragana(head.reading_form()) if head.surface() == head.dictionary_form() else None,
             )
             word_key = (word.key, word.form)
+            window.append(word_key)
+            window_counts[word_key] += 1
+            distinct += window_counts[word_key] == 1
+            if len(window) > MATTR_WINDOW:
+                old = window.popleft()
+                window_counts[old] -= 1
+                distinct -= window_counts[old] == 0
+            if len(window) == MATTR_WINDOW:
+                ttr_sum += distinct / MATTR_WINDOW
+                windows += 1
             entry = result.words.get(word_key)
             if entry:
                 entry[1] += 1
@@ -373,6 +478,9 @@ class Analyzer:
             result.markers[name] = count
 
         result.sentence_count = count_sentences(text)
+        # Lines without 。 (common in light novels) end a sentence too.
+        result.line_sentence_count = sum(count_sentences(line) for line in text.split('\n') if line)
+        result.mattr = ttr_sum / windows if windows else (len(result.words) / result.word_count if result.word_count else 0)
         return result
 
 
@@ -483,8 +591,9 @@ def compute_features(analysis: Analysis, frequency) -> dict:
     per_sentence = word_count / sentence_count if sentence_count > 0 else 5
     f.update(KangoPercentage=kango, WagoPercentage=wago, GairaigoPercentage=gairaigo, VerbPercentage=verb,
              ParticlePercentage=particle, AvgWordPerSentence=per_sentence,
+             # jReadability takes particles as a percentage, like the other shares.
              ReadabilityScore=per_sentence * -0.056 + kango * -0.126 + wago * -0.042 + verb * -0.145
-             + particle * -0.044 + 11.724)
+             + particle * 100 * -0.044 + 11.724)
 
     f['LogicalConnectorRatio'] = analysis.markers['logical'] / word_count
     f['ModalMarkerRatio'] = analysis.markers['modal'] / word_count
@@ -498,7 +607,7 @@ def compute_features(analysis: Analysis, frequency) -> dict:
     custom_sum = 0.0
     softcap_score = custom_rank_score(RANK_SOFTCAP_START)
     for word, n in words:
-        data = frequency.word(word.key) if word.pos != 'name' else None
+        data = frequency.word(word.key, word.reading) if word.pos != 'name' else None
         if not data:
             continue
         rank, observed = data
@@ -551,3 +660,55 @@ def compute_features(analysis: Analysis, frequency) -> dict:
     f['RatioConjugations'] = total_conjugations / word_count
 
     return f
+
+
+def _coverage_rank(ranked: list, share: float) -> float:
+    """Frequency rank a reader must know up to for `share` of the tokens; `ranked` is sorted
+    (rank, occurrences). Learners need about 95-98% known words to read unaided."""
+    total = sum(n for _, n in ranked)
+    covered = 0
+    for rank, n in ranked:
+        covered += n
+        if covered >= share * total:
+            return rank
+    return ranked[-1][0] if ranked else math.nan
+
+
+def compute_extra_features(analysis: Analysis, frequency, ruby: dict | None = None) -> dict:
+    """EXTRA_FEATURES. `ruby` is the furigana count from book_text."""
+    text = analysis.text
+    ruby = ruby or {}
+    kanji = [c for c in text if is_kanji(c)]
+    unique_kanji = len(set(kanji))
+    sentences = max(analysis.line_sentence_count, 1)
+
+    # Words without a rank are mostly names and numbers, skipped as in the frequency features.
+    by_rank = Counter()
+    for word, n in analysis.words.values():
+        data = frequency.word(word.key, word.reading) if word.pos != 'name' else None
+        if data:
+            by_rank[data[0]] += n
+    ranked = sorted(by_rank.items())
+    content = len(TOKEN_CLEAN.sub('', text)) or 1
+
+    return {
+        'LogCharacters': math.log(max(len(TOKEN_CLEAN.sub('', text)), 1)),
+        'LogUniqueKanji': math.log(max(unique_kanji, 10)),
+        'CoverageRank90': math.log(_coverage_rank(ranked, 0.90)),
+        'CoverageRank95': math.log(_coverage_rank(ranked, 0.95)),
+        'CoverageRank98': math.log(_coverage_rank(ranked, 0.98)),
+        'Mattr': analysis.mattr,
+        'LineSentenceLength': content / sentences,
+        'PredicatesPerSentence': analysis.predicates / sentences,
+        'RelativeClausesPerSentence': analysis.relative_clauses / sentences,
+        'HiraganaRatio': len(HIRAGANA.findall(text)) / content,
+        'NonJoyoKanjiShare': sum(1 for c in kanji if c not in KANJI_GRADES) / len(kanji) if kanji else 0,
+        'UpperJoyoKanjiShare': sum(1 for c in kanji if KANJI_GRADES.get(c) == 8) / len(kanji) if kanji else 0,
+        'RubyKanjiShare': min(ruby.get('kanji', 0) / len(kanji), 1) if kanji else 0,
+        'RubyKatakanaShare': ruby.get('katakana', 0) / ruby['ruby'] if ruby.get('ruby') else 0,
+    }
+
+
+def words_for_coverage(extra: dict) -> int:
+    """Top-N words a reader needs to know for 95% of the book's words."""
+    return int(round(math.exp(extra['CoverageRank95'])))

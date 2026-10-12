@@ -37,6 +37,11 @@ export interface CalibreDifficulty {
   difficulty: number;
   /** With the adjustment jiten.moe applies (fitted to its newer hosted model) */
   adjusted: number;
+  /** 10th and 90th percentile of the estimate (older estimates have none) */
+  low?: number;
+  high?: number;
+  /** Top-N words a reader needs to know for 95% of the book's words */
+  words95?: number | null;
   characters: number;
   uniqueKanji: number;
   computedAt: number;
@@ -83,6 +88,13 @@ export async function loadCalibreDifficulty(): Promise<Record<string, CalibreDif
   }
 
   return (await response.json()).books || {};
+}
+
+/** How often each kanji occurs in a book with an estimate; undefined if it has none. */
+export async function loadBookKanji(id: number): Promise<Record<string, number> | undefined> {
+  const response = await fetch(`${difficultyApiUrl}kanji/${id}`, { cache: 'no-cache' });
+
+  return response.ok ? response.json() : undefined;
 }
 
 function toLibraryUrl(path: string) {

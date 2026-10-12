@@ -800,11 +800,11 @@
   }
 
   function onDifficultyClick() {
-    const selectedIds = ($bookCards$ ?? [])
-      .filter((card) => selectedBookIds.has(card.id) && card.calibreId)
-      .map((card) => card.calibreId as number);
+    const books = ($bookCards$ ?? []).filter(
+      (card) => selectedBookIds.has(card.id) && card.calibreId
+    );
 
-    dialogManager.dialogs$.next([{ component: DifficultyDialog, props: { selectedIds } }]);
+    dialogManager.dialogs$.next([{ component: DifficultyDialog, props: { books } }]);
   }
 
   function onReplicateData() {
@@ -1211,11 +1211,11 @@
               <span class="hidden sm:inline">Make series</span>
             </button>
           {/if}
-          {#if $storageSource$ === StorageKey.CALIBRE && hasPermission($account$, 'difficulty')}
+          {#if $storageSource$ === StorageKey.CALIBRE}
             <button
               type="button"
               class="library-toolbar-button"
-              title="Estimate difficulty of selected books"
+              title="Difficulty of selected books"
               disabled={!selectedBookIds.size}
               on:click={onDifficultyClick}
             >
