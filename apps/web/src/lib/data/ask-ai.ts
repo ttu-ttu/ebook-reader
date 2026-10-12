@@ -10,7 +10,12 @@
  */
 
 import { aiPrompts } from '$lib/data/ai-prompts';
-import { openRouterApiKey$, openRouterModel$, redactSecret } from '$lib/data/ai-settings';
+import {
+  askAiReaderNote$,
+  openRouterApiKey$,
+  openRouterModel$,
+  redactSecret
+} from '$lib/data/ai-settings';
 
 const apiUrl = 'https://openrouter.ai/api/v1';
 
@@ -105,6 +110,8 @@ export async function askAi(
     throw new Error('Add an OpenRouter API key in Settings → AI first');
   }
 
+  const note = askAiReaderNote$.getValue().trim();
+  const system = options.system || (note ? `${aiPrompts().ask}\n\n${note}` : aiPrompts().ask);
   const response = await fetch(`${apiUrl}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -115,7 +122,7 @@ export async function askAi(
     body: JSON.stringify({
       model: options.model || openRouterModel$.getValue(),
       stream: true,
-      messages: [{ role: 'system', content: options.system || aiPrompts().ask }, ...messages]
+      messages: [{ role: 'system', content: system }, ...messages]
     }),
     signal
   });

@@ -1041,7 +1041,6 @@
     on:filesChange={(ev) => onFilesChange(ev.detail)}
     on:domainHintClick={onDomainHintClick}
     on:bugReportClick={onBugReportClick}
-    on:difficultyClick={onDifficultyClick}
     on:importBackup={(ev) => onImportBackup(ev.detail)}
   />
 

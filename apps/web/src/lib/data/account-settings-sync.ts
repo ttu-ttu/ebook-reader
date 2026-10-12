@@ -18,12 +18,14 @@ import {
   aiLanguage$,
   askAiDefaultPreset$,
   askAiPresets$,
+  askAiReaderNote$,
   openRouterApiKey$,
   openRouterModel$,
   openRouterRecapModel$,
   lorebookAutoInterval$,
   elevenLabsApiKey$,
   elevenLabsModel$,
+  ttsPlaybackRate$,
   ttsVoiceId$
 } from '$lib/data/ai-settings';
 import { homeBookTitles$ } from '$lib/data/library-home';
@@ -95,9 +97,11 @@ const sharedSettings: Record<string, Store> = {
   homeBookTitles: homeBookTitles$,
   askAiPresets: askAiPresets$,
   askAiDefaultPreset: askAiDefaultPreset$,
+  askAiReaderNote: askAiReaderNote$,
   elevenLabsApiKey: elevenLabsApiKey$,
   elevenLabsModel: elevenLabsModel$,
-  ttsVoiceId: ttsVoiceId$
+  ttsVoiceId: ttsVoiceId$,
+  ttsPlaybackRate: ttsPlaybackRate$
 };
 
 /**

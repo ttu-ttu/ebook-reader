@@ -15,6 +15,7 @@ import {
   faBookmark,
   faBullseye,
   faChartLine,
+  faCircleInfo,
   faClockRotateLeft,
   faCodeMerge,
   faCommentDots,
@@ -131,6 +132,12 @@ export const settingsAreas: SettingsArea[] = [
     label: 'AI',
     icon: faWandMagicSparkles,
     sections: [
+      {
+        id: 'ai-guide',
+        label: 'Setup Guide',
+        description: 'Getting OpenRouter and ElevenLabs keys, step by step.',
+        icon: faCircleInfo
+      },
       {
         id: 'ai-ask',
         label: 'Ask AI',

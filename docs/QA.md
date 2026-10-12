@@ -119,11 +119,9 @@ account container to `http://127.0.0.1:8766/<route>` with headers `Host`,
 | AUI-1 | `$U` → Settings → General → Account (default settings) | No form; text says sign-in only works on the secure address, with a link to it |
 | AUI-2 | `$S`, signed out | Username/password form; header shows a person icon titled "Sign in" |
 | AUI-3 | Sign in with a wrong password | Red error under the form, password field cleared, no reload |
-| AUI-4 | Sign in correctly | Page reloads; Account section shows the username, "Sign out", "What syncs" (mentions this device's reader profile), "Settings sync" status, "Change password", "Data from before signing in" |
+| AUI-4 | Sign in correctly | Page reloads; Account section shows the username, "Sign out", "What syncs" (mentions this device's reader profile), "Settings sync" status, "Change password", and "Admin panel" for admins |
 | AUI-5 | Password manager | The browser offers to save the password |
 | AUI-6 | Change password in the UI | "Password changed. Other devices have been signed out." |
-| AUI-7 | Fresh account (no reader data) | "This account has no reading data yet. Copy what was saved before signing in?" |
-| AUI-8 | "Copy to my account" | Message with copied file and book counts, or "Nothing to copy..."; files appear in the account folder; the shared folder is unchanged |
 | AUI-9 | Sign out | Page reloads signed out |
 | AUI-10 | `$DC stop account` while signed in, reload; then `$DC start account` | The app keeps the cached signed-in state and shows errors instead of silently writing to the shared folder; works again after the start |
 
@@ -133,14 +131,14 @@ Signed in on `$S` as `qa-admin`.
 
 | ID | Steps | Expected |
 | --- | --- | --- |
-| ADM-1 | Settings → Account | "Manage accounts" and "User permissions" cards; a non-admin account sees neither |
+| ADM-1 | Settings → Account → "Open admin panel" | `/admin` with Accounts ("Manage accounts", "User permissions") and Tools tabs; a non-admin account without `difficulty` sees no link, and `/admin` says it has no access |
 | ADM-2 | Add `qa-temp` with a password | "Added qa-temp."; listed in both cards |
 | ADM-3 | Reset `qa-temp`'s password | Message; its existing sessions are signed out |
 | ADM-4 | User permissions: tick "Add books" for `qa-desktop` | Saved; `ebook-account list` shows `import` for it; reload keeps it |
 | ADM-5 | Admin column for your own account | Disabled ("Another admin has to change this"); permission boxes of admins checked and disabled |
 | ADM-6 | Make `qa-temp` an admin, then remove admin | Both work; the last admin can never be removed or demoted (409) |
 | ADM-7 | Remove `qa-temp` | Gone from the list; its data folder stays in `$DATA/accounts/` |
-| ADM-8 | As `qa-desktop` without permissions: library | No "Make series", no "Difficulty estimates"; importing a file into the Calibre source says the account may not add books |
+| ADM-8 | As `qa-desktop` without permissions: library | No "Make series", no difficulty button or admin panel link; importing a file into the Calibre source says the account may not add books |
 | ADM-9 | As `qa-desktop` with `series`: select one book | "Make series" shown and works |
 | ADM-10 | `GET $S/account/api/admin/users` as `qa-desktop` | 403 `Only admins can do this` |
 
@@ -298,7 +296,7 @@ Don't start jobs (rule 1) unless the owner approves a run.
 | ID | Steps | Expected |
 | --- | --- | --- |
 | DIF-1 | `curl -s $U/calibre/difficulty/api/status` (trusted network) | JSON with `job`, `dictionary`, `results`, `workers` |
-| DIF-2 | Library → More → "Difficulty estimates" (Calibre source, `difficulty` permission) | Dialog with the estimate options and status; buttons disabled while a job runs |
+| DIF-2 | Admin panel → Tools (`difficulty` permission), and the gauge button with books selected in the library (Calibre source) | Estimate options and status; buttons disabled while a job runs |
 | DIF-3 | With results present | Badges and Difficulty sort/filter use `/calibre/difficulty.json` |
 | DIF-4 | No outbound calls to jiten.moe | None in the browser network log or server code |
 | DIF-5 | Without the `difficulty` profile | The status call fails (502) and the app still works |

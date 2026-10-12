@@ -1,22 +1,19 @@
 <script lang="ts">
   import {
     faArrowRightFromBracket,
-    faCloudArrowUp,
     faRightToBracket,
     faRotate,
-    faSpinner
+    faSpinner,
+    faUserShield
   } from '@fortawesome/free-solid-svg-icons';
-  import SettingsAdmin from '$lib/components/settings/settings-admin.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import { buttonClasses, inputClasses } from '$lib/css-classes';
   import {
     account$,
-    accountHasReaderData,
-    accountReady,
+    canOpenAdminPanel,
     changePassword,
     httpAccountsAllowed,
     httpsAppUrl,
-    importSharedData,
     isInsecurePage,
     signIn,
     signInAvailableHere,
@@ -28,6 +25,7 @@
     settingsSyncState$,
     syncAccountSettings
   } from '$lib/data/account-settings-sync';
+  import { pagePath } from '$lib/data/env';
   import { onMount } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -48,8 +46,6 @@
   let currentPassword = '';
   let newPassword = '';
   let passwordMessage = '';
-  let offerImport = false;
-  let importMessage = '';
 
   $: user = $account$;
   $: syncState = $settingsSyncState$;
@@ -58,11 +54,6 @@
     if (insecure) {
       available = await httpAccountsAllowed();
       checkingHttp = false;
-    }
-
-    // On a fresh page load the session check may still be running.
-    if (await accountReady()) {
-      offerImport = !(await accountHasReaderData().catch(() => true));
     }
   });
 
@@ -104,23 +95,6 @@
     if (!failure) {
       currentPassword = '';
       newPassword = '';
-    }
-  }
-
-  async function onImport() {
-    let result = { books: 0, files: 0 };
-    const failure = await run(async () => {
-      result = await importSharedData();
-    });
-
-    offerImport = false;
-
-    if (failure) {
-      importMessage = `Copy failed: ${failure}`;
-    } else if (result.files) {
-      importMessage = `Copied ${result.files} file(s) for ${result.books} book(s). Reload the library to see them.`;
-    } else {
-      importMessage = 'Nothing to copy: this account already has its own copy of everything.';
     }
   }
 
@@ -227,24 +201,16 @@
     </form>
   </SettingsItemGroup>
 
-  <SettingsItemGroup
-    title="Data from before signing in"
-    tooltip="Progress, statistics and highlights saved on this server while signed out are shared. Copy them into this account; anything the account already has is kept."
-  >
-    {#if offerImport}
-      <p class="mb-3 text-sm font-semibold">
-        This account has no reading data yet. Copy what was saved before signing in?
-      </p>
-    {/if}
-    <button class="{buttonClasses} flex items-center gap-2" disabled={busy} on:click={onImport}>
-      <Fa icon={busy ? faSpinner : faCloudArrowUp} spin={busy} />
-      Copy to my account
-    </button>
-    {#if importMessage}<p class="mt-2 text-sm">{importMessage}</p>{/if}
-  </SettingsItemGroup>
-
-  {#if user.admin}
-    <SettingsAdmin self={user} />
+  {#if canOpenAdminPanel(user)}
+    <SettingsItemGroup
+      title="Admin panel"
+      tooltip="Manage accounts and permissions, and run server tools such as difficulty estimates."
+    >
+      <a class="{buttonClasses} inline-flex items-center gap-2 self-start" href="{pagePath}/admin">
+        <Fa icon={faUserShield} />
+        Open admin panel
+      </a>
+    </SettingsItemGroup>
   {/if}
 {:else if user === undefined}
   <SettingsItemGroup title="Account" wide>
@@ -253,7 +219,7 @@
 {:else}
   <SettingsItemGroup
     title="Sign in"
-    tooltip="Keeps reading progress, statistics, highlights, AI settings and themes in your account on this server, shared by every device you sign in on. Accounts are created by an admin (Settings → Account) or on the server with ebook-account add NAME."
+    tooltip="Keeps reading progress, statistics, highlights, AI settings and themes in your account on this server, shared by every device you sign in on. Accounts are created by an admin (admin panel) or on the server with ebook-account add NAME."
     wide
   >
     {#if checkingHttp}

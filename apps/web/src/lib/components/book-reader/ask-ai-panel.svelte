@@ -6,6 +6,7 @@
     aiLanguage$,
     askAiDefaultPreset$,
     askAiPresets$,
+    openRouterApiKey$,
     openRouterModel$,
     type AskAiPreset
   } from '$lib/data/ai-settings';
@@ -15,6 +16,7 @@
     type ChatMessage,
     type PassageContext
   } from '$lib/data/ask-ai';
+  import { pagePath } from '$lib/data/env';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import Fa from 'svelte-fa';
   import { renderBasicMarkdown } from '$lib/functions/basic-markdown';
@@ -113,6 +115,17 @@
     <blockquote class="reader-panel-quote mb-3 border-l-2 pl-3 opacity-80" lang="ja">
       {passage.selection}
     </blockquote>
+    {#if !$openRouterApiKey$}
+      <p class="mb-3">
+        Ask AI needs an OpenRouter API key.
+        <a
+          class="underline"
+          href="{pagePath}/settings?section=ai#ai-guide"
+          target="_blank"
+          rel="noreferrer">Setup guide</a
+        >
+      </p>
+    {/if}
     {#each exchanges as exchange, index (index)}
       {#if exchange.question}
         <p class="mt-4 mb-2 font-semibold">{exchange.question}</p>

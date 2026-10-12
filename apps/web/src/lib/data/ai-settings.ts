@@ -27,6 +27,8 @@ export const elevenLabsModel$ = writableStringLocalStorageSubject()(
   defaultElevenLabsModel
 );
 export const ttsVoiceId$ = writableStringLocalStorageSubject()('ttsVoiceId', '');
+/** Playback speed of the AI voice (the highlight follows the audio clock). */
+export const ttsPlaybackRate$ = writableNumberLocalStorageSubject()('ttsPlaybackRate', 1);
 
 export const defaultOpenRouterModel = '~google/gemini-flash-latest';
 
@@ -41,6 +43,9 @@ export const openRouterRecapModel$ = writableStringLocalStorageSubject()(
   'openRouterRecapModel',
   '~deepseek/deepseek-flash-latest'
 );
+
+/** Added to Ask AI's instructions, e.g. the reader's level; empty adds nothing. */
+export const askAiReaderNote$ = writableStringLocalStorageSubject()('askAiReaderNote', '');
 
 /** Language of the AI prompts and answers (Ask AI, recaps, lorebook): 'en' or 'ja'. */
 export const aiLanguage$ = writableStringLocalStorageSubject()('aiLanguage', 'en');
@@ -65,24 +70,6 @@ export const defaultAskAiPresets: AskAiPreset[] = [
     label: 'Translate',
     prompt:
       'Translate the selected passage into natural English. Then give a closer, more literal rendering and point out where the two differ.'
-  },
-  {
-    id: 'grammar',
-    label: 'Grammar',
-    prompt:
-      'Break down the grammar of the selected passage step by step: conjugations, particles, auxiliary verbs and sentence structure. Name each grammar point and explain what it adds.'
-  },
-  {
-    id: 'kanji',
-    label: 'Kanji',
-    prompt:
-      'Go through the kanji words in the selected passage. For each, give the reading, the meaning in this context, and the meaning of each kanji. Point out any unusual readings.'
-  },
-  {
-    id: 'vocabulary',
-    label: 'Vocabulary',
-    prompt:
-      'List the words in the selected passage a learner might not know, as "word (reading): meaning in this context", one per line. Mark literary, archaic or slang words.'
   },
   {
     id: 'nuance',

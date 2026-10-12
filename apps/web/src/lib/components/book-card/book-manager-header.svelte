@@ -36,14 +36,12 @@
     faChevronDown,
     faEllipsis,
     faFileImport,
-    faGaugeHigh,
     faGrip,
     faHashtag,
     faList,
     faSquareCheck,
     faTriangleExclamation
   } from '@fortawesome/free-solid-svg-icons';
-  import { account$, hasPermission } from '$lib/data/account';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -55,7 +53,6 @@
   const dispatch = createEventDispatcher<{
     domainHintClick: void;
     bugReportClick: void;
-    difficultyClick: void;
     filesChange: FileList;
     importBackup: File;
   }>();
@@ -387,16 +384,6 @@
         <Fa icon={faSquareCheck} fw />
         {selectMode ? 'Stop selecting' : 'Select books'}
       </button>
-      {#if $storageSource$ === StorageKey.CALIBRE && hasPermission($account$, 'difficulty')}
-        <button
-          type="button"
-          class="app-popover-item"
-          on:click={() => runMoreAction(() => dispatch('difficultyClick'))}
-        >
-          <Fa icon={faGaugeHigh} fw />
-          Difficulty estimates
-        </button>
-      {/if}
       <button
         type="button"
         class="app-popover-item"

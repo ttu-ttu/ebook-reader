@@ -5,7 +5,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { openRouterApiKey$ } from '$lib/data/ai-settings';
+import { askAiReaderNote$, openRouterApiKey$ } from '$lib/data/ai-settings';
 import { askAi } from './ask-ai';
 
 function stream(lines: string[]) {
@@ -16,6 +16,7 @@ describe('askAi', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     openRouterApiKey$.next('');
+    askAiReaderNote$.next('');
   });
 
   it('streams the answer', async () => {
@@ -37,6 +38,24 @@ describe('askAi', () => {
 
     expect(messages[1]).toEqual({ role: 'assistant', content: 'こんにちは' });
     expect(onText).toHaveBeenLastCalledWith('こんにちは');
+  });
+
+  it('adds the reader note to the default instructions only', async () => {
+    openRouterApiKey$.next('sk-or-secret');
+    askAiReaderNote$.next('I am at JLPT N3.');
+    const fetch = vi.fn(async () =>
+      stream(['data: {"choices":[{"delta":{"content":"a"}}]}', 'data: [DONE]'])
+    );
+    vi.stubGlobal('fetch', fetch);
+    const system = (call: number) =>
+      JSON.parse((fetch.mock.calls[call] as unknown as [string, RequestInit])[1].body as string)
+        .messages[0].content;
+
+    await askAi([{ role: 'user', content: 'q' }], () => {});
+    await askAi([{ role: 'user', content: 'q' }], () => {}, undefined, { system: 'Recap.' });
+
+    expect(system(0)).toMatch(/\n\nI am at JLPT N3\.$/);
+    expect(system(1)).toBe('Recap.');
   });
 
   it('keeps the key out of error messages', async () => {

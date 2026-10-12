@@ -7,6 +7,7 @@
   import {
     askAiDefaultPreset$,
     askAiPresets$,
+    askAiReaderNote$,
     defaultAskAiPresets,
     defaultOpenRouterModel,
     lorebookAutoInterval$,
@@ -16,6 +17,7 @@
     defaultElevenLabsModel,
     elevenLabsApiKey$,
     elevenLabsModel$,
+    ttsPlaybackRate$,
     ttsVoiceId$
   } from '$lib/data/ai-settings';
   import { listOpenRouterModels, type OpenRouterModel } from '$lib/data/ask-ai';
@@ -59,6 +61,66 @@
   });
 </script>
 
+<SettingsSection id="ai-guide" keywords="api key openrouter elevenlabs voice">
+  <SettingsItemGroup
+    title="OpenRouter (Ask AI, Story so far, Lorebook)"
+    tooltip="OpenRouter gives one key for models from many providers. You pay per request; a question with the default Flash models costs a fraction of a cent."
+  >
+    <ol class="guide-steps">
+      <li>
+        Create an account at
+        <a href="https://openrouter.ai" target="_blank" rel="noreferrer">openrouter.ai</a>.
+      </li>
+      <li>
+        Add credits in
+        <a href="https://openrouter.ai/settings/credits" target="_blank" rel="noreferrer"
+          >Settings → Credits</a
+        >.
+      </li>
+      <li>
+        Create a key in
+        <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer"
+          >Settings → API Keys</a
+        >. Give it a credit limit so a leaked key can't cost much.
+      </li>
+      <li>
+        Copy the key (it starts with <code>sk-or-</code> and is only shown once) and paste it
+        into <a href="#ai-ask">OpenRouter API key</a>.
+      </li>
+      <li>The default models work well; you can pick any other OpenRouter model there.</li>
+    </ol>
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="ElevenLabs (AI voice)"
+    tooltip="ElevenLabs reads the book aloud. Plans include a number of characters a month; reading uses one per character."
+  >
+    <ol class="guide-steps">
+      <li>
+        Create an account at
+        <a href="https://elevenlabs.io" target="_blank" rel="noreferrer">elevenlabs.io</a>.
+      </li>
+      <li>
+        Open API Keys (in the account menu) and create a key. Allowing only Text to Speech and
+        setting a credit limit keeps a leaked key harmless.
+      </li>
+      <li>
+        Copy the key (it starts with <code>sk_</code>) and paste it into
+        <a href="#ai-read-aloud">ElevenLabs API key</a>.
+      </li>
+      <li>
+        In Voices, choose a voice that speaks Japanese, open its menu, choose "Copy voice ID" and
+        paste it into ElevenLabs voice ID.
+      </li>
+      <li>Open a book and press the headphones icon, then "AI voice".</li>
+    </ol>
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Where the keys go"
+    tooltip="Keys are kept in this browser and, when signed in, in your account on this server, so your other devices get them. They are removed from the browser when you sign out. The browser sends them only to OpenRouter and ElevenLabs."
+    wide
+  />
+</SettingsSection>
+
 <SettingsSection id="ai-ask">
   <SettingsItemGroup
     title="OpenRouter API key"
@@ -73,6 +135,7 @@
       class={inputClasses}
       bind:value={$openRouterApiKey$}
     />
+    <a class="mt-2 inline-block text-xs underline" href="#ai-guide">How to get a key</a>
   </SettingsItemGroup>
   <SettingsItemGroup
     title="AI language"
@@ -112,6 +175,20 @@
         Type to search {models.length || ''} models, e.g. "claude", "gemini" or "deepseek".
       {/if}
     </p>
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="About you"
+    tooltip="Added to every Ask AI question, e.g. your level or how you like answers: &quot;I'm around JLPT N3; keep answers short and give readings for kanji above N3.&quot;"
+    wide
+  >
+    <textarea
+      id="ask-ai-reader-note"
+      class="{inputClasses} min-h-[2.5rem] w-full"
+      rows="2"
+      aria-label="About you"
+      placeholder="Optional"
+      bind:value={$askAiReaderNote$}
+    />
   </SettingsItemGroup>
 </SettingsSection>
 
@@ -217,6 +294,16 @@
       <option value="eleven_multilingual_v2" />
     </datalist>
   </SettingsItemGroup>
+  <SettingsItemGroup
+    title="AI voice speed"
+    tooltip="Plays the voice faster or slower without changing its pitch; the highlight follows."
+  >
+    <select id="tts-speed" aria-label="AI voice speed" bind:value={$ttsPlaybackRate$}>
+      {#each [0.75, 0.9, 1, 1.1, 1.25, 1.5] as rate}
+        <option value={rate}>{rate}×</option>
+      {/each}
+    </select>
+  </SettingsItemGroup>
   <SettingsItemGroup title="ElevenLabs voice ID" tooltip="The voice used to read the book.">
     <input
       id="tts-voice"
@@ -262,6 +349,18 @@
 </SettingsSection>
 
 <style>
+  .guide-steps {
+    display: grid;
+    gap: 0.35rem;
+    padding-left: 1.2rem;
+    font-size: 0.88rem;
+    list-style: decimal;
+  }
+
+  .guide-steps a {
+    text-decoration: underline;
+  }
+
   .preset-row {
     display: grid;
     grid-template-columns: 8rem minmax(0, 1fr) auto;

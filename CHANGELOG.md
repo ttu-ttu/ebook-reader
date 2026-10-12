@@ -24,16 +24,17 @@ First public release. Compared with upstream ッツ Ebook Reader:
   left, left to right, vertical strip).
 - **Difficulty estimates** with Jiten's features and a model distilled from
   jiten.moe's scores, computed on the server on demand (or on a faster computer
-  with `offline.py`).
+  with `offline.py`), started from the admin panel's Tools tab or for books
+  selected in the library.
 
 ### Accounts and sync
 
-- **Accounts** (no sign-up; admins add them) with an admin panel and per-account
-  permissions (add books, edit series, difficulty estimates).
+- **Accounts** (no sign-up; admins add them) with an admin panel (`/admin`,
+  linked from Settings → Account: accounts, permissions and server tools) and
+  per-account permissions (add books, edit series, difficulty estimates).
 - Progress, statistics, reading goals, highlights, recaps and lorebooks sync per
   account; AI settings and themes sync through `settings.json`, reader settings
-  separately for phones and larger screens. "Copy to my account" adopts data
-  saved while signed out.
+  separately for phones and larger screens.
 - Signing in over plain HTTP is possible with `ALLOW_HTTP_ACCOUNTS=1` (off by
   default; the app warns while it is in use).
 
@@ -47,7 +48,9 @@ First public release. Compared with upstream ッツ Ebook Reader:
   (SillyTavern format), an **AI voice** (ElevenLabs) that highlights the line being
   read, and **audiobooks** matched to the text by their subtitles. Default models:
   `~google/gemini-flash-latest` for Ask AI, `~deepseek/deepseek-flash-latest` for
-  recaps and the lorebook.
+  recaps and the lorebook. Settings → AI has a setup guide for the OpenRouter and
+  ElevenLabs keys, an "About you" note added to Ask AI questions (e.g. your level)
+  and an AI voice speed. Ask AI presets: Explain, Translate and Nuance.
 - **Themes** for the whole app, following the system's light and dark mode, with
   a theme editor and import/export (`themes.md`).
 - A settings page with sidebar sections and search.

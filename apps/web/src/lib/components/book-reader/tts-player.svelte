@@ -10,6 +10,7 @@
     defaultElevenLabsModel,
     elevenLabsApiKey$,
     elevenLabsModel$,
+    ttsPlaybackRate$,
     ttsVoiceId$
   } from '$lib/data/ai-settings';
   import {
@@ -62,6 +63,11 @@
     audio.addEventListener('ended', () => playChunk(index + 1));
     audio.addEventListener('timeupdate', updateReading);
   });
+
+  $: if (audio) {
+    audio.defaultPlaybackRate = $ttsPlaybackRate$;
+    audio.playbackRate = $ttsPlaybackRate$;
+  }
 
   let timeline: TimelineEntry[] = [];
   let reading: TimelineEntry | undefined;

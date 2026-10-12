@@ -76,8 +76,8 @@ work on the plain-HTTP address, with a warning in the app, but passwords,
 sessions and synced settings (including AI API keys) cross the network
 unencrypted. Leave it off if anyone else can see the network.
 
-There is no sign-up. Admins add accounts in Settings → Account → Manage
-accounts, or with `docker compose exec account ebook-account ...`
+There is no sign-up. Admins add accounts in the admin panel (Settings → Account → Open admin
+panel), or with `docker compose exec account ebook-account ...`
 (`add NAME [--admin]`, `passwd NAME`, `remove NAME`, `admin NAME on|off`,
 `permissions NAME import,series,difficulty`, `list`).
 

@@ -143,24 +143,6 @@ export function changePassword(current: string, next: string) {
   return post('password', { current, new: next });
 }
 
-/** Copies progress, statistics and highlights saved while signed out into the account. */
-export function importSharedData() {
-  return post<{ books: number; files: number }>('import-shared');
-}
-
-/** Whether the account has reader data yet (to offer importSharedData). */
-export async function accountHasReaderData() {
-  const response = await fetch(accountSyncUrl, { cache: 'no-store' });
-
-  if (!response.ok) {
-    return false;
-  }
-
-  const entries: { name: string }[] = await response.json();
-
-  return entries.some((entry) => entry.name !== 'settings.json');
-}
-
 /** Accounts on this server, for the admin panel. */
 export async function listAccounts(): Promise<AdminAccount[]> {
   const response = await fetch(`${accountApiUrl}admin/users`, { cache: 'no-store' });
@@ -193,6 +175,11 @@ export function setAccountPermissions(username: string, permissions: AccountPerm
 /** Whether a (signed-in) account may do this; admins may do everything. */
 export function hasPermission(user: AccountUser | null | undefined, permission: AccountPermission) {
   return !!user && (!!user.admin || !!user.permissions?.includes(permission));
+}
+
+/** Admins manage accounts there; the difficulty permission gives its Tools tab. */
+export function canOpenAdminPanel(user: AccountUser | null | undefined) {
+  return !!user?.admin || hasPermission(user, 'difficulty');
 }
 
 /** The account's data stays on the server. */

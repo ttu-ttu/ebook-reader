@@ -107,4 +107,4 @@ Not configuration files but commands, in the `account` container
 | `remove NAME` | Delete the account; its data folder stays. |
 | `list` | Accounts, ids, creation dates and rights. |
 
-Admins can do the same in Settings → Account.
+Admins can do the same in the admin panel (Settings → Account → Open admin panel).
