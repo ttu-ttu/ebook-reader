@@ -66,8 +66,7 @@ export const settingsAreas: SettingsArea[] = [
       {
         id: 'general-account',
         label: 'Account',
-        description:
-          'Sign in with Google to keep progress, statistics and settings across devices.',
+        description: 'Sign in to keep progress, statistics and settings across devices.',
         icon: faUser
       },
       {
