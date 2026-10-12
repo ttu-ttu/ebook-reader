@@ -44,7 +44,7 @@
   }
 </script>
 
-<aside class="library-sidebar app-chrome-glass-surface" aria-label="Library filters">
+<aside class="library-sidebar" aria-label="Library filters">
   <button
     type="button"
     class="library-sidebar-toggle"
@@ -114,7 +114,12 @@
 
       {#each libraryFilterSections as section (section.key)}
         {@const expanded = !$libraryCollapsedFilterSections$.includes(section.key)}
-        <section class="library-filter-section">
+        <section
+          class="library-filter-section"
+          class:library-filter-section-active={section.filters.some(
+            (filter) => filter.key === activeFilter
+          )}
+        >
           <button
             type="button"
             class="library-filter-section-toggle"
@@ -154,16 +159,11 @@
 
 <style>
   .library-sidebar {
-    --library-sidebar-fg: var(--app-header-fg);
-    --library-sidebar-muted: var(--app-header-icon-fg);
-    --library-sidebar-active-bg: color-mix(
-      in srgb,
-      var(--accent-color) 18%,
-      var(--app-header-icon-bg)
-    );
-    --library-sidebar-hover-bg: var(--app-header-icon-hover-bg);
-    --library-sidebar-control-bg: var(--app-header-icon-bg);
-    --library-sidebar-control-border: var(--app-header-icon-border);
+    --library-sidebar-fg: var(--font-color);
+    --library-sidebar-muted: var(--app-muted-fg);
+    --library-sidebar-hover-bg: color-mix(in srgb, var(--font-color) 5%, transparent);
+    --library-sidebar-control-bg: var(--app-control-bg);
+    --library-sidebar-control-border: var(--app-control-border);
 
     position: fixed;
     top: calc(var(--library-header-height) - 1px);
@@ -174,7 +174,8 @@
     box-sizing: border-box;
     width: var(--library-sidebar-width);
     height: calc(100dvh - var(--library-header-height) + 1px);
-    border-right: 1px solid var(--app-header-border);
+    border-right: 1px solid var(--border-color);
+    background: var(--background-color);
     color: var(--library-sidebar-fg);
   }
 
@@ -196,21 +197,20 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.55rem;
-    min-height: 2.75rem;
-    padding: 0.2rem 0.78rem;
+    min-height: 2.5rem;
+    padding: 0.2rem 0.7rem;
     border: 1px solid var(--library-sidebar-control-border);
-    border-radius: 0.85rem;
+    border-radius: calc(0.6rem * var(--app-radius-scale));
     background: var(--library-sidebar-control-bg);
-    box-shadow: inset 0 1px color-mix(in srgb, var(--app-inset-highlight) 20%, transparent);
     color: var(--library-sidebar-muted);
     transition:
       background-color 0.16s ease,
       color 0.16s ease;
   }
 
-  .library-filter-search:hover,
   .library-filter-search:focus-within {
-    background: var(--library-sidebar-hover-bg);
+    border-color: var(--app-focus-ring);
+    box-shadow: 0 0 0 1px var(--app-focus-ring);
     color: var(--library-sidebar-fg);
   }
 
@@ -221,8 +221,7 @@
     border: 0;
     background: transparent;
     color: var(--library-sidebar-fg);
-    font-size: 0.96rem;
-    font-weight: 700;
+    font-size: 0.9rem;
     outline: none;
     appearance: none;
   }
@@ -254,7 +253,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    margin-top: 0.82rem;
+    margin-top: 1.1rem;
   }
 
   .library-filter-section-toggle,
@@ -265,7 +264,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.55rem;
-    border-radius: 0.75rem;
+    border-radius: calc(0.4rem * var(--app-radius-scale));
     color: var(--library-sidebar-muted);
     text-align: left;
     transition:
@@ -282,17 +281,19 @@
   }
 
   .library-filter-section-toggle {
-    min-height: 2.1rem;
-    padding: 0.35rem 0.55rem;
-    font-size: 0.78rem;
-    font-weight: 800;
+    min-height: 1.9rem;
+    padding: 0.3rem 0.55rem;
+    color: var(--app-text-subtle);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .library-filter-row {
-    min-height: 2.38rem;
-    padding: 0.48rem 0.65rem;
-    font-size: 0.93rem;
-    font-weight: 700;
+    min-height: 2.1rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.88rem;
   }
 
   .library-filter-section-toggle:hover,
@@ -303,9 +304,16 @@
 
   .library-filter-row-active,
   .library-filter-row-active:hover {
-    background: var(--library-sidebar-active-bg);
+    background: transparent;
+    box-shadow: inset 2px 0 var(--accent-color);
     color: var(--library-sidebar-fg);
-    font-weight: 800;
+    font-weight: 650;
+  }
+
+  .library-filter-section-toggle:focus-visible,
+  .library-filter-row:focus-visible {
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: -2px;
   }
 
   .library-filter-list {
@@ -314,7 +322,7 @@
     gap: 0.12rem;
     margin-left: 0.62rem;
     padding-left: 0.45rem;
-    border-left: 1px solid color-mix(in srgb, var(--library-sidebar-fg) 12%, transparent);
+    border-left: 1px solid var(--border-color);
   }
 
   .library-filter-count {
@@ -322,13 +330,20 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    min-width: 1.4rem;
-    padding: 0.08rem 0.38rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--library-sidebar-fg) 8%, transparent);
-    color: var(--library-sidebar-muted);
-    font-size: 0.68rem;
-    font-weight: 700;
+    color: var(--app-text-subtle);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  /* Counts only where they help: the active filter's group, and under the pointer */
+  .library-filter-row:hover .library-filter-count,
+  .library-filter-row-active .library-filter-count,
+  .library-filter-section-active .library-filter-count,
+  .library-sidebar-toggle .library-filter-count {
+    opacity: 1;
   }
 
   .library-filter-chevron {
@@ -343,27 +358,13 @@
 
   @media (max-width: 900px) {
     .library-sidebar {
-      --library-sidebar-fg: var(--font-color);
-      --library-sidebar-muted: color-mix(in srgb, var(--font-color) 64%, transparent);
-      --library-sidebar-active-bg: color-mix(
-        in srgb,
-        var(--accent-color) 13%,
-        var(--surface-color)
-      );
-      --library-sidebar-hover-bg: color-mix(in srgb, var(--font-color) 5%, transparent);
-      --library-sidebar-control-bg: color-mix(in srgb, var(--surface-color) 92%, transparent);
-      --library-sidebar-control-border: color-mix(
-        in srgb,
-        var(--font-color) 10%,
-        var(--border-color)
-      );
-
       position: relative;
       top: auto;
       z-index: 20;
       width: auto;
       height: auto;
       border-right: 0;
+      background: transparent;
     }
 
     .library-sidebar::before {
@@ -373,16 +374,15 @@
     .library-sidebar-toggle {
       display: flex;
       width: 100%;
-      min-height: 3rem;
+      min-height: 2.75rem;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
-      padding: 0.75rem 0.95rem;
+      padding: 0.6rem 0.9rem;
       border: 1px solid var(--library-sidebar-control-border);
-      border-radius: 1.15rem;
-      background: color-mix(in srgb, var(--surface-strong-color) 94%, var(--background-color));
-      box-shadow: inset 0 1px var(--app-inset-highlight);
-      font-weight: 700;
+      border-radius: calc(0.6rem * var(--app-radius-scale));
+      background: var(--app-control-bg);
+      font-weight: 600;
     }
 
     .library-sidebar-content {
@@ -393,9 +393,9 @@
       display: flex;
       margin-top: 0.55rem;
       padding: 0.85rem;
-      border: 1px solid var(--library-sidebar-control-border);
-      border-radius: 1.15rem;
-      background: color-mix(in srgb, var(--surface-color) 98%, var(--background-color));
+      border: 1px solid var(--border-color);
+      border-radius: calc(0.6rem * var(--app-radius-scale));
+      background: var(--surface-strong-color);
       box-shadow: 0 18px 40px -28px var(--shadow-color);
     }
   }

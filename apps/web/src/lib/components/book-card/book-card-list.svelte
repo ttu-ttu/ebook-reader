@@ -3,6 +3,7 @@
   import BookCard from '$lib/components/book-card/book-card.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import DifficultyBadge from '$lib/components/book-card/difficulty-badge.svelte';
+  import { isFinished, isReading } from '$lib/components/book-card/library-filters';
   import { formatSeries } from '$lib/components/book-card/library-sort';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
@@ -40,19 +41,24 @@
         aria-pressed={selectMode ? selected : undefined}
         on:click={() => dispatch('bookClick', { id: bookCard.id })}
       >
-        <BookCard imagePath={bookCard.imagePath} title={bookCard.title} />
-        {#if compact}
-          <span class="library-card-compact-progress" style:width="{percent}%" />
-        {:else}
+        <span class="library-card-cover">
+          <BookCard imagePath={bookCard.imagePath} title={bookCard.title} />
+          {#if isFinished(bookCard)}
+            <span class="library-card-seal" title="Finished">読了</span>
+          {/if}
+          {#if compact && isReading(bookCard)}
+            <span class="library-card-compact-progress" style:width="{percent}%" />
+          {/if}
+        </span>
+        {#if !compact}
           <span class="library-card-body">
-            <span class="library-card-title">{bookCard.title}</span>
+            <span class="library-card-title" lang="ja">{bookCard.title}</span>
+            <!-- Calibre's placeholder author is noise under every card -->
+            {#if bookCard.authors && bookCard.authors !== 'Unknown'}
+              <span class="library-card-author" lang="ja">{bookCard.authors}</span>
+            {/if}
             {#if bookCard.series || bookCard.difficulty !== undefined}
               <span class="library-card-meta">
-                {#if bookCard.series}
-                  <span class="library-card-series" title="Series: {formatSeries(bookCard)}"
-                    >{formatSeries(bookCard)}</span
-                  >
-                {/if}
                 {#if bookCard.difficulty !== undefined}
                   <DifficultyBadge
                     difficulty={bookCard.difficulty}
@@ -62,12 +68,21 @@
                     compact
                   />
                 {/if}
+                {#if bookCard.series}
+                  <span class="library-card-series" title="Series: {formatSeries(bookCard)}"
+                    >{formatSeries(bookCard)}</span
+                  >
+                {/if}
               </span>
             {/if}
-            <span class="library-card-progress">
-              <span class="library-card-progress-fill" style:width="{percent}%" />
-              <span class="library-card-progress-label">{percent}%</span>
-            </span>
+            {#if isReading(bookCard)}
+              <span class="library-card-progress" title="{percent}% read">
+                <span class="library-card-progress-track">
+                  <span class="library-card-progress-fill" style:width="{percent}%" />
+                </span>
+                <span class="library-card-progress-label">{percent}%</span>
+              </span>
+            {/if}
           </span>
         {/if}
       </button>
@@ -94,104 +109,95 @@
 <style>
   .library-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5rem), 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: 2rem 1.5rem;
     padding-bottom: 1rem;
   }
 
   .library-grid-compact {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
-    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 7rem), 1fr));
+    gap: 1.25rem 1rem;
   }
 
   @media (max-width: 639px) {
     .library-grid {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
-      gap: 0.85rem;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.25rem), 1fr));
+      gap: 1.5rem 0.9rem;
     }
 
     .library-grid-compact {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 5.5rem), 1fr));
     }
   }
 
   .library-card {
     position: relative;
     display: flex;
+    min-width: 0;
     flex-direction: column;
-    border: 1px solid color-mix(in srgb, var(--font-color) 8%, var(--border-color));
-    border-radius: 0 0 0.95rem 0.95rem;
-    background: color-mix(in srgb, var(--surface-strong-color) 92%, var(--background-color));
-    box-shadow:
-      0 18px 42px -34px var(--shadow-color),
-      inset 0 1px var(--app-inset-highlight);
-    transition:
-      border-color 0.18s ease,
-      box-shadow 0.18s ease,
-      transform 0.18s ease;
-  }
-
-  .library-card:hover,
-  .library-card:focus-within {
-    border-color: color-mix(in srgb, var(--accent-color) 38%, var(--border-color));
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--accent-color) 18%, transparent),
-      0 18px 38px -30px var(--shadow-color);
-    transform: translateY(-1px);
-  }
-
-  .library-card-current,
-  .library-card-selected {
-    border-color: color-mix(in srgb, var(--accent-color) 62%, var(--border-color));
-    box-shadow:
-      0 0 0 2px color-mix(in srgb, var(--accent-color) 30%, transparent),
-      0 18px 38px -34px var(--shadow-color);
-  }
-
-  .library-card-selected {
-    background: color-mix(in srgb, var(--accent-color) 6%, var(--surface-strong-color));
   }
 
   .library-card-main {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    position: relative;
-    overflow: hidden;
-    border-radius: inherit;
+    gap: 0.65rem;
+    border-radius: calc(4px * var(--app-radius-scale));
     text-align: left;
   }
 
   .library-card-main:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--accent-color) 64%, transparent);
-    outline-offset: 2px;
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: 4px;
+  }
+
+  .library-card-cover {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: calc(4px * var(--app-radius-scale));
+    box-shadow:
+      0 1px 2px var(--app-cover-shadow),
+      0 10px 22px -12px var(--app-cover-shadow);
+    transition:
+      box-shadow 0.2s var(--app-ease),
+      transform 0.2s var(--app-ease);
+  }
+
+  .library-card-main:hover .library-card-cover {
+    box-shadow:
+      0 2px 4px var(--app-cover-shadow),
+      0 16px 30px -14px var(--app-cover-shadow);
+    transform: translateY(-3px);
+  }
+
+  .library-card-current .library-card-cover,
+  .library-card-selected .library-card-cover {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+  }
+
+  .library-card-seal {
+    position: absolute;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    padding: 0.15rem 0.2rem;
+    border: 1.5px solid var(--accent-color);
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--surface-strong-color) 88%, transparent);
+    color: var(--accent-strong-color);
+    font-family: var(--app-font-display);
+    font-size: 0.62rem;
+    line-height: 1.1;
+    writing-mode: vertical-rl;
+    transform: rotate(-4deg);
   }
 
   .library-card-body {
     display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    gap: 0.625rem;
-    padding: 0.75rem 0.875rem 0.875rem;
-    border-top: 1px solid color-mix(in srgb, var(--font-color) 9%, transparent);
-  }
-
-  .library-card-meta {
-    display: flex;
     min-width: 0;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.4rem;
-    margin-top: -0.3rem;
-  }
-
-  .library-card-series {
-    overflow: hidden;
-    color: var(--app-muted-fg);
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
   .library-card-title {
@@ -200,82 +206,101 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
-    font-size: 0.9rem;
-    font-weight: 700;
-    line-height: 1.3;
+    /* Room for CJK glyphs so the clamp never cuts them */
+    padding-block: 0.05em;
+    font-family: var(--app-font-display);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .library-card-author,
+  .library-card-series {
+    overflow: hidden;
+    color: var(--app-muted-fg);
+    font-size: 0.74rem;
+    line-height: 1.5;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .library-card-meta {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.15rem;
+  }
+
+  .library-card-series {
+    min-width: 0;
+    color: var(--app-text-subtle);
   }
 
   .library-card-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+  }
+
+  .library-card-progress-track {
     position: relative;
-    display: block;
-    height: 1.25rem;
-    margin-top: auto;
+    flex: 1;
+    height: 3px;
     overflow: hidden;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--font-color) 8%, var(--surface-color));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--font-color) 5%, transparent);
+    background: var(--app-progress-track);
   }
 
   .library-card-progress-fill {
     position: absolute;
     inset: 0 auto 0 0;
-    border-radius: inherit;
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--accent-color) 55%, transparent),
-      color-mix(in srgb, var(--accent-strong-color) 70%, transparent)
-    );
+    background: var(--app-progress-fill);
   }
 
   .library-card-progress-label {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 800;
+    color: var(--app-muted-fg);
+    font-size: 0.68rem;
+    font-variant-numeric: tabular-nums;
   }
 
   .library-card-compact-progress {
     position: absolute;
     bottom: 0;
     left: 0;
-    height: 0.3rem;
-    background: linear-gradient(90deg, var(--accent-color), var(--accent-strong-color));
+    height: 3px;
+    background: var(--app-progress-fill);
   }
 
   .library-card-check {
     position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
+    top: 0.4rem;
+    left: 0.4rem;
     display: inline-flex;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.6rem;
+    height: 1.6rem;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
     background: var(--accent-color);
     color: var(--app-accent-fg);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     pointer-events: none;
-    box-shadow: 0 6px 16px -8px var(--shadow-color);
   }
 
   .library-card-remove {
     position: absolute;
-    top: -0.5rem;
-    right: -0.5rem;
+    top: 0.35rem;
+    right: 0.35rem;
     display: inline-flex;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.6rem;
+    height: 1.6rem;
     align-items: center;
     justify-content: center;
-    border: 1px solid color-mix(in srgb, var(--app-danger-color) 40%, var(--border-color));
     border-radius: 999px;
-    background: color-mix(in srgb, var(--app-danger-color) 14%, var(--surface-strong-color));
+    background: color-mix(in srgb, var(--surface-strong-color) 92%, transparent);
     color: var(--app-danger-color);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     opacity: 0;
     transition: opacity 0.16s ease;
   }
@@ -292,8 +317,11 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .library-card:hover,
-    .library-card:focus-within {
+    .library-card-cover {
+      transition: none;
+    }
+
+    .library-card-main:hover .library-card-cover {
       transform: none;
     }
   }

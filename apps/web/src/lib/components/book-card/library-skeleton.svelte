@@ -45,15 +45,9 @@
             <span class="skeleton-cover-mark" />
           </div>
           {#if mode === 'covers-comfortable'}
-            <div class="flex flex-col gap-2.5 px-3.5 pb-3.5 pt-3">
-              <span class="app-skeleton h-3 w-11/12 rounded-full" />
-              <span class="app-skeleton h-3 w-2/3 rounded-full" />
-              <span class="relative mt-1 h-5 overflow-hidden rounded-full app-skeleton">
-                <span
-                  class="absolute inset-y-0 left-0 rounded-full app-skeleton opacity-60"
-                  style:width="{width}%"
-                />
-              </span>
+            <div class="flex flex-col gap-2 pt-3">
+              <span class="app-skeleton h-3 rounded-full" style:width="{60 + (width % 35)}%" />
+              <span class="app-skeleton h-2.5 w-1/2 rounded-full" />
             </div>
           {/if}
         </div>
@@ -65,36 +59,34 @@
 <style>
   .skeleton-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5rem), 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: 2rem 1.5rem;
   }
 
   .skeleton-grid-compact {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
-    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 7rem), 1fr));
+    gap: 1.25rem 1rem;
   }
 
+  /* Same columns as book-card-list.svelte */
   @media (max-width: 639px) {
     .skeleton-grid {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
-      gap: 0.85rem;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.25rem), 1fr));
+      gap: 1.5rem 0.9rem;
     }
 
     .skeleton-grid-compact {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 5.5rem), 1fr));
     }
   }
 
   .skeleton-card {
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--font-color) 8%, var(--border-color));
-    border-radius: 0 0 0.95rem 0.95rem;
-    background: color-mix(in srgb, var(--surface-strong-color) 92%, var(--background-color));
-    box-shadow: 0 18px 42px -34px var(--shadow-color);
+    min-width: 0;
   }
 
   .skeleton-cover {
     display: grid;
+    border-radius: calc(4px * var(--app-radius-scale));
     aspect-ratio: 375 / 529;
     place-items: center;
   }

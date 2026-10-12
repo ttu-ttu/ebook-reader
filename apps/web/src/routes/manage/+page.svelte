@@ -1277,8 +1277,8 @@
           on:remove={(ev) => removeFromHome(ev.detail.title)}
         />
         {#if !homeCards.length}
-          <div class="library-empty app-surface-card">
-            <p class="font-bold">Pick your next reads in the Store</p>
+          <div class="library-empty">
+            <p class="library-empty-title">Pick your next reads in the Store</p>
             <p class="text-sm font-semibold text-[color:var(--app-muted-fg)]">
               Search for a book or a series there and add it to Home, or select several books and
               press "Add to Home".
@@ -1300,7 +1300,7 @@
       {:else if $bookCards$.length}
         <SeriesResults matches={seriesMatches} on:showSeries={(ev) => showSeries(ev.detail)} />
         {#if !visibleBookCards.length}
-          <div class="library-empty app-surface-card">
+          <div class="library-empty">
             <p class="font-bold">No books match this filter.</p>
             <button type="button" class="library-toolbar-button" on:click={clearFilters}>
               Show all books
@@ -1399,43 +1399,77 @@
 
   .library-tabs {
     display: inline-flex;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
-    padding: 0.25rem;
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--surface-color) 92%, transparent);
-  }
-
-  .library-tabs-small {
-    margin-left: 0.5rem;
-  }
-
-  .library-tabs-small .library-tab {
-    padding: 0.3rem 0.8rem;
-    font-size: 0.8rem;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
   }
 
   .library-tab {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.4rem 1rem;
-    border-radius: 999px;
+    padding: 0.35rem 0;
     color: var(--app-muted-fg);
-    font-size: 0.88rem;
-    font-weight: 800;
+    font-family: var(--app-font-display);
+    font-size: 1.35rem;
+    transition: color 0.15s ease;
   }
 
+  .library-tab :global(svg) {
+    display: none;
+  }
+
+  .library-tab:hover,
   .library-tab-active {
-    background: color-mix(in srgb, var(--accent-color) 18%, var(--surface-strong-color));
     color: var(--font-color);
   }
 
+  .library-tab-active::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 -2px;
+    height: 2px;
+    background: var(--accent-color);
+  }
+
+  .library-tab:focus-visible {
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: 2px;
+  }
+
   .library-tab-count {
-    font-size: 0.72rem;
-    font-weight: 700;
-    opacity: 0.75;
+    color: var(--app-text-subtle);
+    font-family: var(--app-ui-font, 'Noto Sans JP'), sans-serif;
+    font-size: 0.78rem;
+  }
+
+  /* Books / Series: a small segmented control */
+  .library-tabs-small {
+    gap: 0;
+    margin-left: 1rem;
+    padding: 2px;
+    border: 1px solid var(--app-control-border);
+    border-radius: calc(0.5rem * var(--app-radius-scale));
+    vertical-align: bottom;
+  }
+
+  .library-tabs-small .library-tab {
+    padding: 0.25rem 0.75rem;
+    border-radius: calc(0.4rem * var(--app-radius-scale));
+    font-family: inherit;
+    font-size: 0.8rem;
+  }
+
+  .library-tabs-small .library-tab :global(svg) {
+    display: inline;
+  }
+
+  .library-tabs-small .library-tab-active {
+    background: color-mix(in srgb, var(--font-color) 8%, transparent);
+  }
+
+  .library-tabs-small .library-tab-active::after {
+    content: none;
   }
 
   .library-main {
@@ -1537,8 +1571,14 @@
     margin: 3rem auto;
     max-width: 32rem;
     padding: 2.5rem 1.5rem;
-    border-radius: 1.4rem;
+    border: 1px dashed var(--border-color);
+    border-radius: calc(0.75rem * var(--app-radius-scale));
     text-align: center;
+  }
+
+  .library-empty-title {
+    font-family: var(--app-font-display);
+    font-size: 1.15rem;
   }
 
   .library-empty-import {

@@ -22,6 +22,10 @@ export interface LibraryFilterSection {
 const dayMs = 24 * 60 * 60 * 1000;
 const completedThreshold = 0.995;
 
+export function isFinished(card: BookCardProps) {
+  return card.progress >= completedThreshold;
+}
+
 /** Started but not finished. */
 export function isReading(card: BookCardProps) {
   return card.progress > 0 && card.progress < completedThreshold;
@@ -55,7 +59,7 @@ export const libraryFilterSections: LibraryFilterSection[] = [
       {
         key: 'completed',
         label: 'Completed',
-        test: (card) => card.progress >= completedThreshold
+        test: isFinished
       }
     ]
   },
