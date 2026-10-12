@@ -2,6 +2,7 @@
   import DialogTemplate from '$lib/components/dialog-template.svelte';
   import Ripple from '$lib/components/ripple.svelte';
   import { buttonClasses } from '$lib/css-classes';
+  import { defaultUpdateRepo } from '$lib/data/app-update';
   import { logger } from '$lib/data/logger';
   import { StorageSourceDefault } from '$lib/data/storage/storage-types';
   import {
@@ -190,7 +191,7 @@
   <svelte:fragment slot="footer">
     <a
       class={buttonClasses}
-      href="https://github.com/ttu-ttu/ebook-reader"
+      href="https://github.com/{defaultUpdateRepo}"
       target="_blank"
       rel="noreferrer"
     >

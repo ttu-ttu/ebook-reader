@@ -80,7 +80,7 @@
         <a
           href="{pagePath}/manage"
           class="hidden shrink-0 items-center opacity-95 transition-opacity hover:opacity-100 sm:flex"
-          title="ッツ Ebook Reader"
+          title="Chimimouryou"
           on:click={(event) => navigate(event, 'library', `${pagePath}/manage`)}
         >
           <AppHeaderLogo />

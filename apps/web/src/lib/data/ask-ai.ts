@@ -117,7 +117,7 @@ export async function askAi(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'X-Title': 'ttu Ebook Reader'
+      'X-Title': 'Chimimouryou'
     },
     body: JSON.stringify({
       model: options.model || openRouterModel$.getValue(),
