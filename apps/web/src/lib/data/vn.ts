@@ -252,3 +252,65 @@ export function fromBase64(text: string) {
 export function encodePath(path: string) {
   return path.split('/').map(encodeURIComponent).join('/');
 }
+
+/** A line of the page as drawn on the game screen, in screen pixels, for hover lookups. */
+export interface VnOverlayLine {
+  text: string;
+  x: number;
+  y: number;
+  /** Font size */
+  size: number;
+  /** Distance between characters */
+  pitch: number;
+}
+
+function charLength(lead: number, encoding: VnEncoding) {
+  if (encoding === 'utf8') return lead < 0x80 ? 1 : lead >= 0xf0 ? 4 : lead >= 0xe0 ? 3 : 2;
+
+  return (lead >= 0x81 && lead <= 0x9f) || (lead >= 0xe0 && lead <= 0xfc) ? 2 : 1;
+}
+
+/**
+ * The page's characters grouped into screen lines, from the engine's character boxes
+ * (byte offset in the page, x, y, font size; four numbers each). Ruby readings have no
+ * boxes, so lines hold the base text only.
+ * shortcut: one pitch per line, from its first and last character, so half-width letters
+ * in a full-width line drift a little; give each run its own pitch if that matters.
+ */
+export function overlayLines(
+  bytes: Uint8Array,
+  boxes: ArrayLike<number>,
+  encoding: VnEncoding
+): VnOverlayLine[] {
+  const lines: { text: string; x: number; y: number; size: number; last: number; count: number }[] =
+    [];
+
+  for (let index = 0; index + 3 < boxes.length; index += 4) {
+    const offset = boxes[index];
+
+    if (offset >= bytes.length) break;
+
+    const char = decodeText(
+      bytes.subarray(offset, offset + charLength(bytes[offset], encoding)),
+      encoding
+    );
+    const [x, y, size] = [boxes[index + 1], boxes[index + 2], boxes[index + 3]];
+    const line = lines[lines.length - 1];
+
+    if (line && line.y === y && x > line.last) {
+      line.text += char;
+      line.last = x;
+      line.count += 1;
+    } else {
+      lines.push({ text: char, x, y, size, last: x, count: 1 });
+    }
+  }
+
+  return lines.map(({ text, x, y, size, last, count }) => ({
+    text,
+    x,
+    y,
+    size,
+    pitch: count > 1 ? (last - x) / (count - 1) : size
+  }));
+}

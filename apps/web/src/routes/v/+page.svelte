@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
    * Visual novel player (ONScripter games, not part of upstream): the engine runs in a
-   * same-origin frame (static/vn/player.html); its text hook sends every page's text here,
-   * shown in a panel Yomitan can read and counted for progress and statistics. Saves of
+   * same-origin frame (static/vn/player.html); its text hook sends every page's text here
+   * with where each character was drawn: laid invisibly over the game for Yomitan (and
+   * optionally shown in a panel below it), and counted for progress and statistics. Saves of
    * Calibre games sync through vnsaves.json in the reader's sync folder.
    */
   import { onDestroy, onMount } from 'svelte';
@@ -32,6 +33,7 @@
     loadVnRead,
     mergeVnSaves,
     newText,
+    overlayLines,
     parseVnPage,
     sameVnSaves,
     saveVnRead,
@@ -73,7 +75,8 @@
 
   /** Time between two clicks counted as reading at most, so breaks don't count. */
   const maxSecondsPerPage = 120;
-  const showText$ = writableBooleanLocalStorageSubject()('vnShowText', true);
+  /** The text panel below the game; hovering the game's own text works without it. */
+  const showText$ = writableBooleanLocalStorageSubject()('vnTextPanel', false);
   const defaultSources: Record<string, StorageKey> = {
     [StorageSourceDefault.CALIBRE_DEFAULT]: StorageKey.CALIBRE,
     [StorageSourceDefault.GDRIVE_DEFAULT]: StorageKey.GDRIVE,
@@ -266,8 +269,10 @@
           { modified: file.modified, bytes: fromBase64(file.data) }
         ])
       ),
-      onText: (bytes: Uint8Array, skipped: number) =>
-        onText(decodeText(bytes, info.encoding), !!skipped),
+      onText: (bytes: Uint8Array, skipped: number, boxes: Int32Array) => {
+        player.showText(overlayLines(bytes, boxes, info.encoding));
+        onText(decodeText(bytes, info.encoding), !!skipped);
+      },
       onSave: uploadSaves,
       onExit: () => (ended = true)
     });

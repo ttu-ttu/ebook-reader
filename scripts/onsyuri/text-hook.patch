@@ -1,8 +1,8 @@
 diff --git a/src/onsyuri/ONScripter_text.cpp b/src/onsyuri/ONScripter_text.cpp
-index 32615ce..86aebc8 100644
+index 32615ce..9931727 100644
 --- a/src/onsyuri/ONScripter_text.cpp
 +++ b/src/onsyuri/ONScripter_text.cpp
-@@ -26,6 +26,19 @@
+@@ -26,6 +26,41 @@
  #include "coding2utf16.h"
  #include "Utils.h"
  
@@ -10,19 +10,54 @@ index 32615ce..86aebc8 100644
 +#include <emscripten.h>
 +#endif
 +
-+// chimimouryou: hand the page shown so far (raw script bytes) to the web page, for its
-+// text panel and reading statistics. skipped is set while the reader skips text.
++// chimimouryou: where each character of the page was drawn (byte offset in the page,
++// x, y and font size in screen pixels), so the web page can lay hoverable text over it.
++static int char_boxes[4 * 4096];
++static int char_box_count = 0;
++
++static void addCharBox(int offset, int x, int y, int size)
++{
++    // Offsets only grow within a page: a smaller one starts the next page.
++    if (char_box_count && offset <= char_boxes[4 * (char_box_count - 1)]) char_box_count = 0;
++    if (char_box_count >= 4096) return;
++    int *box = char_boxes + 4 * char_box_count++;
++    box[0] = offset;
++    box[1] = x;
++    box[2] = y;
++    box[3] = size;
++}
++
++// chimimouryou: hand the page shown so far (raw script bytes) and its character boxes to
++// the web page, for hover lookups, its text panel and reading statistics. skipped is set
++// while the reader skips text.
 +static void textHook(const char *text, int len, int skipped)
 +{
++    if (char_box_count && char_boxes[4 * (char_box_count - 1)] >= len) char_box_count = 0;
 +#if defined(WEB)
-+    EM_ASM({ if (self.onsyuriText) self.onsyuriText(HEAPU8.slice($0, $0 + $1), $2); }, text, len, skipped);
++    EM_ASM({
++        if (self.onsyuriText)
++            self.onsyuriText(HEAPU8.slice($0, $0 + $1), $2, HEAP32.slice($3 >> 2, ($3 >> 2) + $4 * 4));
++    }, text, len, skipped, char_boxes, char_box_count);
 +#endif
 +}
 +
  extern Coding2UTF16 *coding2utf16;
  
  #define IS_ROTATION_REQUIRED(x)	\
-@@ -528,6 +541,7 @@ bool ONScripter::clickWait( char *out_text )
+@@ -215,6 +250,12 @@ void ONScripter::drawChar( char* text, FontInfo *info, bool flush_flag, bool loo
+     info->old_xy[0] = info->x(false);
+     info->old_xy[1] = info->y(false);
+ 
++    if (lookback_flag && info == &sentence_font)
++        addCharBox(current_page->text_count,
++                   info->x() * screen_ratio1 / screen_ratio2,
++                   info->y() * screen_ratio1 / screen_ratio2,
++                   info->font_size_xy[1] * screen_ratio1 / screen_ratio2);
++
+     char text2[5] = {text[0], 0, 0, 0, 0};
+     if (coding2utf16->force_utf8) strncpy(text2, text, UTF8_N_BYTE(text[0]));
+     else if (IS_TWO_BYTE(text[0])) text2[1] = text[1];
+@@ -528,6 +569,7 @@ bool ONScripter::clickWait( char *out_text )
          else{ // called on '@'
              flush(refreshMode());
          }
@@ -30,7 +65,7 @@ index 32615ce..86aebc8 100644
          num_chars_in_sentence = 0;
  
          event_mode = IDLE_EVENT_MODE;
-@@ -538,6 +552,7 @@ bool ONScripter::clickWait( char *out_text )
+@@ -538,6 +580,7 @@ bool ONScripter::clickWait( char *out_text )
              drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
              num_chars_in_sentence++;
          }
@@ -38,7 +73,7 @@ index 32615ce..86aebc8 100644
  
          while( (!(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) &&
                  script_h.getStringBuffer()[ string_buffer_offset ] == ' ') ||
-@@ -579,6 +594,8 @@ bool ONScripter::clickNewPage( char *out_text )
+@@ -579,6 +622,8 @@ bool ONScripter::clickNewPage( char *out_text )
          drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
          num_chars_in_sentence++;
      }

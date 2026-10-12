@@ -10,8 +10,10 @@ anything a reader or a server operator would notice.
 
 - ZIPs of ONScripter games (a folder with `0.txt`, `00.txt`, `nscript.dat`…) open in a
   new player (`/v`) that runs the game in the browser (ONScripter-yuri, WebAssembly).
-  The text of every page also shows below the game, ready for Yomitan, with ruby as
-  furigana. Import them like manga, or add them to Calibre: the catalog now lists them.
+  Hover the game's own text to look words up with Yomitan: the player lays the page's
+  text, invisible, over the characters the engine drew (clicks still go to the game).
+  A panel below the game can show the text too (A button), with ruby as furigana.
+  Import them like manga, or add them to Calibre: the catalog now lists them.
 - Reading statistics, progress and "Kanji met" count the text as it is read (pages
   read before, or skipped, count once or not at all).
 - Saves stay in the browser; for Calibre games they also sync per reader

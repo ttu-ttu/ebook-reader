@@ -32,12 +32,69 @@ function mkdirs(FS, path) {
 function scale_full(canvas, ratio) {
   var w = window.innerWidth;
   var h = window.innerHeight;
+  var overlay = document.getElementById('overlay');
 
   if (w / h > ratio) w = h * ratio;
   else h = w / ratio;
-  canvas.style.width = w + 'px';
-  canvas.style.height = h + 'px';
+  canvas.style.width = overlay.style.width = w + 'px';
+  canvas.style.height = overlay.style.height = h + 'px';
+  // Overlay lines are laid out in screen pixels, scaled like the canvas.
+  overlay.style.setProperty('--scale', w / g_screen_width);
 }
+
+/** lines: [{ text, x, y, size, pitch }] in screen pixels (overlayLines in lib/data/vn.ts). */
+function showText(lines) {
+  var overlay = document.getElementById('overlay');
+
+  overlay.textContent = '';
+  lines.forEach(function (line) {
+    var div = document.createElement('div');
+
+    div.textContent = line.text;
+    div.style.left = (100 * line.x) / g_screen_width + '%';
+    div.style.top = (100 * line.y) / g_screen_height + '%';
+    div.style.fontSize = 'calc(var(--scale) * ' + line.size + 'px)';
+    div.style.letterSpacing = 'calc(var(--scale) * ' + (line.pitch - line.size) + 'px)';
+    overlay.appendChild(div);
+  });
+}
+
+// The text on screen changes once the game goes on: drop the overlay until the next page
+// arrives. Modifier keys don't count (Yomitan's scan key is often Shift).
+function clearText(event) {
+  if (event.key && /^(Shift|Alt|Meta|Control|OS)$/.test(event.key)) return;
+  document.getElementById('overlay').textContent = '';
+}
+
+['mousedown', 'wheel', 'touchstart'].forEach(function (type) {
+  document.addEventListener(type, clearText, true);
+});
+document.addEventListener('keydown', clearText, true);
+
+// Clicks on the overlay's text go to the game, as if the text weren't there.
+[
+  'mousedown',
+  'mouseup',
+  'mousemove',
+  'click',
+  'contextmenu',
+  'wheel',
+  'touchstart',
+  'touchmove',
+  'touchend'
+].forEach(function (type) {
+  document.getElementById('overlay').addEventListener(type, function (event) {
+    var Copy = event.constructor;
+
+    // Hover stays with the page (Yomitan scans on mousemove); the rest is the game's.
+    if (type !== 'mousemove') event.preventDefault();
+    try {
+      document.getElementById('canvas').dispatchEvent(new Copy(type, event));
+    } catch (error) {
+      console.warn('Could not pass ' + type + ' to the game', error);
+    }
+  });
+});
 
 window.addEventListener('resize', function () {
   scale_full(document.getElementById('canvas'), g_screen_width / g_screen_height);

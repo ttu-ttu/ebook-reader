@@ -18,3 +18,26 @@ body {
 #video {
   display: none;
 }
+
+/* The page's text, invisible, over the characters the engine drew: Yomitan reads it on
+   hover, and selecting it shows where it is. */
+#overlay {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#overlay div {
+  position: absolute;
+  white-space: pre;
+  line-height: 1;
+  color: transparent;
+  pointer-events: auto;
+  cursor: default;
+}
+
+#overlay div::selection {
+  background: rgba(255, 220, 120, 0.35);
+}

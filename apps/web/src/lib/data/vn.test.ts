@@ -15,6 +15,7 @@ import {
   sameVnSaves,
   toBase64,
   newText,
+  overlayLines,
   parseVnPage,
   scriptCharacters
 } from './vn';
@@ -88,5 +89,16 @@ describe('vn', () => {
     const bytes = Uint8Array.from({ length: 70000 }, (_, index) => index % 256);
 
     expect(fromBase64(toBase64(bytes))).toEqual(bytes);
+  });
+
+  it("lays the page out in screen lines from the engine's character boxes", () => {
+    // 「吾(猫/ねこ)」 then a new line with 「あ」, in Shift JIS: ruby markup has no boxes.
+    const bytes = sjis('8ce1' + '28' + '944c' + '2f' + '82cb82b1' + '29' + '0a' + '82a0');
+    const boxes = [0, 10, 20, 24, 3, 36, 20, 24, 12, 10, 50, 24];
+
+    expect(overlayLines(bytes, boxes, 'sjis')).toEqual([
+      { text: '吾猫', x: 10, y: 20, size: 24, pitch: 26 },
+      { text: 'あ', x: 10, y: 50, size: 24, pitch: 24 }
+    ]);
   });
 });
