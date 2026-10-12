@@ -14,6 +14,12 @@ rebuilt so the books show up in the library.
        only, checked by nginx): books without a series put into series, duplicate
        series merged; with apply, metadata.db is backed up, written and the
        catalog rebuilt
+  POST catalog                                 -> {"books": n} after a full catalog
+       rebuild (admins only, checked by nginx)
+
+A ZIP holding an ONScripter game (a script such as 0.txt or nscript.dat) is not
+added to Calibre: the worker unpacks its game folder into VN_DIR, named after the
+uploaded file, where the catalog lists it as a visual novel.
 
 Job states: queued, adding, added (calibreId, title), duplicate, failed (error).
 Standard library only. Not part of upstream.
@@ -22,6 +28,7 @@ import fcntl
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -48,6 +55,13 @@ FORMATS = ('epub', 'htmlz', 'txt', 'cbz', 'zip')
 MANGA_FORMATS = ('cbz', 'zip')
 PAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')
 MAX_BYTES = 300 * 1024 * 1024
+# Games are much larger than books; ZIP uploads may be this large if they hold one.
+MAX_VN_BYTES = 8 * 1024 * 1024 * 1024
+VN_DIR = os.environ.get('VN_DIR', '/vn')
+# ONScripter scripts, as in build-catalog.py and lib/data/vn.ts.
+VN_SCRIPTS = ('0.txt', '00.txt', 'nscr_sec.dat', 'nscript.___', 'nscript.dat', 'onscript.nt2', 'onscript.nt3')
+# Kept free when unpacking a game.
+MIN_FREE_BYTES = int(os.environ.get('MIN_FREE_MB', '1024')) * 1024 * 1024
 MAX_PENDING_PER_ACCOUNT = 100
 # Finished jobs are kept this long so the uploader can read the outcome.
 KEEP_FINISHED_SECONDS = 7 * 24 * 3600
@@ -55,6 +69,7 @@ ADD_TIMEOUT_SECONDS = 600
 CALIBRE_DEBUG = os.environ.get('CALIBRE_DEBUG', 'calibre-debug')
 ASSIGN_SERIES = os.environ.get('ASSIGN_SERIES', '/app/assign-series.py')
 series_busy = threading.Lock()
+catalog_busy = threading.Lock()
 
 lock = threading.Lock()
 work = threading.Condition(lock)
@@ -120,6 +135,81 @@ def check_book(path: str, ext: str) -> str:
     return ''
 
 
+def zip_name(info: zipfile.ZipInfo) -> str:
+    """A member's path. Japanese archives often hold Shift JIS names without the UTF-8
+    flag, which zipfile reads as code page 437."""
+    name = info.filename
+    if not info.flag_bits & 0x800:
+        for encoding in ('utf-8', 'cp932'):
+            try:
+                name = info.filename.encode('cp437').decode(encoding)
+                break
+            except UnicodeError:
+                pass
+    return name.replace('\\', '/')
+
+
+def vn_root(names: list[str]) -> str | None:
+    """The folder holding a game's script ('' or 'Game/'), the shallowest if several."""
+    roots = sorted((name[:name.rfind('/') + 1] for name in names
+                    if name.rsplit('/', 1)[-1].lower() in VN_SCRIPTS and '__MACOSX/' not in name),
+                   key=lambda root: root.count('/'))
+    return roots[0] if roots else None
+
+
+def is_vn_zip(path: str) -> bool:
+    try:
+        with zipfile.ZipFile(path) as archive:
+            return vn_root([zip_name(info) for info in archive.infolist()]) is not None
+    except (OSError, zipfile.BadZipFile):
+        return False
+
+
+def vn_title(name: str) -> str:
+    """The game's folder name: the uploaded file's name without .zip/.cbz."""
+    title = re.sub(r'\.(?:zip|cbz)$', '', name, flags=re.I).strip().lstrip('.')
+    return re.sub(r'[/\\:*?"<>|]', '_', title)[:150] or 'game'
+
+
+def add_vn(job: dict) -> dict:
+    """Unpacks a game's folder from a queued ZIP into VN_DIR/<title>."""
+    path = os.path.join(queue_dir(), job['file'])
+    title = vn_title(job['name'])
+    target = os.path.join(VN_DIR, title)
+    if os.path.exists(target):
+        return {'state': 'duplicate', 'error': 'Already in the visual novel folder'}
+    tmp = os.path.join(VN_DIR, f".importing-{job['id']}")
+    try:
+        with zipfile.ZipFile(path) as archive:
+            members = [(zip_name(info), info) for info in archive.infolist() if not info.is_dir()]
+            root = vn_root([name for name, _ in members])
+            if root is None:
+                return {'state': 'failed', 'error': 'No ONScripter game in this ZIP'}
+            files = []
+            for name, info in members:
+                parts = name[len(root):].split('/')
+                # Only the game folder; nothing outside it, no macOS metadata.
+                if (not name.startswith(root) or '__MACOSX/' in name or parts[-1].startswith('._')
+                        or any(part in ('', '.', '..') for part in parts)):
+                    continue
+                files.append((parts, info))
+            needed = sum(info.file_size for _, info in files)
+            if needed > shutil.disk_usage(VN_DIR).free - MIN_FREE_BYTES:
+                return {'state': 'failed', 'error': 'Not enough free space for this game'}
+            for parts, info in files:
+                dest = os.path.join(tmp, *parts)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                with archive.open(info) as source, open(dest, 'wb') as out:
+                    shutil.copyfileobj(source, out, 1 << 20)
+        os.rename(tmp, target)
+    except (OSError, zipfile.BadZipFile, RuntimeError) as error:
+        print(f"unpack {job['name']}: {error}", file=sys.stderr)
+        return {'state': 'failed', 'error': 'Could not unpack this game'}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return {'state': 'added', 'title': title}
+
+
 def parse_added_ids(output: str) -> list[int]:
     """Book ids from `calibredb add` output ("Added book ids: 12, 13")."""
     match = re.search(r'Added book ids?:\s*([\d,\s]+)', output)
@@ -158,11 +248,26 @@ def add_book(job: dict) -> dict:
     return {'state': 'failed', 'error': 'Calibre could not add this file'}
 
 
-def rebuild_catalog():
-    result = subprocess.run([CATALOG_BUILDER, LIBRARY, CATALOG_OUTPUT],
+def rebuild_catalog(force=False) -> bool:
+    result = subprocess.run([CATALOG_BUILDER, LIBRARY, CATALOG_OUTPUT] + (['--force'] if force else []),
                             capture_output=True, text=True, timeout=1800, check=False)
     if result.returncode:
         print(f'catalog build failed: {result.stderr.strip()[-500:]}', file=sys.stderr)
+    return not result.returncode
+
+
+def run_catalog() -> dict:
+    """Admin panel → Tools → Catalog: a full rebuild now, rather than at the next interval."""
+    if not catalog_busy.acquire(blocking=False):
+        raise ApiError(409, 'The catalog is already being rebuilt')
+    try:
+        if not rebuild_catalog(force=True):
+            raise ApiError(500, 'The catalog build failed; see the import service log')
+        with open(CATALOG_OUTPUT, encoding='utf-8') as f:
+            books = json.load(f)['books']
+    finally:
+        catalog_busy.release()
+    return {'books': len(books), 'visualNovels': sum(1 for book in books if book.get('vn'))}
 
 
 def finish_batch():
@@ -188,7 +293,7 @@ def worker():
             job.update(state='adding', updated=time.time())
             save_jobs()
         try:
-            update = add_book(job)
+            update = add_vn(job) if job.get('kind') == 'vn' else add_book(job)
         except (OSError, subprocess.SubprocessError) as error:
             print(f"calibredb add {job['name']}: {error}", file=sys.stderr)
             update = {'state': 'failed', 'error': 'Calibre could not add this file'}
@@ -284,6 +389,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.handle_api(lambda: self.add(url))
         if url.path == '/series':
             return self.handle_api(self.series)
+        if url.path == '/catalog':
+            return self.handle_api(self.catalog)
         return self.send(404, {'error': 'not found'})
 
     def same_origin(self):
@@ -300,6 +407,11 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(400, 'Invalid request') from error
         return run_series(bool(body.get('apply')))
 
+    def catalog(self):
+        self.account()
+        self.same_origin()
+        return run_catalog()
+
     def add(self, url):
         account = self.account()
         self.same_origin()
@@ -315,7 +427,7 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(400, 'Invalid request') from error
         if length <= 0:
             raise ApiError(400, 'The file is empty')
-        if length > MAX_BYTES:
+        if length > (MAX_VN_BYTES if ext == 'cbz' else MAX_BYTES):
             raise ApiError(413, 'The file is too large')
         with lock:
             pending = sum(1 for j in jobs.values() if j['account'] == account and j['state'] in ('queued', 'adding'))
@@ -333,7 +445,13 @@ class Handler(BaseHTTPRequestHandler):
                     break
                 f.write(chunk)
                 remaining -= len(chunk)
-        problem = 'Upload incomplete' if remaining else check_book(path, ext)
+        vn = not remaining and ext == 'cbz' and is_vn_zip(path)
+        if remaining:
+            problem = 'Upload incomplete'
+        elif vn:
+            problem = '' if os.access(VN_DIR, os.W_OK) else 'There is no visual novel folder (VN_PATH) to add games to'
+        else:
+            problem = 'The file is too large' if length > MAX_BYTES else check_book(path, ext)
         if problem:
             os.remove(path)
             raise ApiError(400, problem)
@@ -341,6 +459,9 @@ class Handler(BaseHTTPRequestHandler):
         now = time.time()
         job = {'id': job_id, 'account': account, 'name': name, 'file': file,
                'state': 'queued', 'created': now, 'updated': now}
+        if vn:
+            job['kind'] = 'vn'
+
         with work:
             jobs[job_id] = job
             save_jobs()
@@ -359,6 +480,11 @@ def main():
     for entry in os.scandir(queue_dir()):
         if entry.name not in known:
             os.remove(entry.path)
+    # Games half unpacked when the service stopped.
+    if os.path.isdir(VN_DIR) and os.access(VN_DIR, os.W_OK):
+        for entry in os.scandir(VN_DIR):
+            if entry.name.startswith('.importing-'):
+                shutil.rmtree(entry.path, ignore_errors=True)
     threading.Thread(target=worker, daemon=True).start()
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
 

@@ -285,6 +285,8 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | VN-2 | With statistics on, advance a few pages, reopen and replay them | Home shows the characters read once; reread pages add nothing; progress in Continue reading |
 | VN-3 | Save in the game; open the same Calibre game in another browser, same account | The save is there |
 | VN-4 | Library Type filter | Games are under Visual novels, not Books or Manga |
+| VN-6 | Library → Import (Calibre source, `import` permission) a ZIP of a game | Unpacked into `VN_PATH/<file name>` (not Calibre), listed under Visual novels after the rebuild; the same file again says it's already there |
+| VN-7 | Admin panel → Tools → Catalog → Rebuild catalog | "Done: N books, of which M visual novels"; files copied into `VN_PATH` by hand show up |
 | VN-5 | Copy an unpacked game folder into `VN_PATH`; wait for the catalog (or run `build-calibre-catalog`) | It appears in the Store; opening it fetches only the files the game uses (network tab), and VN-1 to VN-3 work |
 
 ## 16. Import and covers

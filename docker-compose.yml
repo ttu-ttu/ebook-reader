@@ -79,8 +79,8 @@ services:
     volumes:
       - ${DATA_PATH:-./data}:/data
       - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library
-      # Its catalog rebuilds list the visual novels too.
-      - ${VN_PATH:-${DATA_PATH:-./data}/vn}:/vn:ro
+      # Game ZIPs are unpacked here; its catalog rebuilds list the visual novels too.
+      - ${VN_PATH:-${DATA_PATH:-./data}/vn}:/vn
 
   difficulty:
     <<: *services

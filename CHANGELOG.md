@@ -22,6 +22,10 @@ anything a reader or a server operator would notice.
   `DATA_PATH/vn`, one folder per game) instead of Calibre: the catalog lists them in
   the Store, and the player fetches each file only when the game opens it, so nothing
   is downloaded whole or copied to the browser or the sync folder.
+- ZIPs of games imported into the Calibre source (Library → Import, `import`
+  permission) are unpacked into the visual novel folder instead of Calibre, up to 8 GB
+  (Shift JIS file names are read correctly).
+- Admin panel → Tools → Catalog rebuilds the catalog on demand.
 - The library's Type filter has Visual novels next to Books and Manga.
 - Server: nginx compresses `.wasm`.
 

@@ -342,14 +342,14 @@ def add_missing_covers(library: str, books: dict, state_path: str) -> None:
     os.replace(tmp_state, state_path)
 
 
-def main(library: str, output: str, vn_dir: str | None = None) -> None:
+def main(library: str, output: str, vn_dir: str | None = None, force: bool = False) -> None:
     # The timer and the import queue (calibre-import) both build; one at a time.
     with open(output + '.lock', 'a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        build(library, output, vn_dir)
+        build(library, output, vn_dir, force)
 
 
-def build(library: str, output: str, vn_dir: str | None = None) -> None:
+def build(library: str, output: str, vn_dir: str | None = None, force: bool = False) -> None:
     db_path = os.path.join(library, 'metadata.db')
     vn_dir = vn_dir if vn_dir and os.path.isdir(vn_dir) else None
     # Skip unless the library, the games or this script changed since the last build.
@@ -357,7 +357,7 @@ def build(library: str, output: str, vn_dir: str | None = None) -> None:
     # added while a build ran is picked up by the next one.
     newest_input = max(os.path.getmtime(db_path), os.path.getmtime(__file__),
                        vn_mtime(vn_dir) if vn_dir else 0)
-    if os.path.exists(output) and os.path.getmtime(output) >= newest_input:
+    if not force and os.path.exists(output) and os.path.getmtime(output) >= newest_input:
         return
 
     # Work on a copy so a Calibre write in progress can't break or block us.
@@ -462,4 +462,7 @@ def build(library: str, output: str, vn_dir: str | None = None) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else os.environ.get('VN_DIR', '/vn'))
+    # build-calibre-catalog LIBRARY OUTPUT [VN_DIR] [--force]
+    args = [arg for arg in sys.argv[1:] if arg != '--force']
+    main(args[0], args[1], args[2] if len(args) > 2 else os.environ.get('VN_DIR', '/vn'),
+         '--force' in sys.argv)

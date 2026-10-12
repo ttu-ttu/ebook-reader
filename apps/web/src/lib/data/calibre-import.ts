@@ -8,7 +8,8 @@
  * Adding books to the Calibre library through the server's import queue
  * (scripts/calibre/import/service.py, signed-in readers only). The server adds
  * one book at a time and rebuilds the catalog, so a finished job's book is
- * already in /calibre/catalog.json. Not part of upstream.
+ * already in /calibre/catalog.json. ZIPs of ONScripter games are unpacked into the
+ * visual novel folder (VN_PATH) instead. Not part of upstream.
  */
 
 export interface CalibreImportJob {
@@ -16,6 +17,7 @@ export interface CalibreImportJob {
   /** Uploaded file name */
   name: string;
   state: 'queued' | 'adding' | 'added' | 'duplicate' | 'failed';
+  /** Not set for games unpacked into the visual novel folder */
   calibreId?: number;
   /** Calibre's title (before the catalog makes duplicate titles unique) */
   title?: string;
@@ -109,6 +111,21 @@ export async function checkSeries(apply: boolean): Promise<SeriesReport> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ apply })
   });
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 502
+        ? 'The import service is not running (add import to COMPOSE_PROFILES)'
+        : await errorMessage(response)
+    );
+  }
+
+  return response.json();
+}
+
+/** Rebuilds the catalog now rather than at the next interval (admins only). */
+export async function rebuildCatalog(): Promise<{ books: number; visualNovels: number }> {
+  const response = await fetch(`${apiUrl}catalog`, { method: 'POST' });
 
   if (!response.ok) {
     throw new Error(

@@ -35,8 +35,14 @@ if 'add' in args:
 elif 'list' in args:
     print('[{{"id": 42, "title": "テスト"}}]')
 """)
+CATALOG = os.path.join(STATE, 'catalog.json')
+VN_DIR = os.path.join(STATE, 'vn')
+os.makedirs(VN_DIR)
 with open(FAKE_BUILDER, 'w') as f:
-    f.write(f"#!/bin/sh\necho build >> {BUILDS}\n")
+    f.write(f"""#!/bin/sh
+echo build "$@" >> {BUILDS}
+echo '{{"books": [{{"vn": true}}, {{}}]}}' > "$2"
+""")
 with open(FAKE_CALIBRE_DEBUG, 'w') as f:
     f.write(f"""#!{sys.executable}
 import json, sys
@@ -48,7 +54,8 @@ os.chmod(FAKE_CALIBREDB, 0o755)
 os.chmod(FAKE_BUILDER, 0o755)
 os.environ.update(IMPORT_STATE_DIR=os.path.join(STATE, 'state'), CALIBREDB=FAKE_CALIBREDB,
                   CATALOG_BUILDER=FAKE_BUILDER, CALIBRE_LIBRARY=STATE,
-                  CALIBRE_DEBUG=FAKE_CALIBRE_DEBUG)
+                  CALIBRE_DEBUG=FAKE_CALIBRE_DEBUG, CATALOG_OUTPUT=CATALOG, VN_DIR=VN_DIR,
+                  MIN_FREE_MB='0')
 
 spec = importlib.util.spec_from_file_location(
     'import_service', os.path.join(os.path.dirname(__file__), '..', 'import', 'service.py'))
@@ -147,6 +154,31 @@ class ImportServiceTest(unittest.TestCase):
         self.assertEqual(args[1:], ['--title', '漫画 1'])
         self.assertEqual(self.request('/add?name=a.cbz', epub())[0], 400)
 
+    def test_game_zip_is_unpacked_into_the_vn_folder(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w') as archive:
+            for name in ('ゲーム/0.txt', 'ゲーム/arc.nsa', 'ゲーム/bgm/曲.ogg', 'ゲーム/../evil.txt',
+                         '__MACOSX/ゲーム/._0.txt', 'readme.txt'):
+                archive.writestr(name, b'x')
+        adds = os.path.getsize(ADDS) if os.path.exists(ADDS) else 0
+        _, body = self.request('/add?name=%E3%83%8E%E3%83%99%E3%83%AB.zip', data.getvalue())
+        job = self.wait_for(body['job']['id'])
+        self.assertEqual((job['state'], job['title']), ('added', 'ノベル'))
+        files = sorted(os.path.relpath(os.path.join(root, name), VN_DIR)
+                       for root, _, names in os.walk(VN_DIR) for name in names)
+        self.assertEqual(files, ['ノベル/0.txt', 'ノベル/arc.nsa', 'ノベル/bgm/曲.ogg'])
+        # Not added to Calibre.
+        self.assertEqual(os.path.getsize(ADDS) if os.path.exists(ADDS) else 0, adds)
+        _, body = self.request('/add?name=%E3%83%8E%E3%83%99%E3%83%AB.zip', data.getvalue())
+        self.assertEqual(self.wait_for(body['job']['id'])['state'], 'duplicate')
+
+    def test_catalog_rebuild(self):
+        status, body = self.request('/catalog', b'')
+        self.assertEqual((status, body), (200, {'books': 2, 'visualNovels': 1}))
+        with open(BUILDS) as f:
+            self.assertIn('--force', f.read().splitlines()[-1])
+        self.assertEqual(self.request('/catalog', b'', origin=False)[0], 403)
+
     def test_jobs_are_per_account(self):
         _, body = self.request('/add?name=b.epub', epub())
         job_id = body['job']['id']
@@ -157,6 +189,13 @@ class ImportServiceTest(unittest.TestCase):
         self.assertEqual(service.parse_added_ids('Added book ids: 12, 13'), [12, 13])
         self.assertEqual(service.parse_added_ids('nothing'), [])
         self.assertEqual(service.clean_name('../../x/\x01本.epub'), '本.epub')
+        info = zipfile.ZipInfo('x')
+        info.filename = 'ゲーム'.encode('cp932').decode('cp437') + '\\0.txt'
+        info.flag_bits = 0
+        self.assertEqual(service.zip_name(info), 'ゲーム/0.txt')
+        self.assertEqual(service.vn_root(['a/b/0.txt', 'a/0.TXT', 'x.jpg']), 'a/')
+        self.assertIsNone(service.vn_root(['x.jpg']))
+        self.assertEqual(service.vn_title('.a/b:c.ZIP'), 'a_b_c')
 
 
 if __name__ == '__main__':

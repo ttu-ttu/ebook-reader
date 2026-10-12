@@ -4,6 +4,7 @@
   import { map, share } from 'rxjs';
   import Fa from 'svelte-fa';
   import AppHeader from '$lib/components/app-header/app-header.svelte';
+  import CatalogTool from '$lib/components/admin/catalog-tool.svelte';
   import SeriesTool from '$lib/components/admin/series-tool.svelte';
   import UpdateTool from '$lib/components/admin/update-tool.svelte';
   import DifficultyPanel from '$lib/components/book-card/difficulty-panel.svelte';
@@ -63,8 +64,8 @@
     {:else if !canOpenAdminPanel(user)}
       <SettingsItemGroup title="No access" wide>
         <p class="text-sm">
-          {user ? 'This account' : 'You need to sign in with an account that'} can't use the admin
-          panel. <a class="underline" href="{pagePath}/settings?section=general#general-account"
+          {user ? 'This account' : 'You need to sign in with an account that'} can't use the admin panel.
+          <a class="underline" href="{pagePath}/settings?section=general#general-account"
             >Account settings</a
           >
         </p>
@@ -91,6 +92,9 @@
           {#if user?.admin}
             <SettingsItemGroup title="Updates" wide>
               <UpdateTool />
+            </SettingsItemGroup>
+            <SettingsItemGroup title="Catalog" wide>
+              <CatalogTool />
             </SettingsItemGroup>
             <SettingsItemGroup title="Series" wide>
               <SeriesTool />

@@ -528,7 +528,9 @@
     }
 
     const newTitles = added.flatMap((job) => {
-      const card = books.find((book) => book.calibreId === job.calibreId);
+      // Games unpacked into the visual novel folder have no Calibre id.
+      const card =
+        job.calibreId !== undefined && books.find((book) => book.calibreId === job.calibreId);
 
       return card && !card.series ? [card.title] : [];
     });

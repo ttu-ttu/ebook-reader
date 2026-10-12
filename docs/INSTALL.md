@@ -166,6 +166,23 @@ server, amd64 and arm64): set `IMAGE_PREFIX=ghcr.io/<owner>/<repository>` and
 docker compose pull && docker compose up -d
 ```
 
+### Disk space for builds
+
+Docker keeps build cache forever by default, and every rebuild (updates, deploys)
+adds a few GB, so a small disk fills up after a while. Cap it in
+`/etc/docker/daemon.json` (Docker then trims the oldest cache itself);
+`live-restore` keeps the stack running when Docker restarts:
+
+```json
+{
+  "builder": { "gc": { "enabled": true, "defaultKeepStorage": "6GB" } },
+  "live-restore": true
+}
+```
+
+Apply with `systemctl reload docker` for `live-restore` first, then
+`systemctl restart docker`. `docker builder prune` frees the cache right away.
+
 ## Difficulty estimates
 
 The `difficulty` profile needs Jiten's word frequency list: download

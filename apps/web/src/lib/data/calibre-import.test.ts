@@ -5,7 +5,12 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { uploadToCalibre, waitForImportJobs, type CalibreImportJob } from './calibre-import';
+import {
+  rebuildCatalog,
+  uploadToCalibre,
+  waitForImportJobs,
+  type CalibreImportJob
+} from './calibre-import';
 
 const job = (state: CalibreImportJob['state']): CalibreImportJob => ({
   id: 'j1',
@@ -61,5 +66,21 @@ describe('calibre import', () => {
 
     expect(updates).toEqual(['queued', 'adding', 'added']);
     expect(jobs[0].calibreId).toBe(7);
+  });
+
+  it('rebuilds the catalog, explaining a missing import service', async () => {
+    const counts = { books: 3, visualNovels: 1 };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(counts)))
+    );
+    await expect(rebuildCatalog()).resolves.toEqual(counts);
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('<html>', { status: 502 }))
+    );
+    await expect(rebuildCatalog()).rejects.toThrow(/COMPOSE_PROFILES/);
   });
 });
