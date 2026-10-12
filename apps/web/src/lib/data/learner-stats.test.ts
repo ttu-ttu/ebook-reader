@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import type { BooksDbStatistic } from '$lib/data/database/books-db/versions/books-db';
 import { buildSearchIndex } from '$lib/functions/book-text/book-search';
 import { countKanji, getKanjiSummary, recordKanjiSeen, summarizeKanji } from './kanji-seen';
-import { learnerStats } from './learner-stats';
+import { activityWeeks, learnerStats } from './learner-stats';
 
 const stat = (title: string, dateKey: string, charactersRead: number, extra = {}) =>
   ({ title, dateKey, charactersRead, readingTime: 1800, ...extra }) as BooksDbStatistic;
@@ -72,5 +72,22 @@ describe('kanji seen', () => {
     ]);
 
     expect(summary).toEqual({ unique: 2 });
+  });
+});
+
+describe('activityWeeks', () => {
+  it('lays out weeks Monday first, ending today', () => {
+    // 2026-10-11 is a Sunday, 2026-10-12 a Monday
+    const weeks = activityWeeks(
+      [stat('A', '2026-10-12', 400), stat('A', '2026-10-11', 100), stat('B', '2026-10-11', 100)],
+      '2026-10-12',
+      2
+    );
+
+    expect(weeks).toHaveLength(2);
+    expect(weeks[0][0].dateKey).toBe('2026-10-05');
+    expect(weeks[0][6]).toEqual({ dateKey: '2026-10-11', characters: 200, level: 2 });
+    expect(weeks[1]).toEqual([{ dateKey: '2026-10-12', characters: 400, level: 4 }]);
+    expect(weeks[0][0].level).toBe(0);
   });
 });

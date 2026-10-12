@@ -88,3 +88,46 @@ export function learnerStats(statistics: BooksDbStatistic[], today: string): Lea
     booksStarted: new Set(statistics.map((s) => s.title)).size
   };
 }
+
+export interface ActivityDay {
+  dateKey: string;
+  characters: number;
+  /** 0 = no reading, 1-4 = quarters of the busiest day */
+  level: number;
+}
+
+/**
+ * The last `weeks` weeks of reading, one column per week (Monday first), for the
+ * Home heatmap. The last column ends today.
+ */
+export function activityWeeks(
+  statistics: BooksDbStatistic[],
+  today: string,
+  weeks = 18
+): ActivityDay[][] {
+  const byDay = new Map<number, number>();
+
+  statistics.forEach((statistic) => {
+    const day = dayNumber(statistic.dateKey);
+    byDay.set(day, (byDay.get(day) || 0) + Math.max(0, statistic.charactersRead || 0));
+  });
+
+  const todayNumber = dayNumber(today);
+  // Day 0 (1970-01-01) was a Thursday; Monday is weekday 0 here.
+  const weekday = (todayNumber + 3) % 7;
+  const first = todayNumber - weekday - (weeks - 1) * 7;
+  const max = Math.max(0, ...[...byDay].filter(([day]) => day >= first).map(([, c]) => c));
+
+  return Array.from({ length: weeks }, (_, week) =>
+    Array.from({ length: week === weeks - 1 ? weekday + 1 : 7 }, (__, i) => {
+      const day = first + week * 7 + i;
+      const characters = byDay.get(day) || 0;
+
+      return {
+        dateKey: new Date(day * 8.64e7).toISOString().slice(0, 10),
+        characters,
+        level: characters && max ? Math.min(4, Math.ceil((characters / max) * 4)) : 0
+      };
+    })
+  );
+}

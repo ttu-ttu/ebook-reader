@@ -41,7 +41,7 @@
 </script>
 
 {#if books.length}
-  <section class="shelf app-surface-card" aria-label={heading}>
+  <section class="shelf" aria-label={heading}>
     <h2 class="shelf-heading">
       <Fa {icon} />
       {heading}
@@ -61,13 +61,26 @@
           >
             <span class="shelf-cover">
               <BookCard imagePath={book.imagePath} title={book.title} />
-              <span class="shelf-progress"><span style:width="{percent}%" /></span>
+              {#if isReading(book)}
+                <span class="shelf-progress"><span style:width="{percent}%" /></span>
+              {/if}
             </span>
-            <span class="shelf-title">{book.title}</span>
+            <span class="shelf-title" lang="ja">{book.title}</span>
             <span class="shelf-meta">
-              {percent}%{#if book.series}&nbsp;· {formatSeries(book)}{/if}
+              {#if isReading(book)}{percent}%{/if}{#if isReading(book) && book.series}&nbsp;·
+              {/if}{#if book.series}{formatSeries(book)}{/if}
             </span>
           </button>
+          {#if isReading(book)}
+            <button
+              type="button"
+              class="shelf-resume"
+              aria-label="Resume {book.title}"
+              on:click={() => dispatch('bookClick', { id: book.id })}
+            >
+              <Fa icon={faBookOpenReader} /> Resume
+            </button>
+          {/if}
           {#if removeTitle}
             <button
               type="button"
@@ -87,37 +100,38 @@
 
 <style>
   .shelf {
-    margin-bottom: 1.25rem;
-    padding: 0.9rem 0.9rem 0.75rem;
-    border-radius: calc(1.15rem * var(--app-radius-scale));
+    margin-bottom: 2.5rem;
   }
 
   .shelf-heading {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.7rem;
-    color: var(--app-muted-fg);
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+    font-family: var(--app-font-display);
+    font-size: 1.15rem;
+    font-weight: 400;
+  }
+
+  .shelf-heading :global(svg) {
+    color: var(--accent-color);
+    font-size: 0.85em;
   }
 
   .shelf-row {
     display: grid;
-    grid-auto-columns: 7.25rem;
+    grid-auto-columns: 9.5rem;
     grid-auto-flow: column;
-    gap: 0.85rem;
+    gap: 1.5rem;
     overflow-x: auto;
-    padding-bottom: 0.35rem;
+    padding: 0.25rem 0.25rem 0.5rem;
     scroll-snap-type: x proximity;
   }
 
   .shelf-count {
-    margin-left: auto;
-    font-weight: 700;
-    letter-spacing: 0;
+    color: var(--app-text-subtle);
+    font-family: var(--app-ui-font, 'Noto Sans JP'), sans-serif;
+    font-size: 0.8rem;
   }
 
   .shelf-item {
@@ -169,32 +183,44 @@
   .shelf-cover {
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--border-color);
-    border-radius: calc(0.7rem * var(--app-radius-scale));
-    transition: transform 0.16s ease;
+    margin-bottom: 0.35rem;
+    border-radius: calc(4px * var(--app-radius-scale));
+    box-shadow:
+      0 1px 2px var(--app-cover-shadow),
+      0 12px 26px -14px var(--app-cover-shadow);
+    transition: transform 0.2s var(--app-ease);
   }
 
   .shelf-book:hover .shelf-cover,
   .shelf-book:focus-visible .shelf-cover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+  }
+
+  .shelf-book:focus-visible {
+    outline: none;
+  }
+
+  .shelf-book:focus-visible .shelf-cover {
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: 3px;
   }
 
   .shelf-book-current .shelf-cover {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 35%, transparent);
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
   }
 
   .shelf-progress {
     position: absolute;
     inset: auto 0 0;
-    height: 0.3rem;
-    background: color-mix(in srgb, var(--font-color) 18%, transparent);
+    height: 3px;
+    background: var(--app-progress-track);
   }
 
   .shelf-progress > span {
     display: block;
     height: 100%;
-    background: var(--accent-color);
+    background: var(--app-progress-fill);
   }
 
   .shelf-title {
@@ -203,17 +229,38 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
-    font-size: 0.8rem;
-    font-weight: 700;
-    line-height: 1.3;
+    padding-block: 0.05em;
+    font-family: var(--app-font-display);
+    font-size: 0.85rem;
+    line-height: 1.5;
   }
 
   .shelf-meta {
     overflow: hidden;
     color: var(--app-muted-fg);
-    font-size: 0.7rem;
-    font-weight: 700;
+    font-size: 0.72rem;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .shelf-resume {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.45rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--app-control-border);
+    border-radius: calc(0.5rem * var(--app-radius-scale));
+    color: var(--accent-strong-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .shelf-resume:hover {
+    border-color: var(--accent-color);
+    background: color-mix(in srgb, var(--accent-color) 8%, transparent);
   }
 </style>

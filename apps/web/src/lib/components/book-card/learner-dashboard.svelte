@@ -1,12 +1,15 @@
 <script lang="ts">
-  import { faChartLine, faFire } from '@fortawesome/free-solid-svg-icons';
   import { getKanjiSummary, type KanjiSummary } from '$lib/data/kanji-seen';
-  import { learnerStats, type LearnerStats } from '$lib/data/learner-stats';
+  import {
+    activityWeeks,
+    learnerStats,
+    type ActivityDay,
+    type LearnerStats
+  } from '$lib/data/learner-stats';
   import { pullAccountStatistics } from '$lib/data/statistics-sync';
   import { database, startDayHoursForTracker$, statisticsEnabled$ } from '$lib/data/store';
   import { getDateKey } from '$lib/functions/statistic-util';
   import { onMount } from 'svelte';
-  import Fa from 'svelte-fa';
 
   /**
    * Home tab totals for Japanese learners: characters, time, speed, streaks
@@ -14,6 +17,7 @@
    */
 
   let stats: LearnerStats | undefined;
+  let weeks: ActivityDay[][] = [];
   let kanji: KanjiSummary | undefined;
 
   const number = (value: number) => value.toLocaleString('en-US');
@@ -30,7 +34,10 @@
       .getStatisticsForTimeWindow('0000-00-00', '9999-99-99')
       .catch(() => []);
 
-    stats = learnerStats(statistics, getDateKey($startDayHoursForTracker$));
+    const today = getDateKey($startDayHoursForTracker$);
+
+    stats = learnerStats(statistics, today);
+    weeks = activityWeeks(statistics, today);
   }
 
   onMount(async () => {
@@ -44,18 +51,12 @@
       .catch(() => {});
   });
 
-  $: tiles = stats
+  $: secondary = stats
     ? [
-        { label: 'Characters read', value: number(stats.totalCharacters) },
-        { label: 'Today', value: number(stats.todayCharacters) },
         { label: 'Past 7 days', value: number(stats.weekCharacters) },
+        { label: 'Characters read', value: number(stats.totalCharacters) },
         { label: 'Reading time', value: hours(stats.totalTime) },
         { label: 'Speed', value: stats.speed ? `${number(stats.speed)}/h` : '–' },
-        {
-          label: 'Streak',
-          value: `${stats.streak} day${stats.streak === 1 ? '' : 's'}`,
-          hint: `Longest ${stats.longestStreak} · ${stats.daysRead} days read`
-        },
         {
           label: 'Books finished',
           value: number(stats.booksCompleted),
@@ -66,25 +67,51 @@
     : [];
 </script>
 
-<section class="dashboard app-surface-card" aria-label="Reading stats">
-  <h2 class="dashboard-heading">
-    <Fa icon={faChartLine} />
-    Your reading
-    {#if stats?.streak}
-      <span class="dashboard-streak" title="Days in a row"><Fa icon={faFire} /> {stats.streak}</span
-      >
-    {/if}
-  </h2>
+<section class="dashboard" aria-label="Reading stats">
   {#if stats}
-    <div class="dashboard-tiles">
-      {#each tiles as tile (tile.label)}
-        <div class="dashboard-tile" title={tile.hint || undefined}>
-          <span class="dashboard-value">{tile.value}</span>
-          <span class="dashboard-label">{tile.label}</span>
-          {#if tile.hint}<span class="dashboard-hint">{tile.hint}</span>{/if}
+    <div class="dashboard-main">
+      <div class="dashboard-feature">
+        <span class="dashboard-feature-label">Today</span>
+        <span class="dashboard-feature-value">{number(stats.todayCharacters)}<small>字</small></span>
+        <span
+          class="dashboard-streak"
+          title="Longest {stats.longestStreak} · {stats.daysRead} days read"
+        >
+          {#if stats.streak}
+            <span class="dashboard-seal" aria-hidden="true">連</span>
+            {stats.streak} day{stats.streak === 1 ? '' : 's'} in a row
+          {:else}
+            No streak yet
+          {/if}
+        </span>
+      </div>
+
+      {#if stats.daysRead}
+        <div class="dashboard-heatmap" role="img" aria-label="Characters read per day, last 18 weeks">
+          {#each weeks as week, w (w)}
+            <span class="dashboard-week">
+              {#each week as day (day.dateKey)}
+                <span
+                  class="dashboard-day"
+                  data-level={day.level}
+                  title="{day.dateKey}: {number(day.characters)} characters"
+                />
+              {/each}
+            </span>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <dl class="dashboard-stats">
+      {#each secondary as item (item.label)}
+        <div title={item.hint || undefined}>
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
         </div>
       {/each}
-    </div>
+    </dl>
+
     {#if !$statisticsEnabled$ && !stats.daysRead}
       <p class="dashboard-note">
         Turn on the reading tracker (Settings → Statistics) to count characters, time and streaks.
@@ -95,67 +122,116 @@
 
 <style>
   .dashboard {
-    margin-bottom: 1.25rem;
-    padding: 0.9rem;
-    border-radius: calc(1.15rem * var(--app-radius-scale));
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--border-color);
   }
 
-  .dashboard-heading {
+  .dashboard-main {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.7rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem 2.5rem;
+  }
+
+  .dashboard-feature {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .dashboard-feature-label,
+  .dashboard-note,
+  .dashboard-stats dt {
     color: var(--app-muted-fg);
     font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+  }
+
+  .dashboard-feature-value {
+    font-family: var(--app-font-display);
+    font-size: clamp(2.5rem, 7vw, 3.5rem);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .dashboard-feature-value small {
+    margin-left: 0.2em;
+    color: var(--app-muted-fg);
+    font-size: 0.4em;
   }
 
   .dashboard-streak {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    margin-left: auto;
-    color: var(--accent-strong-color);
-    letter-spacing: 0;
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+    color: var(--app-muted-fg);
+    font-size: 0.82rem;
   }
 
-  .dashboard-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
-    gap: 0.6rem;
+  .dashboard-seal {
+    display: inline-flex;
+    width: 1.3rem;
+    height: 1.3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    background: var(--accent-color);
+    color: var(--app-accent-fg);
+    font-family: var(--app-font-display);
+    font-size: 0.75rem;
   }
 
-  .dashboard-tile {
+  .dashboard-heatmap {
     display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.7rem 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: calc(0.8rem * var(--app-radius-scale));
-    background: color-mix(in srgb, var(--surface-strong-color) 70%, transparent);
+    gap: 3px;
+    max-width: 100%;
+    overflow-x: auto;
   }
 
-  .dashboard-value {
-    font-size: 1.25rem;
-    font-weight: 800;
+  .dashboard-week {
+    display: grid;
+    grid-template-rows: repeat(7, 0.7rem);
+    gap: 3px;
+  }
+
+  .dashboard-day {
+    width: 0.7rem;
+    border-radius: 2px;
+    background: var(--heatmap-empty);
+  }
+
+  .dashboard-day[data-level='1'] {
+    background: var(--heatmap-low);
+  }
+
+  .dashboard-day[data-level='2'] {
+    background: color-mix(in srgb, var(--heatmap-high) 40%, var(--heatmap-low));
+  }
+
+  .dashboard-day[data-level='3'] {
+    background: color-mix(in srgb, var(--heatmap-high) 70%, var(--heatmap-low));
+  }
+
+  .dashboard-day[data-level='4'] {
+    background: var(--heatmap-high);
+  }
+
+  .dashboard-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    margin-top: 1.5rem;
+  }
+
+  .dashboard-stats dd {
+    font-size: 1rem;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
 
-  .dashboard-label,
-  .dashboard-hint,
   .dashboard-note {
-    color: var(--app-muted-fg);
-    font-size: 0.72rem;
-    font-weight: 700;
-  }
-
-  .dashboard-hint {
-    font-weight: 600;
-  }
-
-  .dashboard-note {
-    margin-top: 0.7rem;
+    margin-top: 1rem;
   }
 </style>
