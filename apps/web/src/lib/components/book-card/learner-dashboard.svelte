@@ -2,6 +2,7 @@
   import { faChartLine, faFire } from '@fortawesome/free-solid-svg-icons';
   import { getKanjiSummary, type KanjiSummary } from '$lib/data/kanji-seen';
   import { learnerStats, type LearnerStats } from '$lib/data/learner-stats';
+  import { pullAccountStatistics } from '$lib/data/statistics-sync';
   import { database, startDayHoursForTracker$, statisticsEnabled$ } from '$lib/data/store';
   import { getDateKey } from '$lib/functions/statistic-util';
   import { onMount } from 'svelte';
@@ -24,14 +25,23 @@
     return h ? `${h}h ${m}m` : `${m}m`;
   }
 
-  onMount(async () => {
-    const [statistics, summary] = await Promise.all([
-      database.getStatisticsForTimeWindow('0000-00-00', '9999-99-99').catch(() => []),
-      getKanjiSummary().catch(() => undefined)
-    ]);
+  async function loadStats() {
+    const statistics = await database
+      .getStatisticsForTimeWindow('0000-00-00', '9999-99-99')
+      .catch(() => []);
 
     stats = learnerStats(statistics, getDateKey($startDayHoursForTracker$));
-    kanji = summary;
+  }
+
+  onMount(async () => {
+    getKanjiSummary()
+      .then((summary) => (kanji = summary))
+      .catch(() => {});
+    await loadStats();
+    // Statistics of books not opened in this browser only exist on the server.
+    pullAccountStatistics(window)
+      .then(loadStats)
+      .catch(() => {});
   });
 
   $: tiles = stats

@@ -73,6 +73,28 @@ describe('CalibreStorageHandler.getBookList', () => {
   });
 });
 
+describe('CalibreStorageHandler.listAccountTitles', () => {
+  it("lists the account's book folders, none while signed out", async () => {
+    vi.stubGlobal('fetch', async (url: string) =>
+      url === '/account/sync/ttu-reader-data/'
+        ? new Response(
+            JSON.stringify([
+              { name: '本1', type: 'directory' },
+              { name: 'reading-goals_1_6_0.json', type: 'file' }
+            ])
+          )
+        : new Response('[]')
+    );
+
+    account.user = { id: 'a', username: 'a' };
+    expect(await new CalibreStorageHandler(window).listAccountTitles()).toEqual(['本1']);
+
+    account.user = null;
+    expect(await new CalibreStorageHandler(window).listAccountTitles()).toEqual([]);
+    vi.unstubAllGlobals();
+  });
+});
+
 describe('CalibreStorageHandler sync errors', () => {
   const unauthorized = async () => new Response('', { status: 401 });
 

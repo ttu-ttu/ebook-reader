@@ -440,6 +440,21 @@ export class CalibreStorageHandler extends ApiStorageHandler {
     return personalTitles;
   }
 
+  /** Titles with a folder in the account's sync root; empty while signed out. */
+  async listAccountTitles() {
+    const rootId = await this.ensureTitle();
+
+    if (!this.useAccountFolder) {
+      return [];
+    }
+
+    const entries = (await this.listDirectory(this.toPersonal(rootId))) || [];
+
+    return entries
+      .filter((entry) => entry.type === 'directory')
+      .map((entry) => BaseStorageHandler.desanitizeFilename(entry.name));
+  }
+
   /** Files of a title: the shared folder, with personal files from the account while signed in. */
   private async listTitleFiles(titleId: string): Promise<ExternalFile[]> {
     if (!this.useAccountFolder) {

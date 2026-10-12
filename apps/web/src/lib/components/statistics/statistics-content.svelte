@@ -35,6 +35,7 @@
   } from '$lib/data/database/books-db/versions/books-db';
   import { dialogManager } from '$lib/data/dialog-manager';
   import { logger } from '$lib/data/logger';
+  import { pullAccountStatistics } from '$lib/data/statistics-sync';
   import { getDateRangeLabel } from '$lib/data/reading-goal';
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
@@ -291,7 +292,14 @@
     updateStatisticsData();
   }
 
-  onMount(init);
+  onMount(() => {
+    init();
+    // Statistics of books not opened in this browser only exist on the server.
+    pullAccountStatistics(window)
+      .then(init)
+      .then(() => (statisticsTitleFilters = new Map(statisticsTitleFilters)))
+      .catch(({ message }) => logger.warn(`Failed to sync statistics: ${message}`));
+  });
 
   onDestroy(() => dialogManager.dialogs$.next([]));
 

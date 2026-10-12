@@ -6,6 +6,9 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+- While signed in, the Statistics page and the Home dashboard download the account's
+  statistics and reading goals for every book, not only books opened in this browser.
+
 ## v3.1.0 (2026-10-12)
 
 ### Name and icon
