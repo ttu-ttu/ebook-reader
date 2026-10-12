@@ -363,6 +363,12 @@
 
         bookData = await saveExternalLastRead(externalStorageHandler, bookData);
 
+        // A synced book not cached here yet only gets its data above.
+        if (isManga(bookData)) {
+          goto(`${pagePath}/m?id=${id}`, { replaceState: true });
+          return new Promise<never>(() => {});
+        }
+
         if (bookData.language) {
           document.documentElement.lang = bookData.language;
         }

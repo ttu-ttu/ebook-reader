@@ -6,6 +6,11 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Fixes
+
+- A Calibre manga opened on a device that hadn't cached it yet (already read elsewhere)
+  stayed on the loading spinner instead of opening in the manga reader.
+
 ### Washi & Sumi redesign
 
 - New look and default themes: Washi (warm paper, ink text, vermilion accent, mincho
