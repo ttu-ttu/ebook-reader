@@ -88,3 +88,34 @@ class PlanTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class MergeTest(unittest.TestCase):
+    def test_merges_series_written_differently_into_the_biggest(self):
+        books = [
+            book(1, 'ソードアート・オンライン1', 'ソードアート・オンライン', ['川原礫']),
+            book(2, 'ソードアート・オンライン2', 'ソードアート・オンライン', ['川原礫']),
+            book(3, 'ソードアートオンライン3', 'ソードアートオンライン', ['川原 礫']),
+            book(4, 'ＳＡＯ', 'ＳＡＯ', ['川原礫']),
+        ]
+        renames, merges, _ = assign.merge_plan(books)
+        self.assertEqual(renames, {3: 'ソードアート・オンライン'})
+        self.assertEqual(merges, [{'to': 'ソードアート・オンライン', 'from': ['ソードアートオンライン'], 'books': 1}])
+
+    def test_keeps_series_by_other_authors_apart(self):
+        renames, merges, warnings = assign.merge_plan([
+            book(1, 'A 1', 'Bleach', ['久保帯人']),
+            book(2, 'B 1', 'BLEACH', ['松原真琴']),
+        ])
+        self.assertEqual((renames, merges), ({}, []))
+        self.assertEqual(len(warnings), 1)
+
+    def test_books_without_a_series_join_the_merged_name(self):
+        renames, _, changes, _ = assign.full_plan([
+            book(1, '物語 1', '物語', ['著者']),
+            book(2, '物語 2', '物語', ['著者']),
+            book(3, '物 語 3', '物 語', ['著者']),
+            book(4, '物語 4', '', ['著者']),
+        ])
+        self.assertEqual(renames, {3: '物語'})
+        self.assertEqual(changes, {4: ('物語', 4.0)})

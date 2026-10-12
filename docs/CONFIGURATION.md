@@ -23,6 +23,7 @@ each reader enters them in Settings → AI, and they sync with their account.
 | `CATALOG_INTERVAL`    | `600`                                                  | Seconds between checks of `metadata.db`; the catalog is rebuilt only when it changed. |
 | `DIFFICULTY_WORKERS`  | `2`                                                    | Processes for difficulty estimates (`difficulty` profile), about 0.5-1 GB of RAM each. |
 | `IMAGE_PREFIX`, `IMAGE_TAG` | `ebook-reader`, `local` | Image names: `<prefix>-{web,services,import,difficulty}:<tag>`. The defaults are built locally (`--build`); for published images use `ghcr.io/<owner>/<repository>` and a version or `latest`, then `docker compose pull`. |
+| `UPDATE_REPO`         | `blankiekun/chimimouryou`                              | GitHub repository the admin panel's updater (`ebook-update`, deploy.sh installs) checks and installs from: the newest commit on `main`. |
 | `COMPOSE_PROFILES`    | empty                                                  | Optional services to run: `import` (adding books to Calibre), `difficulty` (difficulty estimates), e.g. `import,difficulty`. Same as passing `--profile`. |
 
 ## Build-time settings of the app (`VITE_*`)
@@ -85,6 +86,9 @@ code are the same container paths.
 | `IMPORT_STATE_DIR`    | `/data/state/import` (queue, `jobs.json`)  | import |
 | `IMPORT_HOST`, `IMPORT_PORT` | `0.0.0.0`, `8767`                   | import |
 | `CALIBRE_WRITE_LOCK`  | `/data/state/import/calibre-write.lock`    | import, `assign-series.py` |
+| `CALIBRE_BACKUP_DIR`  | `/data/state/import/backups` (last 5 `metadata.db` copies) | `assign-series.py --apply` |
+| `CALIBRE_DEBUG`, `ASSIGN_SERIES` | `calibre-debug`, `/app/assign-series.py` | import (admin panel → Tools → Series) |
+| `UPDATE_STATE_DIR`    | `/data/state/update` (`request.json`, `status.json`, `updater`) | account, `ebook-update` on the host |
 | `CALIBRE_CATALOG`     | `/data/state/catalog/catalog.json`         | difficulty |
 | `JITEN_STATE_DIR`     | `/data/state/difficulty` (results, `frequency-dictionary.zip`) | difficulty |
 | `JITEN_WORKERS`       | `DIFFICULTY_WORKERS`                       | difficulty |

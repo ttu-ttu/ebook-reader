@@ -20,6 +20,8 @@ export interface AccountUser {
   /** Admins manage accounts and have every permission; the server enforces both. */
   admin?: boolean;
   permissions?: AccountPermission[];
+  /** Signed in with the first admin's generated password, not changed yet. */
+  temporaryPassword?: boolean;
 }
 
 /** What admins can grant (account/service.py PERMISSIONS). */
@@ -139,8 +141,14 @@ export async function signOut() {
 }
 
 /** Also signs out the account's other sessions. */
-export function changePassword(current: string, next: string) {
-  return post('password', { current, new: next });
+export async function changePassword(current: string, next: string) {
+  await post('password', { current, new: next });
+
+  const user = account$.getValue();
+
+  if (user?.temporaryPassword) {
+    setUser({ ...user, temporaryPassword: false });
+  }
 }
 
 /** Accounts on this server, for the admin panel. */
@@ -207,12 +215,39 @@ export function isInsecurePage() {
 }
 
 /** Whether this server allows accounts on plain-HTTP pages (ALLOW_HTTP_ACCOUNTS, off by default). */
-export async function httpAccountsAllowed() {
+/** httpAccounts: sign-in works over plain HTTP; initialAdmin: the first admin hasn't signed in yet. */
+export async function accountConfig(): Promise<{ httpAccounts: boolean; initialAdmin: boolean }> {
   try {
     const response = await fetch(`${accountApiUrl}config`, { cache: 'no-store' });
+    const config = response.ok ? await response.json() : {};
 
-    return response.ok && !!(await response.json()).httpAccounts;
+    return { httpAccounts: !!config.httpAccounts, initialAdmin: !!config.initialAdmin };
   } catch {
-    return false;
+    return { httpAccounts: false, initialAdmin: false };
   }
+}
+
+export interface UpdateState {
+  /** Written by ebook-update on the server. */
+  status: { state: 'running' | 'done' | 'failed'; ref: string; at: number; message: string } | null;
+  /** The GitHub repository it updates from; empty when it isn't installed. */
+  updater: string;
+  /** A request is waiting for the updater to pick it up. */
+  requested: boolean;
+}
+
+export async function getUpdateState(): Promise<UpdateState> {
+  const response = await fetch(`${accountApiUrl}admin/update`, { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+
+  return data;
+}
+
+/** Asks the server's updater to deploy this commit. */
+export function requestUpdate(ref: string) {
+  return post<UpdateState>('admin/update', { ref });
 }

@@ -87,3 +87,36 @@ export async function waitForImportJobs(
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
 }
+
+/** assign-series.py's report (admin panel → Tools → Series). */
+export interface SeriesReport {
+  /** Books without a series that get one */
+  assigned: number;
+  series: { name: string; volumes: number[] }[];
+  /** Books moved from a duplicate series into the main spelling */
+  merged: number;
+  merges: { to: string; from: string[]; books: number }[];
+  warnings: string[];
+  /** Applied: metadata.db was backed up there first */
+  written?: boolean;
+  backup?: string;
+}
+
+/** Checks the library's series, or applies the changes when `apply` (admins only). */
+export async function checkSeries(apply: boolean): Promise<SeriesReport> {
+  const response = await fetch(`${apiUrl}series`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apply })
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 502
+        ? 'The import service is not running (add import to COMPOSE_PROFILES)'
+        : await errorMessage(response)
+    );
+  }
+
+  return response.json();
+}

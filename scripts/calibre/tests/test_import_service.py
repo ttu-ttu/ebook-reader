@@ -18,6 +18,7 @@ from http.server import ThreadingHTTPServer
 STATE = tempfile.mkdtemp()
 FAKE_CALIBREDB = os.path.join(STATE, 'calibredb')
 FAKE_BUILDER = os.path.join(STATE, 'builder')
+FAKE_CALIBRE_DEBUG = os.path.join(STATE, 'calibre-debug')
 BUILDS = os.path.join(STATE, 'builds.log')
 ADDS = os.path.join(STATE, 'adds.log')
 
@@ -36,10 +37,18 @@ elif 'list' in args:
 """)
 with open(FAKE_BUILDER, 'w') as f:
     f.write(f"#!/bin/sh\necho build >> {BUILDS}\n")
+with open(FAKE_CALIBRE_DEBUG, 'w') as f:
+    f.write(f"""#!{sys.executable}
+import json, sys
+print('calibre noise')
+print(json.dumps({{'assigned': 2, 'merged': 1, 'written': '--apply' in sys.argv}}))
+""")
+os.chmod(FAKE_CALIBRE_DEBUG, 0o755)
 os.chmod(FAKE_CALIBREDB, 0o755)
 os.chmod(FAKE_BUILDER, 0o755)
 os.environ.update(IMPORT_STATE_DIR=os.path.join(STATE, 'state'), CALIBREDB=FAKE_CALIBREDB,
-                  CATALOG_BUILDER=FAKE_BUILDER, CALIBRE_LIBRARY=STATE)
+                  CATALOG_BUILDER=FAKE_BUILDER, CALIBRE_LIBRARY=STATE,
+                  CALIBRE_DEBUG=FAKE_CALIBRE_DEBUG)
 
 spec = importlib.util.spec_from_file_location(
     'import_service', os.path.join(os.path.dirname(__file__), '..', 'import', 'service.py'))
@@ -99,6 +108,13 @@ class ImportServiceTest(unittest.TestCase):
                          ('added', 42, 'テスト', '本.epub'))
         self.assertTrue(os.path.exists(BUILDS))
         self.assertEqual(os.listdir(service.queue_dir()), [])
+
+    def test_series_check_and_apply(self):
+        status, body = self.request('/series', b'{}')
+        self.assertEqual((status, body['assigned'], body['written']), (200, 2, False))
+        status, body = self.request('/series', b'{"apply": true}')
+        self.assertEqual((status, body['written']), (200, True))
+        self.assertEqual(self.request('/series', b'{}', origin=False)[0], 403)
 
     def test_duplicate(self):
         _, body = self.request('/add?name=a.epub', epub('dup'))

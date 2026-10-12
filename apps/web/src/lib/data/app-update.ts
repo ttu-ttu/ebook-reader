@@ -1,0 +1,85 @@
+/**
+ * @license BSD-3-Clause
+ * Copyright (c) 2026, ッツ Reader Authors
+ * All rights reserved.
+ */
+
+/**
+ * Compares the deployed version (/version.txt) with the main branch on GitHub,
+ * for the admin panel's Updates tool. The update itself is done by the server's
+ * ebook-update (account.ts requestUpdate). Not part of upstream.
+ */
+
+export const defaultUpdateRepo = 'blankiekun/chimimouryou';
+
+export interface UpdateCheck {
+  /** Deployed commit; empty if version.txt doesn't name one (e.g. a plain docker build). */
+  current: string;
+  /** Deployed with uncommitted changes. */
+  dirty: boolean;
+  /** Newest commit on main. */
+  latest: string;
+  /** behind: main has newer commits; unknown: the deployed commit isn't on GitHub. */
+  state: 'current' | 'behind' | 'ahead' | 'diverged' | 'unknown';
+  /** Commits on main that aren't deployed, newest first. */
+  commits: { sha: string; message: string }[];
+}
+
+/** The commit in version.txt (deploy.sh: git describe --always --dirty). */
+export function commitOfVersion(version: string) {
+  const match = version.trim().match(/(?:^|-g)([0-9a-f]{7,40})(?:-dirty)?$/);
+
+  return { commit: match ? match[1] : '', dirty: version.trim().endsWith('-dirty') };
+}
+
+async function github(repo: string, path: string) {
+  const response = await fetch(`https://api.github.com/repos/${repo}/${path}`, {
+    headers: { Accept: 'application/vnd.github+json' },
+    cache: 'no-store'
+  });
+
+  if (response.status === 404) {
+    return undefined;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 403 || response.status === 429
+        ? 'GitHub rate limit reached; try again in a while'
+        : `GitHub answered HTTP ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+export async function checkForUpdate(repo: string, version: string): Promise<UpdateCheck> {
+  const { commit: current, dirty } = commitOfVersion(version);
+  const compare = current ? await github(repo, `compare/${current}...main`) : undefined;
+
+  if (!compare) {
+    const head = await github(repo, 'commits/main');
+
+    if (!head) {
+      throw new Error(`${repo} has no main branch on GitHub`);
+    }
+
+    return { current, dirty, latest: head.sha, state: 'unknown', commits: [] };
+  }
+
+  const commits: { sha: string; commit: { message: string } }[] = compare.commits ?? [];
+  // GitHub describes main relative to the deployed commit.
+  const state = ({ identical: 'current', ahead: 'behind', behind: 'ahead' } as const)[
+    compare.status as 'identical' | 'ahead' | 'behind'
+  ];
+
+  return {
+    current,
+    dirty,
+    latest: commits.length ? commits[commits.length - 1].sha : current,
+    state: state ?? 'diverged',
+    commits: commits
+      .map((entry) => ({ sha: entry.sha, message: entry.commit.message.split('\n')[0] }))
+      .reverse()
+  };
+}

@@ -10,6 +10,10 @@ rebuilt so the books show up in the library.
 
   POST add?name=<file name>   body: the file   -> {"job": {...}}
   GET  jobs?ids=a,b                            -> {"jobs": [...]} (own jobs only)
+  POST series   {"apply": bool}                -> assign-series.py's plan (admins
+       only, checked by nginx): books without a series put into series, duplicate
+       series merged; with apply, metadata.db is backed up, written and the
+       catalog rebuilt
 
 Job states: queued, adding, added (calibreId, title), duplicate, failed (error).
 Standard library only. Not part of upstream.
@@ -48,6 +52,9 @@ MAX_PENDING_PER_ACCOUNT = 100
 # Finished jobs are kept this long so the uploader can read the outcome.
 KEEP_FINISHED_SECONDS = 7 * 24 * 3600
 ADD_TIMEOUT_SECONDS = 600
+CALIBRE_DEBUG = os.environ.get('CALIBRE_DEBUG', 'calibre-debug')
+ASSIGN_SERIES = os.environ.get('ASSIGN_SERIES', '/app/assign-series.py')
+series_busy = threading.Lock()
 
 lock = threading.Lock()
 work = threading.Condition(lock)
@@ -201,6 +208,26 @@ def worker():
             finish_batch()
 
 
+def run_series(apply: bool) -> dict:
+    """Runs assign-series.py through Calibre's Python; it takes the write lock itself."""
+    if not series_busy.acquire(blocking=False):
+        raise ApiError(409, 'A series check is already running')
+    try:
+        result = subprocess.run(
+            [CALIBRE_DEBUG, '-e', ASSIGN_SERIES, '--', '--json'] + (['--apply'] if apply else []),
+            capture_output=True, text=True, timeout=ADD_TIMEOUT_SECONDS, check=False)
+    finally:
+        series_busy.release()
+    try:
+        report = json.loads(result.stdout.strip().splitlines()[-1])
+    except (ValueError, IndexError) as error:
+        print(f'assign-series: {result.stderr.strip()[-500:]}', file=sys.stderr)
+        raise ApiError(500, 'The series check failed; see the import service log') from error
+    if report.get('written'):
+        threading.Thread(target=rebuild_catalog, daemon=True).start()
+    return report
+
+
 def public_job(job: dict) -> dict:
     # Added books count as "adding" until the catalog lists them.
     state = 'adding' if job['state'] == 'unlisted' else job['state']
@@ -253,15 +280,29 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802
         url = urlparse(self.path)
-        if url.path != '/add':
-            return self.send(404, {'error': 'not found'})
-        self.handle_api(lambda: self.add(url))
+        if url.path == '/add':
+            return self.handle_api(lambda: self.add(url))
+        if url.path == '/series':
+            return self.handle_api(self.series)
+        return self.send(404, {'error': 'not found'})
 
-    def add(self, url):
-        account = self.account()
+    def same_origin(self):
         scheme = 'http' if ALLOW_HTTP and self.headers.get('X-Forwarded-Proto') == 'http' else 'https'
         if self.headers.get('Origin') != f"{scheme}://{self.headers.get('Host', '')}":
             raise ApiError(403, 'Request from another site')
+
+    def series(self):
+        self.account()
+        self.same_origin()
+        try:
+            body = json.loads(self.rfile.read(min(int(self.headers.get('Content-Length') or 0), 1024)) or b'{}')
+        except ValueError as error:
+            raise ApiError(400, 'Invalid request') from error
+        return run_series(bool(body.get('apply')))
+
+    def add(self, url):
+        account = self.account()
+        self.same_origin()
         name = clean_name(parse_qs(url.query).get('name', [''])[0])
         ext = name.rsplit('.', 1)[-1].lower() if '.' in name else ''
         if ext not in FORMATS:

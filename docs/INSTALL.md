@@ -23,8 +23,12 @@ so both images are large; leave them out unless you want those features.
 git clone <this repository> ebook-reader && cd ebook-reader
 cp .env.example .env        # set LIBRARY_PATH, PUID/PGID, HTTP_PORT
 docker compose up -d --build
-docker compose exec account ebook-account add NAME --admin
+docker compose exec account ebook-account initial-admin
 ```
+
+The first start creates the admin account `admin` with a temporary password;
+`ebook-account initial-admin` (or `docker compose logs account`) shows it until
+that account has signed in. Change it in Settings → Account afterwards.
 
 - `LIBRARY_PATH` is the Calibre library folder (the one with `metadata.db`).
   `PUID`/`PGID` must be able to read it; the catalog also writes `cover.jpg`
@@ -121,11 +125,22 @@ copies the working tree to the server, builds there and restarts the stack
 
 On the server the source goes to `/opt/ebook-reader` and the settings to
 `/etc/ebook-reader`; `ebook-compose` (= `docker compose` for the stack),
-`ebook-account` and `jiten-difficulty-import` are installed in `/usr/local/bin`.
+`ebook-account`, `jiten-difficulty-import` and `ebook-update` are installed in
+`/usr/local/bin`. The end of the output shows the first admin's temporary
+password until that account has signed in.
 Roll back with
 `for i in $(ebook-compose config --images); do docker image tag "${i%:*}:previous" "$i"; done; ebook-compose up -d`.
 
 ## Updating
+
+Servers set up with `scripts/deploy.sh` (systemd, an absolute `DATA_PATH`) can
+update from the admin panel: Tools → Updates compares the server with the main
+branch of `UPDATE_REPO` on GitHub, and "Update" makes `ebook-update` (a systemd
+path unit installed by the deploy) download that commit, rebuild the images and
+restart the stack. A failed build keeps the running version; the previous images
+stay tagged `:previous`. Its log: `journalctl -u ebook-update`.
+
+Otherwise:
 
 ```sh
 git pull && docker compose up -d --build

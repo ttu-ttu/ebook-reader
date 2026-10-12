@@ -141,6 +141,9 @@ Signed in on `$S` as `qa-admin`.
 | ADM-8 | As `qa-desktop` without permissions: library | No "Make series", no difficulty button or admin panel link; importing a file into the Calibre source says the account may not add books |
 | ADM-9 | As `qa-desktop` with `series`: select one book | "Make series" shown and works |
 | ADM-10 | `GET $S/account/api/admin/users` as `qa-desktop` | 403 `Only admins can do this` |
+| ADM-11 | Admin panel → Tools → Series → "Check library" | Counts, merged series and warnings; nothing written. `POST $S/calibre/import/api/series` as `qa-desktop` → 403 |
+| ADM-12 | Admin panel → Tools → Updates | Running commit and how it compares with main; "Update" only when the updater is installed and main is newer |
+| ADM-13 | Fresh `DATA_PATH` (scratch stack) | Deploy output and `ebook-account initial-admin` show `admin` and a password; the sign-in form mentions it; after signing in it is no longer shown and Settings → Account asks to change the password |
 
 ## 8. Access rules
 

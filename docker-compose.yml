@@ -2,7 +2,8 @@
 #   docker compose up -d                          reader, accounts, catalog
 #   docker compose --profile import up -d         + adding books to Calibre
 #   docker compose --profile difficulty up -d     + difficulty estimates
-# First admin: docker compose exec account ebook-account add NAME --admin
+# First admin: the account service creates `admin` with a temporary password, shown by
+#   docker compose exec account ebook-account initial-admin   (until it signs in)
 # See docs/INSTALL.md (HTTPS, reverse proxies, backups). Builds the images here
 # unless IMAGE_PREFIX/IMAGE_TAG name published ones (docker compose pull).
 name: ebook-reader

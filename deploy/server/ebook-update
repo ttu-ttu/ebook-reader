@@ -1,0 +1,110 @@
+#!/bin/bash
+# Updates a stack installed by scripts/deploy.sh to a commit of the GitHub
+# repository, when an admin asks for it in the admin panel (Tools → Updates).
+#
+#   ebook-update install   installs the systemd units (deploy.sh runs it)
+#   ebook-update           handles a waiting request (run by ebook-update.service)
+#
+# The account service writes DATA_PATH/state/update/request.json; the path unit
+# starts this, which downloads the commit, swaps it into /opt/ebook-reader,
+# builds the images and restarts the stack like deploy.sh. If the build fails
+# the running version stays. Progress goes to status.json for the admin panel.
+# DATA_PATH (absolute) and UPDATE_REPO come from /etc/ebook-reader/env.
+set -euo pipefail
+
+APP=/opt/ebook-reader
+CONFIG=/etc/ebook-reader
+COMMANDS="ebook-compose ebook-account jiten-difficulty-import ebook-update"
+
+setting() { sed -n "s/^$1=//p" "$CONFIG/env" | tail -n 1 | tr -d '"'"'"; }
+
+data=$(setting DATA_PATH)
+repo=$(setting UPDATE_REPO)
+repo=${repo:-blankiekun/chimimouryou}
+case "$data" in
+  /*) ;;
+  *) echo "ebook-update needs an absolute DATA_PATH in $CONFIG/env" >&2; exit 1 ;;
+esac
+if ! [[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+  echo "UPDATE_REPO must look like owner/repository" >&2
+  exit 1
+fi
+dir=$data/state/update
+
+if [ "${1:-}" = install ]; then
+  cat > /etc/systemd/system/ebook-update.service <<EOF
+[Unit]
+Description=ebook-reader update requested in the admin panel
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ebook-update
+EOF
+  cat > /etc/systemd/system/ebook-update.path <<EOF
+[Unit]
+Description=Watch for ebook-reader update requests
+
+[Path]
+PathExists=$dir/request.json
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl daemon-reload
+  systemctl enable ebook-update.path >/dev/null 2>&1
+  systemctl restart ebook-update.path
+  # The admin panel only offers updates when this marker exists.
+  printf '%s\n' "$repo" > "$dir/updater"
+  chmod 644 "$dir/updater"
+  exit 0
+fi
+
+[ -f "$dir/request.json" ] || exit 0
+ref=$(sed -n 's/.*"ref": *"\([0-9a-f]\{7,40\}\)".*/\1/p' "$dir/request.json")
+rm -f "$dir/request.json"
+
+# Messages are fixed strings (no quotes), so this stays valid JSON.
+status() {
+  printf '{"state": "%s", "ref": "%s", "at": %s, "message": "%s"}\n' \
+    "$1" "$ref" "$(date +%s)" "$2" > "$dir/status.json.tmp"
+  chmod 644 "$dir/status.json.tmp"
+  mv "$dir/status.json.tmp" "$dir/status.json"
+}
+
+if [ -z "$ref" ]; then
+  status failed "The request did not name a commit"
+  exit 0
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+trap 'status failed "Update failed; see journalctl -u ebook-update on the server"' ERR
+
+status running "Downloading"
+mkdir "$work/src"
+curl -fsSL "https://codeload.github.com/$repo/tar.gz/$ref" | tar -xz -C "$work/src" --strip-components=1
+
+status running "Building"
+compose=/usr/local/bin/ebook-compose
+for image in $($compose config --images | sort -u); do
+  docker image tag "$image" "${image%:*}:previous" 2>/dev/null || true
+done
+rm -rf "$APP.previous"
+mv "$APP" "$APP.previous"
+mv "$work/src" "$APP"
+export VERSION=${ref:0:8}
+if ! $compose build --quiet; then
+  rm -rf "$APP"
+  mv "$APP.previous" "$APP"
+  status failed "The new version did not build; the running one stays"
+  exit 1
+fi
+
+status running "Restarting"
+$compose up -d --remove-orphans
+docker image prune -f >/dev/null
+rm -rf "$APP.previous"
+for command in $COMMANDS; do
+  install -m 755 "$APP/deploy/server/$command" "/usr/local/bin/$command"
+done
+status done "Updated"

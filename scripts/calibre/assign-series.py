@@ -1,22 +1,30 @@
 #!/usr/bin/env python3
-"""Puts Calibre books without a series into the series their title names.
+"""Puts Calibre books without a series into the series their title names, and
+merges series whose names differ only in width, case, spaces or separators.
 
-Run as the library owner, through Calibre's Python, e.g. in the import container
-(back up metadata.db first):
+Run as the library owner, through Calibre's Python, e.g. in the import container,
+or from the admin panel (Tools → Series, through the import service):
 
-  docker compose exec import calibre-debug -e /app/assign-series.py -- [--apply]
+  docker compose exec import calibre-debug -e /app/assign-series.py -- [--apply] [--json]
 
-Without --apply it only prints what it would change. Volume numbers are read
+Without --apply it only prints what it would change; --apply first copies
+metadata.db to the import state folder (backups/, the last few kept). --json
+prints the plan as JSON. Volume numbers are read
 from titles like the catalog does (`split_volume` in build-catalog.py). A book
 joins an existing Calibre series whose name matches its title's base (width and
 case ignored, so ～ and ~ match); otherwise two or more books with the same base
 form a new series, named as written in their titles. Books that already have a
-series, or no volume number in the title, are left alone. It takes the import
+series, or no volume number in the title, are left alone. Duplicate series are
+merged into the variant with the most books, unless their authors differ. It takes the import
 queue's lock (calibre-import), so it never writes while a book is being added.
 Not part of upstream.
 """
 import fcntl
+import glob
 import importlib.machinery
+import json
+import shutil
+import time
 import importlib.util
 import os
 import re
@@ -26,6 +34,8 @@ from collections import Counter, defaultdict
 
 LIBRARY = os.environ.get('CALIBRE_LIBRARY', '/library')
 WRITE_LOCK = os.environ.get('CALIBRE_WRITE_LOCK', '/data/state/import/calibre-write.lock')
+BACKUP_DIR = os.environ.get('CALIBRE_BACKUP_DIR', '/data/state/import/backups')
+KEEP_BACKUPS = 5
 SEPARATORS = ' 　-‐－:：・,、'
 PART_MIDDLE = re.compile(r'中(?:巻)?[\s)）】\]]*$')
 PART_LAST = re.compile(r'下(?:巻)?[\s)）】\]]*$')
@@ -95,6 +105,46 @@ def other_authors(author_lists) -> list[int]:
     return [i for i, names in known.items() if not any(related(name) for name in names)]
 
 
+def merge_key(name: str) -> str:
+    return re.sub(r'[\s' + re.escape(SEPARATORS) + ']', '', key(name))
+
+
+def authors_related(a: set[str], b: set[str]) -> bool:
+    """Unknown authors don't keep series apart; shortened names (定規, 白石定規) match."""
+    return not a or not b or any(
+        x == y or (min(len(x), len(y)) >= 2 and (x in y or y in x)) for x in a for y in b)
+
+
+def merge_plan(books):
+    """Series written differently (width, case, spaces, separators) that share an author.
+    Returns ({id: series}, [{'to', 'from', 'books'}], warnings)."""
+    variants = defaultdict(lambda: defaultdict(list))
+    for book in books:
+        if book['series']:
+            variants[merge_key(book['series'])][book['series']].append(book)
+
+    renames, merges, warnings = {}, [], []
+    for names in variants.values():
+        if len(names) < 2:
+            continue
+        target = max(names, key=lambda name: (len(names[name]), name))
+        authors = lambda members: set().union(*(author_keys(b['authors']) for b in members))  # noqa: E731
+        target_authors = authors(names[target])
+        merged = []
+        for name, members in names.items():
+            if name == target:
+                continue
+            if not authors_related(target_authors, authors(members)):
+                warnings.append(f'{name}: kept apart from {target} (other author)')
+                continue
+            merged.append(name)
+            renames.update({b['id']: target for b in members})
+        if merged:
+            merges.append({'to': target, 'from': sorted(merged),
+                           'books': sum(len(names[name]) for name in merged)})
+    return renames, merges, warnings
+
+
 def plan(books):
     """books: dicts with id, title, series, authors. Returns ({id: (series, index)}, warnings)."""
     existing = {key(b['series']): b['series'] for b in books if b['series']}
@@ -147,8 +197,39 @@ def plan(books):
     return changes, warnings
 
 
+def backup(library: str) -> str:
+    """Copies metadata.db to BACKUP_DIR, keeping the last KEEP_BACKUPS copies."""
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    target = os.path.join(BACKUP_DIR, time.strftime('metadata-%Y%m%d-%H%M%S.db'))
+    shutil.copy2(os.path.join(library, 'metadata.db'), target)
+    for old in sorted(glob.glob(os.path.join(BACKUP_DIR, 'metadata-*.db')))[:-KEEP_BACKUPS]:
+        os.remove(old)
+    return target
+
+
+def full_plan(books):
+    """Merges first, so books without a series join the merged names."""
+    renames, merges, warnings = merge_plan(books)
+    merged = [{**b, 'series': renames.get(b['id'], b['series'])} for b in books]
+    changes, more_warnings = plan(merged)
+    return renames, merges, changes, warnings + more_warnings
+
+
+def report(renames, merges, changes, warnings) -> dict:
+    by_series = defaultdict(list)
+    for name, number in changes.values():
+        by_series[name].append(number)
+    return {
+        'assigned': len(changes),
+        'series': [{'name': name, 'volumes': sorted(numbers)} for name, numbers in sorted(by_series.items())],
+        'merged': len(renames),
+        'merges': merges,
+        'warnings': warnings,
+    }
+
+
 def main(argv):
-    apply = '--apply' in argv
+    apply, as_json = '--apply' in argv, '--json' in argv
     from calibre.library import db  # calibre-debug provides it
 
     with open(WRITE_LOCK, 'a') as lock:
@@ -159,23 +240,29 @@ def main(argv):
         authors = api.all_field_for('authors', ids)
         books = [{'id': i, 'title': titles[i], 'series': series[i] or '', 'authors': list(authors[i])}
                  for i in ids]
-        changes, warnings = plan(books)
+        renames, merges, changes, warnings = full_plan(books)
+        result = report(renames, merges, changes, warnings)
 
-        by_series = defaultdict(list)
-        for book_id, (name, number) in changes.items():
-            by_series[name].append((number, book_id))
-        for name in sorted(by_series):
-            volumes = sorted(by_series[name])
-            print(f'{name}: {len(volumes)} books, volumes {", ".join(f"{n:g}" for n, _ in volumes)}')
+        if apply and (changes or renames):
+            result['backup'] = backup(LIBRARY)
+            api.set_field('series', {**renames, **{i: name for i, (name, _) in changes.items()}})
+            api.set_field('series_index', {i: number for i, (_, number) in changes.items()})
+            result['written'] = True
+
+        if as_json:
+            print(json.dumps(result, ensure_ascii=False))
+            return
+        for merge in merges:
+            print(f"{merge['to']}: merged {', '.join(merge['from'])} ({merge['books']} books)")
+        for entry in result['series']:
+            print(f"{entry['name']}: {len(entry['volumes'])} books, volumes "
+                  f"{', '.join(f'{n:g}' for n in entry['volumes'])}")
         for warning in warnings:
             print(f'warning: {warning}')
-        print(f'{len(changes)} books in {len(by_series)} series'
+        print(f"{len(changes)} books into {len(result['series'])} series, {len(renames)} books in merged series"
               + ('' if apply else ' (dry run; add --apply to write)'))
-
-        if apply and changes:
-            api.set_field('series', {i: name for i, (name, _) in changes.items()})
-            api.set_field('series_index', {i: number for i, (_, number) in changes.items()})
-            print('written')
+        if result.get('written'):
+            print(f"written (backup: {result['backup']})")
 
 
 if __name__ == '__main__':

@@ -15,6 +15,7 @@ class AccountServiceTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         service.DATA_DIR = os.path.join(self.tmp.name, 'data')
+        service.STATE_DIR = self.tmp.name
         service.db = service.Database(os.path.join(self.tmp.name, 'accounts.db'))
 
     def tearDown(self):
@@ -67,6 +68,37 @@ class AccountServiceTest(unittest.TestCase):
             thread.join()
         failures = service.db.query('SELECT failures FROM login_throttle WHERE key = ?', ('user:race',))
         self.assertEqual(failures[0]['failures'], 40)
+
+    def test_initial_admin_until_first_sign_in_and_password_change(self):
+        record = service.ensure_initial_admin()
+        user = service.find_user('admin')
+        self.assertTrue(user['is_admin'])
+        self.assertTrue(service.verify_password(record['password'], user['password_hash'])[0])
+        self.assertIn(record['password'], service.initial_admin_banner(record))
+        self.assertEqual(oct(os.stat(service.initial_admin_path()).st_mode & 0o777), '0o600')
+        # Restarting keeps the same account and password.
+        self.assertEqual(service.ensure_initial_admin(), record)
+
+        service.initial_admin_signed_in(user['id'])
+        self.assertEqual(service.initial_admin_banner(service.initial_admin()), '')
+        self.assertTrue(service.initial_admin()['signedIn'])
+        service.set_password(user['id'], 'a new long password', 'admin')
+        self.assertIsNone(service.initial_admin())
+
+    def test_no_initial_admin_when_accounts_exist(self):
+        service.create_user('alice', 'long enough', admin=True)
+        self.assertIsNone(service.ensure_initial_admin())
+        self.assertIsNone(service.find_user('admin'))
+
+    def test_update_state(self):
+        service.UPDATE_DIR = self.tmp.name
+        self.assertEqual(service.update_state(), {'status': None, 'updater': '', 'requested': False})
+        with open(os.path.join(self.tmp.name, 'updater'), 'w') as f:
+            f.write('owner/repo\n')
+        with open(os.path.join(self.tmp.name, 'status.json'), 'w') as f:
+            f.write('{"state": "done", "ref": "abcdef1"}')
+        self.assertEqual(service.update_state()['updater'], 'owner/repo')
+        self.assertEqual(service.update_state()['status']['state'], 'done')
 
     def test_sessions(self):
         user_id = service.create_user('alice', 'long enough')

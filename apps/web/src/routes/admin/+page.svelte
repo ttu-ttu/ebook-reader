@@ -4,6 +4,8 @@
   import { map, share } from 'rxjs';
   import Fa from 'svelte-fa';
   import AppHeader from '$lib/components/app-header/app-header.svelte';
+  import SeriesTool from '$lib/components/admin/series-tool.svelte';
+  import UpdateTool from '$lib/components/admin/update-tool.svelte';
   import DifficultyPanel from '$lib/components/book-card/difficulty-panel.svelte';
   import SettingsAdmin from '$lib/components/settings/settings-admin.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
@@ -86,9 +88,19 @@
         {#if tab === 'accounts' && user?.admin}
           <SettingsAdmin self={user} />
         {:else if tab === 'tools'}
-          <SettingsItemGroup title="Difficulty estimates" wide>
-            <DifficultyPanel />
-          </SettingsItemGroup>
+          {#if user?.admin}
+            <SettingsItemGroup title="Updates" wide>
+              <UpdateTool />
+            </SettingsItemGroup>
+            <SettingsItemGroup title="Series" wide>
+              <SeriesTool />
+            </SettingsItemGroup>
+          {/if}
+          {#if hasPermission(user, 'difficulty')}
+            <SettingsItemGroup title="Difficulty estimates" wide>
+              <DifficultyPanel />
+            </SettingsItemGroup>
+          {/if}
         {/if}
       </div>
     {/if}

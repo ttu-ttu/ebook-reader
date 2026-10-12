@@ -25,12 +25,18 @@ HTTP API (bound to localhost, proxied by nginx at /account/api/):
   POST admin/set-admin {"username", "admin"}
   POST admin/permissions {"username", "permissions": [...]}
   POST admin/remove   {"username"}; its data folder is kept
+  GET  admin/update   the updater's state (admins only)
+  POST admin/update   {"ref": "<commit>"}: asks the server's updater (ebook-update,
+       a systemd timer on the host) to deploy that commit of the GitHub repository
 
-There is no self-service sign-up. Admins manage accounts in Settings → Account,
-or on the server:
+There is no self-service sign-up. On an empty database the service creates the
+admin account `admin` with a random temporary password, printed in its log and by
+`ebook-account initial-admin` (deploy.sh shows it) until that account signs in.
+Admins manage accounts in the admin panel, or on the server:
   ebook-account add USERNAME [--admin] | passwd USERNAME | remove USERNAME
   ebook-account admin USERNAME on|off | list
   ebook-account permissions USERNAME import,series,difficulty  ('' for none)
+  ebook-account initial-admin   the first admin's temporary password, until it signs in
 
 Security notes:
 - Passwords: scrypt (N=2^15, r=8, p=3, OWASP minimum), 16-byte salt, parameters
@@ -48,6 +54,7 @@ Security notes:
   only, so a cookie planted over HTTP can't take over an HTTPS session.
 """
 import base64
+import fcntl
 import getpass
 import hashlib
 import hmac
@@ -74,6 +81,10 @@ PORT = int(os.environ.get('ACCOUNT_PORT', '8766'))
 # 0.0.0.0 in Docker, where nginx runs in another container.
 HOST = os.environ.get('ACCOUNT_HOST', '127.0.0.1')
 MIN_FREE_BYTES = int(os.environ.get('MIN_FREE_MB', '1024')) * 1024 * 1024
+# Shared with ebook-update on the host: request.json in; status.json, and the
+# installed marker `updater` (holding the GitHub repository), out.
+UPDATE_DIR = os.environ.get('UPDATE_STATE_DIR', '/data/state/update')
+COMMIT_PATTERN = re.compile(r'[0-9a-f]{7,40}')
 
 # nginx serves DATA_DIR/<account id> with `root`, so files live under the URI path.
 SYNC_PATH = os.path.join('account', 'sync')
@@ -281,9 +292,85 @@ def create_user(username: str, password: str, admin: bool = False) -> str:
     return user_id
 
 
+INITIAL_ADMIN = 'admin'
+
+
+def initial_admin_path() -> str:
+    return os.path.join(STATE_DIR, 'initial-admin.json')
+
+
+def write_private_json(path: str, data: dict):
+    tmp = f'{path}.tmp'
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w', encoding='utf-8') as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
+
+
+def initial_admin():
+    """{'id', 'username', 'password'} until the first admin signs in, then
+    {'id', 'username', 'signedIn': True} until it changes the password; else None."""
+    try:
+        with open(initial_admin_path(), encoding='utf-8') as f:
+            record = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return record if db.query('SELECT 1 FROM users WHERE id = ?', (record.get('id'),)) else None
+
+
+def ensure_initial_admin():
+    """On an empty database, creates INITIAL_ADMIN with a random temporary password."""
+    os.makedirs(STATE_DIR, exist_ok=True)
+    with open(initial_admin_path() + '.lock', 'a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if not db.query('SELECT 1 FROM users LIMIT 1'):
+            password = secrets.token_urlsafe(12)
+            user_id = create_user(INITIAL_ADMIN, password, admin=True)
+            write_private_json(initial_admin_path(), {'id': user_id, 'username': INITIAL_ADMIN, 'password': password})
+    return initial_admin()
+
+
+def initial_admin_signed_in(user_id: str):
+    record = initial_admin()
+    if record and record['id'] == user_id and 'password' in record:
+        write_private_json(initial_admin_path(), {'id': user_id, 'username': record['username'], 'signedIn': True})
+
+
+def clear_initial_admin(user_id: str):
+    """The temporary password is gone once the account's password changes."""
+    record = initial_admin()
+    if record and record['id'] == user_id:
+        os.remove(initial_admin_path())
+
+
+def initial_admin_banner(record) -> str:
+    if not record or 'password' not in record:
+        return ''
+    return ('First start: sign in as the admin with this temporary password, then change it\n'
+            f"  username: {record['username']}\n  password: {record['password']}\n"
+            '(shown until that account signs in for the first time)')
+
+
+def update_state() -> dict:
+    """What ebook-update reported: status (state running|done|failed, ref, message),
+    its repository if it is installed (updater) and whether a request waits for it."""
+    try:
+        with open(os.path.join(UPDATE_DIR, 'status.json'), encoding='utf-8') as f:
+            status = json.load(f)
+    except (OSError, ValueError):
+        status = None
+    try:
+        with open(os.path.join(UPDATE_DIR, 'updater'), encoding='utf-8') as f:
+            updater = f.read().strip()
+    except OSError:
+        updater = ''
+    return {'status': status, 'updater': updater,
+            'requested': os.path.exists(os.path.join(UPDATE_DIR, 'request.json'))}
+
+
 def set_password(user_id: str, password: str, username: str):
     """Sets a new password and signs out every session of the account."""
     check_new_password(password, username)
+    clear_initial_admin(user_id)
     db.run(
         ('UPDATE users SET password_hash = ?, password_changed = ? WHERE id = ?',
          (hash_password(password), int(time.time()), user_id)),
@@ -634,10 +721,15 @@ class Handler(BaseHTTPRequestHandler):
         return 200, {}, {}
 
     def get_config(self):
-        return 200, {'httpAccounts': ALLOW_HTTP}, {}
+        record = initial_admin()
+        return 200, {'httpAccounts': ALLOW_HTTP, 'initialAdmin': bool(record and 'password' in record)}, {}
+
+    def me(self, user) -> dict:
+        record = initial_admin()
+        return {**public_user(user), 'temporaryPassword': bool(record and record['id'] == user['id'])}
 
     def get_me(self):
-        return 200, {'user': public_user(self.require_user())}, {}
+        return 200, {'user': self.me(self.require_user())}, {}
 
     def post_login(self):
         body = self.read_json()
@@ -659,8 +751,9 @@ class Handler(BaseHTTPRequestHandler):
         if rehash:
             db.run(('UPDATE users SET password_hash = ? WHERE id = ?', (hash_password(password), user['id'])))
 
+        initial_admin_signed_in(user['id'])
         token = create_session(user['id'])
-        return 200, {'user': public_user(user)}, {'Set-Cookie': self.session_cookie(token, SESSION_MAX_SECONDS)}
+        return 200, {'user': self.me(user)}, {'Set-Cookie': self.session_cookie(token, SESSION_MAX_SECONDS)}
 
     def post_logout(self):
         delete_session(self.session_token())
@@ -679,6 +772,7 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(403, 'The current password is incorrect')
 
         check_new_password(new, user['username'])
+        clear_initial_admin(user['id'])
         db.run(
             ('UPDATE users SET password_hash = ?, password_changed = ? WHERE id = ?',
              (hash_password(new), int(time.time()), user['id'])),
@@ -689,6 +783,23 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_import_shared(self):
         return 200, import_shared(self.require_user()['id']), {}
+
+    def get_admin_update(self):
+        self.require_admin()
+        return 200, update_state(), {}
+
+    def post_admin_update(self):
+        self.require_admin()
+        ref = str(self.read_json().get('ref', ''))
+        if not COMMIT_PATTERN.fullmatch(ref):
+            raise ApiError(400, 'Not a commit')
+        state = update_state()
+        if not state['updater']:
+            raise ApiError(409, 'The updater is not installed on this server (see docs/INSTALL.md, "Updates")')
+        if state['requested'] or (state['status'] or {}).get('state') == 'running':
+            raise ApiError(409, 'An update is already under way')
+        write_private_json(os.path.join(UPDATE_DIR, 'request.json'), {'ref': ref, 'at': int(time.time())})
+        return 200, update_state(), {}
 
     ROUTES = {
         ('GET', 'auth'): get_auth,
@@ -702,6 +813,8 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'admin/set-admin'): post_admin_set_admin,
         ('POST', 'admin/permissions'): post_admin_permissions,
         ('POST', 'admin/remove'): post_admin_remove,
+        ('GET', 'admin/update'): get_admin_update,
+        ('POST', 'admin/update'): post_admin_update,
         ('GET', 'me'): get_me,
         ('GET', 'config'): get_config,
         ('POST', 'login'): post_login,
@@ -749,6 +862,11 @@ def prompt_new_password(username: str) -> str:
 
 
 def cli(command: str, *args: str):
+    if command == 'initial-admin':
+        if banner := initial_admin_banner(ensure_initial_admin()):
+            print(banner)
+        return
+
     if command == 'list':
         for row in db.query('SELECT * FROM users ORDER BY username'):
             created = time.strftime('%Y-%m-%d', time.localtime(row['created']))
@@ -805,6 +923,8 @@ def main():
 
     if command == 'serve':
         os.makedirs(DATA_DIR, exist_ok=True)
+        if banner := initial_admin_banner(ensure_initial_admin()):
+            print(banner, file=sys.stderr, flush=True)
         if ALLOW_HTTP:
             print('WARNING: ALLOW_HTTP_ACCOUNTS=1: sign-in works over plain HTTP; passwords and sessions '
                   'are sent unencrypted there. Use HTTPS if anyone else can see the network.', file=sys.stderr)

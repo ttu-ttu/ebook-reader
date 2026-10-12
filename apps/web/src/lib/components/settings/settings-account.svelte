@@ -10,9 +10,9 @@
   import { buttonClasses, inputClasses } from '$lib/css-classes';
   import {
     account$,
+    accountConfig,
     canOpenAdminPanel,
     changePassword,
-    httpAccountsAllowed,
     httpsAppUrl,
     isInsecurePage,
     signIn,
@@ -36,6 +36,8 @@
   /** HTTPS, or plain HTTP when the server allows it (checked on mount). */
   let available = signInAvailableHere();
   let checkingHttp = insecure;
+  /** The first admin hasn't signed in yet: its password is on the server. */
+  let initialAdmin = false;
 
   $: profileLabel = available || $account$ ? readerProfileLabels[readerProfile()] : '';
 
@@ -51,8 +53,11 @@
   $: syncState = $settingsSyncState$;
 
   onMount(async () => {
+    const config = await accountConfig();
+
+    initialAdmin = config.initialAdmin;
     if (insecure) {
-      available = await httpAccountsAllowed();
+      available = config.httpAccounts;
       checkingHttp = false;
     }
   });
@@ -171,6 +176,14 @@
     </div>
   </SettingsItemGroup>
 
+  {#if user.temporaryPassword}
+    <SettingsItemGroup title="Temporary password" wide>
+      <p class="account-warning" role="alert">
+        You signed in with the password generated when this server was set up. Change it below.
+      </p>
+    </SettingsItemGroup>
+  {/if}
+
   <SettingsItemGroup
     title="Change password"
     tooltip="At least {minPasswordLength} characters. Signs out your other devices."
@@ -233,6 +246,13 @@
           <a class="font-semibold underline" href="{secureUrl}/settings?section=general#general-account"
             >{secureUrl.replace('https://', '')}</a
           > instead.
+        </p>
+      {/if}
+      {#if initialAdmin}
+        <p class="mb-3 text-sm">
+          <strong>First start:</strong> sign in as <code>admin</code> with the temporary password
+          shown at the end of the deploy, or on the server with
+          <code>ebook-account initial-admin</code> (or <code>docker compose logs account</code>).
         </p>
       {/if}
       <form class="account-form" on:submit|preventDefault={onSignIn}>

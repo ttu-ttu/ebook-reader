@@ -31,7 +31,14 @@ First public release. Compared with upstream ッツ Ebook Reader:
 
 - **Accounts** (no sign-up; admins add them) with an admin panel (`/admin`,
   linked from Settings → Account: accounts, permissions and server tools) and
-  per-account permissions (add books, edit series, difficulty estimates).
+  per-account permissions (add books, edit series, difficulty estimates). The
+  first start creates `admin` with a temporary password, shown in the deploy
+  output and the account service's log until it signs in.
+- Admin panel tools: **Series** (puts books without a series into the series
+  their titles name and merges duplicate series, after a dry run; backs up
+  `metadata.db` first) and **Updates** (compares the server with GitHub's main
+  branch; servers set up with `scripts/deploy.sh` update and redeploy themselves
+  through `ebook-update`, `UPDATE_REPO`).
 - Progress, statistics, reading goals, highlights, recaps and lorebooks sync per
   account; AI settings and themes sync through `settings.json`, reader settings
   separately for phones and larger screens.

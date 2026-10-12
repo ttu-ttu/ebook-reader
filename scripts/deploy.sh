@@ -7,8 +7,9 @@
 #   local/docker-compose.override.yml  optional, e.g. deploy/examples/tailscale-https
 #
 # On the server: the source goes to /opt/ebook-reader, the settings to
-# /etc/ebook-reader, and ebook-compose / ebook-account / jiten-difficulty-import
-# to /usr/local/bin. Images are built there; the running stack is only replaced
+# /etc/ebook-reader, and ebook-compose / ebook-account / jiten-difficulty-import /
+# ebook-update to /usr/local/bin (ebook-update's systemd units are installed when
+# DATA_PATH is absolute, for updates from the admin panel). Images are built there; the running stack is only replaced
 # if every image builds, and the previous images stay tagged :previous.
 # Restarting the stack stops a running difficulty job.
 set -euo pipefail
@@ -58,7 +59,7 @@ if [ -f "$LOCAL/docker-compose.override.yml" ]; then
 else
   run rm -f /etc/ebook-reader/docker-compose.override.yml
 fi
-for command in ebook-compose ebook-account jiten-difficulty-import; do
+for command in ebook-compose ebook-account jiten-difficulty-import ebook-update; do
   put "$REPO_ROOT/deploy/server/$command" "/usr/local/bin/$command" 755
 done
 
@@ -72,6 +73,12 @@ run env LANG=C.UTF-8 VERSION="$VERSION" bash -c '
   $compose build --quiet
   $compose up -d --remove-orphans
   docker image prune -f >/dev/null
+  if [ -d /run/systemd/system ]; then
+    /usr/local/bin/ebook-update install || echo "Updates from the admin panel stay off (see above)"
+  fi
 '
+
+# The first admin account and its temporary password, until it has signed in.
+run /usr/local/bin/ebook-account initial-admin || true
 
 echo "Deployed ${VERSION}${SITE_URL:+ -> $SITE_URL} (previous images tagged :previous)"

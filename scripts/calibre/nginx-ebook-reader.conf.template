@@ -106,6 +106,19 @@ server {
     client_max_body_size 300m;
   }
 
+  # Admin panel → Tools → Series: rewrites series in metadata.db, so admins only.
+  location = /calibre/import/api/series {
+    auth_request /_account_admin;
+    auth_request_set $account_id $upstream_http_x_account_id;
+    proxy_pass http://$import_upstream/series;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Account-Id $account_id;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_read_timeout 600s;
+    client_max_body_size 16k;
+  }
+
   # Accounts. The service checks HTTPS, Origin and Host ($http_host keeps the port,
   # which the browser's Origin has on non-standard ports).
   location /account/api/ {
@@ -139,6 +152,15 @@ server {
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
     proxy_set_header X-Original-Method $request_method;
+    client_max_body_size 0;
+  }
+
+  location = /_account_admin {
+    internal;
+    proxy_pass http://$account_upstream/auth/admin;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
     client_max_body_size 0;
   }
 

@@ -40,7 +40,7 @@ itself, and its Yomitan support, are upstream's (see [Using the reader](#using-t
 git clone https://github.com/blankiekun/chimimouryou && cd chimimouryou
 cp .env.example .env          # set LIBRARY_PATH, PUID/PGID
 docker compose up -d --build
-docker compose exec account ebook-account add NAME --admin
+docker compose exec account ebook-account initial-admin   # the first admin's temporary password
 ```
 
 Then open `http://<server>:8080`. Signing in needs HTTPS: put a reverse proxy in
