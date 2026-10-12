@@ -10,9 +10,7 @@ export const heatmapDayMargins = 20;
 
 export const heatmapGridGapValue = 1;
 
-export const heatmapMinValueColor = 'c6e48b';
-
-export const heatmapMaxValueColor = '196127';
+export const heatmapMaxValueColor = 'var(--heatmap-high)';
 
 export const daysOfWeek = [
   'Sunday',

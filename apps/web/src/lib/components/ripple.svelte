@@ -108,7 +108,7 @@
 <span bind:this={containerEl} class="absolute inset-0 h-full w-full">
   {#each ripples as _ (_.id)}
     <span
-      class="absolute rounded-full bg-gray-400/50"
+      class="absolute rounded-full bg-[color:color-mix(in_srgb,currentColor_35%,transparent)]"
       style:width="{diameter}px"
       style:height="{diameter}px"
       style:top="{rippleTop}px"
@@ -119,13 +119,13 @@
   {/each}
   {#if hold}
     <span
-      class="absolute inset-0 h-full w-full bg-gray-400/25"
+      class="absolute inset-0 h-full w-full bg-[color:color-mix(in_srgb,currentColor_18%,transparent)]"
       transition:fade|local={{ easing: quintOut }}
     />
   {/if}
   {#if hold || focus}
     <span
-      class="absolute inset-0 h-full w-full bg-gray-400/[.10]"
+      class="absolute inset-0 h-full w-full bg-[color:color-mix(in_srgb,currentColor_8%,transparent)]"
       transition:fade|local={{ easing: quintOut }}
     />
   {/if}

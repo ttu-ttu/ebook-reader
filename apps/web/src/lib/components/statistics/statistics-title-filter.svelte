@@ -188,7 +188,7 @@
   <div class="flex justify-between mt-6 text-2xl">
     <button
       title="Apply Filter"
-      class="hover:text-red-500"
+      class="hover:text-accent-strong"
       on:click={() => {
         dispatch('applyFilter', titlesToFilter);
         dispatch('close');
@@ -196,17 +196,17 @@
     >
       <Fa icon={faCircleCheck} />
     </button>
-    <button title="Select All" class="hover:text-red-500" on:click={() => handleSelectAll(true)}>
+    <button title="Select All" class="hover:text-accent-strong" on:click={() => handleSelectAll(true)}>
       <Fa icon={faListCheck} />
     </button>
-    <button title="Remove All" class="hover:text-red-500" on:click={() => handleSelectAll(false)}>
+    <button title="Remove All" class="hover:text-accent-strong" on:click={() => handleSelectAll(false)}>
       <Fa icon={faList} />
     </button>
     <button
       title={$lastStatisticsFilterDateRangeOnly$
         ? 'Display Titles across all Time'
         : 'Display Titles in selected Date Range only'}
-      class="hover:text-red-500"
+      class="hover:text-accent-strong"
       on:click={() => ($lastStatisticsFilterDateRangeOnly$ = !$lastStatisticsFilterDateRangeOnly$)}
     >
       <Fa icon={$lastStatisticsFilterDateRangeOnly$ ? faCalendarXmark : faCalendar} />
@@ -215,7 +215,7 @@
       title={$lastStatisticsFilterShowSelectedTitlesOnly$
         ? 'Display all Titles'
         : 'Display selected Titles only'}
-      class="hover:text-red-500"
+      class="hover:text-accent-strong"
       on:click={() =>
         ($lastStatisticsFilterShowSelectedTitlesOnly$ =
           !$lastStatisticsFilterShowSelectedTitlesOnly$)}
@@ -225,7 +225,7 @@
     {#if $preFilteredTitlesForStatistics$.size}
       <button
         title="Remove Prefilter"
-        class="hover:text-red-500"
+        class="hover:text-accent-strong"
         on:click={() => dispatch('clearPrefilter')}
       >
         <Fa icon={faTrash} />

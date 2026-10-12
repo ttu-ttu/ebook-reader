@@ -5,43 +5,57 @@
 @tailwind utilities;
 
 :root {
-  --font-color: #152033;
-  --background-color: #eef3f6;
-  --surface-color: rgba(255, 255, 255, 0.8);
-  --surface-strong-color: rgba(255, 255, 255, 0.92);
-  --border-color: rgba(148, 163, 184, 0.26);
-  --shadow-color: rgba(15, 23, 42, 0.12);
-  --accent-color: #0f766e;
-  --accent-strong-color: #115e59;
-  --app-accent-fg: #f8fafc;
-  --app-muted-fg: rgba(15, 23, 42, 0.66);
-  --app-header-bg: rgba(15, 23, 42, 0.78);
-  --app-header-fg: #f8fafc;
-  --app-header-border: rgba(255, 255, 255, 0.1);
-  --app-header-icon-bg: rgba(255, 255, 255, 0.06);
-  --app-header-icon-border: rgba(255, 255, 255, 0.12);
-  --app-header-icon-fg: rgba(226, 232, 240, 0.86);
-  --app-header-icon-hover-bg: rgba(255, 255, 255, 0.12);
-  --app-header-control-height: 2.6rem;
-  --app-header-pill-height: 3.1rem;
-  --app-header-label-size: 0.92rem;
-  --app-header-icon-size: 1rem;
-  --app-control-bg: rgba(255, 255, 255, 0.88);
-  --app-control-border: rgba(148, 163, 184, 0.38);
-  /* The rest are set by the active theme (lib/data/theme); these are the light defaults. */
-  --app-inset-highlight: rgba(255, 255, 255, 0.72);
-  --app-danger-color: #dc2626;
-  --app-overlay-color: rgba(0, 0, 0, 0.32);
-  --app-scrollbar-color: rgba(100, 116, 139, 0.55);
-  --app-radius-scale: 1;
-  --app-blur: 24px;
-  --reader-panel-bg: rgba(31, 41, 55, 0.96);
-  --reader-panel-fg: #f9fafb;
+  /* Colours are set by the active theme (lib/data/theme); these are Washi's, for the first paint. */
+  --font-color: #1f1b16;
+  --background-color: #f5f0e6;
+  --surface-color: #fbf8f1;
+  --surface-strong-color: #fffdf8;
+  --border-color: #e2d9c8;
+  --shadow-color: rgba(60, 40, 20, 0.12);
+  --accent-color: #b23a24;
+  --accent-strong-color: #9a2f1c;
+  --app-accent-fg: #fffaf2;
+  --app-muted-fg: #5f574b;
+  --app-text-subtle: #857c6f;
+  --app-accent-hover: #9a2f1c;
+  --app-focus-ring: #b23a24;
+  --app-header-bg: rgba(245, 240, 230, 0.94);
+  --app-header-fg: #1f1b16;
+  --app-header-border: #e2d9c8;
+  --app-header-icon-bg: transparent;
+  --app-header-icon-border: transparent;
+  --app-header-icon-fg: #5f574b;
+  --app-header-icon-hover-bg: rgba(31, 27, 22, 0.06);
+  --app-control-bg: #fffdf8;
+  --app-control-border: #cfc3ad;
+  --app-inset-highlight: transparent;
+  --app-danger-color: #a3192b;
+  --app-success-color: #2f7a3e;
+  --app-warning-color: #9a5b06;
+  --app-overlay-color: rgba(31, 27, 22, 0.4);
+  --app-scrollbar-color: rgba(95, 87, 75, 0.45);
+  --app-toggle-on: var(--accent-color);
+  --app-toggle-off: #cfc3ad;
+  --app-progress-track: #e8dfcf;
+  --app-progress-fill: var(--accent-color);
+  --app-cover-shadow: rgba(60, 40, 20, 0.24);
+  --reader-panel-bg: rgba(31, 27, 22, 0.96);
+  --reader-panel-fg: #f5f0e6;
   --highlight-yellow: rgba(250, 204, 21, 0.4);
   --highlight-green: rgba(74, 222, 128, 0.38);
   --highlight-blue: rgba(96, 165, 250, 0.38);
   --highlight-pink: rgba(244, 114, 182, 0.38);
   --search-match-color: rgba(249, 115, 22, 0.5);
+
+  /* Structure: the same under every theme. */
+  --app-radius-scale: 0.6;
+  --app-blur: 0px;
+  --app-font-display: 'KZ UDMincho', 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --app-header-control-height: 2.6rem;
+  --app-header-pill-height: 3.1rem;
+  --app-header-label-size: 0.92rem;
+  --app-header-icon-size: 1rem;
+  --app-ease: cubic-bezier(0.2, 0, 0, 1);
   scrollbar-color: var(--app-scrollbar-color) transparent;
 }
 

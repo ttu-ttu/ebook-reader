@@ -268,8 +268,8 @@
       {#if sendMessage}<p class="mt-2 opacity-70">{sendMessage}</p>{/if}
       {#if progress}<p class="mt-2 opacity-70">{progress}</p>{/if}
     {/if}
-    {#if error}<p class="mt-2 text-red-400">{error}</p>{/if}
-    {#if $extrasSyncError$.lorebook}<p class="mt-2 text-red-400">
+    {#if error}<p class="mt-2 text-panel-danger">{error}</p>{/if}
+    {#if $extrasSyncError$.lorebook}<p class="mt-2 text-panel-danger">
         {$extrasSyncError$.lorebook}
       </p>{/if}
 

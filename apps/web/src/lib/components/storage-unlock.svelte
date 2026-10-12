@@ -65,7 +65,7 @@
     {#if requiresSecret}
       <input type="password" placeholder="Password" bind:value={secret} bind:this={passwordElm} on:keyup={(evt) => {if (evt.key === 'Enter') {unlock()}}}/>
     {/if}
-    <div class="text-red-500">{error}</div>
+    <div class="text-danger">{error}</div>
   </div>
   <div class="mt-2 flex grow justify-between" slot="footer">
     {#if requiresSecret || showCancel}

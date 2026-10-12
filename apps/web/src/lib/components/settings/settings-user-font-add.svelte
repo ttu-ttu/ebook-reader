@@ -108,7 +108,7 @@
       }
     }}
   />
-  <div class:invisible={currentError === 'no error'} class="my-2 text-red-500">{currentError}</div>
+  <div class:invisible={currentError === 'no error'} class="my-2 text-danger">{currentError}</div>
   <div class="flex items-center just justify-between">
     <label class={`${inputClasses} w-40 text-center py-2 hover:opacity-25 mr-2`}>
       <input

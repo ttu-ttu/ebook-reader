@@ -18,6 +18,7 @@ import { writableStringLocalStorageSubject } from '$lib/data/internal/writable-s
 import { customThemes$, theme$ } from '$lib/data/store';
 import {
   allThemeDefinitions,
+  defaultDarkThemeId,
   migrateLegacyTheme,
   resolveTheme,
   type ThemeDefinition
@@ -49,7 +50,7 @@ if (Object.keys(legacyThemes).length && !Object.keys(customAppThemes$.getValue()
 
 /** Switch between `theme$` (light) and `darkTheme$` with the system setting. */
 export const followSystemTheme$ = writableBooleanLocalStorageSubject()('followSystemTheme', false);
-export const darkTheme$ = writableStringLocalStorageSubject()('darkTheme', 'dark-theme');
+export const darkTheme$ = writableStringLocalStorageSubject()('darkTheme', defaultDarkThemeId);
 
 const darkQuery = browser ? window.matchMedia('(prefers-color-scheme: dark)') : undefined;
 

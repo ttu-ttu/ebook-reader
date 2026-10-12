@@ -67,7 +67,7 @@
   </div>
 
   {#if syncError}
-    <p class="px-4 pb-2 text-xs text-red-400">{syncError}</p>
+    <p class="px-4 pb-2 text-xs text-panel-danger">{syncError}</p>
   {/if}
 
   <div class="flex-1 overflow-y-auto px-2 pb-4">

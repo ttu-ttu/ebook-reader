@@ -77,16 +77,16 @@
     <Fa icon={faXmark} />
   </button>
   <div class="flex flex-1 justify-end">
-    <button class="mr-2 sm:mr-4 hover:text-red-500" on:click={() => exportStatisticsData(false)}>
+    <button class="mr-2 sm:mr-4 hover:text-accent-strong" on:click={() => exportStatisticsData(false)}>
       Export Selection
     </button>
-    <button class="mr-2 sm:mr-4 hover:text-red-500" on:click={() => deleteStatisticsData(false)}>
+    <button class="mr-2 sm:mr-4 hover:text-accent-strong" on:click={() => deleteStatisticsData(false)}>
       Delete Selection
     </button>
-    <button class="mr-2 sm:mr-4 hover:text-red-500" on:click={() => exportStatisticsData()}>
+    <button class="mr-2 sm:mr-4 hover:text-accent-strong" on:click={() => exportStatisticsData()}>
       Export All
     </button>
-    <button class="hover:text-red-500" on:click={() => deleteStatisticsData()}>Delete All</button>
+    <button class="hover:text-accent-strong" on:click={() => deleteStatisticsData()}>Delete All</button>
   </div>
 </div>
 <div class="flex-1 p-4 overflow-auto">
@@ -169,7 +169,7 @@
     </div>
   </div>
   <button
-    class="text-left mt-3 hover:text-red-500"
+    class="text-left mt-3 hover:text-accent-strong"
     on:click={() => setStatisticsDatesToAllTime$.next()}
   >
     Set to All Time for selected Book Titles

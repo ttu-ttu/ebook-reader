@@ -591,7 +591,7 @@
       color-mix(in srgb, var(--font-color) 10%, var(--surface-strong-color)),
       color-mix(in srgb, var(--font-color) 6%, var(--surface-color))
     );
-    box-shadow: 0 1px color-mix(in srgb, #000 22%, transparent);
+    box-shadow: 0 1px color-mix(in srgb, var(--shadow-color) 100%, transparent);
     color: color-mix(in srgb, var(--font-color) 86%, transparent);
     font-size: 0.72rem;
     font-weight: 800;
@@ -705,16 +705,16 @@
   }
 
   .sync-dot[data-state='syncing'] {
-    background: #f59e0b;
+    background: var(--app-warning-color);
   }
 
   .sync-dot[data-state='synced'] {
-    background: #16a34a;
-    box-shadow: 0 0 0 2px color-mix(in srgb, #16a34a 18%, transparent);
+    background: var(--app-success-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-success-color) 18%, transparent);
   }
 
   .sync-dot[data-state='error'] {
-    background: #dc2626;
+    background: var(--app-danger-color);
   }
 
   .settings-main {

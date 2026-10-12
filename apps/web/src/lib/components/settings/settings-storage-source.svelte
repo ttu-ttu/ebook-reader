@@ -358,7 +358,7 @@
         <span class="ml-2">
           Make sure to understand the
           <a
-            class="text-red-500"
+            class="text-danger"
             href="https://github.com/ttu-ttu/ebook-reader?tab=readme-ov-file#security-considerations"
             target="_blank"
           >
@@ -369,7 +369,7 @@
       </div>
     {/if}
     {#if error}
-      <div class="text-red-500">Error: {error}</div>
+      <div class="text-danger">Error: {error}</div>
     {/if}
   </div>
   <div class="mt-4 flex grow justify-between" slot="footer">

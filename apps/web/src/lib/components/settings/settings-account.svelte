@@ -306,9 +306,9 @@
 
   .account-warning {
     margin-bottom: 0.75rem;
-    border: 1px solid color-mix(in srgb, #f59e0b 55%, transparent);
+    border: 1px solid color-mix(in srgb, var(--app-warning-color) 55%, transparent);
     border-radius: 0.5rem;
-    background: color-mix(in srgb, #f59e0b 14%, transparent);
+    background: color-mix(in srgb, var(--app-warning-color) 14%, transparent);
     padding: 0.6rem 0.8rem;
     font-size: 0.875rem;
     line-height: 1.45;
@@ -362,15 +362,15 @@
   }
 
   .sync-status[data-state='syncing'] .sync-dot {
-    background: #f59e0b;
+    background: var(--app-warning-color);
   }
 
   .sync-status[data-state='synced'] .sync-dot {
-    background: #16a34a;
+    background: var(--app-success-color);
   }
 
   .sync-status[data-state='error'] .sync-dot {
-    background: #dc2626;
+    background: var(--app-danger-color);
   }
 
   .sync-refresh {

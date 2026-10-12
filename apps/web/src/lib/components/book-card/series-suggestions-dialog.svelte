@@ -51,7 +51,7 @@
     </p>
     {#if suggestions.length > 1}
       <label
-        class="flex cursor-pointer items-center gap-3 border-b border-gray-400/20 py-2 font-medium"
+        class="flex cursor-pointer items-center gap-3 border-b border-line py-2 font-medium"
       >
         <input
           type="checkbox"
@@ -66,7 +66,7 @@
       {#each suggestions as suggestion (suggestion.title)}
         <li>
           <label
-            class="flex cursor-pointer items-center gap-3 border-b border-gray-400/20 py-2 hover:bg-gray-500/10"
+            class="flex cursor-pointer items-center gap-3 border-b border-line py-2 hover:bg-hover"
           >
             <input
               type="checkbox"

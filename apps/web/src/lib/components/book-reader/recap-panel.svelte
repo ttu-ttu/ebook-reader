@@ -126,10 +126,10 @@
 
 <div class="flex-1 overflow-y-auto px-4 py-3">
   {#if error}
-    <p class="mb-3 text-red-400">{error}</p>
+    <p class="mb-3 text-panel-danger">{error}</p>
   {/if}
   {#if $extrasSyncError$.recaps}
-    <p class="mb-3 text-xs text-red-400">{$extrasSyncError$.recaps}</p>
+    <p class="mb-3 text-xs text-panel-danger">{$extrasSyncError$.recaps}</p>
   {/if}
 
   {#if !plan && !error}

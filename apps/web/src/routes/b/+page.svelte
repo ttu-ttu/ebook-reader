@@ -2310,11 +2310,11 @@
 
 {#if (isSelectingCustomReadingPoint && !$isMobile$) || (!isPaginated && showCustomReadingPoint)}
   <div
-    class="fixed left-0 z-20 h-[1px] w-full border border-red-500"
+    class="fixed left-0 z-20 h-[1px] w-full border border-danger"
     style:top={`${customReadingPointTop}px`}
   />
   <div
-    class="fixed top-0 z-20 h-full w-[1px] border border-red-500"
+    class="fixed top-0 z-20 h-full w-[1px] border border-danger"
     style:left={`${customReadingPointLeft}px`}
   />
 {/if}
@@ -2355,7 +2355,7 @@
         role="button"
         title="Click to open Tracker Menu or Double Click to toggle Tracker"
         class="flex h-full w-8 items-center justify-center text-sm sm:text-lg"
-        class:text-red-500={$isTrackerPaused$}
+        class:text-danger={$isTrackerPaused$}
         class:animate-pulse={frozenPosition > -1}
         use:multiClickHandler={[trackerSingleClickHandler, trackerDblClickHandler]}
       >
@@ -2367,7 +2367,7 @@
         tabindex="0"
         role="button"
         class="flex h-full w-8 items-center justify-center text-sm sm:text-lg"
-        class:text-red-500={externalStorageErrors > 1}
+        class:text-danger={externalStorageErrors > 1}
         class:animate-pulse={externalStorageErrors > 1 || isReplicating}
         on:click|stopPropagation={() => {
           if ($statisticsEnabled$) {

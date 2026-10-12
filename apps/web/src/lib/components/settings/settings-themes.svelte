@@ -22,6 +22,8 @@
   import { themeTokensByGroup, type ThemeToken } from '$lib/data/theme/theme-tokens';
   import {
     builtInThemeIds,
+    defaultDarkThemeId,
+    defaultLightThemeId,
     exportableTheme,
     parseThemeDefinition,
     resolveTheme,
@@ -159,11 +161,11 @@
         : base;
 
     if ($theme$ === definition.id) {
-      theme$.next(fallback('light-theme'));
+      theme$.next(fallback(defaultLightThemeId));
     }
 
     if ($darkTheme$ === definition.id) {
-      darkTheme$.next(fallback('dark-theme'));
+      darkTheme$.next(fallback(defaultDarkThemeId));
     }
   }
 

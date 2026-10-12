@@ -128,7 +128,7 @@
   </div>
 
   {#if error}
-    <p class="px-3 pb-2 text-xs text-red-400">{error}</p>
+    <p class="px-3 pb-2 text-xs text-panel-danger">{error}</p>
   {/if}
 
   <ol class="flex-1 overflow-y-auto px-1 pb-3" bind:this={listElm}>

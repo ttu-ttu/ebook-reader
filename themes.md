@@ -14,6 +14,8 @@ Built-in themes:
 
 | Id | Name | Kind |
 | --- | --- | --- |
+| `washi-theme` | Washi | light, warm paper and vermilion (default) |
+| `washi-dark-theme` | Sumi | dark, ink and vermilion (default dark) |
 | `light-theme` | Light | light |
 | `ecru-theme` | Ecru | light, warm paper |
 | `water-theme` | Water | light, pale blue page |
@@ -25,7 +27,7 @@ Built-in themes:
 | `nord-theme` | Nord | dark, blue-grey |
 | `solarized-dark-theme` | Solarized Dark | dark |
 
-The first six keep the ids of upstream ッツ Reader's reader themes, so a theme
+`light-theme` to `black-theme` keep the ids of upstream ッツ Reader's reader themes, so a theme
 chosen before this update stays selected. Custom reader themes made with the old
 "custom theme" dialog are converted once into full themes.
 
@@ -73,9 +75,13 @@ Every colour accepts anything CSS understands as a colour:
 - `color-mix(in srgb, #0f766e 40%, white)`
 - names such as `rebeccapurple`
 
-Many surfaces are translucent on purpose (the header is frosted glass), so alpha
-matters. Values that are too opaque make the header look flat; values that are
-too transparent make text hard to read over book covers.
+Colours added later (subtle text, accent hover, focus ring, switches, progress,
+cover shadow, difficulty and heatmap) default to mixes of the older ones, such as
+`var(--accent-color)`, so a theme made before them only needs them if you want
+something different. You can use those `var(--…)` references in your own values too.
+
+The editor warns when text, muted text or text on the accent falls below WCAG AA
+contrast (4.5:1); built-in themes are checked by `themes.test.ts`.
 
 ### App
 
@@ -86,17 +92,45 @@ too transparent make text hard to read over book covers.
 | `surfaceStrong` | `--surface-strong-color` | Cards and panels (top of their gradient), popovers, dialogs |
 | `text` | `--font-color` | Main text colour |
 | `mutedText` | `--app-muted-fg` | Secondary text such as hints and counts |
+| `subtleText` | `--app-text-subtle` | Least important text: placeholders, counts on inactive filters |
 | `border` | `--border-color` | Card and divider borders |
 | `shadow` | `--shadow-color` | Drop shadows |
 | `insetHighlight` | `--app-inset-highlight` | The thin light line along the top edge of cards |
 | `accent` | `--accent-color` | Active items, progress bars, focus rings |
 | `accentStrong` | `--accent-strong-color` | Accent used for text and icons |
+| `accentHover` | `--app-accent-hover` | Accent buttons and links under the pointer |
 | `accentText` | `--app-accent-fg` | Text placed on an accent background |
 | `control` | `--app-control-bg` | Inputs, tabs and buttons |
+| `focusRing` | `--app-focus-ring` | Outline around the focused control when using the keyboard |
 | `controlBorder` | `--app-control-border` | Borders of inputs, tabs and buttons |
 | `danger` | `--app-danger-color` | Delete actions and errors |
 | `overlay` | `--app-overlay-color` | Dims the page behind dialogs |
 | `scrollbar` | `--app-scrollbar-color` | Scrollbar thumb |
+
+### States
+
+| Key | CSS variable | Used for |
+| --- | --- | --- |
+| `success` | `--app-success-color` | Synced, saved and other good states |
+| `warning` | `--app-warning-color` | Pending sync and other states that need attention |
+| `toggleOn` | `--app-toggle-on` | Track of a switch that is on |
+| `toggleOff` | `--app-toggle-off` | Track of a switch that is off |
+| `progressTrack` | `--app-progress-track` | Empty part of progress bars |
+| `progressFill` | `--app-progress-fill` | Filled part of progress bars |
+| `coverShadow` | `--app-cover-shadow` | Shadow under book covers |
+
+### Data
+
+| Key | CSS variable | Used for |
+| --- | --- | --- |
+| `difficulty1` | `--difficulty-1` | Beginner |
+| `difficulty2` | `--difficulty-2` | Easy |
+| `difficulty3` | `--difficulty-3` | Average |
+| `difficulty4` | `--difficulty-4` | Hard |
+| `difficulty5` | `--difficulty-5` | Expert and above |
+| `heatmapEmpty` | `--heatmap-empty` | Days without reading |
+| `heatmapLow` | `--heatmap-low` | Days with the least reading; other days blend towards the next colour |
+| `heatmapHigh` | `--heatmap-high` | Days with the most reading |
 
 ### Header
 
@@ -134,7 +168,6 @@ too transparent make text hard to read over book covers.
 | `highlightPink` | `--highlight-pink` | Fourth highlight colour |
 | `searchMatch` | `--search-match-color` | The search result you jumped to |
 | `readingLine` | `--reading-line-color` | What the audiobook or AI voice is reading |
-**Tips**
 
 - Highlight colours sit on top of the book text, so give them roughly 30–45%
   opacity. Fully opaque highlights hide the text.

@@ -868,7 +868,7 @@
   </div>
 {/if}
 {#if $statisticsActionInProgress$}
-  <div class="tap-highlight-transparent fixed inset-0 bg-black/[.2] z-[70]" />
+  <div class="tap-highlight-transparent fixed inset-0 bg-overlay z-[70]" />
   <div class="flex fixed items-center justify-center inset-0 h-full w-full text-7xl">
     <Fa icon={faSpinner} spin />
   </div>

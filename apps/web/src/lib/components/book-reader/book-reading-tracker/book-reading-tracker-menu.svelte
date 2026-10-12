@@ -187,7 +187,7 @@
     tabindex="0"
     role="button"
     title="Close Tracker Menu"
-    class="flex items-center hover:text-red-500 md:items-center"
+    class="flex items-center hover:text-accent-strong md:items-center"
     on:click={() => dispatch('trackerMenuClosed')}
     on:keyup={dummyFn}
   >
@@ -261,7 +261,7 @@
               <div
                 tabindex="0"
                 role="button"
-                class="ml-4 hover:text-red-500"
+                class="ml-4 hover:text-accent-strong"
                 title={action.title}
                 on:click={() => executeAction(action.event)}
                 on:keyup={dummyFn}
@@ -368,21 +368,21 @@
             {#each trackingHistoryItems as trackingHistoryItem (trackingHistoryItem.id)}
               <div>{trackingHistoryItem.dateTimeKey}</div>
               <div
-                class:text-green-500={trackingHistoryItem.timeDiff > 0}
-                class:text-red-500={trackingHistoryItem.timeDiff < 0}
+                class:text-success={trackingHistoryItem.timeDiff > 0}
+                class:text-danger={trackingHistoryItem.timeDiff < 0}
               >
                 {trackingHistoryItem.timeDiff}
               </div>
               <div
-                class:text-green-500={trackingHistoryItem.characterDiff > 0}
-                class:text-red-500={trackingHistoryItem.characterDiff < 0}
+                class:text-success={trackingHistoryItem.characterDiff > 0}
+                class:text-danger={trackingHistoryItem.characterDiff < 0}
               >
                 {trackingHistoryItem.characterDiff}
               </div>
               <div class="flex">
                 <button
                   title="Revert Item"
-                  class="hover:text-red-500"
+                  class="hover:text-accent-strong"
                   on:click={() => dispatch('revertStatistic', trackingHistoryItem)}
                 >
                   <Fa icon={faTrash} />
@@ -390,7 +390,7 @@
                 <div
                   title="Item saved to Database"
                   class="ml-4 cursor-not-allowed"
-                  class:text-green-500={trackingHistoryItem.saved}
+                  class:text-success={trackingHistoryItem.saved}
                 >
                   <Fa icon={faFloppyDisk} />
                 </div>
@@ -422,7 +422,7 @@
     </div>
   {/each}
   {#if actionInProgress}
-    <div class="tap-highlight-transparent absolute inset-0 bg-black/[.2]" />
+    <div class="tap-highlight-transparent absolute inset-0 bg-overlay" />
     <div class="absolute inset-0 flex h-full w-full items-center justify-center text-7xl">
       <Fa icon={faSpinner} spin />
     </div>

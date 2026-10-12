@@ -110,7 +110,7 @@
     padding: 0 0.4rem 0 0.5rem;
     border: 1px solid color-mix(in srgb, var(--reader-panel-fg) 10%, transparent);
     border-radius: 1.1rem;
-    box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.45);
+    box-shadow: 0 10px 30px -12px var(--shadow-color);
     font-size: 0.875rem;
     backdrop-filter: blur(12px);
   }

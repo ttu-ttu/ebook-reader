@@ -206,8 +206,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      color: #dcddde;
-      background-color: rgba(0, 0, 0, 0.6);
+      color: var(--reader-panel-fg);
+      background-color: color-mix(in srgb, var(--reader-panel-bg) 65%, transparent);
       display: inline-block;
       padding: 12px 8px;
       border-radius: 20px;
@@ -219,8 +219,7 @@
 
     @media (hover: hover) {
       &:hover :global(.spoiler-label) {
-        color: #ffffff;
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: var(--reader-panel-bg);
       }
     }
 

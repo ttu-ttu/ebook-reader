@@ -102,7 +102,7 @@
       series. Unchecked books already in it are taken out.
     </p>
     <label
-      class="flex cursor-pointer items-center gap-3 border-b border-gray-400/20 py-2 font-medium"
+      class="flex cursor-pointer items-center gap-3 border-b border-line py-2 font-medium"
     >
       <input
         type="checkbox"
@@ -116,7 +116,7 @@
       {#each candidates as card (card.title)}
         <li>
           <label
-            class="flex cursor-pointer items-center gap-3 border-b border-gray-400/20 py-2 hover:bg-gray-500/10"
+            class="flex cursor-pointer items-center gap-3 border-b border-line py-2 hover:bg-hover"
           >
             <input
               type="checkbox"
@@ -136,7 +136,7 @@
       {/each}
     </ul>
     {#if error}
-      <p class="pt-2 text-sm text-red-500">{error}</p>
+      <p class="pt-2 text-sm text-danger">{error}</p>
     {/if}
   </div>
   <div class="flex grow items-center justify-between" slot="footer">

@@ -24,7 +24,6 @@
     HeatmapType,
     type ReadingGoalHeatmapGlobalDayData,
     daysOfWeekShort,
-    heatmapMinValueColor,
     heatmapMaxValueColor,
     type StatisticsHeatmapDayData
   } from '$lib/components/statistics/statistics-heatmap/statistics-heatmap';
@@ -117,7 +116,7 @@
       colorRanges.push(
         {
           limit: 100,
-          color: `#${heatmapMaxValueColor}`
+          color: heatmapMaxValueColor
         },
         ...getColorRanges(1, 100, 100)
       );
@@ -776,20 +775,14 @@
           if (limit) {
             colorRangeslist.push({
               limit,
-              color: colorByRating(
-                heatmapMinValueColor,
-                heatmapMaxValueColor,
-                minimumValue,
-                colorMax,
-                limit
-              )
+              color: colorByRating(minimumValue, colorMax, limit)
             });
           }
         }
       } else {
         colorRangeslist.push({
           limit: minimumValue,
-          color: `#${heatmapMaxValueColor}`
+          color: heatmapMaxValueColor
         });
       }
     }
@@ -799,34 +792,10 @@
     return colorRangeslist;
   }
 
-  function colorByRating(
-    colorStart: string,
-    colorEnd: String,
-    minValue: number,
-    maxValue: number,
-    value: number
-  ) {
-    const colorRatio = limitToRange(0, 1, value / (maxValue - minValue));
-    const r = Math.ceil(
-      parseInt(colorStart.substring(0, 2), 16) * (1 - colorRatio) +
-        parseInt(colorEnd.substring(0, 2), 16) * colorRatio
-    );
-    const g = Math.ceil(
-      parseInt(colorStart.substring(2, 4), 16) * (1 - colorRatio) +
-        parseInt(colorEnd.substring(2, 4), 16) * colorRatio
-    );
-    const b = Math.ceil(
-      parseInt(colorStart.substring(4, 6), 16) * (1 - colorRatio) +
-        parseInt(colorEnd.substring(4, 6), 16) * colorRatio
-    );
+  function colorByRating(minValue: number, maxValue: number, value: number) {
+    const percent = Math.round(limitToRange(0, 1, value / (maxValue - minValue)) * 100);
 
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  }
-
-  function toHex(valueToConvert: number | string) {
-    const value = valueToConvert.toString(16);
-
-    return value.length === 1 ? `0${value}` : value;
+    return `color-mix(in srgb, var(--heatmap-high) ${percent}%, var(--heatmap-low))`;
   }
 
   function getCompletedReadingGoalsLabel(
@@ -1078,14 +1047,14 @@
   {heatmapLabel}
   <button
     title="Return to current Year"
-    class="mx-4 hover:text-red-500"
+    class="mx-4 hover:text-accent-strong"
     on:click={() => changeHeatmapYear(today.getFullYear() - heatmapYear)}
   >
     <Fa icon={faRepeat} />
   </button>
   <button
     title="Switch (Streak) Data between 'All Time' and 'Current Year'"
-    class="text-lg hover:text-red-500"
+    class="text-lg hover:text-accent-strong"
     on:click={() =>
       (heatmapAggregration =
         heatmapAggregration === HeatmapDataAggregration.ALL_TIME
@@ -1098,7 +1067,7 @@
 <div class="flex justify-between">
   <button
     title="Move Backwards"
-    class="hover:text-red-500"
+    class="hover:text-accent-strong"
     on:click={() => {
       if (heatmapElement.scrollLeft === 0) {
         changeHeatmapYear(-1);
@@ -1162,8 +1131,8 @@
         class:cursor-pointer={heatmapDay.isCurrentYear}
         class:heatmap-day-current={heatmapDay.isCurrentYear}
         class:heatmap-day-other={!heatmapDay.isCurrentYear}
-        class:border-amber-500={isSelected}
-        class:border-red-500={isToday}
+        class:border-warning={isSelected}
+        class:border-accent={isToday}
         class:highlight={selectedStreakDates.has(heatmapDay.dateString)}
         style:animation-delay={`${3 * heatmapDay.heatmapColumn}ms`}
         style:height={`${dayElementSize}px`}
@@ -1214,7 +1183,7 @@
   </div>
   <button
     title="Move Forwards"
-    class="hover:text-red-500"
+    class="hover:text-accent-strong"
     on:click={() => {
       const scrollWidth =
         heatmapElement.scrollWidth - heatmapElement.scrollLeft - heatmapDayMargins;
@@ -1389,11 +1358,11 @@
 
 <style>
   .heatmap-day-current {
-    background-color: color-mix(in srgb, var(--font-color) 22%, var(--surface-strong-color));
+    background-color: var(--heatmap-empty);
   }
 
   .heatmap-day-other {
-    background-color: color-mix(in srgb, var(--font-color) 10%, var(--surface-strong-color));
+    background-color: color-mix(in srgb, var(--heatmap-empty) 45%, transparent);
   }
 
   .highlight {

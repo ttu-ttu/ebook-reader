@@ -41,7 +41,7 @@
         }
       }}
     />
-    <div class="text-red-500 mt-4">{error}</div>
+    <div class="text-danger mt-4">{error}</div>
   </div>
   <div class="flex grow justify-between" slot="footer">
     <button

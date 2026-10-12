@@ -48,7 +48,38 @@ export interface ResolvedTheme {
 
 export const themeFormatVersion = 1;
 
+/**
+ * Tokens added with the Washi redesign. Their defaults follow the colours every
+ * theme already sets, so themes made before them still look like themselves.
+ */
+const derivedTokens = {
+  subtleText: 'color-mix(in srgb, var(--app-muted-fg) 72%, transparent)',
+  accentHover: 'color-mix(in srgb, var(--accent-color) 84%, var(--font-color))',
+  focusRing: 'var(--accent-color)',
+  toggleOn: 'var(--accent-color)',
+  toggleOff: 'color-mix(in srgb, var(--font-color) 24%, transparent)',
+  progressTrack: 'color-mix(in srgb, var(--font-color) 12%, transparent)',
+  progressFill: 'var(--accent-color)',
+  coverShadow: 'var(--shadow-color)',
+  heatmapEmpty: 'color-mix(in srgb, var(--font-color) 7%, transparent)',
+  heatmapLow: 'color-mix(in srgb, var(--accent-color) 28%, var(--background-color))',
+  heatmapHigh: 'var(--accent-color)'
+} as const;
+
+/** Jiten's difficulty palette, readable on light and dark backgrounds. */
+const jitenDifficulty = {
+  difficulty1: '#15803d',
+  difficulty2: '#22c55e',
+  difficulty3: '#06b6d4',
+  difficulty4: '#d97706',
+  difficulty5: '#dc2626'
+} as const;
+
 const lightBase: ThemeColors = {
+  ...derivedTokens,
+  ...jitenDifficulty,
+  success: '#15803d',
+  warning: '#b45309',
   background: '#eef3f6',
   surface: 'rgba(255, 255, 255, 0.8)',
   surfaceStrong: 'rgba(255, 255, 255, 0.92)',
@@ -90,6 +121,10 @@ const lightBase: ThemeColors = {
 };
 
 const darkBase: ThemeColors = {
+  ...derivedTokens,
+  ...jitenDifficulty,
+  success: '#4ade80',
+  warning: '#fbbf24',
   background: '#16191c',
   surface: 'rgba(36, 40, 45, 0.82)',
   surfaceStrong: 'rgba(44, 49, 55, 0.96)',
@@ -132,8 +167,124 @@ const darkBase: ThemeColors = {
 
 const defaults = { radius: 1, blur: 24, uiFont: '', customCss: '' };
 
-/** Built-in themes. The first six keep the ids of upstream's reader themes. */
+/** The default themes (Settings → Themes, and the reset target). */
+export const defaultLightThemeId = 'washi-theme';
+export const defaultDarkThemeId = 'washi-dark-theme';
+
+/** Built-in themes. Ids from light-theme to black-theme are upstream's reader themes. */
 export const builtInThemes: ThemeDefinition[] = [
+  {
+    id: 'washi-theme',
+    name: 'Washi',
+    extends: 'light',
+    radius: 0.6,
+    blur: 0,
+    colors: {
+      background: '#f5f0e6',
+      surface: '#fbf8f1',
+      surfaceStrong: '#fffdf8',
+      text: '#1f1b16',
+      mutedText: '#5f574b',
+      subtleText: '#857c6f',
+      border: '#e2d9c8',
+      shadow: 'rgba(60, 40, 20, 0.12)',
+      insetHighlight: 'rgba(255, 255, 255, 0)',
+      accent: '#b23a24',
+      accentStrong: '#9a2f1c',
+      accentHover: '#9a2f1c',
+      accentText: '#fffaf2',
+      focusRing: '#b23a24',
+      control: '#fffdf8',
+      controlBorder: '#cfc3ad',
+      danger: '#a3192b',
+      success: '#2f7a3e',
+      warning: '#9a5b06',
+      overlay: 'rgba(31, 27, 22, 0.4)',
+      scrollbar: 'rgba(95, 87, 75, 0.45)',
+      toggleOff: '#cfc3ad',
+      progressTrack: '#e8dfcf',
+      coverShadow: 'rgba(60, 40, 20, 0.24)',
+      difficulty1: '#4f7a3a',
+      difficulty2: '#7d9a3e',
+      difficulty3: '#c08a1e',
+      difficulty4: '#c4561f',
+      difficulty5: '#a3201b',
+      heatmapEmpty: '#ebe3d4',
+      heatmapLow: '#ecc3b4',
+      headerBackground: 'rgba(245, 240, 230, 0.94)',
+      headerText: '#1f1b16',
+      headerBorder: '#e2d9c8',
+      headerIcon: '#5f574b',
+      headerIconBackground: 'transparent',
+      headerIconBorder: 'transparent',
+      headerIconHover: 'rgba(31, 27, 22, 0.06)',
+      readerText: '#2a241d',
+      readerBackground: '#f7f2e8',
+      selectionText: '#fffaf2',
+      selectionBackground: 'rgba(178, 58, 36, 0.78)',
+      furiganaHintText: 'rgba(42, 36, 29, 0.35)',
+      furiganaHintShadow: 'rgba(42, 36, 29, 0.3)',
+      footerText: 'rgba(42, 36, 29, 0.6)',
+      panelBackground: 'rgba(31, 27, 22, 0.96)',
+      panelText: '#f5f0e6'
+    }
+  },
+  {
+    id: 'washi-dark-theme',
+    name: 'Sumi',
+    extends: 'dark',
+    radius: 0.6,
+    blur: 0,
+    colors: {
+      background: '#1a1714',
+      surface: '#24201b',
+      surfaceStrong: '#2c2823',
+      text: '#ece5d8',
+      mutedText: '#a89f90',
+      subtleText: '#857d70',
+      border: '#3a342d',
+      shadow: 'rgba(0, 0, 0, 0.5)',
+      insetHighlight: 'rgba(255, 255, 255, 0)',
+      accent: '#e8735a',
+      accentStrong: '#f08b73',
+      accentHover: '#f08b73',
+      accentText: '#1a1714',
+      focusRing: '#e8735a',
+      control: '#211d19',
+      controlBorder: '#4a433a',
+      danger: '#ff8f85',
+      success: '#8cc68c',
+      warning: '#e3a949',
+      overlay: 'rgba(0, 0, 0, 0.6)',
+      scrollbar: 'rgba(168, 159, 144, 0.4)',
+      toggleOff: '#4a433a',
+      progressTrack: '#332e28',
+      coverShadow: 'rgba(0, 0, 0, 0.6)',
+      difficulty1: '#7fae5f',
+      difficulty2: '#a9c25a',
+      difficulty3: '#e0b04a',
+      difficulty4: '#ef8a4c',
+      difficulty5: '#f0675a',
+      heatmapEmpty: '#2a2621',
+      heatmapLow: '#5a3329',
+      headerBackground: 'rgba(26, 23, 20, 0.94)',
+      headerText: '#ece5d8',
+      headerBorder: '#3a342d',
+      headerIcon: '#a89f90',
+      headerIconBackground: 'transparent',
+      headerIconBorder: 'transparent',
+      headerIconHover: 'rgba(236, 229, 216, 0.08)',
+      readerText: 'rgba(236, 229, 216, 0.88)',
+      readerBackground: '#1c1915',
+      selectionText: '#1a1714',
+      selectionBackground: 'rgba(232, 115, 90, 0.82)',
+      furiganaHintText: 'rgba(236, 229, 216, 0.3)',
+      furiganaHintShadow: 'rgba(236, 229, 216, 0.25)',
+      footerText: 'rgba(236, 229, 216, 0.55)',
+      panelBackground: 'rgba(14, 12, 10, 0.96)',
+      panelText: '#ece5d8'
+    }
+  },
   { id: 'light-theme', name: 'Light', dark: false },
   {
     id: 'ecru-theme',
@@ -194,7 +345,7 @@ export const builtInThemes: ThemeDefinition[] = [
       surface: 'rgba(251, 246, 236, 0.82)',
       surfaceStrong: 'rgba(253, 250, 243, 0.94)',
       text: '#3e2f22',
-      mutedText: 'rgba(62, 47, 34, 0.66)',
+      mutedText: 'rgba(62, 47, 34, 0.76)',
       border: 'rgba(139, 107, 72, 0.22)',
       accent: '#8b5e34',
       accentStrong: '#6d4826',
@@ -214,9 +365,9 @@ export const builtInThemes: ThemeDefinition[] = [
       surface: 'rgba(255, 250, 252, 0.82)',
       surfaceStrong: 'rgba(255, 252, 253, 0.94)',
       text: '#3f2a33',
-      mutedText: 'rgba(63, 42, 51, 0.64)',
+      mutedText: 'rgba(63, 42, 51, 0.76)',
       border: 'rgba(219, 39, 119, 0.14)',
-      accent: '#db2777',
+      accent: '#cf2470',
       accentStrong: '#be185d',
       headerBackground: 'rgba(80, 28, 52, 0.82)',
       readerText: '#3f2a33',
@@ -233,7 +384,7 @@ export const builtInThemes: ThemeDefinition[] = [
       surface: 'rgba(59, 66, 82, 0.82)',
       surfaceStrong: 'rgba(67, 76, 94, 0.96)',
       text: '#eceff4',
-      mutedText: 'rgba(216, 222, 233, 0.66)',
+      mutedText: 'rgba(216, 222, 233, 0.8)',
       control: 'rgba(59, 66, 82, 0.92)',
       accent: '#88c0d0',
       accentStrong: '#8fbcbb',
@@ -255,7 +406,7 @@ export const builtInThemes: ThemeDefinition[] = [
       surface: 'rgba(7, 54, 66, 0.82)',
       surfaceStrong: 'rgba(7, 54, 66, 0.97)',
       text: '#eee8d5',
-      mutedText: 'rgba(147, 161, 161, 0.9)',
+      mutedText: '#a9b5b5',
       control: 'rgba(7, 54, 66, 0.92)',
       accent: '#b58900',
       accentStrong: '#cb9b11',

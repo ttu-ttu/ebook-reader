@@ -417,7 +417,7 @@
         {@const otherRowInEdit = rowInEdit && !currentRowInEdit}
         <div class="col-span-2 md:col-span-1">
           <button
-            class="hover:text-red-500"
+            class="hover:text-accent-strong"
             class:cursor-not-allowed={otherRowInEdit}
             title={otherRowInEdit ? '' : `${rowInEdit ? 'Cancel Edit' : 'Delete Row'}`}
             disabled={otherRowInEdit}
@@ -433,7 +433,7 @@
           </button>
           {#if isNoneAggregation}
             <button
-              class="ml-2 hover:text-red-500"
+              class="ml-2 hover:text-accent-strong"
               class:cursor-not-allowed={otherRowInEdit}
               title={otherRowInEdit ? '' : `${rowInEdit ? 'Save Changes' : 'Edit Row'}`}
               disabled={otherRowInEdit}

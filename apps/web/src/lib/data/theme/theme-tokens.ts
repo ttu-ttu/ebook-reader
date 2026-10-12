@@ -38,6 +38,11 @@ export const themeTokenGroups = {
       cssVar: '--app-muted-fg',
       description: 'Secondary text such as hints and counts'
     },
+    subtleText: {
+      label: 'Subtle text',
+      cssVar: '--app-text-subtle',
+      description: 'Least important text: placeholders, counts on inactive filters'
+    },
     border: { label: 'Border', cssVar: '--border-color', description: 'Card and divider borders' },
     shadow: { label: 'Shadow', cssVar: '--shadow-color', description: 'Drop shadows' },
     insetHighlight: {
@@ -55,6 +60,11 @@ export const themeTokenGroups = {
       cssVar: '--accent-strong-color',
       description: 'Accent used for text and icons'
     },
+    accentHover: {
+      label: 'Accent (hover)',
+      cssVar: '--app-accent-hover',
+      description: 'Accent buttons and links under the pointer'
+    },
     accentText: {
       label: 'Text on accent',
       cssVar: '--app-accent-fg',
@@ -64,6 +74,11 @@ export const themeTokenGroups = {
       label: 'Controls',
       cssVar: '--app-control-bg',
       description: 'Inputs, tabs and buttons'
+    },
+    focusRing: {
+      label: 'Focus ring',
+      cssVar: '--app-focus-ring',
+      description: 'Outline around the focused control when using the keyboard'
     },
     controlBorder: {
       label: 'Control border',
@@ -84,6 +99,69 @@ export const themeTokenGroups = {
       label: 'Scrollbar',
       cssVar: '--app-scrollbar-color',
       description: 'Scrollbar thumb'
+    }
+  },
+  States: {
+    success: {
+      label: 'Success',
+      cssVar: '--app-success-color',
+      description: 'Synced, saved and other good states'
+    },
+    warning: {
+      label: 'Warning',
+      cssVar: '--app-warning-color',
+      description: 'Pending sync and other states that need attention'
+    },
+    toggleOn: {
+      label: 'Switch on',
+      cssVar: '--app-toggle-on',
+      description: 'Track of a switch that is on'
+    },
+    toggleOff: {
+      label: 'Switch off',
+      cssVar: '--app-toggle-off',
+      description: 'Track of a switch that is off'
+    },
+    progressTrack: {
+      label: 'Progress track',
+      cssVar: '--app-progress-track',
+      description: 'Empty part of progress bars'
+    },
+    progressFill: {
+      label: 'Progress fill',
+      cssVar: '--app-progress-fill',
+      description: 'Filled part of progress bars'
+    },
+    coverShadow: {
+      label: 'Cover shadow',
+      cssVar: '--app-cover-shadow',
+      description: 'Shadow under book covers'
+    }
+  },
+  Data: {
+    difficulty1: { label: 'Difficulty 1', cssVar: '--difficulty-1', description: 'Beginner' },
+    difficulty2: { label: 'Difficulty 2', cssVar: '--difficulty-2', description: 'Easy' },
+    difficulty3: { label: 'Difficulty 3', cssVar: '--difficulty-3', description: 'Average' },
+    difficulty4: { label: 'Difficulty 4', cssVar: '--difficulty-4', description: 'Hard' },
+    difficulty5: {
+      label: 'Difficulty 5',
+      cssVar: '--difficulty-5',
+      description: 'Expert and above'
+    },
+    heatmapEmpty: {
+      label: 'Heatmap (no reading)',
+      cssVar: '--heatmap-empty',
+      description: 'Days without reading'
+    },
+    heatmapLow: {
+      label: 'Heatmap (a little)',
+      cssVar: '--heatmap-low',
+      description: 'Days with the least reading; other days blend towards the next colour'
+    },
+    heatmapHigh: {
+      label: 'Heatmap (a lot)',
+      cssVar: '--heatmap-high',
+      description: 'Days with the most reading'
     }
   },
   Header: {

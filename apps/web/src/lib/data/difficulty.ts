@@ -10,9 +10,6 @@
 
 export const difficultyNames = ['Beginner', 'Easy', 'Average', 'Hard', 'Expert', 'Insane'] as const;
 
-/** Jiten's default palette, readable on light and dark backgrounds. */
-const difficultyColors = ['#15803d', '#22c55e', '#06b6d4', '#d97706', '#dc2626', '#dc2626'];
-
 export function difficultyBand(difficulty: number) {
   return Math.min(Math.max(Math.floor(difficulty), 0), difficultyNames.length - 1);
 }
@@ -21,6 +18,7 @@ export function difficultyName(difficulty: number) {
   return difficultyNames[difficultyBand(difficulty)];
 }
 
+/** Theme colour of the band (difficulty1-5; Insane shares Expert's). */
 export function difficultyColor(difficulty: number) {
-  return difficultyColors[difficultyBand(difficulty)];
+  return `var(--difficulty-${Math.min(difficultyBand(difficulty) + 1, 5)})`;
 }

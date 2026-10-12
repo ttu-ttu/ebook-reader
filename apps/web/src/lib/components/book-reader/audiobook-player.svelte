@@ -385,7 +385,7 @@
     <button class="player-pill" disabled={!audioFile || !subtitleFile || matching} on:click={match}>
       {#if matching}<Fa icon={faSpinner} spin /> Matching...{:else}Match with the book{/if}
     </button>
-    {#if error}<p class="pt-2 text-xs text-red-400">{error}</p>{/if}
+    {#if error}<p class="pt-2 text-xs text-panel-danger">{error}</p>{/if}
   </div>
 {/if}
 
@@ -580,7 +580,7 @@
     padding: 0.6rem 0.75rem 0.75rem;
     border: 1px solid color-mix(in srgb, var(--reader-panel-fg) 10%, transparent);
     border-radius: 1.1rem;
-    box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.45);
+    box-shadow: 0 10px 30px -12px var(--shadow-color);
   }
 
   .sheet-header {

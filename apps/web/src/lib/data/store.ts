@@ -40,6 +40,7 @@ import {
   AutoReplicationType,
   ReplicationSaveBehavior
 } from '$lib/functions/replication/replication-options';
+import { defaultLightThemeId } from '$lib/data/theme/themes';
 import { writableSubject } from '$lib/functions/svelte/store';
 import { map } from 'rxjs';
 import { BookReaderAvailableKeybind, type BookReaderKeybindMap } from './book-reader-keybind';
@@ -62,7 +63,7 @@ import type { WritingMode } from './writing-mode';
 import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
 
-export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
+export const theme$ = writableStringLocalStorageSubject()('theme', defaultLightThemeId);
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
   'customThemes',
   {}

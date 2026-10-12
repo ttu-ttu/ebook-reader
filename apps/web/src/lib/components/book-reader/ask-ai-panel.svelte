@@ -131,7 +131,7 @@
         <p class="mt-4 mb-2 font-semibold">{exchange.question}</p>
       {/if}
       {#if exchange.error}
-        <p class="text-red-400">{exchange.error}</p>
+        <p class="text-panel-danger">{exchange.error}</p>
       {:else if exchange.answer}
         <div class="answer whitespace-pre-wrap leading-relaxed">
           {@html renderBasicMarkdown(exchange.answer)}
