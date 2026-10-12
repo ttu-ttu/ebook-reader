@@ -206,7 +206,8 @@ function fetch_file(FS, key, filemap) {
   node.loading = true;
   loadFile(node.url)
     .then(function (data) {
-      FS.writeFile(node.path, new Uint8Array(data));
+      // canOwn: the engine keeps this buffer instead of a copy, so a file sits in memory once.
+      FS.writeFile(node.path, new Uint8Array(data), { canOwn: true });
     })
     .catch(function (error) {
       console.error('Could not load ' + node.path, error);

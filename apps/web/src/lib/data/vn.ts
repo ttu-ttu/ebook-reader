@@ -48,6 +48,16 @@ export interface VnRead {
 
 export type VnLine = { text: string; ruby?: string }[];
 
+/** Cache API cache keeping a server game's files in this browser (the /v page asks first). */
+export function vnCacheName(title: string) {
+  return `ttu-vn:${title}`;
+}
+
+/** Frees a game's kept files, e.g. when it leaves the library or Home. */
+export async function deleteVnCache(title: string) {
+  if ('caches' in window) await caches.delete(vnCacheName(title));
+}
+
 /** The folder holding the game's script ('' or 'Game/'), the shallowest if several. */
 export function findVnRoot(paths: string[]): string | undefined {
   const roots = paths

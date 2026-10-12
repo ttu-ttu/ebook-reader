@@ -14,6 +14,7 @@ import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 import { orderSeries } from '$lib/components/book-card/library-sort';
 import { writableObjectLocalStorageSubject } from '$lib/data/internal/writable-object-local-storage-subject';
 import { writableStringLocalStorageSubject } from '$lib/data/internal/writable-string-local-storage-subject';
+import { deleteVnCache } from '$lib/data/vn';
 
 export type LibraryTab = 'home' | 'store';
 
@@ -31,6 +32,7 @@ export function addToHome(titles: string[]) {
 
 export function removeFromHome(title: string) {
   homeBookTitles$.next(homeBookTitles$.getValue().filter((t) => t !== title));
+  deleteVnCache(title).catch(() => {});
 }
 
 export interface SeriesMatch {

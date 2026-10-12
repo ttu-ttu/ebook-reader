@@ -34,6 +34,7 @@
     mergeVnSaves,
     newText,
     overlayLines,
+    vnCacheName,
     parseVnPage,
     sameVnSaves,
     saveVnRead,
@@ -249,7 +250,7 @@
   async function gameCache(base: string | undefined) {
     if (!base || !('caches' in window)) return undefined;
 
-    const name = `ttu-vn:${base}`;
+    const name = vnCacheName(book!.title);
 
     if (await caches.has(name)) return name;
 

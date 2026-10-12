@@ -33,6 +33,7 @@
     seriesGroups,
     storeView$
   } from '$lib/data/library-home';
+  import { deleteVnCache } from '$lib/data/vn';
   import DifficultyDialog from '$lib/components/book-card/difficulty-dialog.svelte';
   import {
     allBooksFilter,
@@ -697,16 +698,16 @@
 
     const currentBookCount = $bookCards$.length;
     const handler = getStorageHandler(window, $storageSource$, '');
+    const cards = $bookCards$.filter((card) => bookIds.includes(card.id));
     const { error, deleted } = await handler.deleteBookData(
-      $bookCards$.reduce((toDelete, card) => {
-        if (bookIds.includes(card.id)) {
-          toDelete.push(card.title);
-        }
-        return toDelete;
-      }, [] as string[]),
+      cards.map((card) => card.title),
       cancelSignal,
       $keepLocalStatisticsOnDeletion$
     );
+
+    cards
+      .filter((card) => deleted.includes(card.id))
+      .forEach((card) => deleteVnCache(card.title).catch(() => {}));
 
     resetProgress();
 
