@@ -246,8 +246,8 @@ class AccountServiceTest(unittest.TestCase):
         server = ThreadingHTTPServer(('127.0.0.1', 0), service.Handler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
 
-        def status(token):
-            request = urllib.request.Request(f'http://127.0.0.1:{server.server_port}/config',
+        def status(token, path='/config'):
+            request = urllib.request.Request(f'http://127.0.0.1:{server.server_port}{path}',
                                              headers={'X-Internal-Token': token})
             try:
                 with urllib.request.urlopen(request) as response:
@@ -262,6 +262,8 @@ class AccountServiceTest(unittest.TestCase):
             self.assertEqual(status(''), 403)
             self.assertEqual(status('c0ffe'), 403)
             self.assertEqual(status('c0ffee'), 200)
+            # A trailing slash would get around nginx's exact location (its rate limit for login).
+            self.assertEqual(status('c0ffee', '/config/'), 404)
         finally:
             server.shutdown()
             server.server_close()

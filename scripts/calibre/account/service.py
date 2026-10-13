@@ -824,7 +824,8 @@ class Handler(BaseHTTPRequestHandler):
     }
 
     def dispatch(self, method: str):
-        route = self.ROUTES.get((method, self.path.split('?')[0].strip('/')))
+        # Only the leading slash: nginx rate-limits /account/api/login exactly, not login/.
+        route = self.ROUTES.get((method, self.path.split('?')[0].lstrip('/')))
 
         try:
             if not from_nginx(self.headers):

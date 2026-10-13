@@ -38,6 +38,8 @@ anything a reader or a server operator would notice.
   longer reach outside hosts.
 - Reader: a recap or lorebook update saved while its sync was fetching the server
   copy is no longer overwritten by that sync.
+- Server: the sign-in rate limit can no longer be skipped with a trailing slash
+  (`/account/api/login/`).
 
 ### Library
 
