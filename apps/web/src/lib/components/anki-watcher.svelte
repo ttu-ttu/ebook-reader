@@ -44,7 +44,14 @@
     try {
       show('Adding media to the Anki card…');
 
-      const filled = await addMediaToNote(note, await media(note));
+      const found = await media(note);
+
+      if (!found.audio && !found.picture) {
+        message = '';
+        return;
+      }
+
+      const filled = await addMediaToNote(note, found);
 
       show(
         filled.length

@@ -260,21 +260,19 @@ export async function bookSentenceAudio(
   }
 
   const audiobook = await getAudiobook(title);
+  const clip =
+    audiobook &&
+    sentenceClip(
+      audiobook.cues,
+      (await getIndex()).paragraphs.map((p) => matchableText(p.text)).join(''),
+      sentence,
+      position
+    );
 
-  if (!audiobook) {
-    if (ankiBookAiFallback$.getValue()) {
-      return (await synthesizeSpeech(sentence)).audio;
-    }
-    throw new Error('No audiobook for this book (Listen → Audiobook)');
+  if (audiobook && clip) {
+    return recordClip(audiobook.audio, clip.start, clip.end);
   }
 
-  const index = await getIndex();
-  const bookText = index.paragraphs.map((p) => matchableText(p.text)).join('');
-  const clip = sentenceClip(audiobook.cues, bookText, sentence, position);
-
-  if (!clip) {
-    throw new Error('The sentence was not found in the audiobook');
-  }
-
-  return recordClip(audiobook.audio, clip.start, clip.end);
+  // No audiobook, or the sentence isn't in its subtitles.
+  return ankiBookAiFallback$.getValue() ? (await synthesizeSpeech(sentence)).audio : undefined;
 }
