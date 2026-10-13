@@ -11,6 +11,7 @@
  */
 
 export const defaultUpdateRepo = 'blankiekun/chimimouryou';
+export const engineRepo = 'blankiekun/CONscripter';
 
 export interface UpdateCheck {
   /** Deployed commit; empty if version.txt doesn't name one (e.g. a plain docker build). */
@@ -81,5 +82,27 @@ export async function checkForUpdate(repo: string, version: string): Promise<Upd
     commits: commits
       .map((entry) => ({ sha: entry.sha, message: entry.commit.message.split('\n')[0] }))
       .reverse()
+  };
+}
+
+/** The visual novel engine's version (static/vn/conscripter-version.txt) and CONscripter's latest release. */
+export async function checkEngineRelease(installed: string) {
+  const release = await github(engineRepo, 'releases/latest');
+
+  if (!release) {
+    throw new Error(`${engineRepo} has no release on GitHub`);
+  }
+
+  const latest: string = release.tag_name;
+
+  return {
+    installed: installed.trim(),
+    latest,
+    url: release.html_url as string,
+    newer: latest !== installed.trim(),
+    /** build.sh needs the release's web build, which is uploaded after the tag. */
+    webBuild: (release.assets ?? []).some((asset: { name: string }) =>
+      asset.name.endsWith('_web.7z')
+    )
   };
 }

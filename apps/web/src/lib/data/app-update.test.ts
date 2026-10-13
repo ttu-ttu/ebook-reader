@@ -5,7 +5,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { checkForUpdate, commitOfVersion } from './app-update';
+import { checkEngineRelease, checkForUpdate, commitOfVersion } from './app-update';
 
 function github(routes: Record<string, unknown>) {
   vi.stubGlobal(
@@ -61,5 +61,26 @@ describe('app update check', () => {
     const check = await checkForUpdate('o/r', 'deadbee-dirty');
 
     expect([check.state, check.latest, check.dirty]).toEqual(['unknown', 'c9', true]);
+  });
+
+  it('compares the installed engine with the latest CONscripter release', async () => {
+    const release = {
+      tag_name: 'v0.10.0',
+      html_url: 'https://example.test/v0.10.0',
+      assets: [{ name: 'conscripter_v0.10.0_web.7z' }]
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(release)))
+    );
+
+    expect(await checkEngineRelease('v0.9.0\n')).toEqual({
+      installed: 'v0.9.0',
+      latest: 'v0.10.0',
+      url: release.html_url,
+      newer: true,
+      webBuild: true
+    });
+    expect((await checkEngineRelease('v0.10.0')).newer).toBe(false);
   });
 });

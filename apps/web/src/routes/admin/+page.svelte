@@ -4,6 +4,7 @@
   import { map, share } from 'rxjs';
   import Fa from 'svelte-fa';
   import AppHeader from '$lib/components/app-header/app-header.svelte';
+  import EngineTool from '$lib/components/admin/engine-tool.svelte';
   import CatalogTool from '$lib/components/admin/catalog-tool.svelte';
   import SeriesTool from '$lib/components/admin/series-tool.svelte';
   import UpdateTool from '$lib/components/admin/update-tool.svelte';
@@ -92,6 +93,9 @@
           {#if user?.admin}
             <SettingsItemGroup title="Updates" wide>
               <UpdateTool />
+            </SettingsItemGroup>
+            <SettingsItemGroup title="Visual novel engine" wide>
+              <EngineTool />
             </SettingsItemGroup>
             <SettingsItemGroup title="Catalog" wide>
               <CatalogTool />

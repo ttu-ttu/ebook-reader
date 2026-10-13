@@ -6,6 +6,13 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Visual novel engine
+
+- The visual novel player runs CONscripter v0.10.0, taken from its own web release
+  (`scripts/onsyuri/build.sh` downloads the latest one; our text hook is now part of
+  CONscripter). Admin panel → Tools → Visual novel engine shows the installed and the
+  latest release.
+
 ### Security fixes (AUDIT.md)
 
 - Server: the account, import and difficulty services only answer nginx, which
