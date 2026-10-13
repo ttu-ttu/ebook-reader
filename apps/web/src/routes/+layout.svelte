@@ -5,6 +5,7 @@
   import ThemeStyle from '$lib/components/theme/theme-style.svelte';
   import { accountReady } from '$lib/data/account';
   import { startSettingsSync } from '$lib/data/account-settings-sync';
+  import { releaseReaderData } from '$lib/data/reader-data-owner';
   import { basePath, clearConsoleOnReload } from '$lib/data/env';
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { userFontsCacheName, type UserFont } from '$lib/data/fonts';
@@ -19,7 +20,10 @@
   let zIndex = '';
 
   if (browser) {
-    accountReady().then(startSettingsSync);
+    accountReady().then(async (user) => {
+      await releaseReaderData(user).catch(() => {});
+      startSettingsSync(user);
+    });
   }
 
   $: if (browser) {

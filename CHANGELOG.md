@@ -27,6 +27,10 @@ anything a reader or a server operator would notice.
   progress count), and a failed upload no longer leaves a partial file behind.
 - Difficulty: uploading the frequency list no longer hangs until nginx times out
   with a 504.
+- Accounts: when another account (or nobody) uses the browser, the previous reader's
+  progress, statistics and reading goals for Calibre books are removed from it, so
+  they are no longer shown to or synced into the next account. They come back from
+  the server at the next sign-in.
 
 ### Library
 
