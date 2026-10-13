@@ -4,7 +4,7 @@
 # committed, so this only runs when the engine or the patch changes.
 set -euo pipefail
 
-ONSYURI_COMMIT=08f744b31cc1907b66a15f0402e62321a131ed81
+ONSYURI_COMMIT=d65a3b40efbf557d95bfd3075b25307c0374720b
 EMSDK_IMAGE=emscripten/emsdk:6.0.12
 
 here=$(cd "$(dirname "$0")" && pwd)
