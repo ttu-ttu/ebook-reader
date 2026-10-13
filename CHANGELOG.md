@@ -71,6 +71,12 @@ anything a reader or a server operator would notice.
 - A Calibre manga opened on a device that hadn't cached it yet (already read elsewhere)
   stayed on the loading spinner instead of opening in the manga reader.
 
+### Server
+
+- The account service no longer has `POST /account/api/import-shared` (copying data saved
+  while signed out into an account); the app stopped using it, and `STORAGE_ROOT_NAME` is
+  no longer read.
+
 ### Washi & Sumi redesign
 
 - New look and default themes: Washi (warm paper, ink text, vermilion accent, mincho

@@ -120,8 +120,7 @@ TypeScript with tests, the UI in `components/book-reader/`, and keep the glue in
 **A per-reader file for Calibre books** - either a prefix in
 `CalibreStorageHandler.isPersonalFile` (synced like progress), or a file of its
 own through `CalibreStorageHandler.syncFileUrl(title, name)` (like
-`annotations.json`). Add the prefix to `PERSONAL_PREFIXES` in
-`account/service.py` so `import-shared` includes it.
+`annotations.json`).
 
 **A server endpoint** - add a route to the service's `ROUTES` (accounts) or
 `do_GET`/`do_POST` (difficulty), proxy it in `nginx-ebook-reader.conf.template` if it

@@ -79,7 +79,6 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
   The Statistics page and Home dashboard pull every book's statistics from there (`data/statistics-sync.ts`, own handler instances so they never switch the reader's context).
   AI settings and themes sync through `settings.json` in that folder (`lib/data/account-settings-sync.ts`; add a store to `sharedSettings` to sync it). Each setting keeps its own last-changed time, and the newest wins.
   Settings → Reader options (`readerSettings`) sync per reader profile, stored as `reader.<phone|desktop>.<key>`, so phones and larger screens keep separate reader styles (e.g. 1 vs 2 page columns). A device is a phone if it has a coarse pointer and a screen short side under 600 px (`readerProfile()`).
-  `POST /account/api/import-shared` copies progress, statistics and highlights saved while signed out into the account (never overwriting its own files); the UI no longer offers it.
 - Settings page (`routes/settings/+page.svelte`): sidebar areas and sections (collapsible groups, scroll-spy; on phones a list that drills into one area), defined in `settings/settings-sections.ts`. URLs are `/settings?section=<area>#<section id>`; old `?tab=` links still work. The first jump to the section in the URL doesn't call SvelteKit's `replaceState` (the router isn't ready in the first `onMount`).
   Each `SettingsSection` (by id) can live in any component; CSS `order` keeps the sidebar order. Search (Ctrl+F) matches `SettingsItemGroup` titles and descriptions (`data-settings-search`).
 - The reading tracker starts when a book opens if statistics are enabled and `trackerStartOnOpen$` is on (`startTrackerOnOpen$` in `b/+page.svelte`, after 1.5 s without a page change).
@@ -114,7 +113,7 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
 ## Fragile areas
 
 - `routes/b/+page.svelte`: huge; the reader extras' glue lives inline. Keep new logic in `lib/` modules with tests and verify with a real book in both view modes.
-- Sync file names carry metadata (`bookdata_*`, `progress_*`, upstream's `BaseStorageHandler`); renaming or adding prefixes affects every device. Per-reader prefixes must match `isPersonalFile` and `PERSONAL_PREFIXES` in `account/service.py`.
+- Sync file names carry metadata (`bookdata_*`, `progress_*`, upstream's `BaseStorageHandler`); renaming or adding prefixes affects every device.
 - Book titles are identities (folder names). Changing how `build-catalog.py` makes titles unique orphans synced data.
 - `scripts/deploy.sh`: the server-side steps are single-quoted `bash -c '…'` strings run through `run`; a single quote inside one ends it early. Over SSH they are re-quoted with `printf %q`, so keep them plain bash.
 - `local/` and `CLAUDE.local.md` are gitignored and hold one deployment's settings; never commit them.

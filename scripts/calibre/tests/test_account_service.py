@@ -107,29 +107,6 @@ class AccountServiceTest(unittest.TestCase):
         service.delete_session(token)
         self.assertIsNone(service.session_user(token))
 
-    def test_copy_missing_files_never_overwrites(self):
-        source = os.path.join(self.tmp.name, 'src')
-        target = os.path.join(self.tmp.name, 'dst')
-        os.makedirs(source)
-        os.makedirs(target)
-        for name in ('progress_1_old.json', 'statistics_x.json', 'bookdata_x.html'):
-            open(os.path.join(source, name), 'w').close()
-        open(os.path.join(target, 'progress_2_mine.json'), 'w').close()
-        copied = service.copy_missing_files(source, target, service.PERSONAL_PREFIXES)
-        self.assertEqual(copied, 1)
-        self.assertEqual(sorted(os.listdir(target)), ['progress_2_mine.json', 'statistics_x.json'])
-
-    def test_copy_includes_recaps_and_lorebook(self):
-        source = os.path.join(self.tmp.name, 'src2')
-        target = os.path.join(self.tmp.name, 'dst2')
-        os.makedirs(source)
-        os.makedirs(target)
-        for name in ('recaps.json', 'lorebook.json', 'cover.jpg'):
-            open(os.path.join(source, name), 'w').close()
-        copied = service.copy_missing_files(source, target, service.PERSONAL_PREFIXES)
-        self.assertEqual(copied, 2)
-        self.assertEqual(sorted(os.listdir(target)), ['lorebook.json', 'recaps.json'])
-
     def test_auth_status(self):
         reader = {'is_admin': 0, 'permissions': ''}
         importer = {'is_admin': 0, 'permissions': 'import'}

@@ -41,7 +41,7 @@ yourself.
 | `VITE_GDRIVE_CLIENT_ID`, `VITE_GDRIVE_CLIENT_SECRET` | empty | Google Drive sync (upstream feature); needs your own OAuth client. |
 | `VITE_ONEDRIVE_CLIENT_ID`, `VITE_ONEDRIVE_CLIENT_SECRET` | empty | OneDrive sync (upstream feature). |
 | `VITE_GDRIVE_*_ENDPOINT`, `VITE_GDRIVE_SCOPE`, `VITE_ONEDRIVE_*` | Google's / Microsoft's | OAuth endpoints and scopes; rarely changed. |
-| `VITE_STORAGE_ROOT_NAME`      | `ttu-reader-data`   | Root folder name in synced storage. Changing it hides existing synced data; must match the services' `STORAGE_ROOT_NAME`. |
+| `VITE_STORAGE_ROOT_NAME`      | `ttu-reader-data`   | Root folder name in synced storage. Changing it hides existing synced data. |
 | `VITE_BASE_PATH`, `VITE_PAGE_PATH` | upstream's site, empty | Upstream's hosting paths. |
 | `VITE_CLEAR_ON_RELOAD`        | off                 | Clears the console on reload (development). |
 
@@ -74,13 +74,12 @@ code are the same container paths.
 | Variable              | Docker value                               | Used by |
 | --------------------- | ------------------------------------------ | ------- |
 | `CALIBRE_LIBRARY`     | `/library`                                 | import, difficulty |
-| `SHARED_SYNC_DIR`     | `/data/sync`                               | account (`import-shared`, free-space check) |
+| `SHARED_SYNC_DIR`     | `/data/sync`                               | account (free-space check) |
 | `ACCOUNT_STATE_DIR`   | `/data/state/account` (`accounts.db`)      | account |
 | `ACCOUNT_DATA_DIR`    | `/data/accounts` (must match nginx's `ACCOUNT_DATA_DIR`) | account |
 | `ACCOUNT_HOST`, `ACCOUNT_PORT` | `0.0.0.0`, `8766`                 | account |
 | `ALLOW_HTTP_ACCOUNTS` | `0`                                        | account, import |
 | `MIN_FREE_MB`         | `1024`                                     | account |
-| `STORAGE_ROOT_NAME`   | `ttu-reader-data`                          | account |
 | `CATALOG_OUTPUT`      | `/data/state/catalog/catalog.json`         | import (rebuilds the catalog after adding books) |
 | `CATALOG_BUILDER`     | `/usr/local/bin/build-calibre-catalog`     | import |
 | `CALIBREDB`           | `calibredb`                                | import |

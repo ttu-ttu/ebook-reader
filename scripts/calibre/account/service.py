@@ -10,7 +10,6 @@ HTTP API (bound to localhost, proxied by nginx at /account/api/):
   POST login          {"username": ..., "password": ...}
   POST logout
   POST password       {"current": ..., "new": ...}; signs out other sessions
-  POST import-shared  copy progress/statistics/highlights saved while signed out
   GET  auth           200 with X-Account-Id, or 401 (nginx auth_request)
   GET  auth/<permission>         the same, 403 without that permission
   GET  auth/<permission>/writes  writes (X-Original-Method) need it; reads need
@@ -76,7 +75,6 @@ STATE_DIR = os.environ.get('ACCOUNT_STATE_DIR', '/data/state/account')
 # the settings (API keys).
 DATA_DIR = os.environ.get('ACCOUNT_DATA_DIR', '/data/accounts')
 SHARED_SYNC_DIR = os.environ.get('SHARED_SYNC_DIR', '/data/sync')
-ROOT_NAME = os.environ.get('STORAGE_ROOT_NAME', 'ttu-reader-data')
 PORT = int(os.environ.get('ACCOUNT_PORT', '8766'))
 # 0.0.0.0 in Docker, where nginx runs in another container.
 HOST = os.environ.get('ACCOUNT_HOST', '127.0.0.1')
@@ -88,10 +86,6 @@ COMMIT_PATTERN = re.compile(r'[0-9a-f]{7,40}')
 
 # nginx serves DATA_DIR/<account id> with `root`, so files live under the URI path.
 SYNC_PATH = os.path.join('account', 'sync')
-# Files that belong to a reader rather than to the book (see calibre-handler.ts).
-PERSONAL_PREFIXES = ('progress_', 'statistics_', 'annotations.json', 'recaps.json', 'lorebook.json',
-                     'vnsaves.json')
-READING_GOALS_PREFIX = 'ttu-user-goals_'
 
 COOKIE = '__Host-ttu_session'
 # Over plain HTTP (ALLOW_HTTP_ACCOUNTS): __Host- cookies must be Secure, which
@@ -534,50 +528,6 @@ def delete_session(token: str | None):
 
 
 # ---------------------------------------------------------------------------
-# Copying data saved while signed out (shared Calibre sync folder) to an account
-
-
-def copy_missing_files(source_dir: str, target_dir: str, prefixes: tuple) -> int:
-    """Copies files with these prefixes unless the target already has one with the same prefix."""
-    existing = os.listdir(target_dir) if os.path.isdir(target_dir) else []
-    copied = 0
-
-    for name in sorted(os.listdir(source_dir)):
-        prefix = next((p for p in prefixes if name.startswith(p)), None)
-
-        if not prefix or not os.path.isfile(os.path.join(source_dir, name)):
-            continue
-        if any(other.startswith(prefix) for other in existing):
-            continue
-
-        os.makedirs(target_dir, exist_ok=True)
-        shutil.copy2(os.path.join(source_dir, name), os.path.join(target_dir, name))
-        existing.append(name)
-        copied += 1
-
-    return copied
-
-
-def import_shared(user_id: str) -> dict:
-    source_root = os.path.join(SHARED_SYNC_DIR, ROOT_NAME)
-    target_root = os.path.join(DATA_DIR, user_id, SYNC_PATH, ROOT_NAME)
-    result = {'books': 0, 'files': 0}
-
-    if not os.path.isdir(source_root):
-        return result
-
-    result['files'] += copy_missing_files(source_root, target_root, (READING_GOALS_PREFIX,))
-
-    for entry in os.scandir(source_root):
-        if entry.is_dir() and not entry.name.startswith('.'):
-            copied = copy_missing_files(entry.path, os.path.join(target_root, entry.name), PERSONAL_PREFIXES)
-            result['books'] += 1 if copied else 0
-            result['files'] += copied
-
-    return result
-
-
-# ---------------------------------------------------------------------------
 # HTTP
 
 
@@ -782,9 +732,6 @@ class Handler(BaseHTTPRequestHandler):
         )
         return 200, {}, {}
 
-    def post_import_shared(self):
-        return 200, import_shared(self.require_user()['id']), {}
-
     def get_admin_update(self):
         self.require_admin()
         return 200, update_state(), {}
@@ -821,7 +768,6 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'login'): post_login,
         ('POST', 'logout'): post_logout,
         ('POST', 'password'): post_password,
-        ('POST', 'import-shared'): post_import_shared,
     }
 
     def dispatch(self, method: str):

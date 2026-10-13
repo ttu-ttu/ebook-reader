@@ -123,8 +123,8 @@ section in paginated mode. `annotations.json` is merged per highlight (newest
   the library owner), infers series from volume numbers, and makes titles unique.
 - **Accounts** (`account/service.py`): scrypt passwords, throttled sign-in,
   sessions in SQLite, admins and per-account permissions, the `auth_request`
-  answers (with `X-Account-Id`) for every protected location, a free-disk guard
-  for uploads, and `import-shared` to copy signed-out data into an account.
+  answers (with `X-Account-Id`) for every protected location, and a free-disk
+  guard for uploads.
 - **Import** (`import/service.py`): a queue that adds uploaded files to Calibre
   with `calibredb add`, one at a time, then rebuilds the catalog; the only writer
   of `metadata.db`.
