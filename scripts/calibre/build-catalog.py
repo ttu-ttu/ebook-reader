@@ -12,11 +12,11 @@ import json
 import os
 import posixpath
 import re
-import shutil
 import sqlite3
 import sys
 import tempfile
 import unicodedata
+import urllib.request
 import zipfile
 import zlib
 from collections import Counter, defaultdict
@@ -360,11 +360,15 @@ def build(library: str, output: str, vn_dir: str | None = None, force: bool = Fa
     if not force and os.path.exists(output) and os.path.getmtime(output) >= newest_input:
         return
 
-    # Work on a copy so a Calibre write in progress can't break or block us.
+    # Work on a copy so we don't block Calibre for the whole build. SQLite's backup takes
+    # it under a read lock, so a write in progress (ours or Calibre's own) can't tear it.
     with tempfile.TemporaryDirectory() as tmp:
-        db_copy = os.path.join(tmp, 'metadata.db')
-        shutil.copyfile(db_path, db_copy)
-        conn = sqlite3.connect(db_copy)
+        conn = sqlite3.connect(os.path.join(tmp, 'metadata.db'))
+        source = sqlite3.connect(f'file:{urllib.request.pathname2url(db_path)}?mode=ro', uri=True)
+        try:
+            source.backup(conn)
+        finally:
+            source.close()
         rows = conn.execute(
             f"""
             SELECT b.id, b.title, b.path, b.timestamp, d.name, d.format, d.uncompressed_size,

@@ -33,7 +33,7 @@ Top 5:
 | A-13 | Low | AuthZ (local) | `import/service.py:352`, `jiten/service.py`, tailscale override | Services trust `X-Account-Id`; host-local processes bypass all checks | Resolved |
 | A-14 | Low | CSRF | `jiten/service.py:336` | Difficulty POSTs have no Origin check (import has one) | Resolved |
 | A-15 | Low | Race | `account/service.py:378` | Last-admin check and update are not atomic | Resolved |
-| A-16 | Low | Race | `build-catalog.py:366` | `metadata.db` copied without the Calibre write lock (needs verification) | Open |
+| A-16 | Low | Race | `build-catalog.py:366` | `metadata.db` copied without the Calibre write lock (needs verification) | Resolved |
 | A-17 | Low | DoS | `build-catalog.py:209-245`, `jiten/frequency.py:15,21` | Unbounded `archive.read()` of ZIP members (needs verification) | Open |
 | A-18 | Low | Dependencies | `apps/web/package.json` | Svelte 4 runtime is end-of-life; 69 dev-tooling advisories | Open |
 | A-19 | Info | Misc | various | Small items, listed in section 3 | Open |
