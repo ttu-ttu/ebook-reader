@@ -2,12 +2,22 @@
   import { faSpinner } from '@fortawesome/free-solid-svg-icons';
   import { onDestroy, onMount } from 'svelte';
   import Fa from 'svelte-fa';
+  import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
   import { buttonClasses } from '$lib/css-classes';
   import { getUpdateState, requestUpdate, type UpdateState } from '$lib/data/account';
-  import { checkForUpdate, defaultUpdateRepo, type UpdateCheck } from '$lib/data/app-update';
+  import {
+    checkForUpdate,
+    defaultUpdateRepo,
+    updateChannel$,
+    type UpdateCheck
+  } from '$lib/data/app-update';
 
   const pollMs = 3000;
   const shownCommits = 30;
+  const channelOptions = [
+    { id: 'stable', text: 'Stable' },
+    { id: 'edge', text: 'Bleeding edge' }
+  ];
 
   let state: UpdateState | undefined;
   let check: UpdateCheck | undefined;
@@ -23,7 +33,12 @@
     !!state?.updater && !!check && check.latest !== check.current && check.state !== 'ahead';
   $: finished = !!updatingTo && status?.ref === updatingTo && status.state !== 'running';
 
-  onMount(refresh);
+  let mounted = false;
+
+  onMount(() => (mounted = true));
+
+  // Checks on opening and again when the channel changes.
+  $: if (mounted && $updateChannel$) refresh();
 
   onDestroy(() => clearTimeout(pollTimer));
 
@@ -36,7 +51,7 @@
 
       const version = await (await fetch('/version.txt', { cache: 'no-store' })).text();
 
-      check = await checkForUpdate(repo, version);
+      check = await checkForUpdate(repo, version, $updateChannel$);
     } catch (e: any) {
       error = e.message;
     } finally {
@@ -83,29 +98,36 @@
 
 <div class="flex flex-col gap-3 text-sm">
   <p>
-    Compares this server with the main branch of
+    Compares this server with the latest release (stable) or the newest commit on main (bleeding
+    edge) of
     <a class="underline" href="https://github.com/{repo}" target="_blank" rel="noreferrer">{repo}</a
-    >. Updating downloads that version, rebuilds it on the server and restarts everything (about
-    a minute of downtime; a running difficulty job stops).
+    >. Updating downloads that version, rebuilds it on the server and restarts everything (about a
+    minute of downtime; a running difficulty job stops).
   </p>
+
+  <div>
+    <ButtonToggleGroup options={channelOptions} bind:selectedOptionId={$updateChannel$} />
+  </div>
 
   {#if checking}
     <p class="flex items-center gap-2"><Fa icon={faSpinner} spin /> Checking GitHub...</p>
   {:else if check}
     <p>
-      Running <code>{check.current ? short(check.current) : 'an unknown version'}</code
-      >{check.dirty ? ' with local changes' : ''}.
+      Running <code>{check.current ? short(check.current) : 'an unknown version'}</code>{check.dirty
+        ? ' with local changes'
+        : ''}.
       {#if check.state === 'current'}
         This is the latest version.
       {:else if check.state === 'behind'}
-        <strong>{check.commits.length} newer commits</strong> on main (latest
+        <strong>{check.commits.length} newer commits</strong> in {check.target} (latest
         <code>{short(check.latest)}</code>).
       {:else if check.state === 'ahead'}
-        This is newer than main on GitHub.
+        This is newer than {check.target} on GitHub.
       {:else if check.state === 'diverged'}
-        It has commits that aren't on main; main is at <code>{short(check.latest)}</code>.
+        It has commits that aren't in {check.target}, which is at
+        <code>{short(check.latest)}</code>.
       {:else}
-        This version isn't on GitHub (a local build); main is at
+        This version isn't on GitHub (a local build); {check.target} is at
         <code>{short(check.latest)}</code>.
       {/if}
     </p>
@@ -123,9 +145,8 @@
 
   {#if state && !state.updater}
     <p class="text-[color:var(--app-muted-fg)]">
-      The updater isn't installed on this server. Servers set up with scripts/deploy.sh get it
-      (it needs systemd and an absolute DATA_PATH); otherwise update as described in
-      docs/INSTALL.md.
+      The updater isn't installed on this server. Servers set up with scripts/deploy.sh get it (it
+      needs systemd and an absolute DATA_PATH); otherwise update as described in docs/INSTALL.md.
     </p>
   {/if}
 
@@ -134,7 +155,9 @@
       Check again
     </button>
     {#if canUpdate && !updatingTo && check}
-      <button class={buttonClasses} on:click={update}>Update to {short(check.latest)}</button>
+      <button class={buttonClasses} on:click={update}>
+        Update to {check.target === 'main' ? short(check.latest) : check.target}
+      </button>
     {/if}
   </div>
 

@@ -143,7 +143,7 @@ Signed in on `$S` as `qa-admin`.
 | ADM-9 | As `qa-desktop` with `series`: select one book | "Make series" shown and works |
 | ADM-10 | `GET $S/account/api/admin/users` as `qa-desktop` | 403 `Only admins can do this` |
 | ADM-11 | Admin panel → Tools → Series → "Check library" | Counts, merged series and warnings; nothing written. `POST $S/calibre/import/api/series` as `qa-desktop` → 403 |
-| ADM-12 | Admin panel → Tools → Updates | Running commit and how it compares with main; "Update" only when the updater is installed and main is newer |
+| ADM-12 | Admin panel → Tools → Updates | Running commit and how it compares with the latest release (Stable) or main (Bleeding edge); "Update" only when the updater is installed and the target is newer |
 | ADM-13 | Fresh `DATA_PATH` (scratch stack) | Deploy output and `ebook-account initial-admin` show `admin` and a password; the sign-in form mentions it; after signing in it is no longer shown and Settings → Account asks to change the password |
 
 ## 8. Access rules

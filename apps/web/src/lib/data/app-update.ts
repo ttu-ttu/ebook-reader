@@ -5,24 +5,35 @@
  */
 
 /**
- * Compares the deployed version (/version.txt) with the main branch on GitHub,
- * for the admin panel's Updates tool. The update itself is done by the server's
+ * Compares the deployed version (/version.txt) with GitHub, for the admin panel's
+ * Updates tool: the latest release (stable) or the main branch (bleeding edge). The update itself is done by the server's
  * ebook-update (account.ts requestUpdate). Not part of upstream.
  */
+
+import { writableStringLocalStorageSubject } from '$lib/data/internal/writable-string-local-storage-subject';
 
 export const defaultUpdateRepo = 'blankiekun/chimimouryou';
 export const engineRepo = 'blankiekun/CONscripter';
 
+export type UpdateChannel = 'stable' | 'edge';
+
+export const updateChannel$ = writableStringLocalStorageSubject<UpdateChannel>()(
+  'updateChannel',
+  'stable'
+);
+
 export interface UpdateCheck {
+  /** What it was compared with: the latest release's tag, or main. */
+  target: string;
   /** Deployed commit; empty if version.txt doesn't name one (e.g. a plain docker build). */
   current: string;
   /** Deployed with uncommitted changes. */
   dirty: boolean;
-  /** Newest commit on main. */
+  /** The target's commit. */
   latest: string;
-  /** behind: main has newer commits; unknown: the deployed commit isn't on GitHub. */
+  /** behind: the target has newer commits; unknown: the deployed commit isn't on GitHub. */
   state: 'current' | 'behind' | 'ahead' | 'diverged' | 'unknown';
-  /** Commits on main that aren't deployed, newest first. */
+  /** Commits in the target that aren't deployed, newest first. */
   commits: { sha: string; message: string }[];
 }
 
@@ -54,27 +65,44 @@ async function github(repo: string, path: string) {
   return response.json();
 }
 
-export async function checkForUpdate(repo: string, version: string): Promise<UpdateCheck> {
+export async function checkForUpdate(
+  repo: string,
+  version: string,
+  channel: UpdateChannel = 'edge'
+): Promise<UpdateCheck> {
   const { commit: current, dirty } = commitOfVersion(version);
-  const compare = current ? await github(repo, `compare/${current}...main`) : undefined;
+  let target = 'main';
 
-  if (!compare) {
-    const head = await github(repo, 'commits/main');
+  if (channel === 'stable') {
+    const release = await github(repo, 'releases/latest');
 
-    if (!head) {
-      throw new Error(`${repo} has no main branch on GitHub`);
+    if (!release) {
+      throw new Error(`${repo} has no release on GitHub`);
     }
 
-    return { current, dirty, latest: head.sha, state: 'unknown', commits: [] };
+    target = release.tag_name;
+  }
+
+  const compare = current ? await github(repo, `compare/${current}...${target}`) : undefined;
+
+  if (!compare) {
+    const head = await github(repo, `commits/${target}`);
+
+    if (!head) {
+      throw new Error(`${repo} has no ${target} on GitHub`);
+    }
+
+    return { target, current, dirty, latest: head.sha, state: 'unknown', commits: [] };
   }
 
   const commits: { sha: string; commit: { message: string } }[] = compare.commits ?? [];
-  // GitHub describes main relative to the deployed commit.
+  // GitHub describes the target relative to the deployed commit.
   const state = ({ identical: 'current', ahead: 'behind', behind: 'ahead' } as const)[
     compare.status as 'identical' | 'ahead' | 'behind'
   ];
 
   return {
+    target,
     current,
     dirty,
     latest: commits.length ? commits[commits.length - 1].sha : current,

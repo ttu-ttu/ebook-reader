@@ -44,6 +44,7 @@ describe('app update check', () => {
     });
 
     expect(await checkForUpdate('o/r', 'aaaaaaa')).toEqual({
+      target: 'main',
       current: 'aaaaaaa',
       dirty: false,
       latest: 'b2',
@@ -53,6 +54,20 @@ describe('app update check', () => {
         { sha: 'b1', message: 'feat: one' }
       ]
     });
+  });
+
+  it('compares with the latest release on the stable channel', async () => {
+    github({
+      'releases/latest': { tag_name: 'v3.2.0' },
+      'compare/aaaaaaa...v3.2.0': {
+        status: 'ahead',
+        commits: [{ sha: 'r1', commit: { message: 'docs: v3.2.0' } }]
+      }
+    });
+
+    const check = await checkForUpdate('o/r', 'v3.1.0-0-gaaaaaaa', 'stable');
+
+    expect([check.target, check.state, check.latest]).toEqual(['v3.2.0', 'behind', 'r1']);
   });
 
   it('is unknown when the deployed commit is not on GitHub', async () => {

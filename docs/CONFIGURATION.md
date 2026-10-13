@@ -25,7 +25,7 @@ each reader enters them in Settings → AI, and they sync with their account.
 | `CATALOG_INTERVAL`    | `600`                                                  | Seconds between checks of `metadata.db`; the catalog is rebuilt only when it changed. |
 | `DIFFICULTY_WORKERS`  | `2`                                                    | Processes for difficulty estimates (`difficulty` profile), about 0.5-1 GB of RAM each. |
 | `IMAGE_PREFIX`, `IMAGE_TAG` | `ebook-reader`, `local` | Image names: `<prefix>-{web,services,import,difficulty}:<tag>`. The defaults are built locally (`--build`); for published images use `ghcr.io/<owner>/<repository>` and a version or `latest`, then `docker compose pull`. |
-| `UPDATE_REPO`         | `blankiekun/chimimouryou`                              | GitHub repository the admin panel's updater (`ebook-update`, deploy.sh installs) checks and installs from: the newest commit on `main`. |
+| `UPDATE_REPO`         | `blankiekun/chimimouryou`                              | GitHub repository the admin panel's updater (`ebook-update`, deploy.sh installs) checks and installs from: its latest release, or the newest commit on `main`. |
 | `COMPOSE_PROFILES`    | empty                                                  | Optional services to run: `import` (adding books to Calibre), `difficulty` (difficulty estimates), e.g. `import,difficulty`. Same as passing `--profile`. |
 
 ## Build-time settings of the app (`VITE_*`)

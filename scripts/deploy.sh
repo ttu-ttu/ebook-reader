@@ -17,7 +17,7 @@ set -euo pipefail
 
 REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 LOCAL="${DEPLOY_CONFIG:-$REPO_ROOT/local}"
-VERSION="$(git -C "$REPO_ROOT" describe --always --dirty)"
+VERSION="$(git -C "$REPO_ROOT" describe --always --long --dirty)"
 
 if [ ! -f "$LOCAL/deploy.env" ] || [ ! -f "$LOCAL/env" ]; then
   echo "Missing $LOCAL/deploy.env or $LOCAL/env: copy deploy/deploy.env.example and .env.example there." >&2

@@ -22,6 +22,12 @@ anything a reader or a server operator would notice.
   under Settings → Audiobookshelf. Server: set `AUDIOBOOKSHELF_URL`; nginx forwards
   only Audiobookshelf's API and sign-in, at `/audiobookshelf/`, to signed-in readers.
 
+### Updates
+
+- Admin panel → Tools → Updates has two channels: Stable (the default) updates to
+  the latest release, Bleeding edge to the newest commit on main. Server: the
+  updater accepts either; deploy.sh's `version.txt` now always names the commit.
+
 ### Visual novel engine
 
 - The visual novel player runs CONscripter v0.10.0, taken from its own web release

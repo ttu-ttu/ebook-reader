@@ -144,12 +144,13 @@ Roll back with
 ## Updating
 
 Servers set up with `scripts/deploy.sh` (systemd, an absolute `DATA_PATH`) can
-update from the admin panel: Tools → Updates compares the server with the main
-branch of `UPDATE_REPO` on GitHub, and "Update" makes `ebook-update` (a systemd
+update from the admin panel: Tools → Updates compares the server with the latest
+release (Stable, the default) or the newest commit on main (Bleeding edge) of
+`UPDATE_REPO` on GitHub, and "Update" makes `ebook-update` (a systemd
 path unit installed by the deploy) download that commit, rebuild the images and
 restart the stack. A failed build keeps the running version; the previous images
 stay tagged `:previous`. Its log: `journalctl -u ebook-update`. It builds and
-runs whatever is on that branch as root, so only point `UPDATE_REPO` at a
+runs whatever is released or on main as root, so only point `UPDATE_REPO` at a
 repository you trust.
 
 Otherwise:
