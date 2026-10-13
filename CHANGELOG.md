@@ -6,6 +6,22 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Plugins
+
+- Settings → General → Plugins switches optional features on or off for your account;
+  every plugin starts off. The AI tools (Ask AI, Story so far, Lorebook, the AI voice
+  and the ElevenLabs fallback for Anki cards) are now the "AI tools" plugin: switch it
+  on to get them back; while off, their buttons, tabs and settings are hidden.
+- New Audiobookshelf plugin: Listen → Audiobookshelf finds the book's audiobook on
+  your Audiobookshelf server and streams it, keeping the listening position there
+  (a single file out of a folder of several books keeps it in the browser). Books are
+  matched by series name and volume, so titles with tags like (MFブックス) and
+  audiobooks stored as one folder of volumes are found. With subtitles (an SRT or VTT
+  stored next to the audio in Audiobookshelf, or loaded with the CC button) the line
+  being read is highlighted, as in the audiobook mode. Sign in
+  under Settings → Audiobookshelf. Server: set `AUDIOBOOKSHELF_URL`; nginx forwards
+  only Audiobookshelf's API and sign-in, at `/audiobookshelf/`, to signed-in readers.
+
 ### Visual novel engine
 
 - The visual novel player runs CONscripter v0.10.0, taken from its own web release

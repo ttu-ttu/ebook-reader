@@ -99,7 +99,6 @@
   import ReaderCompanion, {
     type CompanionTab
   } from '$lib/components/book-reader/reader-companion.svelte';
-  import AskAiPanel from '$lib/components/book-reader/ask-ai-panel.svelte';
   import BookSearchPanel from '$lib/components/book-reader/book-search-panel.svelte';
   import HighlightEditor from '$lib/components/book-reader/highlight-editor.svelte';
   import SelectionToolbar from '$lib/components/book-reader/selection-toolbar.svelte';
@@ -129,11 +128,10 @@
   import ListenPanel, { listenBarRem } from '$lib/components/book-reader/listen-panel.svelte';
   import AnkiWatcher from '$lib/components/anki-watcher.svelte';
   import { bookSentenceAudio, noteSentence } from '$lib/data/anki';
-  import { autoUpdateLorebook } from '$lib/data/lorebook';
-  import { enableExtrasSync, syncExtras } from '$lib/data/extras-sync';
+  import { enableExtrasSync } from '$lib/data/extras-sync';
   import { recordKanjiSeen } from '$lib/data/kanji-seen';
   import type { PassageContext } from '$lib/data/ask-ai';
-  import { openRouterApiKey$ } from '$lib/data/ai-settings';
+  import { activePlugins, activePlugins$, type SelectionActionContribution } from '$lib/plugins';
   import {
     readerImageGalleryPictures$,
     toggleImageGalleryPictureSpoiler$,
@@ -261,7 +259,8 @@
   let highlightsDirty = true;
   let ttsStartCharCount = 0;
   let selectedRange: Range | undefined;
-  let askPassage: PassageContext | undefined;
+  /** A plugin's selection action, open with the passage it was given */
+  let selectionPanel: { action: SelectionActionContribution; passage: PassageContext } | undefined;
   let customReadingPointRange: Range | undefined;
   let lastSelectedRange: Range | undefined;
   let lastSelectedRangeWasEmpty = true;
@@ -808,7 +807,7 @@
         : undefined;
   }
 
-  function openAskAi() {
+  function openSelectionAction(action: SelectionActionContribution) {
     const content = document.querySelector('.book-content');
 
     if (!selectedRange || !content) {
@@ -823,15 +822,25 @@
     after.setStart(selectedRange.endContainer, selectedRange.endOffset);
     after.setEnd(content, content.childNodes.length);
 
-    askPassage = {
-      bookTitle: $rawBookData$?.title ?? '',
-      before: getTextWithoutFurigana(before).slice(-2000),
-      selection: getTextWithoutFurigana(selectedRange),
-      after: getTextWithoutFurigana(after).slice(0, 600)
+    selectionPanel = {
+      action,
+      passage: {
+        bookTitle: $rawBookData$?.title ?? '',
+        before: getTextWithoutFurigana(before).slice(-2000),
+        selection: getTextWithoutFurigana(selectedRange),
+        after: getTextWithoutFurigana(after).slice(0, 600)
+      }
     };
     selectedRange = undefined;
     document.getSelection()?.removeAllRanges();
   }
+
+  /** A plugin tab offered after days away ("Story so far") */
+  $: absenceTab = welcomeBackDays
+    ? $activePlugins$
+        .flatMap((plugin) => plugin.companionTabs ?? [])
+        .find((tab) => tab.offerAfterAbsence?.())
+    : undefined;
 
   $: highlights$ = annotations?.highlights$;
   $: highlightSyncError$ = annotations?.syncError$;
@@ -970,7 +979,7 @@
   }
 
   // Background work that follows the reading position: kanji seen (Home tab)
-  // and the automatic lorebook update.
+  // and the plugins' (e.g. the automatic lorebook update).
   let readingWorkTimer: ReturnType<typeof setTimeout> | undefined;
 
   $: if (exploredCharCount && $rawBookData$ && $bookData$) {
@@ -980,9 +989,8 @@
         getSearchIndex()
           .then((index) => recordKanjiSeen(title, index, position))
           .catch(() => {});
-        // Start from another device's progress, if newer.
-        syncExtras('lorebook', title).then(() =>
-          autoUpdateLorebook(title, getSearchIndex, position)
+        activePlugins().forEach((plugin) =>
+          plugin.onPositionSettled?.(title, getSearchIndex, position)
         );
       },
       15_000,
@@ -1118,7 +1126,11 @@
     companionTab = panel === 'search' ? undefined : panel;
     welcomeBackDays = 0;
 
-    if (panel === 'recap') {
+    if (
+      $activePlugins$.some((plugin) =>
+        plugin.companionTabs?.some((tab) => tab.key === panel && tab.pausesTracker)
+      )
+    ) {
       pauseTracker();
     }
   }
@@ -2478,12 +2490,12 @@
   />
 {/if}
 
-{#if selectedRange && !askPassage && !editingHighlight}
+{#if selectedRange && !selectionPanel && !editingHighlight}
   <SelectionToolbar
     raised={showTts}
     on:highlight={({ detail }) => createHighlight(detail)}
     on:note={() => createHighlight('yellow', true)}
-    on:askAi={openAskAi}
+    on:action={({ detail }) => openSelectionAction(detail)}
   />
 {/if}
 
@@ -2538,7 +2550,7 @@
   />
 {/if}
 
-{#if welcomeBackDays && storedExploredCharacter > 0 && $openRouterApiKey$ && companionTab !== 'recap'}
+{#if welcomeBackDays && storedExploredCharacter > 0 && absenceTab && companionTab !== absenceTab.key}
   <div
     class="reader-panel writing-horizontal-tb fixed left-1/2 top-10 z-20 flex -translate-x-1/2 items-center gap-3 rounded-full py-1.5 pl-4 pr-1.5 text-sm shadow-lg"
     role="status"
@@ -2546,9 +2558,9 @@
     <span>Welcome back - it's been {welcomeBackDays} days.</span>
     <button
       class="reader-panel-chip rounded-full px-3 py-1 font-semibold"
-      on:click={() => openPanel('recap')}
+      on:click={() => absenceTab && openPanel(absenceTab.key)}
     >
-      Story so far
+      {absenceTab.label}
     </button>
     <button class="px-2 opacity-70" title="Dismiss" on:click={() => (welcomeBackDays = 0)}>
       ✕
@@ -2556,8 +2568,12 @@
   </div>
 {/if}
 
-{#if askPassage}
-  <AskAiPanel passage={askPassage} on:close={() => (askPassage = undefined)} />
+{#if selectionPanel}
+  <svelte:component
+    this={selectionPanel.action.panel}
+    passage={selectionPanel.passage}
+    on:close={() => (selectionPanel = undefined)}
+  />
 {/if}
 
 {#if bookCompleted}

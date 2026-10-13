@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { faNoteSticky, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+  import { faNoteSticky } from '@fortawesome/free-solid-svg-icons';
   import { highlightColors, type HighlightColor } from '$lib/data/annotations';
+  import { activePlugins$, type SelectionActionContribution } from '$lib/plugins';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -10,7 +11,7 @@
   const dispatch = createEventDispatcher<{
     highlight: HighlightColor;
     note: void;
-    askAi: void;
+    action: SelectionActionContribution;
   }>();
 </script>
 
@@ -43,16 +44,18 @@
     <Fa icon={faNoteSticky} />
     <span class="hidden sm:inline">Note</span>
   </button>
-  <button
-    type="button"
-    class="flex h-8 items-center gap-1.5 rounded-full px-2.5"
-    title="Ask AI about the selection"
-    on:mousedown|preventDefault
-    on:click={() => dispatch('askAi')}
-  >
-    <Fa icon={faWandMagicSparkles} />
-    Ask AI
-  </button>
+  {#each $activePlugins$.flatMap((plugin) => plugin.selectionActions ?? []) as action (action.label)}
+    <button
+      type="button"
+      class="flex h-8 items-center gap-1.5 rounded-full px-2.5"
+      title={action.title}
+      on:mousedown|preventDefault
+      on:click={() => dispatch('action', action)}
+    >
+      <Fa icon={action.icon} />
+      {action.label}
+    </button>
+  {/each}
 </div>
 
 <style>

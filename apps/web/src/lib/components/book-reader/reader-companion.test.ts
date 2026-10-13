@@ -9,6 +9,7 @@ import '$lib/data/storage/storage-handler-factory';
 import { tick } from 'svelte';
 import { describe, expect, it, vi } from 'vitest';
 import { buildSearchIndex } from '$lib/functions/book-text/book-search';
+import { setPluginEnabled } from '$lib/plugins';
 import ReaderCompanion from './reader-companion.svelte';
 
 describe('ReaderCompanion', () => {
@@ -16,6 +17,7 @@ describe('ReaderCompanion', () => {
     const target = document.createElement('div');
     const index = buildSearchIndex('<p>猫が好き。</p>');
 
+    setPluginEnabled('ai', true);
     new ReaderCompanion({
       target,
       props: {
@@ -40,5 +42,30 @@ describe('ReaderCompanion', () => {
 
     await click('Lorebook');
     await vi.waitFor(() => expect(target.textContent).toContain('Read up to 0 characters'));
+  });
+
+  it('leaves out the tabs of a plugin that is switched off', async () => {
+    const target = document.createElement('div');
+
+    setPluginEnabled('ai', false);
+
+    new ReaderCompanion({
+      target,
+      props: {
+        tab: 'highlights',
+        title: 'Off',
+        highlights: [],
+        syncError: '',
+        getIndex: async () => buildSearchIndex(''),
+        sections: [],
+        position: 0,
+        bookCharacters: 0
+      }
+    });
+    await tick();
+
+    expect(
+      [...target.querySelectorAll('[role=tab]')].map((tab) => tab.getAttribute('title'))
+    ).toEqual(['Highlights']);
   });
 });

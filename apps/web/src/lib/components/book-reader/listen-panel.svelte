@@ -4,10 +4,10 @@
 </script>
 
 <script lang="ts">
-  import { faCompactDisc, faRobot, faXmark } from '@fortawesome/free-solid-svg-icons';
+  import { faCompactDisc, faXmark } from '@fortawesome/free-solid-svg-icons';
   import AudiobookPlayer from '$lib/components/book-reader/audiobook-player.svelte';
-  import TtsPlayer from '$lib/components/book-reader/tts-player.svelte';
   import { getAudiobook, type BookAudiobook } from '$lib/data/audiobook';
+  import { activePlugins$ } from '$lib/plugins';
   import type { SearchIndex } from '$lib/functions/book-text/book-search';
   import { createEventDispatcher, onMount } from 'svelte';
   import Fa from 'svelte-fa';
@@ -31,7 +31,11 @@
 
   let loaded = false;
   let audiobook: BookAudiobook | undefined;
-  let mode: 'audiobook' | 'voice' = 'voice';
+  /** 'audiobook' or a plugin's listen mode key */
+  let mode = 'audiobook';
+
+  $: pluginModes = $activePlugins$.flatMap((plugin) => plugin.listenModes ?? []);
+  $: pluginMode = pluginModes.find((item) => item.key === mode);
 
   onMount(async () => {
     try {
@@ -39,11 +43,11 @@
     } catch (_) {
       // No stored audiobook
     }
-    mode = audiobook ? 'audiobook' : 'voice';
+    mode = audiobook ? 'audiobook' : (pluginModes[0]?.key ?? 'audiobook');
     loaded = true;
   });
 
-  function setMode(value: typeof mode) {
+  function setMode(value: string) {
     mode = value;
     dispatch('reading', undefined);
   }
@@ -52,7 +56,15 @@
 <!-- A single fixed-height row above the footer; the reader is shortened by listenBarRem so no text sits under it. -->
 <div class="listen-bar reader-panel writing-horizontal-tb" role="region" aria-label="Listen">
   {#if loaded}
-    {#if mode === 'audiobook'}
+    {#if pluginMode}
+      <svelte:component
+        this={pluginMode.component}
+        {...pluginMode.props({ title, elementHtml, getIndex, position, startCharCount })}
+        on:position
+        on:reading
+        on:jump
+      />
+    {:else}
       <AudiobookPlayer
         {title}
         {audiobook}
@@ -62,33 +74,26 @@
         on:jump
         on:changed={({ detail }) => (audiobook = detail)}
       />
-    {:else}
-      <TtsPlayer {elementHtml} {startCharCount} on:position on:reading />
     {/if}
   {:else}
     <span class="flex-1" />
   {/if}
 
-  <div class="listen-modes" role="radiogroup" aria-label="Source">
-    <button
-      role="radio"
-      aria-checked={mode === 'audiobook'}
-      class:listen-mode-active={mode === 'audiobook'}
-      title="Audiobook"
-      on:click={() => setMode('audiobook')}
-    >
-      <Fa icon={faCompactDisc} />
-    </button>
-    <button
-      role="radio"
-      aria-checked={mode === 'voice'}
-      class:listen-mode-active={mode === 'voice'}
-      title="AI voice (ElevenLabs)"
-      on:click={() => setMode('voice')}
-    >
-      <Fa icon={faRobot} />
-    </button>
-  </div>
+  {#if pluginModes.length}
+    <div class="listen-modes" role="radiogroup" aria-label="Source">
+      {#each [{ key: 'audiobook', title: 'Audiobook', icon: faCompactDisc }, ...pluginModes] as item (item.key)}
+        <button
+          role="radio"
+          aria-checked={mode === item.key}
+          class:listen-mode-active={mode === item.key}
+          title={item.title}
+          on:click={() => setMode(item.key)}
+        >
+          <Fa icon={item.icon} />
+        </button>
+      {/each}
+    </div>
+  {/if}
   <button class="listen-icon" title="Close" on:click={() => dispatch('close')}>
     <Fa icon={faXmark} />
   </button>

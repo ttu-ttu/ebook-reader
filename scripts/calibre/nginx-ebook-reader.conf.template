@@ -338,6 +338,9 @@ server {
     proxy_read_timeout 20s;
   }
 
+  # Audiobookshelf plugin (AUDIOBOOKSHELF_URL; render-nginx.sh writes the block).
+${AUDIOBOOKSHELF_LOCATION}
+
   # Synced reader data (processed books, progress, statistics, highlights) for
   # the Calibre storage source. Plain WebDAV writes plus JSON directory listings.
   location /calibre/sync/ {

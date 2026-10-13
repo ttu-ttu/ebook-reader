@@ -1,27 +1,22 @@
 <script lang="ts" context="module">
-  export type CompanionTab = 'highlights' | 'recap' | 'lorebook';
+  /** 'highlights' or a plugin's tab key */
+  export type CompanionTab = string;
 </script>
 
 <script lang="ts">
-  import {
-    faBookAtlas,
-    faBookOpen,
-    faHighlighter,
-    faXmark
-  } from '@fortawesome/free-solid-svg-icons';
+  import { faHighlighter, faXmark } from '@fortawesome/free-solid-svg-icons';
   import AiLanguageToggle from '$lib/components/ai-language-toggle.svelte';
   import AnnotationsPanel from '$lib/components/book-reader/annotations-panel.svelte';
-  import LorebookPanel from '$lib/components/book-reader/lorebook-panel.svelte';
-  import RecapPanel from '$lib/components/book-reader/recap-panel.svelte';
   import type { Highlight } from '$lib/data/annotations';
   import type { Section } from '$lib/data/database/books-db/versions/v3/books-db-v3';
   import type { SearchIndex } from '$lib/functions/book-text/book-search';
+  import { activePlugins$ } from '$lib/plugins';
   import { createEventDispatcher } from 'svelte';
   import Fa from 'svelte-fa';
 
   /**
-   * The reader's side panel: highlights, "Story so far" and the lorebook as
-   * tabs, instead of separate entries in the More menu. Not part of upstream.
+   * The reader's side panel: highlights and the plugins' tabs ("Story so far",
+   * lorebook), instead of separate entries in the More menu. Not part of upstream.
    */
   export let tab: CompanionTab;
   export let title: string;
@@ -45,11 +40,8 @@
     visited = new Set([...visited, tab]);
   }
 
-  const tabs = [
-    { key: 'highlights', label: 'Highlights', icon: faHighlighter },
-    { key: 'recap', label: 'Story so far', icon: faBookOpen },
-    { key: 'lorebook', label: 'Lorebook', icon: faBookAtlas }
-  ] as const;
+  $: pluginTabs = $activePlugins$.flatMap((plugin) => plugin.companionTabs ?? []);
+  $: tabs = [{ key: 'highlights', label: 'Highlights', icon: faHighlighter }, ...pluginTabs];
 </script>
 
 <aside
@@ -77,6 +69,7 @@
     >
   </header>
 
+  <!-- shortcut: assumes every plugin tab is an AI tab; give tabs their own toolbar when another plugin adds one. -->
   {#if tab !== 'highlights'}
     <!-- Below the tabs, not beside Close, which it covered on phones. -->
     <div class="flex justify-end px-4 pt-2"><AiLanguageToggle /></div>
@@ -88,23 +81,23 @@
       <AnnotationsPanel {title} {highlights} {syncError} on:jump on:edit />
     </div>
   {/if}
-  {#if visited.has('recap')}
-    <div class="tab-panel" class:hidden={tab !== 'recap'}>
-      <RecapPanel
-        {title}
-        {getIndex}
-        {sections}
-        {position}
-        {bookCharacters}
-        active={tab === 'recap'}
-      />
-    </div>
-  {/if}
-  {#if visited.has('lorebook')}
-    <div class="tab-panel" class:hidden={tab !== 'lorebook'}>
-      <LorebookPanel {title} {getIndex} {position} />
-    </div>
-  {/if}
+  {#each pluginTabs as item (item.key)}
+    {#if visited.has(item.key)}
+      <div class="tab-panel" class:hidden={tab !== item.key}>
+        <svelte:component
+          this={item.component}
+          {...item.props({
+            title,
+            getIndex,
+            sections,
+            position,
+            bookCharacters,
+            active: tab === item.key
+          })}
+        />
+      </div>
+    {/if}
+  {/each}
 </aside>
 
 <style>

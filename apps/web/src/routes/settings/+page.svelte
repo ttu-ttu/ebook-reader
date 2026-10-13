@@ -14,7 +14,8 @@
   import Fa from 'svelte-fa';
   import AppHeader from '$lib/components/app-header/app-header.svelte';
   import SettingsAccount from '$lib/components/settings/settings-account.svelte';
-  import SettingsAi from '$lib/components/settings/settings-ai.svelte';
+  import SettingsPlugins from '$lib/components/settings/settings-plugins.svelte';
+  import { activePlugins$, plugins } from '$lib/plugins';
   import SettingsAnki from '$lib/components/settings/settings-anki.svelte';
   import SettingsContent from '$lib/components/settings/settings-content.svelte';
   import SettingsSection from '$lib/components/settings/settings-section.svelte';
@@ -124,6 +125,13 @@
   $: view.set({ area: activeArea, query });
   $: applySearch(query);
   $: searching = !!query.trim();
+  // Areas of plugins that are switched off are hidden.
+  $: visibleAreas = settingsAreas.filter(
+    (area) =>
+      !plugins.some(
+        (plugin) => plugin.settingsArea === area.id && !$activePlugins$.includes(plugin)
+      )
+  );
   $: activeAreaInfo = settingsAreas.find((area) => area.id === activeArea) ?? settingsAreas[0];
   $: activeSectionInfo = findSettingsSection(activeSection);
 
@@ -205,7 +213,8 @@
       let visibleItems = 0;
 
       section.querySelectorAll<HTMLElement>('[data-settings-item]').forEach((item) => {
-        const ownMatch = !!needle && (item.dataset.settingsSearch || '').toLowerCase().includes(needle);
+        const ownMatch =
+          !!needle && (item.dataset.settingsSearch || '').toLowerCase().includes(needle);
         const match = sectionMatch || ownMatch;
 
         item.hidden = !match;
@@ -345,7 +354,7 @@
         </span>
       </div>
       <nav class="settings-nav" aria-label="Settings sections">
-        {#each settingsAreas as area (area.id)}
+        {#each visibleAreas as area (area.id)}
           {@const collapsed = collapsedAreas.has(area.id)}
           <div class="settings-nav-area">
             <div class="settings-nav-area-heading">
@@ -392,7 +401,10 @@
       <div class="settings-sync-note">
         {#if $account$}
           <span class="sync-dot" data-state={$settingsSyncState$.state} />
-          <span class="min-w-0 truncate" title="Progress, statistics, reader and AI settings and themes sync to your account">
+          <span
+            class="min-w-0 truncate"
+            title="Progress, statistics, reader and AI settings and themes sync to your account"
+          >
             {$account$.username}
           </span>
           <button
@@ -453,7 +465,12 @@
         >
           <SettingsThemes />
         </SettingsSection>
-        <SettingsAi />
+        <SettingsPlugins />
+        {#each $activePlugins$ as plugin (plugin.id)}
+          {#if plugin.settings}
+            <svelte:component this={plugin.settings} />
+          {/if}
+        {/each}
         <SettingsAnki />
         <SettingsContent
           {storageQuota}
@@ -525,7 +542,6 @@
       </div>
     </main>
   </div>
-
 </div>
 {$setPersistentStorage$ ?? ''}
 

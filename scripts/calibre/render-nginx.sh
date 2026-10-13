@@ -23,6 +23,8 @@ set -eu
 # The reverse proxy in front, if any: only it may report the scheme (X-Forwarded-Proto).
 : "${REAL_IP_FROM:=}"
 case "$PUBLIC_READS" in 0|1) ;; *) echo "PUBLIC_READS must be 0 or 1" >&2; exit 1 ;; esac
+# Audiobookshelf for the plugin (e.g. http://10.0.0.5:13378 or .../audiobookshelf); empty = off.
+: "${AUDIOBOOKSHELF_URL:=}"
 
 # The secret nginx sends the services (X-Internal-Token), made by the web container.
 : "${INTERNAL_TOKEN_FILE:=/data/state/internal-token}"
@@ -35,9 +37,38 @@ esac
 TRUSTED_NETWORKS_GEO=$(for network in $TRUSTED_NETWORKS; do printf '  %s 1;\n' "$network"; done)
 REAL_IP_FROM_GEO=$(for network in $REAL_IP_FROM; do printf '  %s 1;\n' "$network"; done)
 
+# Only its API and sign-in, for signed-in readers: never its web UI, whose scripts
+# would run on this origin. The reader's cookies stay here.
+AUDIOBOOKSHELF_LOCATION=''
+if [ -n "$AUDIOBOOKSHELF_URL" ]; then
+  abs_url=${AUDIOBOOKSHELF_URL%/}
+  if ! printf '%s' "$abs_url" | grep -Eq '^https?://[A-Za-z0-9.:-]+(/[A-Za-z0-9._~/-]*)?$'; then
+    echo "AUDIOBOOKSHELF_URL must look like http://host:port[/path]" >&2; exit 1
+  fi
+  abs_origin=$(printf '%s' "$abs_url" | sed -E 's#^(https?://[^/]+).*#\1#')
+  abs_path=${abs_url#"$abs_origin"}
+  AUDIOBOOKSHELF_LOCATION=$(printf '%s\n' \
+    '  location ~ ^/audiobookshelf/(api/|login$) {' \
+    '    auth_request /_account_auth;' \
+    "    set \$abs_origin $abs_origin;" \
+    "    rewrite ^/audiobookshelf/(.*)\$ $abs_path/\$1 break;" \
+    '    proxy_pass $abs_origin;' \
+    '    proxy_http_version 1.1;' \
+    '    proxy_set_header Cookie "";' \
+    '    proxy_set_header Origin "";' \
+    '    proxy_set_header Referer "";' \
+    '    proxy_hide_header Set-Cookie;' \
+    '    proxy_buffering off;' \
+    '    proxy_read_timeout 300s;' \
+    "    add_header Content-Security-Policy \"sandbox; default-src 'none'\" always;" \
+    '    add_header X-Content-Type-Options nosniff always;' \
+    '  }')
+fi
+
 export WEB_ROOT LIBRARY_DIR VN_DIR SYNC_DIR ACCOUNT_DATA_DIR CATALOG_FILE DIFFICULTY_FILE \
-  ACCOUNT_UPSTREAM IMPORT_UPSTREAM DIFFICULTY_UPSTREAM TRUSTED_NETWORKS_GEO REAL_IP_FROM_GEO PUBLIC_READS INTERNAL_TOKEN
+  ACCOUNT_UPSTREAM IMPORT_UPSTREAM DIFFICULTY_UPSTREAM TRUSTED_NETWORKS_GEO REAL_IP_FROM_GEO PUBLIC_READS INTERNAL_TOKEN \
+  AUDIOBOOKSHELF_LOCATION
 
 # Only these names: the template's own nginx variables ($host, ...) stay as they are.
-envsubst '${WEB_ROOT} ${LIBRARY_DIR} ${VN_DIR} ${SYNC_DIR} ${ACCOUNT_DATA_DIR} ${CATALOG_FILE} ${DIFFICULTY_FILE} ${ACCOUNT_UPSTREAM} ${IMPORT_UPSTREAM} ${DIFFICULTY_UPSTREAM} ${TRUSTED_NETWORKS_GEO} ${REAL_IP_FROM_GEO} ${PUBLIC_READS} ${INTERNAL_TOKEN}' \
+envsubst '${WEB_ROOT} ${LIBRARY_DIR} ${VN_DIR} ${SYNC_DIR} ${ACCOUNT_DATA_DIR} ${CATALOG_FILE} ${DIFFICULTY_FILE} ${ACCOUNT_UPSTREAM} ${IMPORT_UPSTREAM} ${DIFFICULTY_UPSTREAM} ${TRUSTED_NETWORKS_GEO} ${REAL_IP_FROM_GEO} ${PUBLIC_READS} ${INTERNAL_TOKEN} ${AUDIOBOOKSHELF_LOCATION}' \
   < "$(dirname "$0")/nginx-ebook-reader.conf.template"

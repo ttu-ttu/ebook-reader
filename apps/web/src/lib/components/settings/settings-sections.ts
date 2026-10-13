@@ -84,6 +84,12 @@ export const settingsAreas: SettingsArea[] = [
         label: 'Custom Themes',
         description: 'Create, edit, import and export themes.',
         icon: faSwatchbook
+      },
+      {
+        id: 'general-plugins',
+        label: 'Plugins',
+        description: 'Optional features: switch them on or off for your account.',
+        icon: faPlug
       }
     ]
   },
@@ -164,6 +170,19 @@ export const settingsAreas: SettingsArea[] = [
         label: 'Story So Far & Lorebook',
         description: 'Spoiler-free recaps and the lorebook of what you have read.',
         icon: faClockRotateLeft
+      }
+    ]
+  },
+  {
+    id: 'audiobookshelf',
+    label: 'Audiobookshelf',
+    icon: faHeadphones,
+    sections: [
+      {
+        id: 'audiobookshelf-connect',
+        label: 'Server',
+        description: 'Your Audiobookshelf account, for Listen → Audiobookshelf.',
+        icon: faServer
       }
     ]
   },

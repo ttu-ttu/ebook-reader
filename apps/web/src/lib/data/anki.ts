@@ -14,7 +14,6 @@
 import { writableBooleanLocalStorageSubject } from '$lib/data/internal/writable-boolean-local-storage-subject';
 import { writableStringLocalStorageSubject } from '$lib/data/internal/writable-string-local-storage-subject';
 import { getAudiobook } from '$lib/data/audiobook';
-import { synthesizeSpeech } from '$lib/data/tts';
 import { matchableText, type MatchedCue } from '$lib/functions/audiobook/subtitles';
 import type { SearchIndex } from '$lib/functions/book-text/book-search';
 
@@ -273,6 +272,10 @@ export async function bookSentenceAudio(
     return recordClip(audiobook.audio, clip.start, clip.end);
   }
 
-  // No audiobook, or the sentence isn't in its subtitles.
-  return ankiBookAiFallback$.getValue() ? (await synthesizeSpeech(sentence)).audio : undefined;
+  // No audiobook, or the sentence isn't in its subtitles: a plugin's (the AI voice).
+  // Imported here: the plugins pull in components, which would make an import cycle.
+  const { activePlugins } = await import('$lib/plugins');
+  const fallback = activePlugins().find((plugin) => plugin.ankiSentenceAudio);
+
+  return ankiBookAiFallback$.getValue() ? fallback?.ankiSentenceAudio?.(sentence) : undefined;
 }

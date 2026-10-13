@@ -40,6 +40,7 @@ services:
       TRUSTED_NETWORKS: ${TRUSTED_NETWORKS:-}
       REAL_IP_FROM: ${REAL_IP_FROM:-}
       PUBLIC_READS: ${PUBLIC_READS:-0}
+      AUDIOBOOKSHELF_URL: ${AUDIOBOOKSHELF_URL:-}
     volumes:
       - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library:ro
       - ${VN_PATH:-${DATA_PATH:-./data}/vn}:/vn:ro

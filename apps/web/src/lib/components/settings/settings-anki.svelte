@@ -16,6 +16,7 @@
     ankiVnAudio$,
     ankiVnScreenshot$
   } from '$lib/data/anki';
+  import { activePlugins$ } from '$lib/plugins';
 
   const origin = typeof location === 'undefined' ? '' : location.origin;
 
@@ -79,12 +80,14 @@
   >
     <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={$ankiBookAudio$} />
   </SettingsItemGroup>
-  <SettingsItemGroup
-    title="Use ElevenLabs audio if no audiobook file present"
-    tooltip="The sentence read by the AI voice (key and voice in Settings → AI). Each card uses ElevenLabs credits."
-  >
-    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={$ankiBookAiFallback$} />
-  </SettingsItemGroup>
+  {#if $activePlugins$.some((plugin) => plugin.ankiSentenceAudio)}
+    <SettingsItemGroup
+      title="Use ElevenLabs audio if no audiobook file present"
+      tooltip="The sentence read by the AI voice (key and voice in Settings → AI). Each card uses ElevenLabs credits."
+    >
+      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={$ankiBookAiFallback$} />
+    </SettingsItemGroup>
+  {/if}
   <SettingsItemGroup
     title="Visual novel screenshot"
     tooltip="The game screen when the card was added."

@@ -30,6 +30,8 @@ import {
 } from '$lib/data/ai-settings';
 import { homeBookTitles$, homeRemovedTitles$ } from '$lib/data/library-home';
 import { logger } from '$lib/data/logger';
+import { enabledPlugins$ } from '$lib/plugins/plugin-settings';
+import { audiobookshelfToken$ } from '$lib/data/audiobookshelf';
 import {
   autoBookmark$,
   autoBookmarkTime$,
@@ -94,6 +96,8 @@ const sharedSettings: Record<string, Store> = {
   openRouterRecapModel: openRouterRecapModel$,
   lorebookAutoInterval: lorebookAutoInterval$,
   aiLanguage: aiLanguage$,
+  enabledPlugins: enabledPlugins$,
+  audiobookshelfToken: audiobookshelfToken$,
   homeBookTitles: homeBookTitles$,
   homeRemovedTitles: homeRemovedTitles$,
   askAiPresets: askAiPresets$,
@@ -110,7 +114,7 @@ const sharedSettings: Record<string, Store> = {
  * from the browser when it signs out (or the session expires) or another account
  * signs in, so they are never used by, shown to or uploaded for someone else.
  */
-const secretSettings = ['openRouterApiKey', 'elevenLabsApiKey'];
+const secretSettings = ['openRouterApiKey', 'elevenLabsApiKey', 'audiobookshelfToken'];
 
 /** Settings → Reader: localStorage key → store, synced per reader profile. */
 const readerSettings: Record<string, Store> = {
