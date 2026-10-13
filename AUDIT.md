@@ -25,7 +25,7 @@ Top 5:
 | A-05 | Medium | DoS | `import/service.py:425-447` | No free-space check on import uploads; partial files left on error | Resolved |
 | A-06 | Medium | Bug | `jiten/service.py:287` | Dictionary upload reads until EOF: hangs, user gets a 504 | Resolved |
 | A-07 | Medium | Data exposure | `routes/b/+page.svelte:1587,1780`, `browser-handler.ts` | Progress/statistics of one account leak into another on a shared browser | Resolved |
-| A-08 | Low | Secrets | `account-settings-sync.ts:348-361` | AI keys typed while signed out are adopted by the next account | Open |
+| A-08 | Low | Secrets | `account-settings-sync.ts:348-361` | AI keys typed while signed out are adopted by the next account | Resolved |
 | A-09 | Low | Web / CSS injection | `style-sheet-renderer.svelte`, `svelte.config.js` | Book CSS (writable by any account via sync) styles the whole page | Open |
 | A-10 | Low | Race | `extras-sync.ts:125-140` | Recap/lorebook sync can overwrite a local write made during its fetch | Open |
 | A-11 | Low | AuthN | `nginx-ebook-reader.conf.template:154`, `account/service.py:774` | `/account/api/login/` skips nginx's `limit_req` | Open |

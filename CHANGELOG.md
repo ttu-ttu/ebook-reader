@@ -31,6 +31,8 @@ anything a reader or a server operator would notice.
   progress, statistics and reading goals for Calibre books are removed from it, so
   they are no longer shown to or synced into the next account. They come back from
   the server at the next sign-in.
+- Accounts: AI keys typed while signed out are removed when an account signs in,
+  instead of being saved to that account.
 
 ### Library
 

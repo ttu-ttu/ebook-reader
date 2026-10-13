@@ -107,13 +107,24 @@ describe('account settings sync', () => {
     expect(openRouterApiKey$.getValue()).toBe('sk-or-alice');
   });
 
-  it('adopts settings saved before owners were recorded', async () => {
+  it("doesn't adopt API keys typed while signed out", async () => {
     leaveSettingsFrom(undefined);
     mockServer({ values: {}, modified: {} });
 
     await signInAs(alice);
 
-    expect(uploads.join()).toContain('sk-or-alice');
+    expect(uploads.join()).not.toContain('sk-');
+    expect(openRouterApiKey$.getValue()).toBe('');
+    expect(openRouterModel$.getValue()).toBe('model/alice');
+  });
+
+  it('keeps API keys typed while signed out until someone signs in', async () => {
+    leaveSettingsFrom(undefined);
+    mockServer();
+
+    await signInAs(null);
+
+    expect(openRouterApiKey$.getValue()).toBe('sk-or-alice');
   });
 
   it("applies the new account's own keys", async () => {

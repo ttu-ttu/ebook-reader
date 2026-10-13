@@ -342,13 +342,13 @@ function onVisibilityChange() {
 
 /**
  * Forgets the previous account's API keys and change times when the browser is
- * signed out or another account signs in. Settings saved before owners were
- * recorded are adopted by the first account that syncs.
+ * signed out or another account signs in. Keys typed while signed out belong to
+ * nobody, so the account that signs in next doesn't adopt them either.
  */
 function releasePreviousOwner(user: AccountUser | null) {
   const owner = window.localStorage.getItem(ownerKey);
 
-  if (owner && owner !== user?.id) {
+  if (user ? owner !== user.id : owner) {
     secretSettings.forEach((key) => {
       sharedSettings[key].next('');
       window.localStorage.removeItem(key);

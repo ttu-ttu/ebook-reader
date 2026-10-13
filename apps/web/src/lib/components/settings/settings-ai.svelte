@@ -116,7 +116,7 @@
   </SettingsItemGroup>
   <SettingsItemGroup
     title="Where the keys go"
-    tooltip="Keys are kept in this browser and, when signed in, in your account on this server, so your other devices get them. They are removed from the browser when you sign out. The browser sends them only to OpenRouter and ElevenLabs."
+    tooltip="Keys are kept in this browser and, when signed in, in your account on this server, so your other devices get them. They are removed from the browser when you sign out, and keys typed while signed out are removed when someone signs in. The browser sends them only to OpenRouter and ElevenLabs."
     wide
   />
 </SettingsSection>
