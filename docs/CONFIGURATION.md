@@ -38,7 +38,7 @@ yourself.
 | Variable                      | Default             | What it does |
 | ----------------------------- | ------------------- | ------------ |
 | `VITE_HTTPS_URL`              | the current host over HTTPS | Where the plain-HTTP page sends people to sign in. |
-| `VITE_DEFAULT_STORAGE_SOURCE` | `calibre`           | Library source on first visit. Builds without the server (static hosting, `docker-compose.static.yml`) use `browser`. |
+| `VITE_DEFAULT_STORAGE_SOURCE` | `calibre`           | Library source on first visit. Builds without the server (static hosting, `docker-compose.static.yml`) use `browser`, the only build with the Browser library source. |
 | `VITE_GDRIVE_CLIENT_ID`, `VITE_GDRIVE_CLIENT_SECRET` | empty | Google Drive sync (upstream feature); needs your own OAuth client. |
 | `VITE_ONEDRIVE_CLIENT_ID`, `VITE_ONEDRIVE_CLIENT_SECRET` | empty | OneDrive sync (upstream feature). |
 | `VITE_GDRIVE_*_ENDPOINT`, `VITE_GDRIVE_SCOPE`, `VITE_ONEDRIVE_*` | Google's / Microsoft's | OAuth endpoints and scopes; rarely changed. |

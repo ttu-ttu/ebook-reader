@@ -34,7 +34,7 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
 
 - Calibre library (`/calibre/catalog.json`, files at `/calibre/library/`, read-only; only book files and covers are served).
   The catalog is built from a copy of `metadata.db` by `build-catalog.py` (the `catalog` service, every `CATALOG_INTERVAL` seconds, only when the DB changed).
-- Calibre is the default storage source (`StorageKey.CALIBRE`, `lib/data/storage/handler/calibre-handler.ts`).
+- Calibre is the default storage source (`StorageKey.CALIBRE`, `lib/data/storage/handler/calibre-handler.ts`). The Browser source is only offered in builds that default to it (`browserSourceAvailable`, `fallbackStorageSource` in `storage-view.ts`: the reader-only static build); the browser handler stays as every source's IndexedDB cache. Signed out where reads need an account, the catalog's 401 lists an empty library that asks to sign in.
   The library lists the whole catalog. Opening a book for the first time downloads it from Calibre, processes it, and uploads the processed data to the server.
   Reader data (book data, progress, statistics) syncs through nginx WebDAV at `/calibre/sync/`, with the same folder-per-title layout as GDrive. Sync for Calibre books is always on, regardless of the auto-replication setting.
   Books are identified by title, so the catalog makes duplicate Calibre titles unique by appending ` (author)` or ` [id]`.

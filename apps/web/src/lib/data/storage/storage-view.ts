@@ -103,11 +103,27 @@ export function getStorageIconData(storageSource: StorageKey): StorageIcon {
   }
 }
 
+// Builds without the Calibre server (static hosting) default to 'browser'.
+const defaultStorageSource =
+  (import.meta.env.VITE_DEFAULT_STORAGE_SOURCE as StorageKey) || StorageKey.CALIBRE;
+
+/** The Browser library source exists only in the reader-only build; server builds list Calibre. */
+export const browserSourceAvailable = defaultStorageSource === StorageKey.BROWSER;
+
+/** Where the library goes when its source fails or is removed. */
+export const fallbackStorageSource = browserSourceAvailable
+  ? StorageKey.BROWSER
+  : StorageKey.CALIBRE;
+
 export const storageSource$ = writableStringLocalStorageSubject<StorageKey>()(
   'lastStorageSource',
-  // Builds without the Calibre server (static hosting) can default to e.g. 'browser'.
-  (import.meta.env.VITE_DEFAULT_STORAGE_SOURCE as StorageKey) || StorageKey.CALIBRE
+  defaultStorageSource
 );
+
+// A Browser source saved before it was removed from server builds.
+if (!browserSourceAvailable && storageSource$.getValue() === StorageKey.BROWSER) {
+  storageSource$.next(StorageKey.CALIBRE);
+}
 
 export const storageIcon$ = writableSubject<StorageIcon>(getStorageIconData(StorageKey.BROWSER));
 

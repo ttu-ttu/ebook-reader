@@ -117,4 +117,15 @@ describe('CalibreStorageHandler sync errors', () => {
     ).rejects.toThrow('has expired');
     vi.unstubAllGlobals();
   });
+
+  it('lists an empty library, not a failure, while signed out where reads need an account', async () => {
+    vi.stubGlobal('fetch', unauthorized);
+
+    account.user = null;
+    expect(await new CalibreStorageHandler(window).getBookList()).toEqual([]);
+
+    account.user = { id: 'a', username: 'a' };
+    await expect(new CalibreStorageHandler(window).getBookList()).rejects.toThrow();
+    vi.unstubAllGlobals();
+  });
 });

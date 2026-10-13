@@ -16,6 +16,7 @@
     changePassword,
     httpsAppUrl,
     isInsecurePage,
+    isLoopbackPage,
     signIn,
     signInAvailableHere,
     signOut
@@ -32,6 +33,7 @@
 
   const minPasswordLength = 8;
   const insecure = isInsecurePage();
+  const warnInsecure = insecure && !isLoopbackPage();
   const secureUrl = signInAvailableHere() ? '' : httpsAppUrl();
 
   /** HTTPS, or plain HTTP when the server allows it (checked on mount). */
@@ -111,7 +113,7 @@
 
 {#if user}
   <SettingsItemGroup title="Signed in" wide>
-    {#if insecure}
+    {#if warnInsecure}
       <p class="account-warning" role="alert">
         <strong>Not encrypted.</strong> This page uses plain HTTP, so your password, your session
         and the settings that sync with your account (including AI API keys) can be read by
@@ -247,7 +249,7 @@
     {#if checkingHttp}
       <span class="flex items-center gap-2"><Fa icon={faSpinner} spin /> Checking sign-in...</span>
     {:else if available}
-      {#if insecure}
+      {#if warnInsecure}
         <p class="account-warning" role="alert">
           <strong>Not encrypted.</strong> This server allows signing in over plain HTTP. Your
           password and session will be sent unencrypted and can be read by anyone who can watch

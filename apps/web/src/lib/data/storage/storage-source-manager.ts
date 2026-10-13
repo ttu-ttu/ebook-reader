@@ -15,7 +15,7 @@ import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
 import { dialogManager } from '$lib/data/dialog-manager';
 import { logger } from '$lib/data/logger';
-import { storageSource$ } from '$lib/data/storage/storage-view';
+import { fallbackStorageSource, storageSource$ } from '$lib/data/storage/storage-view';
 
 const saltByteLength = 16;
 const ivByteLength = 12;
@@ -86,7 +86,7 @@ export function setStorageSourceDefault(name: string, type: StorageKey) {
   }
 
   if (!name && type === StorageKey.FS) {
-    storageSource$.next(StorageKey.BROWSER);
+    storageSource$.next(fallbackStorageSource);
   }
 }
 

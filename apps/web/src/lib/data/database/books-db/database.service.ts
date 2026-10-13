@@ -14,7 +14,7 @@ import type {
   BooksDbSubtitleData
 } from '$lib/data/database/books-db/versions/books-db';
 import { Observable, Subject, from } from 'rxjs';
-import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
+import { StorageDataType } from '$lib/data/storage/storage-types';
 import {
   advanceDateDays,
   getDate,
@@ -47,7 +47,7 @@ import { logger } from '$lib/data/logger';
 import pLimit from 'p-limit';
 import { replicationProgress$ } from '$lib/functions/replication/replication-progress';
 import { setStorageSourceDefault } from '$lib/data/storage/storage-source-manager';
-import { storageSource$ } from '$lib/data/storage/storage-view';
+import { fallbackStorageSource, storageSource$ } from '$lib/data/storage/storage-view';
 import { throwIfAborted } from '$lib/functions/replication/replication-error';
 
 const LAST_ITEM_KEY = 0;
@@ -97,9 +97,9 @@ export class DatabaseService {
               ]);
             }
 
-            if (storageSource !== StorageKey.BROWSER) {
+            if (storageSource !== fallbackStorageSource) {
               this.lastHandler = undefined;
-              storageSource$.next(StorageKey.BROWSER);
+              storageSource$.next(fallbackStorageSource);
             }
 
             return [[]];

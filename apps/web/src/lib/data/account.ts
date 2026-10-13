@@ -218,6 +218,11 @@ export function isInsecurePage() {
   return browser && window.location.protocol === 'http:';
 }
 
+/** Opened on this machine (localhost): plain HTTP never leaves it, so there's nothing to warn about. */
+export function isLoopbackPage() {
+  return browser && /^(localhost|127\.|\[::1\]$)/.test(window.location.hostname);
+}
+
 /** Whether this server allows accounts on plain-HTTP pages (ALLOW_HTTP_ACCOUNTS, off by default). */
 /** httpAccounts: sign-in works over plain HTTP; initialAdmin: the first admin hasn't signed in yet. */
 export async function accountConfig(): Promise<{ httpAccounts: boolean; initialAdmin: boolean }> {

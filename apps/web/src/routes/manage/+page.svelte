@@ -17,6 +17,7 @@
     faRotateLeft,
     faStore,
     faTrash,
+    faUser,
     faXmark
   } from '@fortawesome/free-solid-svg-icons';
   import BookCardList from '$lib/components/book-card/book-card-list.svelte';
@@ -1351,6 +1352,17 @@
             <button type="button" class="underline" on:click={clearFilters}>show all</button>
           </p>
         {/if}
+      {:else if $storageSource$ === StorageKey.CALIBRE && $account$ === null}
+        <a
+          class="library-empty library-empty-import app-surface-card"
+          href="/settings?section=general#general-account"
+        >
+          <span class="library-empty-icon"><Fa icon={faUser} /></span>
+          <span class="text-xl font-extrabold">Sign in to see the library</span>
+          <span class="text-sm font-semibold text-[color:var(--app-muted-fg)]">
+            This server's library needs an account
+          </span>
+        </a>
       {:else}
         <label class="library-empty library-empty-import app-surface-card">
           <input

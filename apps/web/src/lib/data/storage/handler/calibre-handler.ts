@@ -53,10 +53,13 @@ const syncBaseUrl = '/calibre/sync/';
 
 /** 401 from the sync folder: an expired session, or a signed-out reader outside the trusted networks. */
 function unauthorizedError() {
-  return new Error(
-    currentAccount()
-      ? 'Your sign-in has expired. Sign in again in Settings → General → Account.'
-      : 'Using the library from this network needs an account. Sign in in Settings → General → Account.'
+  return Object.assign(
+    new Error(
+      currentAccount()
+        ? 'Your sign-in has expired. Sign in again in Settings → General → Account.'
+        : 'Using the library from this network needs an account. Sign in in Settings → General → Account.'
+    ),
+    { status: 401 }
   );
 }
 
@@ -177,6 +180,12 @@ export class CalibreStorageHandler extends ApiStorageHandler {
         this.dataListFetched = true;
       } catch (error) {
         this.clearData();
+        // Signed out where the library needs an account: an empty library that asks to
+        // sign in (manage page), not a failure that switches the source to the browser.
+        if (!currentAccount() && (error as { status?: number }).status === 401) {
+          return [];
+        }
+
         throw error;
       }
     }

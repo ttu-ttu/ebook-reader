@@ -10,6 +10,7 @@
   import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
   import { StorageKey } from '$lib/data/storage/storage-types';
   import {
+    browserSourceAvailable,
     isStorageSourceAvailable,
     storageIcon$,
     storageSource$
@@ -90,7 +91,9 @@
   $: storageSourceMenuItems = browser
     ? [
         { label: 'Calibre', key: StorageKey.CALIBRE, requiresConnectivity: false },
-        { label: 'Browser', key: StorageKey.BROWSER, requiresConnectivity: false },
+        ...(browserSourceAvailable
+          ? [{ label: 'Browser', key: StorageKey.BROWSER, requiresConnectivity: false }]
+          : []),
         ...(isStorageSourceAvailable(StorageKey.GDRIVE, $gDriveStorageSource$, window)
           ? [{ label: 'GDrive', key: StorageKey.GDRIVE, requiresConnectivity: true }]
           : []),

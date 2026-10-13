@@ -4,6 +4,9 @@
  * All rights reserved.
  */
 
+// A LAN address: on localhost the plain-HTTP warning is hidden (nothing crosses a network).
+// @vitest-environment-options {"url": "http://books.lan/"}
+
 import { BehaviorSubject } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { account$ } from '$lib/data/account';
@@ -18,7 +21,7 @@ vi.mock('$lib/data/account-settings-sync', () => ({
 
 const { default: SettingsAccount } = await import('./settings-account.svelte');
 
-/** The account API as seen from a signed-out plain-HTTP page (jsdom's location is http:). */
+/** The account API as seen from a signed-out plain-HTTP page (http://books.lan/). */
 function stubServer(httpAccounts: boolean) {
   vi.stubGlobal(
     'fetch',

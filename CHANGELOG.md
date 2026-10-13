@@ -6,6 +6,18 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Setup
+
+- The README starts with a setup guide: a new or an existing Calibre library, on your own
+  computer (HTTP sign-in on localhost) or on a server behind HTTPS.
+- Signed out where the library needs an account, the library asks you to sign in instead
+  of showing "Calibre catalog unavailable (HTTP 401)" and switching to browser storage.
+- The plain-HTTP warning in Settings → Account is not shown on localhost, where nothing
+  crosses a network.
+- The Browser library source is gone from server builds (only the reader-only static build
+  has it); a saved Browser choice moves to Calibre. Books stay cached in the browser as
+  before.
+
 ### Whisper subtitles
 
 - The audiobook and Audiobookshelf players can make their own subtitles: Whisper runs in

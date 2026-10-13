@@ -70,7 +70,9 @@ export function loadCalibreCatalog(refresh = false) {
   catalogCache ??= fetch(catalogUrl, { cache: 'no-cache' })
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`Calibre catalog unavailable (HTTP ${response.status})`);
+        throw Object.assign(new Error(`Calibre catalog unavailable (HTTP ${response.status})`), {
+          status: response.status
+        });
       }
 
       return response.json();
