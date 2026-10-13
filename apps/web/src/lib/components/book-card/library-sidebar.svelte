@@ -10,7 +10,7 @@
     allBooksFilter,
     countBookCards,
     getLibraryFilter,
-    getLibraryFilterSections
+    libraryFilterSections
   } from '$lib/components/book-card/library-filters';
   import { libraryCollapsedFilterSections$ } from '$lib/data/store';
   import Fa from 'svelte-fa';
@@ -22,8 +22,7 @@
 
   let mobileOpen = false;
 
-  $: libraryFilterSections = getLibraryFilterSections(bookCards);
-  $: counts = countBookCards(bookCards, libraryFilterSections);
+  $: counts = countBookCards(bookCards);
   $: activeFilterLabel = getLibraryFilter(activeFilter).label;
 
   function toggleSection(sectionKey: string) {

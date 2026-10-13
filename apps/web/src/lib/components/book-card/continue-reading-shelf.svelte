@@ -8,6 +8,7 @@
   import BookCard from '$lib/components/book-card/book-card.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import { isReading } from '$lib/components/book-card/library-filters';
+  import { homeRemovedTitles$, isContinueReading, lastRead } from '$lib/data/library-home';
   import { formatSeries } from '$lib/components/book-card/library-sort';
   import { longPress } from '$lib/functions/use-long-press';
   import { createEventDispatcher } from 'svelte';
@@ -34,14 +35,10 @@
   }>();
   const maxBooks = 12;
 
-  // lastBookOpen is stored with the shared book file; the bookmark time is per account.
-  const lastRead = (card: BookCardProps) =>
-    Math.max(card.lastBookOpen || 0, card.lastBookmarkModified || 0);
-
   $: books =
     shelfBooks ??
     bookCards
-      .filter((card) => isReading(card) && lastRead(card))
+      .filter((card) => isContinueReading(card, $homeRemovedTitles$))
       .sort((a, b) => lastRead(b) - lastRead(a))
       .slice(0, maxBooks);
 </script>

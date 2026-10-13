@@ -9,6 +9,8 @@ import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 import {
   addToHome,
   homeBookTitles$,
+  homeRemovedTitles$,
+  isContinueReading,
   matchingSeries,
   removeFromHome,
   seriesGroups
@@ -50,6 +52,24 @@ describe('home titles', () => {
     removeFromHome('a');
 
     expect(homeBookTitles$.getValue()).toEqual(['b', 'c']);
+  });
+
+  it('hides a removed book from Continue reading until it is read again', () => {
+    const reading = {
+      title: 'r',
+      progress: 0.5,
+      lastBookOpen: 1,
+      lastBookmarkModified: 0
+    } as BookCardProps;
+
+    expect(isContinueReading(reading, homeRemovedTitles$.getValue())).toBe(true);
+    removeFromHome('r');
+    expect(isContinueReading(reading, homeRemovedTitles$.getValue())).toBe(false);
+    expect(
+      isContinueReading({ ...reading, lastBookOpen: Date.now() + 1 }, homeRemovedTitles$.getValue())
+    ).toBe(true);
+    addToHome(['r']);
+    expect(homeRemovedTitles$.getValue()).not.toHaveProperty('r');
   });
 });
 

@@ -11,6 +11,7 @@
  */
 
 import type { BookCardProps } from '$lib/components/book-card/book-card-props';
+import { isReading } from '$lib/components/book-card/library-filters';
 import { orderSeries } from '$lib/components/book-card/library-sort';
 import { writableObjectLocalStorageSubject } from '$lib/data/internal/writable-object-local-storage-subject';
 import { writableStringLocalStorageSubject } from '$lib/data/internal/writable-string-local-storage-subject';
@@ -26,12 +27,31 @@ export const storeView$ = writableStringLocalStorageSubject()('libraryStoreView'
 /** Titles added to Home from the Store (titles are how books are identified across devices). */
 export const homeBookTitles$ = writableObjectLocalStorageSubject<string[]>()('homeBookTitles', []);
 
+/** Titles removed from Home and when: Continue reading skips them until they are read again. */
+export const homeRemovedTitles$ = writableObjectLocalStorageSubject<Record<string, number>>()(
+  'homeRemovedTitles',
+  {}
+);
+
+// lastBookOpen is stored with the shared book file; the bookmark time is per account.
+export const lastRead = (card: BookCardProps) =>
+  Math.max(card.lastBookOpen || 0, card.lastBookmarkModified || 0);
+
+/** Shown on Home's Continue reading shelf. */
+export function isContinueReading(card: BookCardProps, removed: Record<string, number>) {
+  return isReading(card) && lastRead(card) > (removed[card.title] ?? 0);
+}
+
 export function addToHome(titles: string[]) {
   homeBookTitles$.next([...new Set([...homeBookTitles$.getValue(), ...titles])]);
+  const removed = { ...homeRemovedTitles$.getValue() };
+  titles.forEach((title) => delete removed[title]);
+  homeRemovedTitles$.next(removed);
 }
 
 export function removeFromHome(title: string) {
   homeBookTitles$.next(homeBookTitles$.getValue().filter((t) => t !== title));
+  homeRemovedTitles$.next({ ...homeRemovedTitles$.getValue(), [title]: Date.now() });
   deleteVnCache(title).catch(() => {});
 }
 

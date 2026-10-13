@@ -189,7 +189,7 @@
   $: isLoading = !$bookCards$ || $booksAreLoading$;
   $: hasActiveFilter = activeFilter !== allBooksFilter.key || !!searchTerm.trim();
   $: isHome = $libraryTab$ !== 'store';
-  $: showSeriesGrid = !isHome && $storeView$ === 'series';
+  $: showSeriesGrid = !isHome && $storeView$ === 'series' && activeFilter !== 'vn';
   $: seriesMatches = isHome || showSeriesGrid ? [] : matchingSeries($bookCards$ ?? [], searchTerm);
 
   function showSeries(series: string) {
@@ -1079,30 +1079,8 @@
       on:drop={(ev) => ev.preventDefault()}
       on:drop={(ev) => getDropEventFiles(ev).then(onFilesChange)}
     >
-      <div class="library-tabs" role="tablist" aria-label="Library">
-        <button
-          type="button"
-          role="tab"
-          class="library-tab"
-          class:library-tab-active={isHome}
-          aria-selected={isHome}
-          on:click={() => ($libraryTab$ = 'home')}
-        >
-          <Fa icon={faHouse} /> Home
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="library-tab"
-          class:library-tab-active={!isHome}
-          aria-selected={!isHome}
-          on:click={() => ($libraryTab$ = 'store')}
-        >
-          <Fa icon={faStore} /> Store
-          {#if $bookCards$?.length}<span class="library-tab-count">{$bookCards$.length}</span>{/if}
-        </button>
-      </div>
-      {#if !isHome}
+      <!-- Visual novels aren't grouped in series -->
+      {#if !isHome && activeFilter !== 'vn'}
         <div class="library-tabs library-tabs-small" role="radiogroup" aria-label="Store view">
           <button
             type="button"
@@ -1285,6 +1263,8 @@
           on:bookClick={(ev) => onCoverClick(ev.detail.id)}
           on:bookRead={(ev) => onBookClick(ev.detail.id)}
           on:bookSelect={(ev) => selectBook(ev.detail.id)}
+          removeTitle="Remove from Home"
+          on:remove={(ev) => removeFromHome(ev.detail.title)}
         />
         <ContinueReadingShelf
           bookCards={$bookCards$}
@@ -1475,16 +1455,9 @@
     outline-offset: 2px;
   }
 
-  .library-tab-count {
-    color: var(--app-text-subtle);
-    font-family: var(--app-ui-font, 'Noto Sans JP'), sans-serif;
-    font-size: 0.78rem;
-  }
-
   /* Books / Series: a small segmented control */
   .library-tabs-small {
     gap: 0;
-    margin-left: 1rem;
     padding: 2px;
     border: 1px solid var(--app-control-border);
     border-radius: calc(0.5rem * var(--app-radius-scale));

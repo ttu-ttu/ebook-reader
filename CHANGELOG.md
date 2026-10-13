@@ -6,6 +6,18 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Library
+
+- Home and Store are in the top bar in place of "Library"; the logo opens Home.
+- Removing a book from Home also takes it off Continue reading until it is read again
+  (the shelf has a remove button too).
+- The Store sidebar drops the Series and Tags filters (search still finds tags), and
+  Books/Series is hidden while the Visual novels filter is on.
+- Length filters count books not opened yet when they have a difficulty estimate, and
+  100k–300k is split into 100k–150k, 150k–200k and 200k–300k.
+- Visual novels can get difficulty estimates, from their scripts. Server: the
+  difficulty container mounts `VN_PATH` at `/vn` (read-only).
+
 ### Book pages
 
 - Clicking a book in the Store or a cover on Home opens its page instead of reading or

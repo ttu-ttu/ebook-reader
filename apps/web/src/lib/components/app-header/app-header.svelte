@@ -9,12 +9,15 @@
     faBookOpenReader,
     faChartLine,
     faGear,
+    faHouse,
     faNoteSticky,
+    faStore,
     faUser
   } from '@fortawesome/free-solid-svg-icons';
   import AppHeaderLogo from '$lib/components/app-header/app-header-logo.svelte';
   import { account$ } from '$lib/data/account';
   import { pagePath } from '$lib/data/env';
+  import { libraryTab$, type LibraryTab } from '$lib/data/library-home';
   import Fa from 'svelte-fa';
 
   export let active: AppSection | undefined;
@@ -24,7 +27,8 @@
   /** When set, small screens show a back button instead of the section navigation. */
   export let onBack: (() => void) | undefined = undefined;
 
-  function navigate(event: MouseEvent, section: AppSection, href: string) {
+  function navigate(event: MouseEvent, section: AppSection, href: string, tab?: LibraryTab) {
+    if (tab) $libraryTab$ = tab;
     if (onNavigate) {
       event.preventDefault();
       onNavigate(section, href);
@@ -33,15 +37,21 @@
 
   const sections: {
     key: AppSection;
+    /** The library's Home or Store tab */
+    tab?: LibraryTab;
     label: string;
     icon: typeof faBook;
     href: string;
   }[] = [
-    { key: 'library', label: 'Library', icon: faBook, href: `${pagePath}/manage` },
+    { key: 'library', tab: 'home', label: 'Home', icon: faHouse, href: `${pagePath}/manage` },
+    { key: 'library', tab: 'store', label: 'Store', icon: faStore, href: `${pagePath}/manage` },
     { key: 'statistics', label: 'Statistics', icon: faChartLine, href: `${pagePath}/statistics` },
     { key: 'settings', label: 'Settings', icon: faGear, href: `${pagePath}/settings` },
     { key: 'notes', label: 'Notes', icon: faNoteSticky, href: '' }
   ];
+
+  $: isActive = (section: (typeof sections)[number]) =>
+    section.key === active && (!section.tab || section.tab === $libraryTab$);
 </script>
 
 <header class="fixed inset-x-0 top-0 z-40">
@@ -65,21 +75,21 @@
         href="{pagePath}/manage"
         class="app-brand {onBack ? 'hidden sm:flex' : 'flex'}"
         title="Chimimouryou"
-        on:click={(event) => navigate(event, 'library', `${pagePath}/manage`)}
+        on:click={(event) => navigate(event, 'library', `${pagePath}/manage`, 'home')}
       >
         <AppHeaderLogo label="Chimimouryou" />
       </a>
 
       <nav class="section-nav hidden sm:flex" aria-label="Sections">
-        {#each sections as section (section.key)}
+        {#each sections as section (section.label)}
           {#if section.href}
             <a
               href={section.href}
               class="section-nav-item"
-              class:section-nav-item-active={section.key === active}
-              aria-current={section.key === active ? 'page' : undefined}
+              class:section-nav-item-active={isActive(section)}
+              aria-current={isActive(section) ? 'page' : undefined}
               title={section.label}
-              on:click={(event) => navigate(event, section.key, section.href)}
+              on:click={(event) => navigate(event, section.key, section.href, section.tab)}
             >
               <Fa icon={section.icon} class="md:hidden" />
               <span class="hidden md:inline">{section.label}</span>
@@ -132,14 +142,14 @@
 
 {#if !onBack}
   <nav class="app-bottom-nav" aria-label="Sections">
-    {#each sections as section (section.key)}
+    {#each sections as section (section.label)}
       {#if section.href}
         <a
           href={section.href}
           class="bottom-nav-item"
-          class:bottom-nav-item-active={section.key === active}
-          aria-current={section.key === active ? 'page' : undefined}
-          on:click={(event) => navigate(event, section.key, section.href)}
+          class:bottom-nav-item-active={isActive(section)}
+          aria-current={isActive(section) ? 'page' : undefined}
+          on:click={(event) => navigate(event, section.key, section.href, section.tab)}
         >
           <Fa icon={section.icon} />
           <span>{section.label}</span>

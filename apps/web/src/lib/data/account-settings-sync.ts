@@ -28,7 +28,7 @@ import {
   ttsPlaybackRate$,
   ttsVoiceId$
 } from '$lib/data/ai-settings';
-import { homeBookTitles$ } from '$lib/data/library-home';
+import { homeBookTitles$, homeRemovedTitles$ } from '$lib/data/library-home';
 import { logger } from '$lib/data/logger';
 import {
   autoBookmark$,
@@ -95,6 +95,7 @@ const sharedSettings: Record<string, Store> = {
   lorebookAutoInterval: lorebookAutoInterval$,
   aiLanguage: aiLanguage$,
   homeBookTitles: homeBookTitles$,
+  homeRemovedTitles: homeRemovedTitles$,
   askAiPresets: askAiPresets$,
   askAiDefaultPreset: askAiDefaultPreset$,
   askAiReaderNote: askAiReaderNote$,

@@ -38,7 +38,13 @@
   import { dialogManager } from '$lib/data/dialog-manager';
   import { getKanjiSeen, kanjiCoverage, type KanjiCoverage } from '$lib/data/kanji-seen';
   import { learnerStats } from '$lib/data/learner-stats';
-  import { addToHome, homeBookTitles$, removeFromHome } from '$lib/data/library-home';
+  import {
+    addToHome,
+    homeBookTitles$,
+    homeRemovedTitles$,
+    isContinueReading,
+    removeFromHome
+  } from '$lib/data/library-home';
   import { guessSeriesName } from '$lib/data/series-overrides';
   import { database, startDayHoursForTracker$ } from '$lib/data/store';
   import { getDateKey } from '$lib/functions/statistic-util';
@@ -90,7 +96,8 @@
     kind === 'manga' ? (characters ? `${characters}頁` : '') : japaneseLength(characters);
   $: remaining = isReading(book) ? characters * (1 - book.progress) : characters;
   $: canEdit = isCalibre && hasPermission($account$, 'series');
-  $: onHome = $homeBookTitles$.includes(book.title);
+  $: onHome =
+    $homeBookTitles$.includes(book.title) || isContinueReading(book, $homeRemovedTitles$);
   $: seriesBooks = book.series
     ? orderSeries(bookCards.filter((card) => card.series === book.series))
     : [];

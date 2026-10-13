@@ -104,19 +104,6 @@ export const libraryFilterSections: LibraryFilterSection[] = [
     ]
   },
   {
-    key: 'series',
-    label: 'Series',
-    filters: [
-      { key: 'in-series', label: 'In a series', test: (card) => !!card.series },
-      { key: 'standalone', label: 'Standalone', test: (card) => !card.series },
-      {
-        key: 'series-first',
-        label: 'First volumes',
-        test: (card) => !!card.series && (card.seriesIndex ?? 1) <= 1
-      }
-    ]
-  },
-  {
     key: 'length',
     label: 'Length',
     filters: [
@@ -127,8 +114,18 @@ export const libraryFilterSections: LibraryFilterSection[] = [
       },
       {
         key: 'medium',
-        label: '100k – 300k characters',
-        test: (card) => card.characters >= 100_000 && card.characters <= 300_000
+        label: '100k – 150k characters',
+        test: (card) => card.characters >= 100_000 && card.characters < 150_000
+      },
+      {
+        key: 'medium-long',
+        label: '150k – 200k characters',
+        test: (card) => card.characters >= 150_000 && card.characters < 200_000
+      },
+      {
+        key: 'longer',
+        label: '200k – 300k characters',
+        test: (card) => card.characters >= 200_000 && card.characters <= 300_000
       },
       {
         key: 'long',
@@ -146,48 +143,14 @@ const filtersByKey = new Map(
   ])
 );
 
-const tagPrefix = 'tag:';
 const seriesPrefix = 'series:';
 
 /** Filter key showing one series (Store → Series). */
 export function seriesFilterKey(series: string) {
   return `${seriesPrefix}${series}`;
 }
-const maxTagFilters = 40;
-
-function tagFilter(tag: string): LibraryFilter {
-  return {
-    key: `${tagPrefix}${tag}`,
-    label: tag,
-    test: (card) => !!card.tags?.includes(tag)
-  };
-}
-
-/** Static sections plus the most used Calibre tags. */
-export function getLibraryFilterSections(bookCards: BookCardProps[]): LibraryFilterSection[] {
-  const tagCounts = new Map<string, number>();
-
-  bookCards.forEach((card) =>
-    card.tags?.forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1))
-  );
-
-  if (!tagCounts.size) {
-    return libraryFilterSections;
-  }
-
-  const tags = [...tagCounts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, maxTagFilters)
-    .map(([tag]) => tagFilter(tag));
-
-  return [...libraryFilterSections, { key: 'tags', label: 'Tags', filters: tags }];
-}
 
 export function getLibraryFilter(key: string) {
-  if (key.startsWith(tagPrefix)) {
-    return tagFilter(key.slice(tagPrefix.length));
-  }
-
   if (key.startsWith(seriesPrefix)) {
     const series = key.slice(seriesPrefix.length);
 

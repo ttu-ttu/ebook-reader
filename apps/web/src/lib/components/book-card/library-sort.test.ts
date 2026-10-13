@@ -14,7 +14,7 @@ import {
   orderSeries,
   titleVolume
 } from './library-sort';
-import { filterBookCards, getLibraryFilterSections } from './library-filters';
+import { filterBookCards } from './library-filters';
 
 function card(props: Partial<BookCardProps>): BookCardProps {
   return {
@@ -83,9 +83,9 @@ describe('library filters', () => {
     card({ title: 'Done', progress: 1, tags: ['SF', 'Mystery'] })
   ];
 
-  it('filters by status, tag and search term', () => {
+  it('filters by status and search term', () => {
     expect(filterBookCards(cards, 'reading', '').map((c) => c.title)).toEqual(['Reading']);
-    expect(filterBookCards(cards, 'tag:SF', '').map((c) => c.title)).toEqual(['Unread', 'Done']);
+    expect(filterBookCards(cards, 'all', 'mystery').map((c) => c.title)).toEqual(['Done']);
     expect(filterBookCards(cards, 'all', '著者').map((c) => c.title)).toEqual(['Reading']);
     expect(filterBookCards(cards, 'unknown-key', '')).toHaveLength(3);
   });
@@ -97,10 +97,12 @@ describe('library filters', () => {
     expect(filterBookCards(withManga, 'books', 'done').map((c) => c.title)).toEqual(['Done']);
   });
 
-  it('lists tags by how often they are used', () => {
-    const tags = getLibraryFilterSections(cards).find((s) => s.key === 'tags')!;
+  it('splits 100k-300k characters into three lengths', () => {
+    const lengths = [120_000, 180_000, 250_000].map((characters) =>
+      card({ title: `${characters}`, characters })
+    );
 
-    expect(tags.filters.map((f) => f.label)).toEqual(['SF', 'Mystery']);
+    expect(filterBookCards(lengths, 'medium-long', '').map((c) => c.title)).toEqual(['180000']);
   });
 });
 

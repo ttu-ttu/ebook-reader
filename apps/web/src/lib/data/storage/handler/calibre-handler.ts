@@ -155,6 +155,8 @@ export class CalibreStorageHandler extends ApiStorageHandler {
             // Unopened books sort by when they were added to Calibre.
             lastBookModified: bookCard.lastBookModified || book.added,
             imagePath: calibreCoverUrl(book) || bookCard.imagePath,
+            // Unopened books: the difficulty service's count, so length filters see them.
+            characters: bookCard.characters || difficulty[book.id]?.characters || 0,
             authors: book.authors,
             series: book.series,
             seriesIndex: book.seriesIndex,
@@ -167,8 +169,8 @@ export class CalibreStorageHandler extends ApiStorageHandler {
             words95: difficulty[book.id]?.words95 ?? undefined,
             manga: (book.format === 'CBZ' || book.format === 'ZIP') && !book.vn,
             vn: !!book.vn,
-            // Game folders aren't in Calibre, so no difficulty estimates.
-            calibreId: book.format === 'VN' ? undefined : book.id
+            // Game folders (format VN) aren't in Calibre, but their catalog ids key estimates too.
+            calibreId: book.id
           });
         }
 
