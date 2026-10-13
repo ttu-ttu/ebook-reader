@@ -260,3 +260,8 @@ export async function getUpdateState(): Promise<UpdateState> {
 export function requestUpdate(ref: string) {
   return post<UpdateState>('admin/update', { ref });
 }
+
+/** Asks the server's updater to install this CONscripter release (rebuilds web only). */
+export function requestEngineUpdate(engine: string) {
+  return post<UpdateState>('admin/update', { engine });
+}

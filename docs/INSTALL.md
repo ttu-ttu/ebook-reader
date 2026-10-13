@@ -151,7 +151,8 @@ path unit installed by the deploy) download that commit, rebuild the images and
 restart the stack. A failed build keeps the running version; the previous images
 stay tagged `:previous`. Its log: `journalctl -u ebook-update`. It builds and
 runs whatever is released or on main as root, so only point `UPDATE_REPO` at a
-repository you trust.
+repository you trust. Tools → Visual novel engine uses the same updater to
+install a new CONscripter release (it rebuilds only the web container).
 
 Otherwise:
 

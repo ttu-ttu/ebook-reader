@@ -26,7 +26,8 @@ HTTP API (bound to localhost, proxied by nginx at /account/api/):
   POST admin/remove   {"username"}; its data folder is kept
   GET  admin/update   the updater's state (admins only)
   POST admin/update   {"ref": "<commit>"}: asks the server's updater (ebook-update,
-       a systemd timer on the host) to deploy that commit of the GitHub repository
+       a systemd timer on the host) to deploy that commit of the GitHub repository;
+       {"engine": "<tag>"} instead installs that CONscripter release (rebuilds web only)
 
 There is no self-service sign-up. On an empty database the service creates the
 admin account `admin` with a random temporary password, printed in its log and by
@@ -87,6 +88,7 @@ UPDATE_DIR = os.environ.get('UPDATE_STATE_DIR', '/data/state/update')
 # this service (its port is also reachable from the host and the other containers).
 INTERNAL_TOKEN_FILE = os.environ.get('INTERNAL_TOKEN_FILE', '/data/state/internal-token')
 COMMIT_PATTERN = re.compile(r'[0-9a-f]{7,40}')
+TAG_PATTERN = re.compile(r'[A-Za-z0-9._-]{1,64}')
 
 # nginx serves DATA_DIR/<account id> with `root`, so files live under the URI path.
 SYNC_PATH = os.path.join('account', 'sync')
@@ -795,15 +797,23 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_admin_update(self):
         self.require_admin()
-        ref = str(self.read_json().get('ref', ''))
-        if not COMMIT_PATTERN.fullmatch(ref):
-            raise ApiError(400, 'Not a commit')
+        body = self.read_json()
+        if 'engine' in body:
+            engine = str(body['engine'])
+            if not TAG_PATTERN.fullmatch(engine):
+                raise ApiError(400, 'Not a release tag')
+            request = {'engine': engine}
+        else:
+            ref = str(body.get('ref', ''))
+            if not COMMIT_PATTERN.fullmatch(ref):
+                raise ApiError(400, 'Not a commit')
+            request = {'ref': ref}
         state = update_state()
         if not state['updater']:
             raise ApiError(409, 'The updater is not installed on this server (see docs/INSTALL.md, "Updates")')
         if state['requested'] or (state['status'] or {}).get('state') == 'running':
             raise ApiError(409, 'An update is already under way')
-        write_private_json(os.path.join(UPDATE_DIR, 'request.json'), {'ref': ref, 'at': int(time.time())})
+        write_private_json(os.path.join(UPDATE_DIR, 'request.json'), {**request, 'at': int(time.time())})
         return 200, update_state(), {}
 
     ROUTES = {

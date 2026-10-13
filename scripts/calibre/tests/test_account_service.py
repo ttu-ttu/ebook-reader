@@ -1,6 +1,7 @@
 """Tests for account/service.py (standard library only). Run from the repo root:
 python3 -m unittest discover -s scripts/calibre/tests
 """
+import json
 import os
 import sys
 import tempfile
@@ -99,6 +100,32 @@ class AccountServiceTest(unittest.TestCase):
             f.write('{"state": "done", "ref": "abcdef1"}')
         self.assertEqual(service.update_state()['updater'], 'owner/repo')
         self.assertEqual(service.update_state()['status']['state'], 'done')
+
+    def test_update_requests(self):
+        service.UPDATE_DIR = self.tmp.name
+        with open(os.path.join(self.tmp.name, 'updater'), 'w') as f:
+            f.write('owner/repo\n')
+        request_path = os.path.join(self.tmp.name, 'request.json')
+
+        def post(body):
+            handler = object.__new__(service.Handler)
+            handler.require_admin = lambda: None
+            handler.read_json = lambda: body
+            return handler.post_admin_update()
+
+        for bad in ({'ref': 'main'}, {'engine': 'v1;rm'}, {'engine': ''}):
+            with self.assertRaises(service.ApiError):
+                post(bad)
+        post({'engine': 'v0.11.0'})
+        with open(request_path) as f:
+            self.assertEqual(json.load(f)['engine'], 'v0.11.0')
+        # One request at a time.
+        with self.assertRaises(service.ApiError):
+            post({'ref': 'abcdef1'})
+        os.remove(request_path)
+        post({'ref': 'abcdef1'})
+        with open(request_path) as f:
+            self.assertNotIn('engine', json.load(f))
 
     def test_sessions(self):
         user_id = service.create_user('alice', 'long enough')

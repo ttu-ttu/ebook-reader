@@ -18,6 +18,14 @@ anything a reader or a server operator would notice.
   has it); a saved Browser choice moves to Calibre. Books stay cached in the browser as
   before.
 
+### Visual novel engine updates
+
+- Admin panel → Tools → Visual novel engine can install a new CONscripter release: the
+  server's updater downloads it and rebuilds only the web container. App updates keep an
+  engine installed this way when it is newer than the one in the commit.
+- Server: `admin/update` also takes `{"engine": "<tag>"}` (only CONscripter's latest
+  release is installed).
+
 ### Whisper subtitles
 
 - The audiobook and Audiobookshelf players can make their own subtitles: Whisper runs in
