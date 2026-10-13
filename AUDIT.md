@@ -389,7 +389,7 @@ The front-end checks ran on a fresh `git archive HEAD` in the scratch directory 
 - **Production stack:** nothing was sent to it. Live checks used the test stack only (A-01 as a dry run; A-02 and A-03 on files created for the test; everything restored).
 - **A-07 and A-10:** not reproduced in a browser; this would need two accounts and a real book on the test stack.
 - **Collection DELETE of the sync root:** not executed (A-02), since it would wipe the test stack's processed books.
-- **Calibre's own EPUB parsing, the ONScripter WebAssembly engine** (`static/vn/onsyuri.*`) and its exposure to game data.
+- **Calibre's own EPUB parsing, the ONScripter WebAssembly engine** (`static/vn/conscripter.*`) and its exposure to game data.
 - **Upstream ttu code:** loaders, GDrive/OneDrive handlers and replication internals were reviewed only where the fork's features touch them.
 - **`scripts/deploy.sh`:** quoting only skimmed (operator-run, not an input boundary).
 - **Host and infrastructure:** Proxmox, Tailscale ACLs, backups.

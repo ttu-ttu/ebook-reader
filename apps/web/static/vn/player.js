@@ -1,8 +1,8 @@
 /**
- * Shell for the CONscripter web engine (onsyuri.js, GPL-2.0, built by scripts/onsyuri/),
+ * Shell for the CONscripter web engine (conscripter.js, GPL-2.0, fetched by scripts/conscripter/),
  * loaded by the reader's /v page in a same-origin iframe. The engine calls the globals below
  * (g_onsyuri_*, fetch_file, flush_save, playVideo, scale_full, onsyuriText, onsyuriChoice,
- * onsyuriOverlay) from its C code.
+ * onsyuriOverlay) from its C code; they keep ONScripter-yuri's names, as does its onsyuri() loader.
  * The page calls startGame() once the frame has loaded.
  */
 
@@ -386,12 +386,7 @@ async function startGame(options) {
 
   g_onsyuri_module.canvas = document.getElementById('canvas');
   g_onsyuri_module.onExit = options.onExit;
-  // The engine is released as conscripter.wasm but shipped as onsyuri.wasm (scripts/onsyuri/build.sh).
-  g_onsyuri_module.locateFile = function (path) {
-    return path.endsWith('.wasm') ? 'onsyuri.wasm' : path;
-  };
-
-  await loadScript('onsyuri.js');
+  await loadScript('conscripter.js');
   // INVOKE_RUN=0: the runtime is ready here and main() waits for callMain.
   g_onsyuri_module = await onsyuri(g_onsyuri_module);
 

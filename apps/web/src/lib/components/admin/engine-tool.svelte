@@ -32,8 +32,8 @@
     Visual novels play on
     <a class="underline" href="https://github.com/{engineRepo}" target="_blank" rel="noreferrer"
       >CONscripter</a
-    >. A new release isn't installed on its own: run <code>scripts/onsyuri/build.sh</code>, commit
-    the files it changes and deploy (or use Updates once the commit is on GitHub).
+    >. A new release isn't installed on its own: run <code>scripts/conscripter/build.sh</code>,
+    commit the files it changes and deploy (or use Updates once the commit is on GitHub).
   </p>
 
   {#if checking}

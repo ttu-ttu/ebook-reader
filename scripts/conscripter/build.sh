@@ -31,8 +31,6 @@ fi
 grep -q onsyuriOverlay "$work/conscripter.js" || { echo "CONscripter $tag has no text hooks" >&2; exit 1; }
 
 mkdir -p "$out"
-# player.js loads onsyuri.*.
-cp "$work/conscripter.js" "$out/onsyuri.js"
-cp "$work/conscripter.wasm" "$out/onsyuri.wasm"
+cp "$work/conscripter.js" "$work/conscripter.wasm" "$out/"
 echo "$tag" > "$out/conscripter-version.txt"
-echo "Copied CONscripter $tag to $out/onsyuri.js and onsyuri.wasm"
+echo "Copied CONscripter $tag to $out"

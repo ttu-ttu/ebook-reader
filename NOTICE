@@ -24,12 +24,12 @@ scripts/calibre/jiten/goshu.json.gz holds word origins (語種) from UniDic
 (https://clrd.ninjal.ac.jp/unidic/, via unidic-lite), Copyright (c) 2011-2013,
 The UniDic Consortium, used under its BSD licence.
 
-The visual novel player (apps/web/static/vn/onsyuri.js and onsyuri.wasm) is
+The visual novel player (apps/web/static/vn/conscripter.js and conscripter.wasm) is
 CONscripter (https://github.com/blankiekun/CONscripter), a fork of
 ONScripter-yuri (https://github.com/YuriSizuku/OnscripterYuri), based on
 ONScripter-Jh and ONScripter by Ogapee, licensed under the GNU General Public
 License version 2. It is the web build of the CONscripter release named in
-apps/web/static/vn/conscripter-version.txt, fetched by scripts/onsyuri/build.sh;
+apps/web/static/vn/conscripter-version.txt, fetched by scripts/conscripter/build.sh;
 that release's tag in the repository above is its complete corresponding
 source. Its fallback font
 (apps/web/static/vn/default.ttf) is Noto Sans JP, licensed under the SIL Open
