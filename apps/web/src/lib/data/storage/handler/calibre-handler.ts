@@ -33,7 +33,7 @@ import type { BooksDbBookData } from '$lib/data/database/books-db/versions/books
 import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
 import { StorageKey, StorageSourceDefault } from '$lib/data/storage/storage-types';
 import { applySeriesOverride, loadSeriesOverrides } from '$lib/data/series-overrides';
-import { applyMetadataCover, loadBookMetadata } from '$lib/data/book-metadata';
+import { applyMetadata, loadBookMetadata } from '$lib/data/book-metadata';
 import { database } from '$lib/data/store';
 import { storage } from '$lib/data/window/navigator/storage';
 import loadEpub from '$lib/functions/file-loaders/epub/load-epub';
@@ -186,7 +186,7 @@ export class CalibreStorageHandler extends ApiStorageHandler {
     ]);
 
     return [...this.titleToBookCard.values()].map((card) =>
-      applySeriesOverride(applyMetadataCover(card, metadata), overrides)
+      applySeriesOverride(applyMetadata(card, metadata), overrides)
     );
   }
 

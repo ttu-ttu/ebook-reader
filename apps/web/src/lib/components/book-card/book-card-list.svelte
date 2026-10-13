@@ -56,7 +56,7 @@
         </span>
         {#if !compact}
           <span class="library-card-body">
-            <span class="library-card-title" lang="ja">{bookCard.title}</span>
+            <span class="library-card-title" lang="ja">{bookCard.displayTitle || bookCard.title}</span>
             <!-- Calibre's placeholder author is noise under every card -->
             {#if bookCard.authors && bookCard.authors !== 'Unknown'}
               <span class="library-card-author" lang="ja">{bookCard.authors}</span>

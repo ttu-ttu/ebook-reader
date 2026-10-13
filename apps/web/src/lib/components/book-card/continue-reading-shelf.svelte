@@ -73,7 +73,7 @@
                 <span class="shelf-progress"><span style:width="{percent}%" /></span>
               {/if}
             </span>
-            <span class="shelf-title" lang="ja">{book.title}</span>
+            <span class="shelf-title" lang="ja">{book.displayTitle || book.title}</span>
             <span class="shelf-meta">
               {#if isReading(book)}{percent}%{/if}{#if isReading(book) && book.series}&nbsp;·
               {/if}{#if book.series}{formatSeries(book)}{/if}

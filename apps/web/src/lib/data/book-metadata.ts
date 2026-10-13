@@ -5,9 +5,11 @@
  */
 
 /**
- * Book details fetched from AniList (books, manga) or VNDB (visual novels)
- * on a book's page, shared by everyone through /calibre/sync/metadata.json
- * and keyed by title like series.json. A saved cover replaces the card's.
+ * Book details fetched from AniList (books, manga), VNDB (visual novels) or
+ * Jiten (all three, through nginx's /jiten/search: its API only allows
+ * jiten.moe) on a book's page, shared by everyone through
+ * /calibre/sync/metadata.json and keyed by title like series.json. A saved
+ * cover replaces the card's, a VNDB title the card's title.
  * Not part of upstream.
  */
 
@@ -15,8 +17,10 @@ import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 
 export type MetadataKind = 'book' | 'manga' | 'vn';
 
+export type MetadataSource = 'anilist' | 'vndb' | 'jiten';
+
 export interface BookMetadata {
-  source: 'anilist' | 'vndb';
+  source: MetadataSource;
   /** The entry's page on the source */
   url: string;
   title: string;
@@ -36,8 +40,9 @@ export type MetadataCandidate = Omit<BookMetadata, 'modified'>;
 export type BookMetadataMap = Record<string, BookMetadata>;
 
 const metadataUrl = '/calibre/sync/metadata.json';
-const pagePrefixes = ['https://anilist.co/', 'https://vndb.org/'];
-const coverPrefixes = ['https://s4.anilist.co/', 'https://t.vndb.org/'];
+const sources: MetadataSource[] = ['anilist', 'vndb', 'jiten'];
+const pagePrefixes = ['https://anilist.co/', 'https://vndb.org/', 'https://jiten.moe/'];
+const coverPrefixes = ['https://s4.anilist.co/', 'https://t.vndb.org/', 'https://cdn.jiten.moe/'];
 const maxDescription = 5000;
 
 let cache: Promise<BookMetadataMap> | undefined;
@@ -56,7 +61,7 @@ export function parseBookMetadata(data: unknown): BookMetadataMap {
   Object.entries(data).forEach(([title, entry]) => {
     if (
       !entry ||
-      (entry.source !== 'anilist' && entry.source !== 'vndb') ||
+      !sources.includes(entry.source) ||
       typeof entry.url !== 'string' ||
       !pagePrefixes.some((prefix) => entry.url.startsWith(prefix)) ||
       typeof entry.modified !== 'number'
@@ -137,10 +142,20 @@ export async function saveBookMetadata(title: string, entry: MetadataCandidate |
   return map;
 }
 
-export function applyMetadataCover(card: BookCardProps, map: BookMetadataMap) {
-  const cover = map[card.title]?.cover;
+export function applyMetadata(card: BookCardProps, map: BookMetadataMap) {
+  const entry = map[card.title];
+  // Only VNDB's: AniList and Jiten name a whole series, not this volume.
+  const displayTitle = entry?.source === 'vndb' ? entry.title : '';
 
-  return cover ? { ...card, imagePath: cover } : card;
+  if (!entry?.cover && !displayTitle) {
+    return card;
+  }
+
+  return {
+    ...card,
+    ...(entry.cover ? { imagePath: entry.cover } : {}),
+    ...(displayTitle ? { displayTitle } : {})
+  };
 }
 
 /** Plain text of AniList's HTML/markdown or VNDB's BBCode, spoilers removed. */
@@ -234,10 +249,76 @@ async function searchVndb(query: string): Promise<MetadataCandidate[]> {
   }));
 }
 
-export function metadataSourceName(kind: MetadataKind) {
-  return kind === 'vn' ? 'VNDB' : 'AniList';
+// Jiten's MediaType and Genre enums (api.jiten.moe/swagger).
+const jitenTypes: Record<MetadataKind, number[]> = { book: [4, 5, 8], manga: [9], vn: [7] };
+const jitenGenres = [
+  '',
+  'Action',
+  'Adventure',
+  'Comedy',
+  'Drama',
+  'Ecchi',
+  'Fantasy',
+  'Horror',
+  'Mecha',
+  'Music',
+  'Mystery',
+  'Psychological',
+  'Romance',
+  'Sci-Fi',
+  'Slice of Life',
+  'Sports',
+  'Supernatural',
+  'Thriller',
+  'Adult'
+];
+
+export function parseJitenDecks(data: any, kind: MetadataKind): MetadataCandidate[] {
+  return (data?.data ?? [])
+    .filter((deck: any) => jitenTypes[kind].includes(deck.mediaType) && !deck.parentDeckId)
+    .slice(0, 8)
+    .map((deck: any) => ({
+      source: 'jiten',
+      url: `https://jiten.moe/decks/media/${deck.deckId}/detail`,
+      title: deck.originalTitle || deck.romajiTitle || deck.englishTitle || '',
+      description: cleanDescription(deck.description || ''),
+      cover: deck.coverName || '',
+      genres: [
+        ...(deck.genres ?? []).map((genre: number) => jitenGenres[genre]).filter(Boolean),
+        ...(deck.tags ?? [])
+          .filter((tag: any) => tag.percentage >= 60)
+          .slice(0, 5)
+          .map((tag: any) => tag.name)
+      ],
+      released: (deck.releaseDate || '').slice(0, 10),
+      score: typeof deck.externalRating === 'number' ? deck.externalRating : null
+    }));
 }
 
-export function searchMetadata(kind: MetadataKind, query: string) {
+async function searchJiten(query: string, kind: MetadataKind) {
+  const response = await fetch(`/jiten/search?titleFilter=${encodeURIComponent(query)}`);
+
+  if (!response.ok) {
+    throw new Error(`Search failed (HTTP ${response.status})`);
+  }
+
+  return parseJitenDecks(await response.json(), kind);
+}
+
+export const sourceNames: Record<MetadataSource, string> = {
+  anilist: 'AniList',
+  vndb: 'VNDB',
+  jiten: 'Jiten'
+};
+
+export function defaultSource(kind: MetadataKind): MetadataSource {
+  return kind === 'vn' ? 'vndb' : 'anilist';
+}
+
+export function searchMetadata(kind: MetadataKind, query: string, source = defaultSource(kind)) {
+  if (source === 'jiten') {
+    return searchJiten(query, kind);
+  }
+
   return kind === 'vn' ? searchVndb(query) : searchAniList(query, kind);
 }

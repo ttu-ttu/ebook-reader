@@ -5,7 +5,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { applyMetadataCover, cleanDescription, parseBookMetadata } from './book-metadata';
+import {
+  applyMetadata,
+  cleanDescription,
+  parseBookMetadata,
+  parseJitenDecks
+} from './book-metadata';
 import type { BookCardProps } from '$lib/components/book-card/book-card-props';
 
 const entry = {
@@ -55,12 +60,60 @@ describe('cleanDescription', () => {
   });
 });
 
-describe('applyMetadataCover', () => {
+describe('applyMetadata', () => {
   it('replaces the cover only when one was saved', () => {
     const card = { title: 'a', imagePath: 'own.jpg' } as BookCardProps;
     const map = parseBookMetadata({ a: entry });
 
-    expect(applyMetadataCover(card, map).imagePath).toBe(entry.cover);
-    expect(applyMetadataCover(card, { a: { ...map.a, cover: '' } })).toBe(card);
+    expect(applyMetadata(card, map).imagePath).toBe(entry.cover);
+    expect(applyMetadata(card, map).displayTitle).toBeUndefined();
+    expect(applyMetadata(card, { a: { ...map.a, cover: '' } })).toBe(card);
+  });
+
+  it("shows VNDB's title", () => {
+    const card = { title: 'game_folder', imagePath: 'own.jpg' } as BookCardProps;
+    const map = parseBookMetadata({
+      game_folder: { ...entry, source: 'vndb', url: 'https://vndb.org/v1', cover: '' }
+    });
+
+    expect(applyMetadata(card, map)).toEqual({ ...card, displayTitle: 'タイトル' });
+  });
+});
+
+describe('parseJitenDecks', () => {
+  const deck = {
+    deckId: 233,
+    mediaType: 7,
+    parentDeckId: null,
+    originalTitle: 'Fate/stay night',
+    description: 'Text',
+    coverName: 'https://cdn.jiten.moe/233/cover.jpg',
+    genres: [1, 99],
+    tags: [
+      { name: 'Magic', percentage: 96 },
+      { name: 'Rare', percentage: 10 }
+    ],
+    releaseDate: '2004-01-30T00:00:00',
+    externalRating: 85
+  };
+
+  it('keeps decks of the kind and maps their fields', () => {
+    const [candidate, ...rest] = parseJitenDecks(
+      { data: [deck, { ...deck, deckId: 1, mediaType: 1 }, { ...deck, parentDeckId: 233 }] },
+      'vn'
+    );
+
+    expect(rest).toEqual([]);
+    expect(candidate).toEqual({
+      source: 'jiten',
+      url: 'https://jiten.moe/decks/media/233/detail',
+      title: 'Fate/stay night',
+      description: 'Text',
+      cover: deck.coverName,
+      genres: ['Action', 'Magic'],
+      released: '2004-01-30',
+      score: 85
+    });
+    expect(parseBookMetadata({ a: { ...candidate, modified: 1 } }).a.cover).toBe(deck.coverName);
   });
 });

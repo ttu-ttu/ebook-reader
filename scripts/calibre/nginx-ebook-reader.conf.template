@@ -12,6 +12,8 @@
 #   admin or that permission (Settings → Account → Manage accounts).
 # Slows password guessing on top of the account service's own lockouts.
 limit_req_zone $binary_remote_addr zone=account_login:1m rate=10r/m;
+# Keeps book page searches on Jiten small (its API terms: personal, small scale).
+limit_req_zone $binary_remote_addr zone=jiten:1m rate=20r/m;
 
 # Behind a reverse proxy every client looks like the proxy, so set
 # real_ip_header/set_real_ip_from for it (REAL_IP_FROM in Docker) first.
@@ -182,6 +184,15 @@ server {
     client_max_body_size 0;
   }
 
+  location = /_account_series {
+    internal;
+    proxy_pass http://$account_upstream/auth/series;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    client_max_body_size 0;
+  }
+
   location = /_account_import {
     internal;
     proxy_pass http://$account_upstream/auth/import;
@@ -278,6 +289,22 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header Referrer-Policy same-origin always;
     add_header Strict-Transport-Security $hsts always;
+  }
+
+  # Book page → Find details → Jiten. Its API only answers jiten.moe's own
+  # origin, so searches go through here, without the reader's cookies.
+  location = /jiten/search {
+    auth_request /_account_series;
+    limit_req zone=jiten burst=5 nodelay;
+    set $jiten_host api.jiten.moe;
+    proxy_pass https://$jiten_host/api/media-deck/get-media-decks$is_args$args;
+    proxy_ssl_server_name on;
+    proxy_set_header Host $jiten_host;
+    proxy_set_header Cookie "";
+    proxy_set_header Origin "";
+    proxy_set_header Referer "";
+    proxy_hide_header Set-Cookie;
+    proxy_read_timeout 20s;
   }
 
   # Synced reader data (processed books, progress, statistics, highlights) for

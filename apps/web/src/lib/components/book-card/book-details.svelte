@@ -18,12 +18,14 @@
   import { account$, hasPermission } from '$lib/data/account';
   import {
     loadBookMetadata,
-    metadataSourceName,
+    defaultSource,
     saveBookMetadata,
     searchMetadata,
+    sourceNames,
     type BookMetadata,
     type MetadataCandidate,
-    type MetadataKind
+    type MetadataKind,
+    type MetadataSource
   } from '$lib/data/book-metadata';
   import {
     loadBookKanji,
@@ -76,10 +78,12 @@
   let searchError = '';
   let saving = false;
   let candidates: MetadataCandidate[] | undefined;
+  let source: MetadataSource | undefined;
 
   const number = (value: number) => value.toLocaleString('en-US');
 
   $: kind = (book.vn ? 'vn' : book.manga ? 'manga' : 'book') as MetadataKind;
+  $: source ??= defaultSource(kind);
   $: kindLabel = { book: '小説', manga: '漫画', vn: 'ノベルゲーム' }[kind];
   $: characters = book.characters || estimate?.characters || 0;
   $: obiLength =
@@ -133,6 +137,7 @@
     kanji = undefined;
     metadata = undefined;
     candidates = undefined;
+    source = undefined;
     searchOpen = false;
     searchError = '';
 
@@ -182,7 +187,7 @@
     searching = true;
     searchError = '';
     try {
-      const results = await searchMetadata(kind, searchTerm.trim());
+      const results = await searchMetadata(kind, searchTerm.trim(), source);
 
       // An older search answering late must not replace a newer one's results.
       if (request === searchRequest) {
@@ -190,7 +195,7 @@
       }
     } catch (error: any) {
       if (request === searchRequest) {
-        searchError = `${metadataSourceName(kind)} search failed: ${error.message}`;
+        searchError = `${sourceNames[source ?? defaultSource(kind)]} search failed: ${error.message}`;
       }
     } finally {
       if (request === searchRequest) {
@@ -274,7 +279,7 @@
     </div>
 
     <div class="details-main">
-      <h1 id="book-details-title" class="details-title" lang="ja">{book.title}</h1>
+      <h1 id="book-details-title" class="details-title" lang="ja">{(metadata?.source === 'vndb' && metadata.title) || book.title}</h1>
       {#if book.authors && book.authors !== 'Unknown'}
         <p class="details-author" lang="ja">{book.authors}</p>
       {/if}
@@ -293,7 +298,7 @@
         <div class="details-description">
           <p lang="ja">{metadata.description}</p>
           <a href={metadata.url} target="_blank" rel="noreferrer">
-            From {metadata.source === 'vndb' ? 'VNDB' : 'AniList'}
+            From {sourceNames[metadata.source]}
           </a>
         </div>
       {/if}
@@ -377,7 +382,7 @@
         {/if}
         {#if metadata?.score}
           <div>
-            <dt>{metadata.source === 'vndb' ? 'VNDB' : 'AniList'} score</dt>
+            <dt>{sourceNames[metadata.source]} score</dt>
             <dd>{metadata.score} / 100</dd>
           </div>
         {/if}
@@ -409,7 +414,7 @@
           {#if !searchOpen}
             <button type="button" class="app-button" on:click={openSearch}>
               <Fa icon={faMagnifyingGlass} />
-              {metadata ? 'Change details' : `Find details on ${metadataSourceName(kind)}`}
+              {metadata ? 'Change details' : `Find details on ${sourceNames[defaultSource(kind)]} or Jiten`}
             </button>
             {#if metadata}
               <button
@@ -423,14 +428,23 @@
             {/if}
           {:else}
             <h2 id="book-details-fetch" class="details-fetch-heading">
-              Find details on {metadataSourceName(kind)}
+              Find details
             </h2>
             <form class="details-search" on:submit|preventDefault={search}>
+              <select
+                class="app-input"
+                aria-label="Source"
+                bind:value={source}
+                on:change={() => ((candidates = undefined), search())}
+              >
+                <option value={defaultSource(kind)}>{sourceNames[defaultSource(kind)]}</option>
+                <option value="jiten">Jiten</option>
+              </select>
               <input
                 class="app-input"
                 type="search"
                 lang="ja"
-                aria-label="Search {metadataSourceName(kind)}"
+                aria-label="Search {sourceNames[source ?? defaultSource(kind)]}"
                 bind:value={searchTerm}
                 on:keydown={(ev) => ev.key === 'Escape' && (searchOpen = false)}
               />

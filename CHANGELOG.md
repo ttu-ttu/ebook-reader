@@ -16,6 +16,11 @@ anything a reader or a server operator would notice.
   and saves the description, genres, score and optionally the cover for everyone
   (`/calibre/sync/metadata.json`). It needs the series permission, now called "Edit
   series and details". Server: the nginx template has a new location for that file.
+- "Find details" can also search Jiten (novels, manga, visual novels), with its covers.
+  Server: nginx proxies the searches at `/jiten/search` (Jiten's API only allows its own
+  site), limited to 20 a minute per address; it needs outbound HTTPS from the web container.
+- Details from VNDB replace a visual novel's folder name with its title on the page and
+  in the library.
 
 ### Visual novels (ONScripter)
 

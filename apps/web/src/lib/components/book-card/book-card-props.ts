@@ -8,6 +8,8 @@ export interface BookCardProps {
   id: number;
   imagePath: string | Blob;
   title: string;
+  /** Shown instead of the title (the identity) when details from VNDB name it */
+  displayTitle?: string;
   characters: number;
   lastBookModified: number;
   lastBookOpen: number;
