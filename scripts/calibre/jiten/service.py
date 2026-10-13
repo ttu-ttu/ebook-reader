@@ -19,7 +19,7 @@ import gzip
 import hmac
 import json
 import os
-import shutil
+import re
 import sys
 import zipfile
 import threading
@@ -337,7 +337,7 @@ class Handler(BaseHTTPRequestHandler):
         parts = self.path.split('?')[0].strip('/').split('/')
         if parts == ['status']:
             self._send(200, runner.status())
-        elif len(parts) == 2 and parts[0] == 'kanji' and parts[1].lstrip('-').isdigit():
+        elif len(parts) == 2 and parts[0] == 'kanji' and re.fullmatch(r'-?[0-9]+', parts[1]):
             try:
                 with open(os.path.join(KANJI_DIR, f'{int(parts[1])}.json.gz'), 'rb') as f:
                     data = f.read()

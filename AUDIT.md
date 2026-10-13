@@ -352,15 +352,15 @@ await db.put(spec.store, { ...merged, account: owner } as never);
 - **CI:** actions are pinned to version tags, not commit SHAs (Info). No workflow exposes secrets to pull requests (`ci.yml` uses none; `release.yml` runs on tags only).
 
 ### A-19 — Info
-- `nginx-ebook-reader.conf.template:375` `location ~ /404(\.html)?$ { internal; }` beats every prefix location, so sync or VN files named `404`/`404.html` can't be fetched.
+- **Fixed:** `nginx-ebook-reader.conf.template:375` `location ~ /404(\.html)?$ { internal; }` beats every prefix location, so sync or VN files named `404`/`404.html` can't be fetched.
 - `GET /account/api/config` is public and says `initialAdmin: true` on a new, unclaimed server. The password itself is random (96 bits).
-- `jiten/service.py:320`: `'²'.lstrip('-').isdigit()` is True but `int()` raises, so the request gets no response (logged traceback only).
-- `import/service.py:323`: `TimeoutExpired` from the series run escapes, so the request gets no response; the busy lock is released.
-- `jiten/features.py` `vn_text` never closes its `ZipFile` (worker processes, recycled).
+- **Fixed:** `jiten/service.py:320`: `'²'.lstrip('-').isdigit()` is True but `int()` raises, so the request gets no response (logged traceback only).
+- **Fixed:** `import/service.py:323`: `TimeoutExpired` from the series run escapes, so the request gets no response; the busy lock is released.
+- **Fixed:** `jiten/features.py` `vn_text` never closes its `ZipFile` (worker processes, recycled).
 - `vn_games` ids are CRC32 of the folder name; a collision would silently drop a game.
 - Mutation-XSS hardening: book HTML is sanitized in an inert document, serialized and re-parsed live. This is safe today because every page, including the 404 fallback, carries the hash-only `script-src` meta CSP (checked on the test stack). Keep it that way.
 - `ebook-update`: a failed `compose build` can leave some images retagged with the new version while the old code runs. Running containers are unaffected; the next manual `up -d` mixes versions. Needs verification.
-- CLAUDE.md says the `pnpm check` baseline is 30 errors; it is now 28.
+- **Fixed:** CLAUDE.md says the `pnpm check` baseline is 30 errors; it is now 28.
 
 ### H-01 — Code health: the authorization layer is untested
 A-01, A-02, A-03 and A-11 all come from the same gap. The permission model lives in nginx `location` blocks, and no test renders the template and sends requests through it. The Python tests call the services directly, behind the boundary. The cheapest guard is a CI job that runs the `web` + `account` + `import` images with a seeded test account and curls the boundary cases:

@@ -241,6 +241,7 @@ def vn_text(path: str, ruby: dict | None = None) -> str:
     scripts or nscript.dat (XORed with 0x84). Like the reader's scriptCharacters, a text
     line starts with a non-ASCII character or a name tag; ruby is (base/reading).
     Encrypted scripts (nscr_sec.dat…) give no text."""
+    archive = None
     if os.path.isdir(path):
         scripts = {name: os.path.join(path, name) for name in os.listdir(path) if _VN_SCRIPT.match(name)}
         read = lambda name: open(scripts[name], 'rb').read()  # noqa: E731
@@ -250,9 +251,13 @@ def vn_text(path: str, ruby: dict | None = None) -> str:
         root = min((posixpath.dirname(n) for n in names), key=lambda d: d.count('/'), default='')
         scripts = {posixpath.basename(n): n for n in names if posixpath.dirname(n) == root}
         read = lambda name: archive.read(scripts[name])  # noqa: E731
-    txt = sorted((n for n in scripts if n.lower().endswith('.txt')), key=lambda n: int(n.split('.')[0]))
-    raw = b'\n'.join(read(n) for n in txt) if txt else \
-        bytes(b ^ 0x84 for b in read(next(iter(scripts)))) if scripts else b''
+    try:
+        txt = sorted((n for n in scripts if n.lower().endswith('.txt')), key=lambda n: int(n.split('.')[0]))
+        raw = b'\n'.join(read(n) for n in txt) if txt else \
+            bytes(b ^ 0x84 for b in read(next(iter(scripts)))) if scripts else b''
+    finally:
+        if archive:
+            archive.close()
     try:
         script = raw.decode('utf-8')
     except UnicodeDecodeError:

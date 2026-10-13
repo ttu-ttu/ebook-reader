@@ -400,7 +400,8 @@ server {
   }
 
   error_page 404 /404.html;
-  location ~ /404(\.html)?$ {
+  # Only the site's own 404 page: sync or game files named 404.html stay reachable.
+  location ~ ^/404(\.html)?$ {
     internal;
   }
 }

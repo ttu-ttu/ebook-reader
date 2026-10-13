@@ -341,6 +341,8 @@ def run_series(apply: bool) -> dict:
         result = subprocess.run(
             [CALIBRE_DEBUG, '-e', ASSIGN_SERIES, '--', '--json'] + (['--apply'] if apply else []),
             capture_output=True, text=True, timeout=ADD_TIMEOUT_SECONDS, check=False)
+    except subprocess.TimeoutExpired as error:
+        raise ApiError(500, 'The series check took too long; see the import service log') from error
     finally:
         series_busy.release()
     try:

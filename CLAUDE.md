@@ -104,7 +104,7 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
 
 - Front end (Node 24, pnpm 10 from `packageManager`): `pnpm test` (Vitest + jsdom, `src/**/*.test.ts`) and `pnpm check` (svelte-check) in `apps/web`, `npx eslint .` from the repo root. Without Node installed, run them in a `node:24-slim` container (CONTRIBUTING.md).
 - Python tests: `python3 -m unittest discover -s scripts/calibre/tests` (standard library only).
-- Baseline: tests all pass, ESLint is clean, `pnpm check` has 30 pre-existing errors. Keep it that way.
+- Baseline: tests all pass, ESLint is clean, `pnpm check` has 28 pre-existing errors. Keep it that way.
 - When dependencies change, regenerate `pnpm-lock.yaml` with pnpm 10 (`pnpm install --no-frozen-lockfile`; `CI=true` forces frozen mode); image builds use `--frozen-lockfile`.
 - Svelte compiles with `immutable: true` (upstream `svelte.config.js`): assign new objects/arrays/Sets, never mutate and reassign the same one, or nothing re-renders.
 - Test patterns: component tests mount with `new Component({ target, props })` (Vitest uses Svelte's browser build, see `reader-companion.test.ts`), `fake-indexeddb/auto` for IndexedDB, `vi.stubGlobal('fetch', …)`, `vi.mock('$lib/data/account', …)` for signed-in state. Storage handlers import each other in a cycle: import `storage-handler-factory` first or mock `calibre-handler`. Components that pull in `account-settings-sync` need it mocked (`settings-account.test.ts`).

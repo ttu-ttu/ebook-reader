@@ -117,7 +117,7 @@ class KanjiEndpointTest(unittest.TestCase):
             with get(f'{base}/kanji/7') as response:
                 import gzip
                 self.assertEqual(json.loads(gzip.decompress(response.read())), {'魔': 2, '法': 1, '女': 1})
-            for path in ('/kanji/8', '/kanji/..%2Fx'):
+            for path in ('/kanji/8', '/kanji/..%2Fx', '/kanji/%C2%B2'):
                 with self.assertRaises(urllib.error.HTTPError) as error:
                     get(base + path)
                 self.assertEqual(error.exception.code, 404)
