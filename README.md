@@ -42,17 +42,102 @@ itself, and its Yomitan support, are upstream's (see [Using the reader](#using-t
   features and a model trained on jiten.moe's scores, computed on your server.
 - **App-wide themes** that follow the system's light and dark mode.
 
-**Run it** (Docker and a Calibre library):
+## Setup
+
+You need [Docker](https://docs.docker.com/get-docker/) with the Compose plugin
+(Docker Desktop on Windows and macOS). Prebuilt images exist for amd64 and arm64.
+
+**1. Get it**
 
 ```sh
 git clone https://github.com/blankiekun/chimimouryou && cd chimimouryou
-cp .env.example .env          # set LIBRARY_PATH, PUID/PGID
-docker compose up -d --build
-docker compose exec account ebook-account initial-admin   # the first admin's temporary password
+cp .env.example .env
 ```
 
-Then open `http://<server>:8080`. Signing in needs HTTPS: put a reverse proxy in
-front (Caddy, Traefik, Tailscale; see the install guide).
+In `.env`, set:
+
+```sh
+IMAGE_PREFIX=ghcr.io/blankiekun/chimimouryou   # prebuilt images, nothing to compile
+IMAGE_TAG=latest
+COMPOSE_PROFILES=import                        # add books from the app
+PUID=1000                                      # your `id -u` and `id -g` (Linux)
+PGID=1000
+```
+
+**2. Choose a library**
+
+- **An existing Calibre library**: point at the folder that holds `metadata.db`
+  (quote paths with spaces):
+
+  ```sh
+  LIBRARY_PATH="/home/you/Calibre Library"
+  ```
+
+  The server adds a `cover.jpg` to book folders without one, and books you add
+  in the app go into Calibre. Back the library up first, and close Calibre
+  while you add books from the app.
+
+- **A new, empty library**: set `LIBRARY_PATH=./library`, then create it:
+
+  ```sh
+  mkdir library
+  docker compose run --rm --no-deps import calibredb --with-library /library list
+  ```
+
+  After you sign in, add books with Import in the library or by dropping files
+  on it. The library is a normal Calibre library, so Calibre can open it later.
+
+**3. Choose how you reach it**
+
+- **Just this computer** (a laptop or desktop): sign in over plain HTTP. The
+  port is only open to this machine, so passwords never cross a network.
+
+  ```sh
+  HTTP_PORT=127.0.0.1:8080
+  ALLOW_HTTP_ACCOUNTS=1
+  ```
+
+  Open <http://localhost:8080>.
+
+- **A server** (home server, VPS) for several people or devices: keep
+  `ALLOW_HTTP_ACCOUNTS=0` and put HTTPS in front. With
+  [Caddy](https://caddyserver.com/) on the same machine (it gets the certificate
+  itself), set
+
+  ```sh
+  HTTP_PORT=127.0.0.1:8080
+  REAL_IP_FROM=172.16.0.0/12      # Docker's network: Caddy's requests come from there
+  ```
+
+  and add this to the Caddyfile:
+
+  ```
+  books.example.com {
+    reverse_proxy 127.0.0.1:8080
+  }
+  ```
+
+  Open `https://books.example.com`. No domain? `tailscale serve --bg 8080`
+  gives an HTTPS address inside your tailnet. Other proxies:
+  [docs/INSTALL.md](docs/INSTALL.md#https).
+
+**4. Start it and sign in**
+
+```sh
+docker compose up -d
+docker compose exec account ebook-account initial-admin
+```
+
+The second command shows the password of the first account, `admin`. Sign in
+(person icon at the top right), and change the password in Settings → Account.
+There is no sign-up: add the other readers in Settings → Account → Admin panel.
+The library fills in about a minute after the first start (longer for a big
+library, while covers are extracted).
+
+Update with `git pull && docker compose pull && docker compose up -d`. The
+[install guide](docs/INSTALL.md) has the rest: trusted networks (reading without
+signing in), permissions, backups, difficulty estimates and building the images
+yourself.
 
 **Documentation**
 
