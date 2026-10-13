@@ -36,6 +36,8 @@ anything a reader or a server operator would notice.
 - Reader: the page only loads images from the server and the cover sites "Find
   details" uses, and fonts and stylesheets from the server, so a book's CSS can no
   longer reach outside hosts.
+- Reader: a recap or lorebook update saved while its sync was fetching the server
+  copy is no longer overwritten by that sync.
 
 ### Library
 

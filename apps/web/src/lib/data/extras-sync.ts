@@ -121,10 +121,6 @@ async function syncOnce<T extends { title: string; account?: string }>(
 
     const owner = currentAccount()?.id ?? '';
     const url = CalibreStorageHandler.syncFileUrl(title, spec.file);
-    const db = await readerDb();
-    const stored = (await db.get(spec.store, title)) as T | undefined;
-    // Another sign-in state's copy stays out of this account (it is on that account's server).
-    const local = stored && (stored.account ?? owner) === owner ? stored : undefined;
     const response = await fetch(url, { cache: 'no-store' });
 
     if (!response.ok && response.status !== 404) {
@@ -132,12 +128,23 @@ async function syncOnce<T extends { title: string; account?: string }>(
     }
 
     const remote = response.ok ? ((await response.json()) as T) : undefined;
+    // Read, merge and write in one transaction, so a save made during the fetch isn't lost.
+    const tx = (await readerDb()).transaction(spec.store, 'readwrite');
+    const stored = (await tx.store.get(title)) as T | undefined;
+    // Another sign-in state's copy stays out of this account (it is on that account's server).
+    const local = stored && (stored.account ?? owner) === owner ? stored : undefined;
     const merged = spec.merge(title, local, remote);
+    const changed = !spec.same(merged, stored) || stored?.account !== owner;
 
-    if (!spec.same(merged, stored) || stored?.account !== owner) {
+    if (changed) {
+      await tx.store.put({ ...merged, account: owner } as never);
+    }
+
+    await tx.done;
+
+    if (changed) {
       applying.add(key);
       try {
-        await db.put(spec.store, { ...merged, account: owner } as never);
         spec.changed$.next(merged);
       } finally {
         applying.delete(key);

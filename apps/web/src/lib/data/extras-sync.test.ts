@@ -96,6 +96,25 @@ describe('extras sync', () => {
     expect(lorebook.processedUpTo).toBe(900);
   });
 
+  it('keeps a local save made while the remote copy was being fetched', async () => {
+    const { files } = server();
+
+    enableExtrasSync('Race');
+    await saveLoreEntries('Race', [entry('葵')]);
+    await syncExtras('lorebook', 'Race');
+
+    const fetchMock = vi.mocked(fetch);
+    const respond = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementationOnce(async (url, init) => {
+      await saveLoreEntries('Race', [entry('葵'), entry('東京')]);
+      return respond(url, init);
+    });
+    await syncExtras('lorebook', 'Race');
+
+    expect((await getLorebook('Race')).entries.map((e) => e.name)).toEqual(['葵', '東京']);
+    expect((files['/sync/Race/lorebook.json'] as { entries: LoreEntry[] }).entries).toHaveLength(2);
+  });
+
   it('combines saved recaps from both sides and keeps deletions', async () => {
     const recap = (created: number) => ({
       position: created,
