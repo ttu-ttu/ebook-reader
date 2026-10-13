@@ -33,6 +33,9 @@ anything a reader or a server operator would notice.
   the server at the next sign-in.
 - Accounts: AI keys typed while signed out are removed when an account signs in,
   instead of being saved to that account.
+- Reader: the page only loads images from the server and the cover sites "Find
+  details" uses, and fonts and stylesheets from the server, so a book's CSS can no
+  longer reach outside hosts.
 
 ### Library
 

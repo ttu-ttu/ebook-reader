@@ -26,7 +26,7 @@ Top 5:
 | A-06 | Medium | Bug | `jiten/service.py:287` | Dictionary upload reads until EOF: hangs, user gets a 504 | Resolved |
 | A-07 | Medium | Data exposure | `routes/b/+page.svelte:1587,1780`, `browser-handler.ts` | Progress/statistics of one account leak into another on a shared browser | Resolved |
 | A-08 | Low | Secrets | `account-settings-sync.ts:348-361` | AI keys typed while signed out are adopted by the next account | Resolved |
-| A-09 | Low | Web / CSS injection | `style-sheet-renderer.svelte`, `svelte.config.js` | Book CSS (writable by any account via sync) styles the whole page | Open |
+| A-09 | Low | Web / CSS injection | `style-sheet-renderer.svelte`, `svelte.config.js` | Book CSS (writable by any account via sync) styles the whole page | Mitigated (CSP) |
 | A-10 | Low | Race | `extras-sync.ts:125-140` | Recap/lorebook sync can overwrite a local write made during its fetch | Open |
 | A-11 | Low | AuthN | `nginx-ebook-reader.conf.template:154`, `account/service.py:774` | `/account/api/login/` skips nginx's `limit_req` | Open |
 | A-12 | Low | Config | `nginx-ebook-reader.conf.template:27` | Client `X-Forwarded-Proto: https` is trusted from anyone | Open |
@@ -263,6 +263,8 @@ Any account can overwrite a title's `bookdata_*` in `/calibre/sync/` (see A-02's
 - Add `img-src 'self' blob: data: https://s4.anilist.co https://t.vndb.org https://cdn.jiten.moe` plus `font-src`/`style-src` limits to the CSP.
 
 **Confidence:** Confirmed (upstream behaves the same; what's new is the shared, cross-account writable source).
+
+**Status:** mitigated. The CSP now limits images to the site, blobs, data URLs and the three cover hosts, and fonts and stylesheets to the site, so book CSS can't load outside resources (no beacons, no remote `@import`). Book CSS is still not scoped: rewriting selectors risks breaking real books' layouts, and a book can already link off-site from its text.
 
 ### A-10 — Recap/lorebook sync can lose a local write made during its fetch (Low)
 **Severity:** Low: a narrow window, but it loses paid-for AI output.
