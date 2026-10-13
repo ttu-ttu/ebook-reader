@@ -23,10 +23,17 @@ ${TRUSTED_NETWORKS_GEO}
 }
 
 # Keep the scheme a TLS-terminating proxy in front of this server reports, so
-# the account service's HTTPS check works behind one.
-map $http_x_forwarded_proto $forwarded_proto {
+# the account service's HTTPS check works behind one. Only that proxy
+# (REAL_IP_FROM, by the address it connects from) may say so; anyone else's
+# X-Forwarded-Proto is ignored.
+geo $realip_remote_addr $from_proxy {
+  default 0;
+${REAL_IP_FROM_GEO}
+}
+
+map "$from_proxy:$http_x_forwarded_proto" $forwarded_proto {
   default $scheme;
-  https https;
+  "1:https" https;
 }
 
 # Service addresses as variables: nginx then starts even when an optional service

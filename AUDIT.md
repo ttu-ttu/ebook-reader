@@ -29,7 +29,7 @@ Top 5:
 | A-09 | Low | Web / CSS injection | `style-sheet-renderer.svelte`, `svelte.config.js` | Book CSS (writable by any account via sync) styles the whole page | Mitigated (CSP) |
 | A-10 | Low | Race | `extras-sync.ts:125-140` | Recap/lorebook sync can overwrite a local write made during its fetch | Resolved |
 | A-11 | Low | AuthN | `nginx-ebook-reader.conf.template:154`, `account/service.py:774` | `/account/api/login/` skips nginx's `limit_req` | Resolved |
-| A-12 | Low | Config | `nginx-ebook-reader.conf.template:27` | Client `X-Forwarded-Proto: https` is trusted from anyone | Open |
+| A-12 | Low | Config | `nginx-ebook-reader.conf.template:27` | Client `X-Forwarded-Proto: https` is trusted from anyone | Resolved |
 | A-13 | Low | AuthZ (local) | `import/service.py:352`, `jiten/service.py`, tailscale override | Services trust `X-Account-Id`; host-local processes bypass all checks | Resolved |
 | A-14 | Low | CSRF | `jiten/service.py:336` | Difficulty POSTs have no Origin check (import has one) | Open |
 | A-15 | Low | Race | `account/service.py:378` | Last-admin check and update are not atomic | Open |

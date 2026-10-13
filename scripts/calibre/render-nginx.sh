@@ -20,6 +20,8 @@ set -eu
 : "${TRUSTED_NETWORKS:=}"
 # 1 = anyone who can reach the server may read the library without signing in.
 : "${PUBLIC_READS:=0}"
+# The reverse proxy in front, if any: only it may report the scheme (X-Forwarded-Proto).
+: "${REAL_IP_FROM:=}"
 case "$PUBLIC_READS" in 0|1) ;; *) echo "PUBLIC_READS must be 0 or 1" >&2; exit 1 ;; esac
 
 # The secret nginx sends the services (X-Internal-Token), made by the web container.
@@ -31,10 +33,11 @@ case "$INTERNAL_TOKEN" in
 esac
 
 TRUSTED_NETWORKS_GEO=$(for network in $TRUSTED_NETWORKS; do printf '  %s 1;\n' "$network"; done)
+REAL_IP_FROM_GEO=$(for network in $REAL_IP_FROM; do printf '  %s 1;\n' "$network"; done)
 
 export WEB_ROOT LIBRARY_DIR VN_DIR SYNC_DIR ACCOUNT_DATA_DIR CATALOG_FILE DIFFICULTY_FILE \
-  ACCOUNT_UPSTREAM IMPORT_UPSTREAM DIFFICULTY_UPSTREAM TRUSTED_NETWORKS_GEO PUBLIC_READS INTERNAL_TOKEN
+  ACCOUNT_UPSTREAM IMPORT_UPSTREAM DIFFICULTY_UPSTREAM TRUSTED_NETWORKS_GEO REAL_IP_FROM_GEO PUBLIC_READS INTERNAL_TOKEN
 
 # Only these names: the template's own nginx variables ($host, ...) stay as they are.
-envsubst '${WEB_ROOT} ${LIBRARY_DIR} ${VN_DIR} ${SYNC_DIR} ${ACCOUNT_DATA_DIR} ${CATALOG_FILE} ${DIFFICULTY_FILE} ${ACCOUNT_UPSTREAM} ${IMPORT_UPSTREAM} ${DIFFICULTY_UPSTREAM} ${TRUSTED_NETWORKS_GEO} ${PUBLIC_READS} ${INTERNAL_TOKEN}' \
+envsubst '${WEB_ROOT} ${LIBRARY_DIR} ${VN_DIR} ${SYNC_DIR} ${ACCOUNT_DATA_DIR} ${CATALOG_FILE} ${DIFFICULTY_FILE} ${ACCOUNT_UPSTREAM} ${IMPORT_UPSTREAM} ${DIFFICULTY_UPSTREAM} ${TRUSTED_NETWORKS_GEO} ${REAL_IP_FROM_GEO} ${PUBLIC_READS} ${INTERNAL_TOKEN}' \
   < "$(dirname "$0")/nginx-ebook-reader.conf.template"
