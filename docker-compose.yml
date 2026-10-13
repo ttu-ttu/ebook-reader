@@ -95,3 +95,4 @@ services:
     volumes:
       - ${DATA_PATH:-./data}:/data
       - ${LIBRARY_PATH:?set LIBRARY_PATH in .env}:/library:ro
+      - ${VN_PATH:-${DATA_PATH:-./data}/vn}:/vn:ro

@@ -30,6 +30,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 LIBRARY = os.environ.get('CALIBRE_LIBRARY', '/library')
+# Unpacked visual novels (catalog format 'VN'; their 'file' is relative to it).
+VN_DIR = os.environ.get('VN_DIR', '/vn')
 CATALOG_PATH = os.environ.get('CALIBRE_CATALOG', '/data/state/catalog/catalog.json')
 STATE_DIR = os.environ.get('JITEN_STATE_DIR', '/data/state/difficulty')
 # Rank-based Yomitan frequency dictionary: Jiten's list (jiten.moe/frequency-dictionaries).
@@ -93,9 +95,12 @@ def save_kanji(book_id: int, text: str):
 def _estimate(book: dict):
     import numpy
     from features import (EXTRA_FEATURES, FEATURE_ORDER, TOKEN_CLEAN, book_text, compute_extra_features,
-                          compute_features, is_kanji, words_for_coverage)
+                          compute_features, is_kanji, vn_text, words_for_coverage)
     ruby = {}
-    text = book_text(os.path.join(LIBRARY, book['file']), book['format'], ruby)
+    if book.get('vn'):
+        text = vn_text(os.path.join(VN_DIR if book['format'] == 'VN' else LIBRARY, book['file']), ruby)
+    else:
+        text = book_text(os.path.join(LIBRARY, book['file']), book['format'], ruby)
     characters = len(TOKEN_CLEAN.sub('', text))
     if characters < 1000:
         return book['id'], None
@@ -161,8 +166,8 @@ def _run_pool(books, task, cancel: threading.Event, workers: int, lost: list):
 
 def load_catalog():
     with open(CATALOG_PATH, encoding='utf-8') as f:
-        # Manga (CBZ/ZIP) has no text to score.
-        return [b for b in json.load(f)['books'] if b['format'] in ('EPUB', 'HTMLZ', 'TXT')]
+        # Manga (CBZ/ZIP) has no text to score; visual novels have their scripts.
+        return [b for b in json.load(f)['books'] if b['format'] in ('EPUB', 'HTMLZ', 'TXT') or b.get('vn')]
 
 
 def load_results():
@@ -312,7 +317,7 @@ class Handler(BaseHTTPRequestHandler):
         parts = self.path.split('?')[0].strip('/').split('/')
         if parts == ['status']:
             self._send(200, runner.status())
-        elif len(parts) == 2 and parts[0] == 'kanji' and parts[1].isdigit():
+        elif len(parts) == 2 and parts[0] == 'kanji' and parts[1].lstrip('-').isdigit():
             try:
                 with open(os.path.join(KANJI_DIR, f'{int(parts[1])}.json.gz'), 'rb') as f:
                     data = f.read()

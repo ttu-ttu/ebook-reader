@@ -10,7 +10,7 @@ import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'jiten'))
 from features import (EXTRA_FEATURES, Analysis, Word, _coverage_rank, _origin, book_text,  # noqa: E402
-                      compute_extra_features, to_hiragana)
+                      compute_extra_features, to_hiragana, vn_text)
 
 OPF = '''<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0">
@@ -59,6 +59,21 @@ class BookTextTest(unittest.TestCase):
         ruby = {}
         self.assertEqual(book_text(path, 'TXT', ruby), '吾輩は猫である。')
         self.assertEqual(ruby, {'ruby': 2, 'kanji': 3})
+
+    def test_vn_script_in_folder_and_zip(self):
+        script = '*start\nbg "a.png",1\n[太郎]「(本気/マジ)だ!w500」@\n　吾輩は#ffffff猫である。\\\nend\n'
+        folder = tempfile.mkdtemp()
+        with open(os.path.join(folder, 'nscript.dat'), 'wb') as f:
+            f.write(bytes(b ^ 0x84 for b in script.encode('cp932')))
+        ruby = {}
+        self.assertEqual(vn_text(folder, ruby), '[太郎]「本気だ」\n吾輩は猫である。')
+        self.assertEqual(ruby, {'ruby': 1, 'kanji': 2, 'katakana': 1})
+        path = os.path.join(tempfile.mkdtemp(), 'game.zip')
+        with zipfile.ZipFile(path, 'w') as archive:
+            archive.writestr('Game/1.txt', '二行目\n'.encode())
+            archive.writestr('Game/0.txt', script.encode())
+            archive.writestr('Game/sub/0.txt', '無視\n'.encode())
+        self.assertEqual(vn_text(path), '[太郎]「本気だ」\n吾輩は猫である。\n二行目')
 
 
 class FeatureTest(unittest.TestCase):
