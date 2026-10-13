@@ -6,6 +6,8 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+## v3.4.0 (2026-10-13)
+
 ### Updates
 
 - A page left open across an update reloads itself once when it can no longer load parts
