@@ -6,6 +6,8 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+## v3.3.0 (2026-10-13)
+
 ### Setup
 
 - The README starts with a setup guide: a new or an existing Calibre library, on your own
