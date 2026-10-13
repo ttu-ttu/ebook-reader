@@ -6,6 +6,11 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Updates
+
+- A page left open across an update reloads itself once when it can no longer load parts
+  of the old version, instead of showing a network error until a hard reload.
+
 ### Visual novels
 
 - Game files kept in the browser for games no longer in the library (removed from the

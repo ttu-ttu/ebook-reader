@@ -10,6 +10,7 @@
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { userFontsCacheName, type UserFont } from '$lib/data/fonts';
   import { fontFamilyGroupOne$, isOnline$, userFonts$ } from '$lib/data/store';
+  import { reloadOnStaleBuild } from '$lib/functions/reload-on-stale-build';
   import { dummyFn, isMobile, isMobile$ } from '$lib/functions/utils';
   import { MetaTags } from 'svelte-meta-tags';
   import '../app.scss';
@@ -20,6 +21,7 @@
   let zIndex = '';
 
   if (browser) {
+    reloadOnStaleBuild(window);
     accountReady().then(async (user) => {
       await releaseReaderData(user).catch(() => {});
       startSettingsSync(user);
