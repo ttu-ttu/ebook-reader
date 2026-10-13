@@ -6,6 +6,8 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+## v3.2.0 (2026-10-13)
+
 ### Plugins
 
 - Settings → General → Plugins switches optional features on or off for your account;
