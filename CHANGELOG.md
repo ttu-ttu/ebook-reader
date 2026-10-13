@@ -21,6 +21,8 @@ anything a reader or a server operator would notice.
 - Server: WebDAV MOVEs in the shared sync folder may only rename a file within its
   folder, so a MOVE can no longer write `series.json` or `metadata.json` without the
   series permission.
+- Server: a damaged ZIP no longer stops the import queue for good; the file fails
+  and the next one is added.
 
 ### Library
 

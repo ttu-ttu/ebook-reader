@@ -188,6 +188,18 @@ class ImportServiceTest(unittest.TestCase):
         _, body = self.request('/add?name=%E3%83%8E%E3%83%99%E3%83%AB.zip', data.getvalue())
         self.assertEqual(self.wait_for(body['job']['id'])['state'], 'duplicate')
 
+    def test_corrupt_game_zip_fails_and_the_queue_goes_on(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w', zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr('壊れ/0.txt', b'x' * 1000)
+        data = bytearray(data.getvalue())
+        data[30 + len('壊れ/0.txt'.encode())] = 0xFF  # reserved deflate block type: zlib.error
+        _, body = self.request('/add?name=%E5%A3%8A%E3%82%8C.zip', bytes(data))
+        self.assertEqual(self.wait_for(body['job']['id'])['state'], 'failed')
+        self.assertFalse(os.path.exists(os.path.join(VN_DIR, '壊れ')))
+        _, body = self.request('/add?name=next.epub', epub('next'))
+        self.assertNotIn(self.wait_for(body['job']['id'])['state'], ('queued', 'adding'))
+
     def test_catalog_rebuild(self):
         status, body = self.request('/catalog', b'', admin=True)
         self.assertEqual((status, body), (200, {'books': 2, 'visualNovels': 1}))

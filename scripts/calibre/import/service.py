@@ -36,6 +36,7 @@ import threading
 import time
 import uuid
 import zipfile
+import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -215,7 +216,7 @@ def add_vn(job: dict) -> dict:
                 with archive.open(info) as source, open(dest, 'wb') as out:
                     shutil.copyfileobj(source, out, 1 << 20)
         os.rename(tmp, target)
-    except (OSError, zipfile.BadZipFile, RuntimeError) as error:
+    except (OSError, zipfile.BadZipFile, RuntimeError, zlib.error, EOFError) as error:
         print(f"unpack {job['name']}: {error}", file=sys.stderr)
         return {'state': 'failed', 'error': 'Could not unpack this game'}
     finally:
@@ -262,8 +263,12 @@ def add_book(job: dict) -> dict:
 
 
 def rebuild_catalog(force=False) -> bool:
-    result = subprocess.run([CATALOG_BUILDER, LIBRARY, CATALOG_OUTPUT] + (['--force'] if force else []),
-                            capture_output=True, text=True, timeout=1800, check=False)
+    try:
+        result = subprocess.run([CATALOG_BUILDER, LIBRARY, CATALOG_OUTPUT] + (['--force'] if force else []),
+                                capture_output=True, text=True, timeout=1800, check=False)
+    except (OSError, subprocess.SubprocessError) as error:
+        print(f'catalog build failed: {error}', file=sys.stderr)
+        return False
     if result.returncode:
         print(f'catalog build failed: {result.stderr.strip()[-500:]}', file=sys.stderr)
     return not result.returncode
@@ -307,8 +312,8 @@ def worker():
             save_jobs()
         try:
             update = add_vn(job) if job.get('kind') == 'vn' else add_book(job)
-        except (OSError, subprocess.SubprocessError) as error:
-            print(f"calibredb add {job['name']}: {error}", file=sys.stderr)
+        except Exception as error:  # noqa: BLE001 - one bad file must not end the worker
+            print(f"add {job['name']}: {error!r}", file=sys.stderr)
             update = {'state': 'failed', 'error': 'Calibre could not add this file'}
         try:
             os.remove(os.path.join(queue_dir(), job['file']))
