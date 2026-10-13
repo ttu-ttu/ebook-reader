@@ -20,5 +20,9 @@ docker run --rm -v "$work/src:/src" -w /src/script "$EMSDK_IMAGE" \
   bash -c 'EMSDK_HOME=/emsdk bash cross_web.sh'
 
 mkdir -p "$out"
-cp "$work/src/build_web/onsyuri.js" "$work/src/build_web/onsyuri.wasm" "$out/"
+# CONscripter renamed the build to conscripter.*; older commits produce onsyuri.*. player.js loads onsyuri.*.
+name=conscripter
+[ -e "$work/src/build_web/$name.js" ] || name=onsyuri
+cp "$work/src/build_web/$name.js" "$out/onsyuri.js"
+cp "$work/src/build_web/$name.wasm" "$out/onsyuri.wasm"
 echo "Built $out/onsyuri.js and onsyuri.wasm"
