@@ -6,6 +6,14 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Whisper subtitles
+
+- The audiobook and Audiobookshelf players can make their own subtitles: Whisper runs in
+  the browser (WebGPU when available, much slower without) and the result is matched to
+  the book like a loaded SRT, and can be downloaded. The model (Base, Small or Large v3
+  Turbo) downloads once from Hugging Face. Keep the tab open while it works.
+- Server: nginx serves `.mjs` files as JavaScript (Whisper's runtime needs it).
+
 ## v3.2.0 (2026-10-13)
 
 ### Plugins

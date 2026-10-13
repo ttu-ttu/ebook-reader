@@ -29,6 +29,7 @@
     type MatchedCue
   } from '$lib/functions/audiobook/subtitles';
   import { toTimeString } from '$lib/functions/statistic-util';
+  import WhisperSubtitles from '$lib/components/book-reader/whisper-subtitles.svelte';
   import { createEventDispatcher, onDestroy, tick } from 'svelte';
   import Fa from 'svelte-fa';
 
@@ -359,8 +360,8 @@
       >
     </div>
     <p class="mb-3 text-xs opacity-75">
-      The subtitle lines (e.g. from Whisper) are matched to the book, so the line being read is
-      highlighted and the pages follow it. Files stay in this browser.
+      The subtitle lines (from a file, or made by Whisper here) are matched to the book, so the line
+      being read is highlighted and the pages follow it. Files stay in this browser.
     </p>
     <label class="sheet-field">
       <span>Audio (.mp3, .m4a, .m4b)</span>
@@ -378,6 +379,18 @@
         on:change={(e) => (subtitleFile = e.currentTarget.files?.[0])}
       />
     </label>
+    {#if audioFile}
+      <div class="mb-3">
+        <WhisperSubtitles
+          name={audioFile.name.replace(/\.[^.]+$/, '')}
+          sources={() => (audioFile ? [{ blob: audioFile, offset: 0 }] : [])}
+          on:srt={({ detail }) => {
+            subtitleFile = new File([detail], 'Whisper.srt');
+            match();
+          }}
+        />
+      </div>
+    {/if}
     <label class="mb-3 flex items-center gap-2 text-xs">
       <input type="checkbox" bind:checked={fromCurrentPosition} />
       The audio starts at my current position

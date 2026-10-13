@@ -12,7 +12,11 @@ const BUILD_CACHE_NAME = `build:${version}`;
 
 const prerenderedSet = new Set(prerendered);
 
-const assetsToCache = build.concat(files).concat(prerendered);
+// Whisper's worker and runtime (tens of MB) load only when someone transcribes.
+const assetsToCache = build
+  .filter((file) => !/ort-wasm|whisper\.worker/.test(file))
+  .concat(files)
+  .concat(prerendered);
 const cachedAssets = new Set(assetsToCache);
 
 worker.addEventListener('install', (event) => {

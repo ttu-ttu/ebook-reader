@@ -73,6 +73,12 @@ server {
     try_files $uri $uri.html $uri/ =404;
   }
 
+  # Module scripts (Whisper's ONNX runtime); nginx's mime.types has no .mjs.
+  location ~ \.mjs$ {
+    types { }
+    default_type application/javascript;
+  }
+
   # Theme guide (themes.md in the repository root, copied by the build).
   location = /themes.md {
     default_type text/plain;

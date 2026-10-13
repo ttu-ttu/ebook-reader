@@ -3,8 +3,10 @@
     faClosedCaptioning,
     faCrosshairs,
     faPlay,
-    faSpinner
+    faSpinner,
+    faWandMagicSparkles
   } from '@fortawesome/free-solid-svg-icons';
+  import WhisperSubtitles from '$lib/components/book-reader/whisper-subtitles.svelte';
   import {
     absCandidateKey,
     absFileText,
@@ -57,6 +59,7 @@
   let matching = false;
   let activeIndex = -1;
   let subtitleInput: HTMLInputElement;
+  let whisperOpen = false;
 
   $: activeCue = cues[activeIndex] as MatchedCue | undefined;
   $: foundCount = cues.filter((cue) => cue.start !== undefined).length;
@@ -335,6 +338,29 @@
     >
       <Fa icon={matching ? faSpinner : faClosedCaptioning} spin={matching} />
     </button>
+    <button
+      class="abs-icon"
+      class:abs-icon-active={whisperOpen}
+      title="Make subtitles with Whisper in this browser"
+      on:click={() => (whisperOpen = !whisperOpen)}
+    >
+      <Fa icon={faWandMagicSparkles} />
+    </button>
+    {#if whisperOpen && candidate}
+      {@const forCandidate = candidate}
+      <!-- Another audiobook stops the transcription. -->
+      {#key forCandidate}
+        <WhisperSubtitles
+          name={forCandidate.label}
+          sources={() =>
+            forCandidate.tracks.map((item) => ({
+              url: absTrackUrl(forCandidate.itemId, item),
+              offset: item.startOffset
+            }))}
+          on:srt={({ detail }) => useSubtitles(() => Promise.resolve(detail), 'Whisper')}
+        />
+      {/key}
+    {/if}
     <input
       bind:this={subtitleInput}
       class="hidden"
