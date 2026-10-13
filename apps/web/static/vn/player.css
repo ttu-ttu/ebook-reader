@@ -30,16 +30,19 @@ body {
 }
 
 #page-text,
+#sprite-text,
 #choices {
   position: absolute;
   inset: 0;
 }
 
-#page-text[hidden] {
+#page-text[hidden],
+#sprite-text[hidden] {
   display: none;
 }
 
 #page-text div,
+#sprite-text div,
 #choices div {
   position: absolute;
   white-space: pre;

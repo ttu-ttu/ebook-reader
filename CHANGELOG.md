@@ -26,6 +26,14 @@ anything a reader or a server operator would notice.
 - Server: `admin/update` also takes `{"engine": "<tag>"}` (only CONscripter's latest
   release is installed).
 
+### Visual novel lookups in backlogs
+
+- Yomitan works in visual novel backlogs: the engine's own and those a game's script draws
+  (CONscripter 0.12.0 sends the text of `strsp` sprites whenever the game waits for input),
+  and in script menus drawn the same way.
+- The text box can be scanned again right after closing a backlog or menu that hid the text
+  window, instead of only after the next click.
+
 ### Whisper subtitles
 
 - The audiobook and Audiobookshelf players can make their own subtitles: Whisper runs in

@@ -2,7 +2,8 @@
  * Shell for the CONscripter web engine (conscripter.js, GPL-2.0, fetched by scripts/conscripter/),
  * loaded by the reader's /v page in a same-origin iframe. The engine calls the globals below
  * (g_onsyuri_*, fetch_file, flush_save, playVideo, scale_full, onsyuriText, onsyuriChoice,
- * onsyuriOverlay) from its C code; they keep ONScripter-yuri's names, as does its onsyuri() loader.
+ * onsyuriOverlay, onsyuriBacklog, onsyuriSprites) from its C code; they keep ONScripter-yuri's names, as does its
+ * onsyuri() loader.
  * The page calls startGame() once the frame has loaded.
  */
 
@@ -12,6 +13,9 @@ var g_onsyuri_filemap = {};
 var g_screen_width = 640;
 var g_screen_height = 480;
 var onsyuriText;
+var textLines = function () {
+  return [];
+};
 var onSave = function () {};
 var textEncoding = 'shift_jis';
 
@@ -78,12 +82,22 @@ function onsyuriChoice(bytes, x, y, size, pitch) {
 }
 
 var stashedChoices = [];
+var stashedPage = [];
+var inSystem = false;
+var inBacklog = false;
+var windowHidden = false;
+
+function updateHidden() {
+  document.getElementById('page-text').hidden = windowHidden || (inSystem && !inBacklog);
+  document.getElementById('sprite-text').hidden = inSystem;
+}
 
 /**
  * The engine says when text leaves the screen, so the overlay never outlives it (clicks
- * elsewhere, e.g. to close Yomitan, leave it alone): 'page' (new page, text window hidden),
- * 'choices' (buttons removed), 'enter'/'leave' (system menu or backlog over the page and
- * back), 'reset' (left the system menu elsewhere, e.g. a loaded game).
+ * elsewhere, e.g. to close Yomitan, leave it alone): 'page' (new page), 'hide'/'show' (text
+ * window hidden and back with its page), 'choices' (buttons removed), 'enter'/'leave' (system
+ * menu or backlog over the page and back), 'reset' (left the system menu elsewhere, e.g. a
+ * loaded game).
  */
 function onsyuriOverlay(event) {
   var page = document.getElementById('page-text');
@@ -91,17 +105,37 @@ function onsyuriOverlay(event) {
 
   if (event === 'page') page.textContent = '';
   else if (event === 'choices') choices.textContent = '';
+  else if (event === 'hide') windowHidden = true;
+  else if (event === 'show') windowHidden = false;
   else if (event === 'enter') {
     stashedChoices = Array.prototype.slice.call(choices.children);
+    stashedPage = Array.prototype.slice.call(page.children);
     choices.textContent = '';
-    page.hidden = true;
+    inSystem = true;
+    inBacklog = false;
   } else if (event === 'leave') {
     choices.replaceChildren.apply(choices, stashedChoices);
-    page.hidden = false;
+    page.replaceChildren.apply(page, stashedPage);
+    inSystem = false;
   } else if (event === 'reset') {
     page.textContent = choices.textContent = '';
-    page.hidden = false;
+    inSystem = windowHidden = false;
   }
+  updateHidden();
+}
+
+/** A backlog page (between 'enter' and 'leave'): script bytes and boxes, as for onsyuriText. */
+function onsyuriBacklog(bytes, boxes) {
+  showText(textLines(bytes, boxes));
+  inBacklog = true;
+  updateHidden();
+}
+
+/** The visible string sprites (strsp: script-drawn menus and backlogs) at each wait for input. */
+function onsyuriSprites(bytes, boxes) {
+  var layer = document.getElementById('sprite-text');
+
+  layer.replaceChildren.apply(layer, textLines(bytes, boxes).map(overlayLine));
 }
 
 // Clicks on the overlay's text go to the game, as if the text weren't there.
@@ -352,7 +386,8 @@ function loadScript(src) {
  * 'utf8'), saveDir (unique per game), cacheName (Cache API cache keeping the fetched files, for
  * games served by URL), saves (synced save files, written when newer than
  * this browser's), recordLines (keep the sound of the current line for lineSound()),
- * onText(bytes, skipped), onSave(saves), onExit(code).
+ * onText(bytes, skipped), textLines(bytes, boxes) (overlay lines for backlog pages and sprites),
+ * onSave(saves), onExit(code).
  */
 async function startGame(options) {
   var gameDir = '/game';
@@ -361,6 +396,7 @@ async function startGame(options) {
   });
 
   onsyuriText = options.onText;
+  textLines = options.textLines || textLines;
   recordLines = !!options.recordLines && typeof MediaRecorder !== 'undefined';
   if (options.cacheName) fileCache = await caches.open(options.cacheName);
   onSave = options.onSave || onSave;

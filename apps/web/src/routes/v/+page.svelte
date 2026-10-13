@@ -303,6 +303,8 @@
         player.showText(overlayLines(bytes, boxes, info.encoding));
         onText(decodeText(bytes, info.encoding), !!skipped);
       },
+      textLines: (bytes: Uint8Array, boxes: Int32Array) =>
+        overlayLines(bytes, boxes, info.encoding),
       onSave: uploadSaves,
       onExit: () => (ended = true)
     });
