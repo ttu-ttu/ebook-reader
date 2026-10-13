@@ -224,6 +224,9 @@ server {
     internal;
     proxy_pass http://$account_upstream/auth/shared/writes;
     proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
+    # The account service refuses some writes by path (shared_write_allowed).
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_set_header X-Destination $http_destination;
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";

@@ -15,6 +15,9 @@ anything a reader or a server operator would notice.
 - Server: the Series and Catalog tools in the admin panel are admin-only in the import
   service itself; an account with only the import permission could reach them
   through a URL nginx didn't match exactly.
+- Server: the shared sync folder itself can no longer be deleted or written over
+  WebDAV (one DELETE removed every book's data), and nginx's upload folder in it
+  (`.tmp`) is no longer reachable. Deleting a book's own folder still works.
 
 ### Library
 

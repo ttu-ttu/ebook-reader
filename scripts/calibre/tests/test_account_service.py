@@ -134,6 +134,20 @@ class AccountServiceTest(unittest.TestCase):
         self.assertEqual(status(admin, 'difficulty', True, 'POST', False), 200)
         self.assertEqual(status(admin, 'admin', False, 'GET', False), 200)
 
+    def test_shared_folder_and_upload_folder_are_protected(self):
+        allowed = service.shared_write_allowed
+        for uri in ('/calibre/sync/', '/calibre/sync', '/calibre/sync//', '/calibre/sync/x/..', '/calibre/sync/%2e/'):
+            self.assertFalse(allowed('DELETE', uri, None), uri)
+            self.assertTrue(allowed('PROPFIND', uri, None), uri)
+        self.assertFalse(allowed('MKCOL', '/calibre/sync/', None))
+        for method in ('GET', 'PUT', 'DELETE'):
+            self.assertFalse(allowed(method, '/calibre/sync/.tmp/0000000001', None))
+            self.assertFalse(allowed(method, '/calibre/sync/%2Etmp/', None))
+        # A book's own folder and files stay deletable ("Delete selected books").
+        self.assertTrue(allowed('DELETE', '/calibre/sync/%E6%9C%AC/', None))
+        self.assertTrue(allowed('PUT', '/calibre/sync/%E6%9C%AC/progress_1.json', None))
+        self.assertTrue(allowed('DELETE', '/calibre/catalog.json', None))  # not this location
+
     def test_plain_http_is_off_by_default(self):
         self.assertFalse(service.ALLOW_HTTP)
         self.assertEqual(service.request_scheme('https'), 'https')

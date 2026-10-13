@@ -59,6 +59,7 @@ import hashlib
 import hmac
 import json
 import os
+import posixpath
 import re
 import secrets
 import shutil
@@ -402,6 +403,27 @@ def auth_status(user, permission: str, writes_only: bool, method: str, trusted_n
     return 200
 
 
+SHARED_SYNC_URI = '/calibre/sync'
+
+
+def uri_path(uri: str) -> str:
+    """The decoded, normalized path of a request URI or Destination URL."""
+    return posixpath.normpath(urllib.parse.unquote(urllib.parse.urlsplit(uri).path) or '/')
+
+
+def shared_write_allowed(method: str, uri: str, destination: str | None) -> bool:
+    """What the shared sync folder's location refuses on top of auth_status: nginx's upload
+    folder (.tmp), and writes to the folder itself (a DELETE would remove every book's data)."""
+    path = uri_path(uri)
+    if not (path + '/').startswith(SHARED_SYNC_URI + '/'):
+        return True
+    if '.tmp' in path.split('/'):
+        return False
+    if method in READ_METHODS:
+        return True
+    return path != SHARED_SYNC_URI
+
+
 def disk_full(path: str) -> bool:
     """Below MIN_FREE_BYTES free: there are no quotas, so this keeps uploads from filling the disk."""
     try:
@@ -634,6 +656,9 @@ class Handler(BaseHTTPRequestHandler):
         method = self.headers.get('X-Original-Method', '')
         status = auth_status(user, permission, writes_only, method,
                              self.headers.get('X-Trusted-Network') == '1', self.headers.get('X-Public-Reads') == '1')
+        if status == 200 and permission == 'shared' and not shared_write_allowed(
+                method, self.headers.get('X-Original-URI', ''), self.headers.get('X-Destination')):
+            status = 403
         if status == 200 and method not in READ_METHODS and permission in ('', 'shared') \
                 and disk_full(DATA_DIR if permission == '' else SHARED_SYNC_DIR):
             # Not log_message: that skips auth requests.
