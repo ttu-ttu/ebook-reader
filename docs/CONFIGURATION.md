@@ -78,7 +78,7 @@ code are the same container paths.
 | `ACCOUNT_STATE_DIR`   | `/data/state/account` (`accounts.db`)      | account |
 | `ACCOUNT_DATA_DIR`    | `/data/accounts` (must match nginx's `ACCOUNT_DATA_DIR`) | account |
 | `ACCOUNT_HOST`, `ACCOUNT_PORT` | `0.0.0.0`, `8766`                 | account |
-| `ALLOW_HTTP_ACCOUNTS` | `0`                                        | account, import |
+| `ALLOW_HTTP_ACCOUNTS` | `0`                                        | account, import, difficulty |
 | `MIN_FREE_MB`         | `1024`                                     | account |
 | `CATALOG_OUTPUT`      | `/data/state/catalog/catalog.json`         | import (rebuilds the catalog after adding books) |
 | `CATALOG_BUILDER`     | `/usr/local/bin/build-calibre-catalog`     | import |
