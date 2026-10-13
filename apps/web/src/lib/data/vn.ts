@@ -167,7 +167,9 @@ export function scriptCharacters(script: string) {
   return script
     .split(/\r?\n/)
     .filter((line) => /^\s*(?:\P{ASCII}|\[)/u.test(line))
-    .map((line) => line.replace(/^\s*\[[^\]]*\]/, '').replace(/#[0-9a-f]{6}|!(?:sd|[sdwz]\d+)/gi, ''))
+    .map((line) =>
+      line.replace(/^\s*\[[^\]]*\]/, '').replace(/#[0-9a-f]{6}|!(?:sd|[sdwz]\d+)/gi, '')
+    )
     .reduce((sum, line) => sum + countTextCharacters(pageText(line)), 0);
 }
 

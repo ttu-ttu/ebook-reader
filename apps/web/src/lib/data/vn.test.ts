@@ -47,7 +47,8 @@ describe('vn', () => {
   });
 
   it('counts the text lines of a script, not its commands, readings or name tags', () => {
-    const script = '*start\nbg "a.png",1\n吾輩は(猫/ねこ)である。@\n[名前|voice/v1.ogg]「#ffffff!z125はい!z100」\\\n;コメント';
+    const script =
+      '*start\nbg "a.png",1\n吾輩は(猫/ねこ)である。@\n[名前|voice/v1.ogg]「#ffffff!z125はい!z100」\\\n;コメント';
 
     expect(scriptCharacters(script)).toBe('吾輩は猫であるはい'.length);
   });
