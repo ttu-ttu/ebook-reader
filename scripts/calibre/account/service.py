@@ -377,11 +377,16 @@ def set_password(user_id: str, password: str, username: str):
     )
 
 
-def keep_an_admin(user, action: str):
-    """Refuses to remove or demote the last admin, which would lock everyone out of the admin panel."""
-    admins = db.query('SELECT COUNT(*) AS n FROM users WHERE is_admin = 1')[0]['n']
-    if user['is_admin'] and admins <= 1:
-        raise ApiError(409, f'Cannot {action} the only admin')
+def keep_an_admin(user, action: str, sql: str):
+    """Runs sql (with the user's id) to remove or demote the user, unless that would leave no admin
+    and lock everyone out of the admin panel. One transaction, so two admins can't remove each other."""
+    def work(connection):
+        target = connection.execute('SELECT is_admin FROM users WHERE id = ?', (user['id'],)).fetchone()
+        admins = connection.execute('SELECT COUNT(*) FROM users WHERE is_admin = 1').fetchone()[0]
+        if target and target[0] and admins <= 1:
+            raise ApiError(409, f'Cannot {action} the only admin')
+        connection.execute(sql, (user['id'],))
+    db.transaction(work)
 
 
 # Methods that only read; nginx sends the original method as X-Original-Method.
@@ -703,10 +708,10 @@ class Handler(BaseHTTPRequestHandler):
         self.require_admin()
         body = self.read_json()
         user = self.target_user(body)
-        admin = bool(body.get('admin'))
-        if not admin:
-            keep_an_admin(user, 'demote')
-        db.run(('UPDATE users SET is_admin = ? WHERE id = ?', (int(admin), user['id'])))
+        if body.get('admin'):
+            db.run(('UPDATE users SET is_admin = 1 WHERE id = ?', (user['id'],)))
+        else:
+            keep_an_admin(user, 'demote', 'UPDATE users SET is_admin = 0 WHERE id = ?')
         return 200, {}, {}
 
     def post_admin_permissions(self):
@@ -720,8 +725,7 @@ class Handler(BaseHTTPRequestHandler):
         user = self.target_user(self.read_json())
         if user['id'] == me['id']:
             raise ApiError(409, 'Cannot remove your own account')
-        keep_an_admin(user, 'remove')
-        db.run(('DELETE FROM users WHERE id = ?', (user['id'],)))
+        keep_an_admin(user, 'remove', 'DELETE FROM users WHERE id = ?')
         return 200, {}, {}
 
     def get_config(self):
@@ -903,16 +907,16 @@ def cli(command: str, *args: str):
         set_password(user['id'], prompt_new_password(username), username)
         print(f'Changed the password of {username} and signed out its sessions')
     elif command == 'admin':
-        if state == 'off':
-            keep_an_admin(user, 'demote')
-        db.run(('UPDATE users SET is_admin = ? WHERE id = ?', (int(state == 'on'), user['id'])))
+        if state == 'on':
+            db.run(('UPDATE users SET is_admin = 1 WHERE id = ?', (user['id'],)))
+        else:
+            keep_an_admin(user, 'demote', 'UPDATE users SET is_admin = 0 WHERE id = ?')
         print(f"{username} is {'now' if state == 'on' else 'no longer'} an admin")
     elif command == 'permissions':
         set_permissions(user['id'], granted)
         print(f"{username} may now: {', '.join(granted) or 'nothing extra'}")
     elif command == 'remove':
-        keep_an_admin(user, 'remove')
-        db.run(('DELETE FROM users WHERE id = ?', (user['id'],)))
+        keep_an_admin(user, 'remove', 'DELETE FROM users WHERE id = ?')
         print(f"Removed {username}. Its data is still in {os.path.join(DATA_DIR, user['id'])}")
     else:
         sys.exit(__doc__)

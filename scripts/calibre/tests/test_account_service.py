@@ -225,11 +225,16 @@ class AccountServiceTest(unittest.TestCase):
         self.assertEqual(raised.exception.status, 409)
         with self.assertRaises(service.ApiError):
             service.create_user('x', 'long enough')
+        demote = 'UPDATE users SET is_admin = 0 WHERE id = ?'
         with self.assertRaises(service.ApiError):
-            service.keep_an_admin(root, 'remove')
+            service.keep_an_admin(root, 'remove', 'DELETE FROM users WHERE id = ?')
         service.create_user('second', 'long enough', admin=True)
-        service.keep_an_admin(root, 'remove')  # another admin exists
-        service.keep_an_admin(service.find_user('second'), 'demote')
+        service.keep_an_admin(service.find_user('second'), 'demote', demote)  # root is still an admin
+        self.assertFalse(service.find_user('second')['is_admin'])
+        # The count is read in the same transaction, not from the (now stale) row passed in.
+        with self.assertRaises(service.ApiError):
+            service.keep_an_admin(root, 'demote', demote)
+        self.assertTrue(service.find_user('root')['is_admin'])
 
     def test_set_password_signs_out(self):
         user_id = service.create_user('bob', 'long enough')
