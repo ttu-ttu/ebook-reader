@@ -32,8 +32,13 @@ export const ankiAudioField$ = writableStringLocalStorageSubject()(
   'SentenceAudio'
 );
 export const ankiPictureField$ = writableStringLocalStorageSubject()('ankiPictureField', 'Picture');
-/** Sentence audio for books: 'off', 'ai' (ElevenLabs) or 'audiobook' (the imported one). */
-export const ankiNovelAudio$ = writableStringLocalStorageSubject()('ankiNovelAudio', 'off');
+/** Sentence audio for books, from the imported audiobook. */
+export const ankiBookAudio$ = writableBooleanLocalStorageSubject()('ankiBookAudio', false);
+/** Books without an audiobook get the sentence read by ElevenLabs instead. */
+export const ankiBookAiFallback$ = writableBooleanLocalStorageSubject()(
+  'ankiBookAiFallback',
+  false
+);
 export const ankiVnScreenshot$ = writableBooleanLocalStorageSubject()('ankiVnScreenshot', true);
 export const ankiVnAudio$ = writableBooleanLocalStorageSubject()('ankiVnAudio', true);
 
@@ -243,25 +248,23 @@ export async function recordClip(audio: Blob, start: number, end: number) {
   }
 }
 
-/** Audio of a sentence mined from a book, from the source chosen in Settings → Anki. */
+/** Audio of a sentence mined from a book: the audiobook's, or the AI voice's if allowed. */
 export async function bookSentenceAudio(
   title: string,
   sentence: string,
   getIndex: () => Promise<SearchIndex>,
   position: number
 ) {
-  const source = ankiNovelAudio$.getValue();
-
-  if (!sentence || source === 'off') {
+  if (!sentence || !ankiBookAudio$.getValue()) {
     return undefined;
-  }
-  if (source === 'ai') {
-    return (await synthesizeSpeech(sentence)).audio;
   }
 
   const audiobook = await getAudiobook(title);
 
   if (!audiobook) {
+    if (ankiBookAiFallback$.getValue()) {
+      return (await synthesizeSpeech(sentence)).audio;
+    }
     throw new Error('No audiobook for this book (Listen → Audiobook)');
   }
 

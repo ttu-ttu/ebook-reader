@@ -1,9 +1,6 @@
 <script lang="ts">
   import ButtonToggleGroup from '$lib/components/button-toggle-group/button-toggle-group.svelte';
-  import {
-    optionsForToggle,
-    type ToggleOption
-  } from '$lib/components/button-toggle-group/toggle-option';
+  import { optionsForToggle } from '$lib/components/button-toggle-group/toggle-option';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import SettingsSection from '$lib/components/settings/settings-section.svelte';
   import { buttonClasses, inputClasses } from '$lib/css-classes';
@@ -12,18 +9,13 @@
     ankiConnectUrl$,
     ankiEnabled$,
     ankiInvoke,
-    ankiNovelAudio$,
+    ankiBookAiFallback$,
+    ankiBookAudio$,
     ankiPictureField$,
     ankiSentenceField$,
     ankiVnAudio$,
     ankiVnScreenshot$
   } from '$lib/data/anki';
-
-  const novelAudioOptions: ToggleOption<string>[] = [
-    { id: 'off', text: 'Off' },
-    { id: 'ai', text: 'AI voice' },
-    { id: 'audiobook', text: 'Audiobook' }
-  ];
 
   const origin = typeof location === 'undefined' ? '' : location.origin;
 
@@ -82,10 +74,16 @@
 
 <SettingsSection id="anki-media">
   <SettingsItemGroup
-    title="Book sentence audio"
-    tooltip="AI voice: the sentence read by ElevenLabs (key and voice in Settings → AI). Audiobook: the lines of the book's imported audiobook, recorded in real time."
+    title="Book audio"
+    tooltip="The sentence's lines from the book's imported audiobook (Listen → Audiobook), recorded in real time."
   >
-    <ButtonToggleGroup options={novelAudioOptions} bind:selectedOptionId={$ankiNovelAudio$} />
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={$ankiBookAudio$} />
+  </SettingsItemGroup>
+  <SettingsItemGroup
+    title="Use ElevenLabs audio if no audiobook file present"
+    tooltip="The sentence read by the AI voice (key and voice in Settings → AI). Each card uses ElevenLabs credits."
+  >
+    <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={$ankiBookAiFallback$} />
   </SettingsItemGroup>
   <SettingsItemGroup
     title="Visual novel screenshot"

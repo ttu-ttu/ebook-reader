@@ -108,8 +108,8 @@ anything a reader or a server operator would notice.
 ### Anki mining
 
 - Settings → Anki: with AnkiConnect, cards you add (e.g. with Yomitan) while a book or
-  visual novel is open get media: for books the sentence read by the AI voice or cut
-  from the book's audiobook, for visual novels a screenshot and the game's sound since
+  visual novel is open get media: for books the sentence cut from the book's audiobook
+  (or, optionally, read by the AI voice when there is none), for visual novels a screenshot and the game's sound since
   your last click. Fields already filled are left alone. Add the site's address to
   AnkiConnect's `webCorsOriginList`.
 
