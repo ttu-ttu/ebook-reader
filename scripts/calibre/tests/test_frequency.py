@@ -66,7 +66,8 @@ class InstallDictionaryTest(unittest.TestCase):
 
     def install(self, data: bytes):
         import io
-        return self.service.install_dictionary(io.BytesIO(data), len(data))
+        # Bytes past Content-Length stand in for a socket that stays open: they must not be read.
+        return self.service.install_dictionary(io.BytesIO(data + b'next request'), len(data))
 
     def test_installs_a_rank_based_list(self):
         with open(dictionary(), 'rb') as f:

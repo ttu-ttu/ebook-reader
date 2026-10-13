@@ -25,6 +25,8 @@ anything a reader or a server operator would notice.
   and the next one is added.
 - Server: imports stop below `MIN_FREE_MB` like other uploads (uploads still in
   progress count), and a failed upload no longer leaves a partial file behind.
+- Difficulty: uploading the frequency list no longer hangs until nginx times out
+  with a 504.
 
 ### Library
 

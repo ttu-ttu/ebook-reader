@@ -287,7 +287,11 @@ def install_dictionary(source, length: int) -> int:
     upload = FREQUENCY_DICTIONARY + '.upload'
     try:
         with open(upload, 'wb') as f:
-            shutil.copyfileobj(source, f, length)
+            # Read exactly length: nginx keeps the connection open, so there is no EOF to wait for.
+            remaining = length
+            while remaining and (chunk := source.read(min(remaining, 1 << 20))):
+                f.write(chunk)
+                remaining -= len(chunk)
         if os.path.getsize(upload) != length:
             raise ValueError('Upload incomplete')
         try:
