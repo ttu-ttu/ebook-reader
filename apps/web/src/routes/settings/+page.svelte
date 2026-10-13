@@ -15,6 +15,7 @@
   import AppHeader from '$lib/components/app-header/app-header.svelte';
   import SettingsAccount from '$lib/components/settings/settings-account.svelte';
   import SettingsAi from '$lib/components/settings/settings-ai.svelte';
+  import SettingsAnki from '$lib/components/settings/settings-anki.svelte';
   import SettingsContent from '$lib/components/settings/settings-content.svelte';
   import SettingsSection from '$lib/components/settings/settings-section.svelte';
   import {
@@ -453,6 +454,7 @@
           <SettingsThemes />
         </SettingsSection>
         <SettingsAi />
+        <SettingsAnki />
         <SettingsContent
           {storageQuota}
           bind:fontFamilyGroupOne={$fontFamilyGroupOne$}

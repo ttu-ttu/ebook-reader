@@ -127,6 +127,8 @@
   } from '$lib/functions/book-text/text-positions';
   import BookReaderHeader from '$lib/components/book-reader/book-reader-header.svelte';
   import ListenPanel, { listenBarRem } from '$lib/components/book-reader/listen-panel.svelte';
+  import AnkiWatcher from '$lib/components/anki-watcher.svelte';
+  import { bookSentenceAudio, noteSentence } from '$lib/data/anki';
   import { autoUpdateLorebook } from '$lib/data/lorebook';
   import { enableExtrasSync, syncExtras } from '$lib/data/extras-sync';
   import { recordKanjiSeen } from '$lib/data/kanji-seen';
@@ -2441,6 +2443,19 @@
     />
   {/if}
 </div>
+
+{#if $rawBookData$}
+  <AnkiWatcher
+    media={async (note) => ({
+      audio: await bookSentenceAudio(
+        $rawBookData$?.title ?? '',
+        noteSentence(note),
+        getSearchIndex,
+        exploredCharCount
+      )
+    })}
+  />
+{/if}
 
 {#if showTts && $rawBookData$ && $bookData$}
   <ListenPanel

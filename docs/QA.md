@@ -264,6 +264,8 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | RDR-11 | Ask AI (needs a QA key) | Panel with presets; the default runs on open; follow-ups work; EN / 日本語 toggle switches the prompts |
 | RDR-12 | Listen → AI voice (needs an ElevenLabs QA key) | Reads from the current position without furigana; the line being read is highlighted; pages turn |
 | RDR-13 | Listen → Audiobook with an audio file and SRT/VTT | Playback follows the text; position kept across reloads |
+| RDR-14 | Settings → Anki on, Test connection; mine a word with Yomitan in a book (Book sentence audio: AI voice, then Audiobook) | Notice "Added to the Anki card: SentenceAudio"; the card plays the sentence |
+| RDR-15 | Same in a visual novel with voices | Card gets the screenshot in Picture and the line's sound in SentenceAudio; mining twice from one line gives the same audio |
 
 ## 15. Library and manga
 

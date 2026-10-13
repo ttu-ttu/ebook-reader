@@ -105,6 +105,14 @@ anything a reader or a server operator would notice.
 - The library's Type filter has Visual novels next to Books and Manga.
 - Server: nginx compresses `.wasm`.
 
+### Anki mining
+
+- Settings → Anki: with AnkiConnect, cards you add (e.g. with Yomitan) while a book or
+  visual novel is open get media: for books the sentence read by the AI voice or cut
+  from the book's audiobook, for visual novels a screenshot and the game's sound since
+  your last click. Fields already filled are left alone. Add the site's address to
+  AnkiConnect's `webCorsOriginList`.
+
 ### Fixes
 
 - Selecting books on Home (long press or right-click) no longer jumps to the Store; the

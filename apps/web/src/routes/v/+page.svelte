@@ -73,6 +73,8 @@
     getDefaultStatistic,
     updateStatistic
   } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
+  import AnkiWatcher from '$lib/components/anki-watcher.svelte';
+  import { ankiEnabled$, ankiVnAudio$, ankiVnScreenshot$ } from '$lib/data/anki';
   import { writableBooleanLocalStorageSubject } from '$lib/data/internal/writable-boolean-local-storage-subject';
 
   /** Time between two clicks counted as reading at most, so breaks don't count. */
@@ -288,6 +290,7 @@
         ? Object.fromEntries(info.files.map((path) => [path, `${info.base}${encodePath(path)}`]))
         : book.blobs,
       cacheName,
+      recordLines: $ankiEnabled$ && $ankiVnAudio$,
       encoding: info.encoding,
       saveDir: `/save/${hashPage(book.title)}`,
       saves: Object.fromEntries(
@@ -303,6 +306,16 @@
       onSave: uploadSaves,
       onExit: () => (ended = true)
     });
+  }
+
+  /** For a note added to Anki while playing: the game screen and the current line's sound. */
+  async function ankiMedia() {
+    const player = frame?.contentWindow as any;
+
+    return {
+      picture: $ankiVnScreenshot$ ? await player?.screenshot() : undefined,
+      audio: $ankiVnAudio$ ? await player?.lineSound() : undefined
+    };
   }
 
   function onText(text: string, skipped: boolean) {
@@ -423,6 +436,7 @@
   </div>
 
   {#if book}
+    <AnkiWatcher media={ankiMedia} />
     <iframe
       bind:this={frame}
       class="min-h-0 w-full flex-1 border-0"

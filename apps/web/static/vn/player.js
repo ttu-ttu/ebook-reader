@@ -133,6 +133,76 @@ window.addEventListener('resize', function () {
   scale_full(document.getElementById('canvas'), g_screen_width / g_screen_height);
 });
 
+// Anki mining (lib/data/anki.ts): a screenshot, and the game's sound since the last click or key.
+var soundTap;
+var lineRecorder;
+var lineAudio;
+var recordLines = false;
+var nativeConnect = AudioNode.prototype.connect;
+var nativeGetContext = HTMLCanvasElement.prototype.getContext;
+
+// Whatever the engine sends to the speakers is also sent to soundTap.
+AudioNode.prototype.connect = function (target) {
+  if (recordLines && target instanceof AudioDestinationNode) {
+    if (!soundTap) {
+      soundTap = this.context.createMediaStreamDestination();
+      restartLineRecorder();
+    }
+    if (soundTap.context === this.context) nativeConnect.call(this, soundTap);
+  }
+  return nativeConnect.apply(this, arguments);
+};
+
+// Keeps the last frame readable after it is shown, for screenshots.
+HTMLCanvasElement.prototype.getContext = function (type, attributes) {
+  if (type === 'webgl' || type === 'webgl2') {
+    attributes = Object.assign({}, attributes, { preserveDrawingBuffer: true });
+  }
+  return nativeGetContext.call(this, type, attributes);
+};
+
+function restartLineRecorder(event) {
+  // Modifier keys are Yomitan's scan keys, not the game's.
+  if (event && /^(Shift|Control|Alt|Meta)$/.test(event.key)) return;
+  if (lineRecorder && lineRecorder.state !== 'inactive') lineRecorder.stop();
+  lineAudio = undefined;
+  if (!soundTap) return;
+
+  var chunks = [];
+  var recorder = new MediaRecorder(soundTap.stream);
+
+  recorder.ondataavailable = function (e) {
+    chunks.push(e.data);
+  };
+  recorder.stopped = new Promise(function (resolve) {
+    recorder.onstop = function () {
+      resolve(new Blob(chunks, { type: recorder.mimeType }));
+    };
+  });
+  recorder.start();
+  lineRecorder = recorder;
+}
+
+['mousedown', 'touchstart', 'keydown'].forEach(function (type) {
+  window.addEventListener(type, restartLineRecorder, true);
+});
+
+/** The sound since the last click or key (null without sound), the same until the next one. */
+function lineSound() {
+  if (!lineAudio) {
+    if (!lineRecorder || lineRecorder.state === 'inactive') return Promise.resolve(null);
+    lineRecorder.stop();
+    lineAudio = lineRecorder.stopped;
+  }
+  return lineAudio;
+}
+
+function screenshot() {
+  return new Promise(function (resolve) {
+    document.getElementById('canvas').toBlob(resolve, 'image/webp', 0.9);
+  });
+}
+
 // Cache API cache of a server game the reader chose to keep in the browser (startGame's cacheName).
 var fileCache;
 var progress = { loaded: 0, total: 0 };
@@ -281,7 +351,8 @@ function loadScript(src) {
  * options: files (path → Blob or URL, paths relative to the game folder), encoding ('sjis' |
  * 'utf8'), saveDir (unique per game), cacheName (Cache API cache keeping the fetched files, for
  * games served by URL), saves (synced save files, written when newer than
- * this browser's), onText(bytes, skipped), onSave(saves), onExit(code).
+ * this browser's), recordLines (keep the sound of the current line for lineSound()),
+ * onText(bytes, skipped), onSave(saves), onExit(code).
  */
 async function startGame(options) {
   var gameDir = '/game';
@@ -290,6 +361,7 @@ async function startGame(options) {
   });
 
   onsyuriText = options.onText;
+  recordLines = !!options.recordLines && typeof MediaRecorder !== 'undefined';
   if (options.cacheName) fileCache = await caches.open(options.cacheName);
   onSave = options.onSave || onSave;
   textEncoding = options.encoding === 'utf8' ? 'utf-8' : 'shift_jis';

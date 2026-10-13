@@ -28,6 +28,9 @@ import {
   faHeadphones,
   faLanguage,
   faListUl,
+  faNoteSticky,
+  faPhotoFilm,
+  faPlug,
   faPalette,
   faRotate,
   faServer,
@@ -161,6 +164,25 @@ export const settingsAreas: SettingsArea[] = [
         label: 'Story So Far & Lorebook',
         description: 'Spoiler-free recaps and the lorebook of what you have read.',
         icon: faClockRotateLeft
+      }
+    ]
+  },
+  {
+    id: 'anki',
+    label: 'Anki',
+    icon: faNoteSticky,
+    sections: [
+      {
+        id: 'anki-connect',
+        label: 'AnkiConnect',
+        description: 'Connecting to Anki and the note fields to fill.',
+        icon: faPlug
+      },
+      {
+        id: 'anki-media',
+        label: 'Card Media',
+        description: 'Audio and screenshots added to cards you mine while reading or playing.',
+        icon: faPhotoFilm
       }
     ]
   },
