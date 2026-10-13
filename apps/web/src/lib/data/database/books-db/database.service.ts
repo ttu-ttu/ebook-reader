@@ -350,6 +350,38 @@ export class DatabaseService {
     this.lastItemChanged$.next();
   }
 
+  /**
+   * Removes one reader's progress, statistics and reading goals for these titles (and all
+   * reading goals) when another reader takes over the browser; the books themselves stay.
+   */
+  async clearReaderData(titles: Set<string>) {
+    const db = await this.db;
+    const tx = db.transaction(
+      ['data', 'bookmark', 'statistic', 'lastModified', 'readingGoal'],
+      'readwrite'
+    );
+    const deletes: Promise<unknown>[] = [];
+
+    for (const book of await tx.objectStore('data').getAll()) {
+      if (titles.has(book.title) && book.id !== undefined) {
+        deletes.push(tx.objectStore('bookmark').delete(book.id));
+      }
+    }
+
+    for (const store of ['statistic', 'lastModified'] as const) {
+      for (const key of await tx.objectStore(store).getAllKeys()) {
+        if (titles.has(key[0])) {
+          deletes.push(tx.objectStore(store).delete(key));
+        }
+      }
+    }
+
+    deletes.push(tx.objectStore('readingGoal').clear());
+    await Promise.all(deletes);
+    await tx.done;
+    lastReadingGoalsModified$.next(0);
+  }
+
   private async deleteSingleData(
     db: IDBPDatabase<BooksDb>,
     dataId: number,

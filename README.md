@@ -36,7 +36,8 @@ itself, and its Yomitan support, are upstream's (see [Using the reader](#using-t
   kanji met. Games come as ZIPs or unpacked folders on the server (`VN_PATH`);
   importing a game ZIP unpacks it there. Saves sync across devices, big games can
   be kept offline, and the library shows VNDB details and difficulty estimates
-  from the script.
+  from the script. Games for other engines can often be converted with
+  [onscripter-convert](https://github.com/blankiekun/onscripter-convert).
 - **Difficulty estimates** with [Jiten](https://github.com/Sirush/Jiten)'s
   features and a model trained on jiten.moe's scores, computed on your server.
 - **App-wide themes** that follow the system's light and dark mode.
