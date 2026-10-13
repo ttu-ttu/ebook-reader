@@ -386,7 +386,7 @@ async function startGame(options) {
 
   g_onsyuri_module.canvas = document.getElementById('canvas');
   g_onsyuri_module.onExit = options.onExit;
-  // The engine is built as conscripter.wasm but shipped as onsyuri.wasm (scripts/onsyuri/build.sh).
+  // The engine is released as conscripter.wasm but shipped as onsyuri.wasm (scripts/onsyuri/build.sh).
   g_onsyuri_module.locateFile = function (path) {
     return path.endsWith('.wasm') ? 'onsyuri.wasm' : path;
   };

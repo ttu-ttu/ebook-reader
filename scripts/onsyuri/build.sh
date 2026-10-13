@@ -1,31 +1,38 @@
 #!/bin/bash
-# Builds the CONscripter web engine (GPL-2.0, https://github.com/blankiekun/CONscripter, a fork
-# of ONScripter-yuri) with text-hook.patch into apps/web/static/vn/. Needs git and Docker. The built files are
-# committed, so this only runs when the engine or the patch changes (e.g. a new CONscripter release).
+# Fetches the CONscripter web engine (GPL-2.0, https://github.com/blankiekun/CONscripter, a fork of
+# ONScripter-yuri) from its newest GitHub release (CONSCRIPTER_TAG=<tag> picks another) into
+# apps/web/static/vn/. Needs curl and 7z, or curl and Docker. The files are committed, so this only
+# runs when CONscripter has a new release.
 set -euo pipefail
 
-REPO=https://github.com/blankiekun/CONscripter.git
-# The newest release tag; CONSCRIPTER_REF=<tag or commit> builds another one.
-ref=${CONSCRIPTER_REF:-$(git ls-remote --tags --refs --sort=-v:refname "$REPO" 'v*' | head -n1 | sed 's|.*refs/tags/||')}
-[ -n "$ref" ] || { echo "No CONscripter release tag found" >&2; exit 1; }
-EMSDK_IMAGE=emscripten/emsdk:6.0.12
+REPO=https://github.com/blankiekun/CONscripter
 
 here=$(cd "$(dirname "$0")" && pwd)
 out=$here/../../apps/web/static/vn
 work=$(mktemp -d)
-trap 'docker run --rm -v "$work:/w" debian:13-slim rm -rf /w/src; rm -rf "$work"' EXIT
+trap 'rm -rf "$work"' EXIT
 
-git clone -q "$REPO" "$work/src"
-git -C "$work/src" checkout -q "$ref"
-git -C "$work/src" apply "$here/text-hook.patch"
+# releases/latest redirects to .../releases/tag/<tag>.
+tag=${CONSCRIPTER_TAG:-$(curl -fsSLI -o /dev/null -w '%{url_effective}' "$REPO/releases/latest" | sed 's|.*/tag/||')}
+[ -n "$tag" ] || { echo "No CONscripter release found" >&2; exit 1; }
+curl -fsSL -o "$work/web.7z" "$REPO/releases/download/$tag/conscripter_${tag}_web.7z"
 
-docker run --rm -v "$work/src:/src" -w /src/script "$EMSDK_IMAGE" \
-  bash -c 'EMSDK_HOME=/emsdk bash cross_web.sh'
+files=(conscripter_web/conscripter.js conscripter_web/conscripter.wasm)
+if command -v 7z >/dev/null; then
+  7z e -y -o"$work" "$work/web.7z" "${files[@]}" >/dev/null
+else
+  docker run --rm -i debian:13-slim bash -c \
+    'apt-get -qq update >/dev/null && apt-get -qq install -y 7zip >/dev/null 2>&1 &&
+     cat > /w.7z && 7z e -y -o/o /w.7z "$@" >/dev/null && tar -C /o -cf - .' _ "${files[@]}" \
+    < "$work/web.7z" | tar -C "$work" -xf -
+fi
+
+# The app's overlay, choices, progress and Anki need the text hooks (CONscripter v0.9.0 and later).
+grep -q onsyuriOverlay "$work/conscripter.js" || { echo "CONscripter $tag has no text hooks" >&2; exit 1; }
 
 mkdir -p "$out"
-# CONscripter renamed the build to conscripter.*; older commits produce onsyuri.*. player.js loads onsyuri.*.
-name=conscripter
-[ -e "$work/src/build_web/$name.js" ] || name=onsyuri
-cp "$work/src/build_web/$name.js" "$out/onsyuri.js"
-cp "$work/src/build_web/$name.wasm" "$out/onsyuri.wasm"
-echo "Built $out/onsyuri.js and onsyuri.wasm from CONscripter $ref"
+# player.js loads onsyuri.*.
+cp "$work/conscripter.js" "$out/onsyuri.js"
+cp "$work/conscripter.wasm" "$out/onsyuri.wasm"
+echo "$tag" > "$out/conscripter-version.txt"
+echo "Copied CONscripter $tag to $out/onsyuri.js and onsyuri.wasm"

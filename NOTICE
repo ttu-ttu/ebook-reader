@@ -28,9 +28,10 @@ The visual novel player (apps/web/static/vn/onsyuri.js and onsyuri.wasm) is
 CONscripter (https://github.com/blankiekun/CONscripter), a fork of
 ONScripter-yuri (https://github.com/YuriSizuku/OnscripterYuri), based on
 ONScripter-Jh and ONScripter by Ogapee, licensed under the GNU General Public
-License version 2. It is built by scripts/onsyuri/build.sh from the pinned
-CONscripter commit plus scripts/onsyuri/text-hook.patch, which is its complete
-corresponding source together with that repository. Its fallback font
+License version 2. It is the web build of the CONscripter release named in
+apps/web/static/vn/conscripter-version.txt, fetched by scripts/onsyuri/build.sh;
+that release's tag in the repository above is its complete corresponding
+source. Its fallback font
 (apps/web/static/vn/default.ttf) is Noto Sans JP, licensed under the SIL Open
 Font License 1.1.
 
