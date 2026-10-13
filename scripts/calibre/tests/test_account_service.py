@@ -236,6 +236,22 @@ class AccountServiceTest(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_auth_response_says_whether_admin(self):
+        service.create_user('boss', 'long enough', admin=True)
+        reader_id = service.create_user('reader', 'long enough')
+        service.set_permissions(reader_id, ['import'])
+
+        class Request:
+            def __init__(self, token):
+                self.headers = {'Cookie': f'{service.COOKIE}={token}', 'X-Original-Method': 'POST'}
+
+            session_token = service.Handler.session_token
+
+        for name, admin in (('boss', '1'), ('reader', '0')):
+            token = service.create_session(service.find_user(name)['id'])
+            status, _, headers = service.Handler.get_auth(Request(token), 'import')
+            self.assertEqual((status, headers['X-Account-Admin']), (200, admin))
+
     def test_old_database_gets_admin_column(self):
         path = os.path.join(self.tmp.name, 'old.db')
         old = service.sqlite3.connect(path)

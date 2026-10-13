@@ -639,7 +639,10 @@ class Handler(BaseHTTPRequestHandler):
             # Not log_message: that skips auth requests.
             sys.stderr.write(f'write refused: less than {MIN_FREE_BYTES // 1024 // 1024} MB free\n')
             status = 403
-        return status, None, {'X-Account-Id': user['id']} if user and status == 200 else {}
+        if not (user and status == 200):
+            return status, None, {}
+        # The import service checks admin itself too (its admin tools share a location prefix).
+        return status, None, {'X-Account-Id': user['id'], 'X-Account-Admin': '1' if user['is_admin'] else '0'}
 
     def get_admin_users(self):
         self.require_admin()

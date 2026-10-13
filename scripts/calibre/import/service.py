@@ -11,11 +11,11 @@ rebuilt so the books show up in the library.
   POST add?name=<file name>   body: the file   -> {"job": {...}}
   GET  jobs?ids=a,b                            -> {"jobs": [...]} (own jobs only)
   POST series   {"apply": bool}                -> assign-series.py's plan (admins
-       only, checked by nginx): books without a series put into series, duplicate
+       only: X-Account-Admin from the auth response): books without a series put into series, duplicate
        series merged; with apply, metadata.db is backed up, written and the
        catalog rebuilt
   POST catalog                                 -> {"books": n} after a full catalog
-       rebuild (admins only, checked by nginx)
+       rebuild (admins only)
 
 A ZIP holding an ONScripter game (a script such as 0.txt or nscript.dat) is not
 added to Calibre: the worker unpacks its game folder into VN_DIR, named after the
@@ -368,6 +368,11 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(401, 'Sign in to add books to Calibre')
         return account
 
+    def require_admin(self):
+        self.account()
+        if self.headers.get('X-Account-Admin') != '1':
+            raise ApiError(403, 'Only admins can do this')
+
     def send(self, status: int, body: dict):
         data = json.dumps(body, ensure_ascii=False).encode()
         self.send_response(status)
@@ -400,13 +405,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802
         url = urlparse(self.path)
+        # Not url.path: urlparse drops ';params', so '/series;x' would count as '/series'.
+        path = self.path.split('?', 1)[0]
         if not from_nginx(self.headers):
             return self.send(403, {'error': 'Only nginx may call this service'})
-        if url.path == '/add':
+        if path == '/add':
             return self.handle_api(lambda: self.add(url))
-        if url.path == '/series':
+        if path == '/series':
             return self.handle_api(self.series)
-        if url.path == '/catalog':
+        if path == '/catalog':
             return self.handle_api(self.catalog)
         return self.send(404, {'error': 'not found'})
 
@@ -416,7 +423,7 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(403, 'Request from another site')
 
     def series(self):
-        self.account()
+        self.require_admin()
         self.same_origin()
         try:
             body = json.loads(self.rfile.read(min(int(self.headers.get('Content-Length') or 0), 1024)) or b'{}')
@@ -425,7 +432,7 @@ class Handler(BaseHTTPRequestHandler):
         return run_series(bool(body.get('apply')))
 
     def catalog(self):
-        self.account()
+        self.require_admin()
         self.same_origin()
         return run_catalog()
 

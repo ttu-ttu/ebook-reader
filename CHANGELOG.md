@@ -12,6 +12,9 @@ anything a reader or a server operator would notice.
   sends them a secret (`X-Internal-Token`) that the web container keeps in
   `DATA_PATH/state/internal-token`; their ports are no longer an open back door
   for other processes on the host. Rebuild and restart all containers together.
+- Server: the Series and Catalog tools in the admin panel are admin-only in the import
+  service itself; an account with only the import permission could reach them
+  through a URL nginx didn't match exactly.
 
 ### Library
 

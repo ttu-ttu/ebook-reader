@@ -88,8 +88,9 @@ class ImportServiceTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.server.shutdown()
 
-    def request(self, path, body=None, account='acc1', origin=True, scheme='https', token='c0ffee'):
-        headers = {'Host': 'reader.example', 'X-Forwarded-Proto': scheme, 'X-Internal-Token': token}
+    def request(self, path, body=None, account='acc1', origin=True, scheme='https', token='c0ffee', admin=False):
+        headers = {'Host': 'reader.example', 'X-Forwarded-Proto': scheme, 'X-Internal-Token': token,
+                   'X-Account-Admin': '1' if admin else '0'}
         if account:
             headers['X-Account-Id'] = account
         if origin:
@@ -120,11 +121,18 @@ class ImportServiceTest(unittest.TestCase):
         self.assertEqual(os.listdir(service.queue_dir()), [])
 
     def test_series_check_and_apply(self):
-        status, body = self.request('/series', b'{}')
+        status, body = self.request('/series', b'{}', admin=True)
         self.assertEqual((status, body['assigned'], body['written']), (200, 2, False))
-        status, body = self.request('/series', b'{"apply": true}')
+        status, body = self.request('/series', b'{"apply": true}', admin=True)
         self.assertEqual((status, body['written']), (200, True))
-        self.assertEqual(self.request('/series', b'{}', origin=False)[0], 403)
+        self.assertEqual(self.request('/series', b'{}', origin=False, admin=True)[0], 403)
+
+    def test_admin_tools_need_admin(self):
+        for path in ('/series', '/catalog'):
+            self.assertEqual(self.request(path, b'{}')[0], 403)
+            # nginx's exact-match admin locations miss these; the service must not see '/series'.
+            for variant in (';x', ';', '/'):
+                self.assertEqual(self.request(path + variant, b'{}', admin=True)[0], 404)
 
     def test_duplicate(self):
         _, body = self.request('/add?name=a.epub', epub('dup'))
@@ -181,11 +189,11 @@ class ImportServiceTest(unittest.TestCase):
         self.assertEqual(self.wait_for(body['job']['id'])['state'], 'duplicate')
 
     def test_catalog_rebuild(self):
-        status, body = self.request('/catalog', b'')
+        status, body = self.request('/catalog', b'', admin=True)
         self.assertEqual((status, body), (200, {'books': 2, 'visualNovels': 1}))
         with open(BUILDS) as f:
             self.assertIn('--force', f.read().splitlines()[-1])
-        self.assertEqual(self.request('/catalog', b'', origin=False)[0], 403)
+        self.assertEqual(self.request('/catalog', b'', origin=False, admin=True)[0], 403)
 
     def test_jobs_are_per_account(self):
         _, body = self.request('/add?name=b.epub', epub())
