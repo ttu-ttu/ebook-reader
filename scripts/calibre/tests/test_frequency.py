@@ -114,6 +114,21 @@ class KanjiEndpointTest(unittest.TestCase):
             with self.assertRaises(urllib.error.HTTPError) as error:
                 get(f'{base}/kanji/7', token='')
             self.assertEqual(error.exception.code, 403)
+
+            def post(origin):
+                headers = {'X-Internal-Token': 'c0ffee', 'Host': 'reader.example'}
+                if origin:
+                    headers['Origin'] = origin
+                request = urllib.request.Request(f'{base}/nothing', data=b'{}', headers=headers)
+                try:
+                    return urllib.request.urlopen(request).status
+                except urllib.error.HTTPError as error:
+                    return error.code
+            # Other sites can't post with the reader's cookie; past the check, an unknown action is 404.
+            self.assertEqual(post(None), 403)
+            self.assertEqual(post('https://evil.example'), 403)
+            self.assertEqual(post('http://reader.example'), 403)
+            self.assertEqual(post('https://reader.example'), 404)
         finally:
             server.shutdown()
             server.server_close()

@@ -58,6 +58,7 @@ PORT = int(os.environ.get('JITEN_PORT', '8765'))
 HOST = os.environ.get('JITEN_HOST', '127.0.0.1')
 # Made by the web container; nginx sends it as X-Internal-Token, so only nginx can call this service.
 INTERNAL_TOKEN_FILE = os.environ.get('INTERNAL_TOKEN_FILE', '/data/state/internal-token')
+ALLOW_HTTP = os.environ.get('ALLOW_HTTP_ACCOUNTS') == '1'
 # Worker processes are replaced after this many books to bound their memory.
 BOOKS_PER_POOL = 300
 
@@ -355,6 +356,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not from_nginx(self.headers):
             return self._send(403, {'error': 'Only nginx may call this service'})
+        # nginx checks the account; this stops other sites from posting with its cookie.
+        scheme = 'http' if ALLOW_HTTP and self.headers.get('X-Forwarded-Proto') == 'http' else 'https'
+        if self.headers.get('Origin') != f"{scheme}://{self.headers.get('Host', '')}":
+            return self._send(403, {'error': 'Request from another site'})
         if self._action() == 'dictionary':
             try:
                 terms = install_dictionary(self.rfile, int(self.headers.get('Content-Length') or 0))

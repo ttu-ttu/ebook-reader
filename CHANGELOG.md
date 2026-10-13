@@ -43,6 +43,9 @@ anything a reader or a server operator would notice.
 - Server: nginx only believes `X-Forwarded-Proto` from the addresses in
   `REAL_IP_FROM`. **Upgrading:** behind a reverse proxy that terminates HTTPS, set
   `REAL_IP_FROM` (docs/INSTALL.md → HTTPS) or signing in stops working.
+- Difficulty: estimate, cancel and frequency list requests must come from the
+  reader's own page (Origin check), like imports. Restart the stack with the new
+  compose file (the difficulty service now reads `ALLOW_HTTP_ACCOUNTS`).
 
 ### Library
 

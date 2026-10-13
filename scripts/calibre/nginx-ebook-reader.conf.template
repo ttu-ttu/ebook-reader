@@ -100,6 +100,8 @@ server {
     proxy_pass http://$difficulty_upstream;
     proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
     # The frequency list upload (jiten_freq_global.zip, about 8 MB).
     client_max_body_size 64m;
   }
