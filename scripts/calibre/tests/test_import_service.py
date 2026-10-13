@@ -10,6 +10,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 import urllib.error
 import urllib.request
 import zipfile
@@ -199,6 +200,13 @@ class ImportServiceTest(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(VN_DIR, '壊れ')))
         _, body = self.request('/add?name=next.epub', epub('next'))
         self.assertNotIn(self.wait_for(body['job']['id'])['state'], ('queued', 'adding'))
+
+    def test_refuses_uploads_without_free_space(self):
+        with mock.patch.object(service, 'MIN_FREE_BYTES', 1 << 62):
+            status, body = self.request('/add?name=full.epub', epub())
+        self.assertEqual((status, body['error']), (507, 'Not enough free space on the server'))
+        self.assertEqual(os.listdir(service.queue_dir()), [])
+        self.assertEqual(service.uploading, {})
 
     def test_catalog_rebuild(self):
         status, body = self.request('/catalog', b'', admin=True)

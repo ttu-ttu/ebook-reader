@@ -23,6 +23,8 @@ anything a reader or a server operator would notice.
   series permission.
 - Server: a damaged ZIP no longer stops the import queue for good; the file fails
   and the next one is added.
+- Server: imports stop below `MIN_FREE_MB` like other uploads (uploads still in
+  progress count), and a failed upload no longer leaves a partial file behind.
 
 ### Library
 

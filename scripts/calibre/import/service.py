@@ -78,6 +78,8 @@ catalog_busy = threading.Lock()
 lock = threading.Lock()
 work = threading.Condition(lock)
 jobs: dict[str, dict] = {}
+# Uploads still being received (under lock): bytes per account, so checks count them too.
+uploading: dict[str, list[int]] = {}
 
 
 def from_nginx(headers) -> bool:
@@ -459,21 +461,40 @@ class Handler(BaseHTTPRequestHandler):
         if length > (MAX_VN_BYTES if ext == 'cbz' else MAX_BYTES):
             raise ApiError(413, 'The file is too large')
         with lock:
-            pending = sum(1 for j in jobs.values() if j['account'] == account and j['state'] in ('queued', 'adding'))
-        if pending >= MAX_PENDING_PER_ACCOUNT:
-            raise ApiError(429, 'Too many books waiting to be added; try again later')
+            pending = len(uploading.get(account, [])) + sum(
+                1 for j in jobs.values() if j['account'] == account and j['state'] in ('queued', 'adding'))
+            if pending >= MAX_PENDING_PER_ACCOUNT:
+                raise ApiError(429, 'Too many books waiting to be added; try again later')
+            reserved = sum(sum(sizes) for sizes in uploading.values())
+            if shutil.disk_usage(queue_dir()).free - reserved - length < MIN_FREE_BYTES:
+                raise ApiError(507, 'Not enough free space on the server')
+            uploading.setdefault(account, []).append(length)
 
         job_id = uuid.uuid4().hex
         file = f'{job_id}.{ext}'
         path = os.path.join(queue_dir(), file)
         remaining = length
-        with open(path, 'wb') as f:
-            while remaining:
-                chunk = self.rfile.read(min(remaining, 1 << 20))
-                if not chunk:
-                    break
-                f.write(chunk)
-                remaining -= len(chunk)
+        try:
+            with open(path, 'wb') as f:
+                while remaining:
+                    chunk = self.rfile.read(min(remaining, 1 << 20))
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    remaining -= len(chunk)
+        except BaseException as error:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+            if isinstance(error, OSError):
+                raise ApiError(507, 'Could not store the file') from error
+            raise
+        finally:
+            with lock:
+                uploading[account].remove(length)
+                if not uploading[account]:
+                    del uploading[account]
         vn = not remaining and ext == 'cbz' and is_vn_zip(path)
         if remaining:
             problem = 'Upload incomplete'

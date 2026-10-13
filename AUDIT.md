@@ -22,7 +22,7 @@ Top 5:
 | A-02 | High | AuthZ / data loss | `nginx-ebook-reader.conf.template:312-319` | Any account can DELETE whole collections in the shared sync folder | Resolved |
 | A-03 | Medium | AuthZ | `nginx-ebook-reader.conf.template:315` | MOVE onto `series.json`/`metadata.json` bypasses the `series` permission | Resolved |
 | A-04 | Medium | DoS / bug | `import/service.py:205`, `:297` | `zlib.error`/`EOFError` from a bad ZIP kills the worker; the queue stalls | Resolved |
-| A-05 | Medium | DoS | `import/service.py:425-447` | No free-space check on import uploads; partial files left on error | Open |
+| A-05 | Medium | DoS | `import/service.py:425-447` | No free-space check on import uploads; partial files left on error | Resolved |
 | A-06 | Medium | Bug | `jiten/service.py:287` | Dictionary upload reads until EOF: hangs, user gets a 504 | Open |
 | A-07 | Medium | Data exposure | `routes/b/+page.svelte:1587,1780`, `browser-handler.ts` | Progress/statistics of one account leak into another on a shared browser | Open |
 | A-08 | Low | Secrets | `account-settings-sync.ts:348-361` | AI keys typed while signed out are adopted by the next account | Open |
