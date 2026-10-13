@@ -16,6 +16,7 @@ Results are written to RESULTS_PATH, which nginx serves as /calibre/difficulty.j
 CLI: service.py serve | compute ID...
 """
 import gzip
+import hmac
 import json
 import os
 import shutil
@@ -55,6 +56,8 @@ KANJI_DIR = os.path.join(STATE_DIR, 'kanji')
 WORKERS = int(os.environ.get('JITEN_WORKERS', os.cpu_count() or 1))
 PORT = int(os.environ.get('JITEN_PORT', '8765'))
 HOST = os.environ.get('JITEN_HOST', '127.0.0.1')
+# Made by the web container; nginx sends it as X-Internal-Token, so only nginx can call this service.
+INTERNAL_TOKEN_FILE = os.environ.get('INTERNAL_TOKEN_FILE', '/data/state/internal-token')
 # Worker processes are replaced after this many books to bound their memory.
 BOOKS_PER_POOL = 300
 
@@ -300,6 +303,16 @@ def install_dictionary(source, length: int) -> int:
             os.remove(upload)
 
 
+def from_nginx(headers) -> bool:
+    """Whether the request carries nginx's internal token (none configured: refuse everything)."""
+    try:
+        with open(INTERNAL_TOKEN_FILE, encoding='ascii') as f:
+            token = f.read().strip()
+    except OSError:
+        return False
+    return bool(token) and hmac.compare_digest(token, headers.get('X-Internal-Token', ''))
+
+
 class Handler(BaseHTTPRequestHandler):
     def _send(self, status, body):
         data = json.dumps(body).encode()
@@ -314,6 +327,8 @@ class Handler(BaseHTTPRequestHandler):
         return self.path.rstrip('/').rsplit('/', 1)[-1]
 
     def do_GET(self):
+        if not from_nginx(self.headers):
+            return self._send(403, {'error': 'Only nginx may call this service'})
         parts = self.path.split('?')[0].strip('/').split('/')
         if parts == ['status']:
             self._send(200, runner.status())
@@ -334,6 +349,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {'error': 'not found'})
 
     def do_POST(self):
+        if not from_nginx(self.headers):
+            return self._send(403, {'error': 'Only nginx may call this service'})
         if self._action() == 'dictionary':
             try:
                 terms = install_dictionary(self.rfile, int(self.headers.get('Content-Length') or 0))

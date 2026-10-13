@@ -28,6 +28,15 @@ for dir in /data /data/sync /data/sync/.tmp /data/accounts /data/accounts/.tmp /
   chown "$PUID:$PGID" "$dir"
 done
 
+# The secret nginx sends the services, so they answer nobody else (their ports are
+# reachable from the host and the other containers). Readable by them, not by others.
+token=/data/state/internal-token
+if [ ! -s "$token" ]; then
+  (umask 077 && head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$token")
+fi
+chown "$PUID:$PGID" "$token"
+chmod 600 "$token"
+
 mkdir -p /etc/nginx/ebook-reader.d
 {
   # Docker's DNS, for the service names in the config.

@@ -208,6 +208,34 @@ class AccountServiceTest(unittest.TestCase):
         self.assertIsNone(service.session_user(token))
         self.assertTrue(service.verify_password('new password', service.find_user('bob')['password_hash'])[0])
 
+    def test_only_nginx_may_call(self):
+        import urllib.error
+        import urllib.request
+        from http.server import ThreadingHTTPServer
+        service.INTERNAL_TOKEN_FILE = os.path.join(self.tmp.name, 'internal-token')
+        server = ThreadingHTTPServer(('127.0.0.1', 0), service.Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        def status(token):
+            request = urllib.request.Request(f'http://127.0.0.1:{server.server_port}/config',
+                                             headers={'X-Internal-Token': token})
+            try:
+                with urllib.request.urlopen(request) as response:
+                    return response.status
+            except urllib.error.HTTPError as error:
+                return error.code
+
+        try:
+            self.assertEqual(status('c0ffee'), 403)  # no token file: refuse everything
+            with open(service.INTERNAL_TOKEN_FILE, 'w') as f:
+                f.write('c0ffee\n')
+            self.assertEqual(status(''), 403)
+            self.assertEqual(status('c0ffe'), 403)
+            self.assertEqual(status('c0ffee'), 200)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_old_database_gets_admin_column(self):
         path = os.path.join(self.tmp.name, 'old.db')
         old = service.sqlite3.connect(path)

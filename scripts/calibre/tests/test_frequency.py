@@ -93,18 +93,26 @@ class KanjiEndpointTest(unittest.TestCase):
         service = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(service)
         service.KANJI_DIR = tempfile.mkdtemp()
+        service.INTERNAL_TOKEN_FILE = os.path.join(service.KANJI_DIR, 'token')
+        with open(service.INTERNAL_TOKEN_FILE, 'w') as f:
+            f.write('c0ffee')
         service.save_kanji(7, '魔法の魔女')
+        def get(url, token='c0ffee'):
+            return urllib.request.urlopen(urllib.request.Request(url, headers={'X-Internal-Token': token}))
         server = ThreadingHTTPServer(('127.0.0.1', 0), service.Handler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:
             base = f'http://127.0.0.1:{server.server_port}'
-            with urllib.request.urlopen(f'{base}/kanji/7') as response:
+            with get(f'{base}/kanji/7') as response:
                 import gzip
                 self.assertEqual(json.loads(gzip.decompress(response.read())), {'魔': 2, '法': 1, '女': 1})
             for path in ('/kanji/8', '/kanji/..%2Fx'):
                 with self.assertRaises(urllib.error.HTTPError) as error:
-                    urllib.request.urlopen(base + path)
+                    get(base + path)
                 self.assertEqual(error.exception.code, 404)
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                get(f'{base}/kanji/7', token='')
+            self.assertEqual(error.exception.code, 403)
         finally:
             server.shutdown()
             server.server_close()

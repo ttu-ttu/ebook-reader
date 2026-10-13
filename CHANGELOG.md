@@ -6,6 +6,13 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Security fixes (AUDIT.md)
+
+- Server: the account, import and difficulty services only answer nginx, which
+  sends them a secret (`X-Internal-Token`) that the web container keeps in
+  `DATA_PATH/state/internal-token`; their ports are no longer an open back door
+  for other processes on the host. Rebuild and restart all containers together.
+
 ### Library
 
 - Home and Store are in the top bar in place of "Library"; the logo opens Home.

@@ -21,6 +21,9 @@ FAKE_BUILDER = os.path.join(STATE, 'builder')
 FAKE_CALIBRE_DEBUG = os.path.join(STATE, 'calibre-debug')
 BUILDS = os.path.join(STATE, 'builds.log')
 ADDS = os.path.join(STATE, 'adds.log')
+TOKEN_FILE = os.path.join(STATE, 'internal-token')
+with open(TOKEN_FILE, 'w') as f:
+    f.write('c0ffee\n')
 
 with open(FAKE_CALIBREDB, 'w') as f:
     f.write(f"""#!{sys.executable}
@@ -55,7 +58,7 @@ os.chmod(FAKE_BUILDER, 0o755)
 os.environ.update(IMPORT_STATE_DIR=os.path.join(STATE, 'state'), CALIBREDB=FAKE_CALIBREDB,
                   CATALOG_BUILDER=FAKE_BUILDER, CALIBRE_LIBRARY=STATE,
                   CALIBRE_DEBUG=FAKE_CALIBRE_DEBUG, CATALOG_OUTPUT=CATALOG, VN_DIR=VN_DIR,
-                  MIN_FREE_MB='0')
+                  MIN_FREE_MB='0', INTERNAL_TOKEN_FILE=TOKEN_FILE)
 
 spec = importlib.util.spec_from_file_location(
     'import_service', os.path.join(os.path.dirname(__file__), '..', 'import', 'service.py'))
@@ -85,8 +88,8 @@ class ImportServiceTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.server.shutdown()
 
-    def request(self, path, body=None, account='acc1', origin=True, scheme='https'):
-        headers = {'Host': 'reader.example', 'X-Forwarded-Proto': scheme}
+    def request(self, path, body=None, account='acc1', origin=True, scheme='https', token='c0ffee'):
+        headers = {'Host': 'reader.example', 'X-Forwarded-Proto': scheme, 'X-Internal-Token': token}
         if account:
             headers['X-Account-Id'] = account
         if origin:
@@ -126,6 +129,11 @@ class ImportServiceTest(unittest.TestCase):
     def test_duplicate(self):
         _, body = self.request('/add?name=a.epub', epub('dup'))
         self.assertEqual(self.wait_for(body['job']['id'])['state'], 'duplicate')
+
+    def test_only_nginx_may_call(self):
+        self.assertEqual(self.request('/jobs?ids=x', token='')[0], 403)
+        self.assertEqual(self.request('/catalog', b'', token='wrong')[0], 403)
+        self.assertEqual(self.request('/jobs?ids=x')[0], 200)
 
     def test_plain_http_only_when_allowed(self):
         self.assertEqual(self.request('/add?name=a.pdf', b'x', scheme='http')[0], 403)

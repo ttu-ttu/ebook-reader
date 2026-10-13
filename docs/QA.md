@@ -110,7 +110,8 @@ Use `$S`.
 
 Direct service tests (bypassing nginx's rate limit) can be sent from inside the
 account container to `http://127.0.0.1:8766/<route>` with headers `Host`,
-`Origin: https://<that host>`, `X-Forwarded-Proto: https`, `X-Real-IP: <any>`.
+`Origin: https://<that host>`, `X-Forwarded-Proto: https`, `X-Real-IP: <any>` and
+`X-Internal-Token: <contents of /data/state/internal-token>` (without it: 403).
 
 ## 6. Accounts (UI)
 

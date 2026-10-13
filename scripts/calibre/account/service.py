@@ -82,6 +82,9 @@ MIN_FREE_BYTES = int(os.environ.get('MIN_FREE_MB', '1024')) * 1024 * 1024
 # Shared with ebook-update on the host: request.json in; status.json, and the
 # installed marker `updater` (holding the GitHub repository), out.
 UPDATE_DIR = os.environ.get('UPDATE_STATE_DIR', '/data/state/update')
+# Made by the web container; nginx sends it as X-Internal-Token, so only nginx can call
+# this service (its port is also reachable from the host and the other containers).
+INTERNAL_TOKEN_FILE = os.environ.get('INTERNAL_TOKEN_FILE', '/data/state/internal-token')
 COMMIT_PATTERN = re.compile(r'[0-9a-f]{7,40}')
 
 # nginx serves DATA_DIR/<account id> with `root`, so files live under the URI path.
@@ -419,6 +422,16 @@ def session_cookie_name(proto: str | None) -> str | None:
     if proto == 'https':
         return COOKIE
     return HTTP_COOKIE if request_scheme(proto) == 'http' else None
+
+
+def from_nginx(headers) -> bool:
+    """Whether the request carries the internal token (none configured: refuse everything)."""
+    try:
+        with open(INTERNAL_TOKEN_FILE, encoding='ascii') as f:
+            token = f.read().strip()
+    except OSError:
+        return False
+    return bool(token) and hmac.compare_digest(token, headers.get('X-Internal-Token', ''))
 
 
 # ---------------------------------------------------------------------------
@@ -774,6 +787,8 @@ class Handler(BaseHTTPRequestHandler):
         route = self.ROUTES.get((method, self.path.split('?')[0].strip('/')))
 
         try:
+            if not from_nginx(self.headers):
+                raise ApiError(403, 'Only nginx may call this service')
             if not route:
                 raise ApiError(404, 'Not found')
             if method == 'POST':

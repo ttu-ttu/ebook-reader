@@ -25,6 +25,7 @@ Job states: queued, adding, added (calibreId, title), duplicate, failed (error).
 Standard library only. Not part of upstream.
 """
 import fcntl
+import hmac
 import json
 import os
 import re
@@ -49,6 +50,8 @@ PORT = int(os.environ.get('IMPORT_PORT', '8767'))
 HOST = os.environ.get('IMPORT_HOST', '127.0.0.1')
 # Same switch as the account service: uploads from plain-HTTP pages too.
 ALLOW_HTTP = os.environ.get('ALLOW_HTTP_ACCOUNTS') == '1'
+# Made by the web container; nginx sends it as X-Internal-Token, so only nginx can call this service.
+INTERNAL_TOKEN_FILE = os.environ.get('INTERNAL_TOKEN_FILE', '/data/state/internal-token')
 
 FORMATS = ('epub', 'htmlz', 'txt', 'cbz', 'zip')
 # Manga: queued as .cbz, since Calibre would unpack a .zip looking for a book inside.
@@ -74,6 +77,16 @@ catalog_busy = threading.Lock()
 lock = threading.Lock()
 work = threading.Condition(lock)
 jobs: dict[str, dict] = {}
+
+
+def from_nginx(headers) -> bool:
+    """Whether the request carries nginx's internal token (none configured: refuse everything)."""
+    try:
+        with open(INTERNAL_TOKEN_FILE, encoding='ascii') as f:
+            token = f.read().strip()
+    except OSError:
+        return False
+    return bool(token) and hmac.compare_digest(token, headers.get('X-Internal-Token', ''))
 
 
 def queue_dir():
@@ -372,6 +385,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):  # noqa: N802
         url = urlparse(self.path)
+        if not from_nginx(self.headers):
+            return self.send(403, {'error': 'Only nginx may call this service'})
         if url.path != '/jobs':
             return self.send(404, {'error': 'not found'})
 
@@ -385,6 +400,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802
         url = urlparse(self.path)
+        if not from_nginx(self.headers):
+            return self.send(403, {'error': 'Only nginx may call this service'})
         if url.path == '/add':
             return self.handle_api(lambda: self.add(url))
         if url.path == '/series':

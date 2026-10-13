@@ -91,6 +91,7 @@ server {
     auth_request /_account_difficulty_writes;
     rewrite ^/calibre/difficulty/api/(.*)$ /$1 break;
     proxy_pass http://$difficulty_upstream;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_http_version 1.1;
     # The frequency list upload (jiten_freq_global.zip, about 8 MB).
     client_max_body_size 64m;
@@ -102,6 +103,7 @@ server {
     auth_request_set $account_id $upstream_http_x_account_id;
     rewrite ^/calibre/import/api/(.*)$ /$1 break;
     proxy_pass http://$import_upstream;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Account-Id $account_id;
@@ -118,6 +120,7 @@ server {
     auth_request /_account_admin;
     auth_request_set $account_id $upstream_http_x_account_id;
     proxy_pass http://$import_upstream/catalog;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Account-Id $account_id;
@@ -131,6 +134,7 @@ server {
     auth_request /_account_admin;
     auth_request_set $account_id $upstream_http_x_account_id;
     proxy_pass http://$import_upstream/series;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Account-Id $account_id;
@@ -144,6 +148,7 @@ server {
   location /account/api/ {
     rewrite ^/account/api/(.*)$ /$1 break;
     proxy_pass http://$account_upstream;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -155,6 +160,7 @@ server {
     limit_req zone=account_login burst=5 nodelay;
     limit_req_status 429;
     proxy_pass http://$account_upstream/login;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -168,6 +174,7 @@ server {
   location = /_account_auth {
     internal;
     proxy_pass http://$account_upstream/auth;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
@@ -178,6 +185,7 @@ server {
   location = /_account_admin {
     internal;
     proxy_pass http://$account_upstream/auth/admin;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
@@ -187,6 +195,7 @@ server {
   location = /_account_series {
     internal;
     proxy_pass http://$account_upstream/auth/series;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
@@ -196,6 +205,7 @@ server {
   location = /_account_import {
     internal;
     proxy_pass http://$account_upstream/auth/import;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
@@ -207,6 +217,7 @@ server {
   location = /_account_shared {
     internal;
     proxy_pass http://$account_upstream/auth/shared/writes;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
@@ -220,6 +231,7 @@ server {
   location = /_account_series_writes {
     internal;
     proxy_pass http://$account_upstream/auth/series/writes;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
@@ -232,6 +244,7 @@ server {
   location = /_account_difficulty_writes {
     internal;
     proxy_pass http://$account_upstream/auth/difficulty/writes;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
     proxy_set_header X-Forwarded-Proto $forwarded_proto;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";

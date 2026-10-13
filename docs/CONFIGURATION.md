@@ -88,6 +88,7 @@ code are the same container paths.
 | `CALIBRE_WRITE_LOCK`  | `/data/state/import/calibre-write.lock`    | import, `assign-series.py` |
 | `CALIBRE_BACKUP_DIR`  | `/data/state/import/backups` (last 5 `metadata.db` copies) | `assign-series.py --apply` |
 | `CALIBRE_DEBUG`, `ASSIGN_SERIES` | `calibre-debug`, `/app/assign-series.py` | import (admin panel → Tools → Series) |
+| `INTERNAL_TOKEN_FILE` | `/data/state/internal-token` (made by the web container) | web (nginx sends it), account, import, difficulty (only answer requests carrying it) |
 | `UPDATE_STATE_DIR`    | `/data/state/update` (`request.json`, `status.json`, `updater`) | account, `ebook-update` on the host |
 | `CALIBRE_CATALOG`     | `/data/state/catalog/catalog.json`         | difficulty |
 | `JITEN_STATE_DIR`     | `/data/state/difficulty` (results, `frequency-dictionary.zip`) | difficulty |
