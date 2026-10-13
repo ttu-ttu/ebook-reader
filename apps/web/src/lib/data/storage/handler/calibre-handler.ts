@@ -29,19 +29,25 @@ import {
 } from '$lib/data/calibre';
 import { ApiStorageHandler, type RequestOptions } from '$lib/data/storage/handler/api-handler';
 import { BaseStorageHandler, type ExternalFile } from '$lib/data/storage/handler/base-handler';
+import { BrowserStorageHandler } from '$lib/data/storage/handler/browser-handler';
 import type { BooksDbBookData } from '$lib/data/database/books-db/versions/books-db';
-import { getStorageHandler } from '$lib/data/storage/storage-handler-factory';
 import { StorageKey, StorageSourceDefault } from '$lib/data/storage/storage-types';
 import { applySeriesOverride, loadSeriesOverrides } from '$lib/data/series-overrides';
 import { applyMetadata, loadBookMetadata } from '$lib/data/book-metadata';
-import { database } from '$lib/data/store';
+import {
+  database,
+  libraryOffline$,
+  readingGoalsMergeMode$,
+  statisticsMergeMode$
+} from '$lib/data/store';
 import { storage } from '$lib/data/window/navigator/storage';
 import loadEpub from '$lib/functions/file-loaders/epub/load-epub';
 import loadHtmlz from '$lib/functions/file-loaders/htmlz/load-htmlz';
 import loadTxt from '$lib/functions/file-loaders/txt/load-txt';
 import loadCbz from '$lib/functions/file-loaders/cbz/load-cbz';
 import { loadVnFolder } from '$lib/functions/file-loaders/vn/load-vn';
-import { deleteOrphanVnCaches } from '$lib/data/vn';
+import { deleteOrphanVnCaches, isVn } from '$lib/data/vn';
+import { isManga } from '$lib/data/manga';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import pLimit from 'p-limit';
 
@@ -62,6 +68,11 @@ function unauthorizedError() {
     ),
     { status: 401 }
   );
+}
+
+/** Bookmark progress as a fraction; old bookmarks store a percentage string like "42.5%". */
+function bookmarkFraction(progress: number | string | undefined) {
+  return typeof progress === 'string' ? Number.parseFloat(progress) / 100 || 0 : progress || 0;
 }
 
 function filesIn(folderId: string, entries: DirectoryEntry[] = []): ExternalFile[] {
@@ -179,6 +190,7 @@ export class CalibreStorageHandler extends ApiStorageHandler {
         }
 
         this.dataListFetched = true;
+        libraryOffline$.next(false);
         // Only after the catalog loaded: a failed or signed-out load must not drop kept games.
         deleteOrphanVnCaches(catalogTitles).catch(() => {});
       } catch (error) {
@@ -187,6 +199,13 @@ export class CalibreStorageHandler extends ApiStorageHandler {
         // sign in (manage page), not a failure that switches the source to the browser.
         if (!currentAccount() && (error as { status?: number }).status === 401) {
           return [];
+        }
+
+        // fetch rejects with a TypeError when the server can't be reached (offline, or
+        // away from its network): list the books this browser has, so they stay readable.
+        if (error instanceof TypeError) {
+          libraryOffline$.next(true);
+          return this.cachedBookList();
         }
 
         throw error;
@@ -202,6 +221,29 @@ export class CalibreStorageHandler extends ApiStorageHandler {
     return [...this.titleToBookCard.values()].map((card) =>
       applySeriesOverride(applyMetadata(card, metadata), overrides)
     );
+  }
+
+  /** Books from this source processed and stored in the browser, with their local progress. */
+  private async cachedBookList(): Promise<BookCardProps[]> {
+    const db = await database.db;
+    const [data, bookmarks] = await Promise.all([db.getAll('data'), db.getAll('bookmark')]);
+    const progress = new Map(bookmarks.map((bookmark) => [bookmark.dataId, bookmark]));
+
+    return data
+      .filter(
+        (book) => book.storageSource === StorageSourceDefault.CALIBRE_DEFAULT && book.elementHtml
+      )
+      .map((book) => ({
+        ...this.createBookCard(book.title),
+        imagePath: book.coverImage || '',
+        characters: BaseStorageHandler.getBookCharacters(book.characters || 0, book.sections || []),
+        lastBookModified: book.lastBookModified || 0,
+        lastBookOpen: book.lastBookOpen || 0,
+        progress: bookmarkFraction(progress.get(book.id)?.progress),
+        lastBookmarkModified: progress.get(book.id)?.lastBookmarkModified || 0,
+        manga: isManga(book),
+        vn: isVn(book)
+      }));
   }
 
   async prepareBookForReading() {
@@ -416,13 +458,16 @@ export class CalibreStorageHandler extends ApiStorageHandler {
   }
 
   private async saveLocally(book: Omit<BooksDbBookData, 'id'>, cover?: Blob) {
-    const browserHandler = getStorageHandler(
+    // Own instance: the shared one holds the context of the book being read, and books
+    // are also processed in the background (offline-books.ts).
+    const browserHandler = new BrowserStorageHandler(this.window, StorageKey.BROWSER);
+
+    browserHandler.updateSettings(
       this.window,
-      StorageKey.BROWSER,
-      undefined,
       true,
-      this.cacheStorageData,
-      ReplicationSaveBehavior.Overwrite
+      ReplicationSaveBehavior.Overwrite,
+      statisticsMergeMode$.getValue(),
+      readingGoalsMergeMode$.getValue()
     );
 
     browserHandler.startContext({ title: book.title, imagePath: cover || '' });

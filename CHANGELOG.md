@@ -10,6 +10,14 @@ anything a reader or a server operator would notice.
 
 - A page left open across an update reloads itself once when it can no longer load parts
   of the old version, instead of showing a network error until a hard reload.
+- Offline, or away from the server's network: the library lists the books already
+  downloaded to the browser (with a note and a retry link, retried by itself when the
+  connection returns) instead of an error and an empty library, and those books open
+  from the browser copy instead of failing to load. Progress made meanwhile uploads
+  once the server can be reached again.
+- Books on Home (My books and Continue reading, not visual novels) are downloaded to the
+  browser in the background while the library is open, so they can be read offline
+  without opening them first.
 
 ### Visual novels
 

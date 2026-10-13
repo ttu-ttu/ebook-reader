@@ -351,7 +351,16 @@
         bookData.lastBookOpen = new Date().getTime();
 
         await localStorageHandler.updateLastRead(bookData);
-        await syncDownData(externalStorageHandler, currentContext);
+
+        try {
+          await syncDownData(externalStorageHandler, currentContext);
+          bookData = await saveExternalLastRead(externalStorageHandler, bookData);
+        } catch (error: any) {
+          // Reading works offline from the browser copy; progress syncs on the next save.
+          if (!bookData.elementHtml) throw error;
+
+          logger.warn(`Sync failed, reading the copy in this browser: ${error.message}`);
+        }
 
         if (!$statisticsEnabled$) {
           const wasNew = (
@@ -362,8 +371,6 @@
             scheduleReplication(StorageDataType.STATISTICS);
           }
         }
-
-        bookData = await saveExternalLastRead(externalStorageHandler, bookData);
 
         // A synced book not cached here yet only gets its data above.
         if (isManga(bookData) || isVn(bookData)) {
@@ -2584,6 +2591,7 @@
 
 <svelte:window
   on:keydown={onKeydown}
+  on:online={() => !blockDataUpdates && executeReplicate$.next()}
   on:beforeunload={handleUnload}
   on:pagehide={() => isTrackerPaused$.next(true)}
   on:resize={() => {

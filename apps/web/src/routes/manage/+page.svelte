@@ -30,12 +30,14 @@
   import {
     addToHome,
     homeBookTitles$,
+    homeRemovedTitles$,
     libraryTab$,
     matchingSeries,
     removeFromHome,
     seriesGroups,
     storeView$
   } from '$lib/data/library-home';
+  import { homeOfflineTitles, keepBooksOffline } from '$lib/data/offline-books';
   import { deleteVnCache } from '$lib/data/vn';
   import DifficultyDialog from '$lib/components/book-card/difficulty-dialog.svelte';
   import {
@@ -89,6 +91,7 @@
     hideExternalReadHint$,
     isOnline$,
     keepLocalStatisticsOnDeletion$,
+    libraryOffline$,
     libraryDisplayMode$,
     lastExportedTarget$,
     lastExportedTypes$,
@@ -205,6 +208,14 @@
     }
     $storeView$ = view;
   }
+  $: if ($bookCards$ && !isLoading && $storageSource$ === StorageKey.CALIBRE) {
+    if ($isOnline$ && !$libraryOffline$) {
+      keepBooksOffline(
+        window,
+        homeOfflineTitles($bookCards$, $homeBookTitles$, $homeRemovedTitles$)
+      );
+    }
+  }
   $: homeCards = (() => {
     const byTitle = new Map(($bookCards$ ?? []).map((card) => [card.title, card]));
 
@@ -221,6 +232,12 @@
   }
 
   onDestroy(() => dialogManager.dialogs$.next([]));
+
+  function retryLibrary() {
+    if ($libraryOffline$) {
+      database.dataListChanged$.next(getStorageHandler(window, $storageSource$, ''));
+    }
+  }
 
   function bookmarkToProgress(b: BooksDbBookmarkData | undefined) {
     return b?.progress
@@ -1043,6 +1060,8 @@
   }
 </script>
 
+<svelte:window on:online={retryLibrary} />
+
 <svelte:head>
   <title>{formatPageTitle('Book Manager')}</title>
 </svelte:head>
@@ -1253,6 +1272,13 @@
         </div>
       {/if}
 
+      {#if $libraryOffline$ && $storageSource$ === StorageKey.CALIBRE && !isLoading}
+        <p class="pb-4 text-center text-xs font-semibold text-[color:var(--app-muted-fg)]">
+          The server can't be reached: showing the books downloaded to this browser. Progress syncs
+          once it's back ·
+          <button type="button" class="underline" on:click={retryLibrary}>retry</button>
+        </p>
+      {/if}
       {#if isLoading}
         <LibrarySkeleton mode={$libraryDisplayMode$} />
       {:else if $bookCards$.length && isHome}

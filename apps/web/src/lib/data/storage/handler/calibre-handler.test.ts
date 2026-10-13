@@ -6,6 +6,7 @@
 
 import 'fake-indexeddb/auto';
 import { describe, expect, it, vi } from 'vitest';
+import { StorageSourceDefault } from '$lib/data/storage/storage-types';
 
 const account = vi.hoisted(() => ({ user: null as { id: string; username: string } | null }));
 
@@ -126,6 +127,35 @@ describe('CalibreStorageHandler sync errors', () => {
 
     account.user = { id: 'a', username: 'a' };
     await expect(new CalibreStorageHandler(window).getBookList()).rejects.toThrow();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('CalibreStorageHandler offline', () => {
+  it("lists this source's cached books when the server can't be reached", async () => {
+    const { database, libraryOffline$ } = await import('$lib/data/store');
+    const db = await database.db;
+    const book = { styleSheet: '', blobs: {}, coverImage: '', hasThumb: false, sections: [] };
+    const id = await db.add('data', {
+      ...book,
+      title: '手元',
+      elementHtml: '<p>本</p>',
+      characters: 3,
+      storageSource: StorageSourceDefault.CALIBRE_DEFAULT
+    } as any);
+
+    await db.add('data', { ...book, title: '他', elementHtml: '<p>x</p>', characters: 1 } as any);
+    await db.add('bookmark', { dataId: id, progress: '42.5%', lastBookmarkModified: 7 } as any);
+    vi.stubGlobal('fetch', async () => {
+      throw new TypeError('Failed to fetch');
+    });
+
+    const cards = await new CalibreStorageHandler(window).getBookList();
+
+    expect(cards.map((card) => [card.title, card.progress, card.lastBookmarkModified])).toEqual([
+      ['手元', 0.425, 7]
+    ]);
+    expect(libraryOffline$.getValue()).toBe(true);
     vi.unstubAllGlobals();
   });
 });
