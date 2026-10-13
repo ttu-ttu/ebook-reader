@@ -46,10 +46,10 @@ describe('vn', () => {
     expect(decodeText(sjis('82a08140'), 'sjis')).toBe('あ　');
   });
 
-  it('counts the text lines of a script, not its commands or readings', () => {
-    const script = '*start\nbg "a.png",1\n吾輩は(猫/ねこ)である。@\n[名前]「はい」\\\n;コメント';
+  it('counts the text lines of a script, not its commands, readings or name tags', () => {
+    const script = '*start\nbg "a.png",1\n吾輩は(猫/ねこ)である。@\n[名前|voice/v1.ogg]「#ffffff!z125はい!z100」\\\n;コメント';
 
-    expect(scriptCharacters(script)).toBe('吾輩は猫である名前はい'.length);
+    expect(scriptCharacters(script)).toBe('吾輩は猫であるはい'.length);
   });
 
   it('splits ruby out of a page', () => {

@@ -15,6 +15,10 @@ anything a reader or a server operator would notice.
 
 - Game files kept in the browser for games no longer in the library (removed from the
   server's folder, or deleted on another device) are deleted when the library loads.
+- A game's length and difficulty estimate no longer count the name and voice tags at the
+  start of lines (`[name|voice/v123.ogg]`) or colour and text size codes; voiced games
+  were counted up to half again too long. Games processed before keep their old length
+  until processed again; estimate them again for the difficulty.
 
 ## v3.3.0 (2026-10-13)
 

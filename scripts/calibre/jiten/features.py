@@ -233,13 +233,14 @@ def book_text(path: str, fmt: str, ruby: dict | None = None) -> str:
 _VN_SCRIPT = re.compile(r'^(?:\d+\.txt|nscript\.dat)$', re.I)
 _VN_RUBY = re.compile(r'\(([^/)]*)/([^)]*)\)')
 # Waits, colours and line ends inside ONScripter text lines.
-_VN_CONTROL = re.compile(r'!(?:sd|[sdw]\d+)|#[0-9a-fA-F]{6}|[@\\/]')
+_VN_CONTROL = re.compile(r'^\s*\[[^\]]*\]|!(?:sd|[sdwz]\d+)|#[0-9a-fA-F]{6}|[@\\/]')
 
 
 def vn_text(path: str, ruby: dict | None = None) -> str:
     """Text lines of an ONScripter game (its folder, or a ZIP holding one): numbered .txt
     scripts or nscript.dat (XORed with 0x84). Like the reader's scriptCharacters, a text
-    line starts with a non-ASCII character or a name tag; ruby is (base/reading).
+    line starts with a non-ASCII character or a name tag (left out, `[name|voice]`);
+    ruby is (base/reading).
     Encrypted scripts (nscr_sec.dat…) give no text."""
     archive = None
     if os.path.isdir(path):

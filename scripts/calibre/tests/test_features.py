@@ -61,19 +61,19 @@ class BookTextTest(unittest.TestCase):
         self.assertEqual(ruby, {'ruby': 2, 'kanji': 3})
 
     def test_vn_script_in_folder_and_zip(self):
-        script = '*start\nbg "a.png",1\n[太郎]「(本気/マジ)だ!w500」@\n　吾輩は#ffffff猫である。\\\nend\n'
+        script = '*start\nbg "a.png",1\n[太郎|voice/v1.ogg]「(本気/マジ)だ!w500」@\n　吾輩は#ffffff猫である。\\\nend\n'
         folder = tempfile.mkdtemp()
         with open(os.path.join(folder, 'nscript.dat'), 'wb') as f:
             f.write(bytes(b ^ 0x84 for b in script.encode('cp932')))
         ruby = {}
-        self.assertEqual(vn_text(folder, ruby), '[太郎]「本気だ」\n吾輩は猫である。')
+        self.assertEqual(vn_text(folder, ruby), '「本気だ」\n吾輩は猫である。')
         self.assertEqual(ruby, {'ruby': 1, 'kanji': 2, 'katakana': 1})
         path = os.path.join(tempfile.mkdtemp(), 'game.zip')
         with zipfile.ZipFile(path, 'w') as archive:
             archive.writestr('Game/1.txt', '二行目\n'.encode())
             archive.writestr('Game/0.txt', script.encode())
             archive.writestr('Game/sub/0.txt', '無視\n'.encode())
-        self.assertEqual(vn_text(path), '[太郎]「本気だ」\n吾輩は猫である。\n二行目')
+        self.assertEqual(vn_text(path), '「本気だ」\n吾輩は猫である。\n二行目')
 
 
 class FeatureTest(unittest.TestCase):

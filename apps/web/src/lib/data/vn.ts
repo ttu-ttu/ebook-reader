@@ -158,7 +158,8 @@ export function isScriptPath(path: string) {
 
 /**
  * Characters in the script's text lines: lines starting with a non-ASCII character or a
- * name tag, as commands start with ASCII.
+ * name tag, as commands start with ASCII. The name tag itself (`[name|voice/file.ogg]`) and
+ * colour and text size codes are left out.
  * shortcut: counts choices and Japanese string arguments too, fine for a progress bar;
  * use the engine's own parser if exact counts are needed.
  */
@@ -166,6 +167,7 @@ export function scriptCharacters(script: string) {
   return script
     .split(/\r?\n/)
     .filter((line) => /^\s*(?:\P{ASCII}|\[)/u.test(line))
+    .map((line) => line.replace(/^\s*\[[^\]]*\]/, '').replace(/#[0-9a-f]{6}|!(?:sd|[sdwz]\d+)/gi, ''))
     .reduce((sum, line) => sum + countTextCharacters(pageText(line)), 0);
 }
 
