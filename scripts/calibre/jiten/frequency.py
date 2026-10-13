@@ -5,20 +5,28 @@ JmDictWordFrequencies / WordFormFrequencies. Not upstream.
 import json
 import zipfile
 
+# Jiten's list is one 55 MB bank; anything far bigger is likely a deflate bomb.
+MAX_MEMBER_BYTES = 128 * 1024 * 1024
 # Share of all word occurrences at rank 1 (の is about 6.5%); shares fall off as 1/rank (Zipf).
 TOP_SHARE = 0.065
+
+
+def _read(archive: zipfile.ZipFile, name: str) -> bytes:
+    if archive.getinfo(name).file_size > MAX_MEMBER_BYTES:
+        raise ValueError(f'{name} is too large')
+    return archive.read(name)
 
 
 def _yomitan_entries(path: str):
     """(term, reading or None, rank) from a rank-based Yomitan frequency dictionary."""
     with zipfile.ZipFile(path) as archive:
-        index = json.loads(archive.read('index.json'))
+        index = json.loads(_read(archive, 'index.json'))
         if index.get('frequencyMode') != 'rank-based':
             raise ValueError(f"{path}: not a rank-based frequency dictionary")
         for name in archive.namelist():
             if not name.startswith('term_meta_bank'):
                 continue
-            for term, kind, data in json.loads(archive.read(name)):
+            for term, kind, data in json.loads(_read(archive, name)):
                 # data: a number, {value, displayValue}, or {reading, frequency: number | {value}}
                 frequency = data.get('frequency', data) if isinstance(data, dict) else data
                 value = frequency.get('value') if isinstance(frequency, dict) else frequency

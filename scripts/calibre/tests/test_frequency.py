@@ -74,6 +74,16 @@ class InstallDictionaryTest(unittest.TestCase):
             self.assertEqual(self.install(f.read()), 5)
         self.assertTrue(os.path.exists(self.service.FREQUENCY_DICTIONARY))
 
+    def test_rejects_oversized_members(self):
+        import frequency
+        limit = frequency.MAX_MEMBER_BYTES
+        frequency.MAX_MEMBER_BYTES = 100  # the term bank is bigger
+        try:
+            with open(dictionary(), 'rb') as f, self.assertRaises(ValueError):
+                self.install(f.read())
+        finally:
+            frequency.MAX_MEMBER_BYTES = limit
+
     def test_rejects_other_files_and_keeps_the_current_one(self):
         for data in (b'not a zip', open(dictionary('occurrence-based'), 'rb').read()):
             with self.assertRaises(ValueError):

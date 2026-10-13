@@ -193,6 +193,8 @@ def is_valid_book(file_path: str, fmt: str) -> bool:
 
 
 MAX_COVER_BYTES = 20 * 1024 * 1024
+# Container, package and page files are small; a bigger one is likely a deflate bomb.
+MAX_PAGE_BYTES = 16 * 1024 * 1024
 FIRST_PAGES_TO_CHECK = 3
 # Bump when cover detection improves, so books remembered as coverless are retried.
 COVER_EXTRACTOR_VERSION = 3
@@ -202,11 +204,17 @@ CONTAINER_NS = '{urn:oasis:names:tc:opendocument:xmlns:container}'
 IMAGE_SRC = re.compile(r'''(?:src|xlink:href|href)\s*=\s*["']([^"']+\.(?:jpe?g|png|gif|webp))["']''', re.I)
 
 
+def read_page(epub: zipfile.ZipFile, name: str) -> bytes:
+    if epub.getinfo(name).file_size > MAX_PAGE_BYTES:
+        raise ValueError(f'{name} is too large')
+    return epub.read(name)
+
+
 def epub_cover_name(epub: zipfile.ZipFile) -> str | None:
     """Like cover_candidate, but follows SVG/XHTML cover pages to the image they show."""
     name = cover_candidate(epub)
     if name and name.lower().endswith(('.svg', '.xhtml', '.html', '.htm')) and name in epub.namelist():
-        match = IMAGE_SRC.search(epub.read(name).decode('utf-8', 'replace'))
+        match = IMAGE_SRC.search(read_page(epub, name).decode('utf-8', 'replace'))
         name = posixpath.normpath(posixpath.join(posixpath.dirname(name), unquote(match.group(1)))) \
             if match else None
     return name
@@ -217,11 +225,11 @@ def cover_candidate(epub: zipfile.ZipFile) -> str | None:
     the first image of the guide's cover page, an image item named like a cover,
     the first image on the first pages, or else the first image in the manifest."""
     if 'META-INF/container.xml' in epub.namelist():
-        container = ElementTree.fromstring(epub.read('META-INF/container.xml'))
+        container = ElementTree.fromstring(read_page(epub, 'META-INF/container.xml'))
         opf_name = container.find(f'.//{CONTAINER_NS}rootfile').get('full-path')
     else:  # Some converters leave it out; the package file is still there.
         opf_name = next(name for name in epub.namelist() if name.lower().endswith('.opf'))
-    opf = ElementTree.fromstring(epub.read(opf_name))
+    opf = ElementTree.fromstring(read_page(epub, opf_name))
 
     def resolve(base: str, href: str) -> str:
         return posixpath.normpath(posixpath.join(posixpath.dirname(base), unquote(href.split('#')[0])))
@@ -242,7 +250,7 @@ def cover_candidate(epub: zipfile.ZipFile) -> str | None:
     def first_image_on(page_name: str) -> str | None:
         if page_name not in epub.namelist():
             return None
-        match = IMAGE_SRC.search(epub.read(page_name).decode('utf-8', 'replace'))
+        match = IMAGE_SRC.search(read_page(epub, page_name).decode('utf-8', 'replace'))
         return resolve(page_name, match.group(1)) if match else None
 
     reference = next((r for r in opf.iter(f'{OPF_NS}reference') if r.get('type') == 'cover'), None)

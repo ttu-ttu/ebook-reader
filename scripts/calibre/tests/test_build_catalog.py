@@ -82,6 +82,16 @@ class CoverTest(unittest.TestCase):
             <item id="b" href="b.png" media-type="image/png"/>'''))
         self.assertEqual(catalog.epub_cover_name(epub), 'OEBPS/b.png')
 
+    def test_oversized_pages_are_not_read(self):
+        epub = make_epub({}, OPF.format(meta='', spine='', items='<item id="c" href="c.jpg" media-type="image/jpeg"/>'))
+        limit = catalog.MAX_PAGE_BYTES
+        catalog.MAX_PAGE_BYTES = 100  # the OPF is bigger
+        try:
+            with self.assertRaises(ValueError):
+                catalog.epub_cover_name(epub)
+        finally:
+            catalog.MAX_PAGE_BYTES = limit
+
     def test_first_page_image(self):
         epub = make_epub(
             {'OEBPS/text/p1.xhtml': '<html><body><img src="../img/front.jpg"/></body></html>'},
