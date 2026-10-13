@@ -12,7 +12,6 @@
 # absolute, for updates from the admin panel). Images are built there; the
 # running stack is only replaced if every image builds, and the previous images
 # stay tagged :previous.
-# Restarting the stack stops a running difficulty job.
 set -euo pipefail
 
 REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"

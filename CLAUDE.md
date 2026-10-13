@@ -130,5 +130,4 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
 
 After deploying, check that the pages load (`/`, `/manage`, `/settings`, `/version.txt`) over HTTP and HTTPS, and that `/version.txt` shows the commit.
 `pnpm check` has pre-existing errors (e.g. `PasswordCredential`, `on:swipe`); only new ones matter.
-Restarting the stack stops a running difficulty job: check `/calibre/difficulty/api/status` first.
 For UI changes, verify the relevant route in a browser if possible. Reader changes need an actual book loaded, which is stored per browser.

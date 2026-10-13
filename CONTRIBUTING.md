@@ -58,8 +58,6 @@ python3 -m unittest discover -s scripts/calibre/tests
 ```
 
 Run the whole thing: `docker compose up -d --build` (see `docs/INSTALL.md`).
-Restarting the stack stops a running difficulty job; check
-`/calibre/difficulty/api/status` first.
 
 ## CI and releases
 

@@ -350,8 +350,7 @@ On a spare machine or VM, following [INSTALL.md](INSTALL.md):
   positions) are not synced.
 - AI API keys are stored in plain text in the account's folder on the server.
 - Signed-out readers on a trusted network can change shared book data.
-- A deploy restarts the stack: a few seconds without service, and a running
-  difficulty job stops.
+- A deploy restarts the stack: a few seconds without service.
 
 ## 20. Reporting
 
