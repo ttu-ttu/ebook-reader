@@ -4,8 +4,9 @@
  * All rights reserved.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  deleteOrphanVnCaches,
   decodeScript,
   decodeText,
   detectEncoding,
@@ -100,5 +101,18 @@ describe('vn', () => {
       { text: '吾猫', x: 10, y: 20, size: 24, pitch: 26 },
       { text: 'あ', x: 10, y: 50, size: 24, pitch: 24 }
     ]);
+  });
+
+  it('deletes kept game files only for games no longer in the library', async () => {
+    const deleted: string[] = [];
+
+    vi.stubGlobal('caches', {
+      keys: async () => ['ttu-vn:ゲーム', 'ttu-vn:消えたゲーム', 'other:1'],
+      delete: async (name: string) => deleted.push(name)
+    });
+    await deleteOrphanVnCaches(new Set(['ゲーム']));
+    vi.unstubAllGlobals();
+
+    expect(deleted).toEqual(['ttu-vn:消えたゲーム']);
   });
 });

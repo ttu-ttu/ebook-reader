@@ -6,6 +6,11 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Visual novels
+
+- Game files kept in the browser for games no longer in the library (removed from the
+  server's folder, or deleted on another device) are deleted when the library loads.
+
 ## v3.3.0 (2026-10-13)
 
 ### Setup

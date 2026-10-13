@@ -48,9 +48,25 @@ export interface VnRead {
 
 export type VnLine = { text: string; ruby?: string }[];
 
+const vnCachePrefix = 'ttu-vn:';
+
 /** Cache API cache keeping a server game's files in this browser (the /v page asks first). */
 export function vnCacheName(title: string) {
-  return `ttu-vn:${title}`;
+  return `${vnCachePrefix}${title}`;
+}
+
+/** Frees kept files of games no longer in the library (removed from the server or elsewhere). */
+export async function deleteOrphanVnCaches(titles: Set<string>) {
+  if (!('caches' in window)) return;
+
+  const names = await caches.keys();
+
+  await Promise.all(
+    names
+      .filter((name) => name.startsWith(vnCachePrefix))
+      .filter((name) => !titles.has(name.slice(vnCachePrefix.length)))
+      .map((name) => caches.delete(name))
+  );
 }
 
 /** Frees a game's kept files, e.g. when it leaves the library or Home. */

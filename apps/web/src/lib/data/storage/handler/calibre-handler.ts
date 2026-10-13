@@ -41,6 +41,7 @@ import loadHtmlz from '$lib/functions/file-loaders/htmlz/load-htmlz';
 import loadTxt from '$lib/functions/file-loaders/txt/load-txt';
 import loadCbz from '$lib/functions/file-loaders/cbz/load-cbz';
 import { loadVnFolder } from '$lib/functions/file-loaders/vn/load-vn';
+import { deleteOrphanVnCaches } from '$lib/data/vn';
 import { ReplicationSaveBehavior } from '$lib/functions/replication/replication-options';
 import pLimit from 'p-limit';
 
@@ -178,6 +179,8 @@ export class CalibreStorageHandler extends ApiStorageHandler {
         }
 
         this.dataListFetched = true;
+        // Only after the catalog loaded: a failed or signed-out load must not drop kept games.
+        deleteOrphanVnCaches(catalogTitles).catch(() => {});
       } catch (error) {
         this.clearData();
         // Signed out where the library needs an account: an empty library that asks to
