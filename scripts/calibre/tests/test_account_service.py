@@ -148,6 +148,22 @@ class AccountServiceTest(unittest.TestCase):
         self.assertTrue(allowed('PUT', '/calibre/sync/%E6%9C%AC/progress_1.json', None))
         self.assertTrue(allowed('DELETE', '/calibre/catalog.json', None))  # not this location
 
+    def test_shared_moves_only_rename_within_a_folder(self):
+        allowed = service.shared_write_allowed
+        source = '/calibre/sync/%E6%9C%AC/progress_1.json'
+        self.assertTrue(allowed('MOVE', source, 'https://h/calibre/sync/%E6%9C%AC/progress_2.json'))
+        self.assertTrue(allowed('MOVE', '/calibre/sync/goals_1.json', 'https://h/calibre/sync/goals_2.json'))
+        for destination in (None, '',
+                            'https://h/calibre/sync/series.json', 'https://h/calibre/sync/series.json?',
+                            'https://h/calibre/sync/%73eries.json', 'https://h/calibre/sync/metadata.json#',
+                            'https://h/calibre/sync/other/progress_2.json', 'https://h/calibre/sync/x.json',
+                            'https://h/abcdefghijklmseries.json', 'https://h/calibre/sync/%E6%9C%AC/../x.json',
+                            'https://h/calibre/sync/%E6%9C%AC/progress_2.json?'):
+            self.assertFalse(allowed('MOVE', source, destination), destination)
+        self.assertFalse(allowed('MOVE', '/calibre/sync/x.json', 'https://h/calibre/sync/series.json?'))
+        self.assertFalse(allowed('MOVE', '/calibre/sync/x.json', 'https://h/calibre/sync/metadata.json'))
+        self.assertFalse(allowed('MOVE', '/calibre/sync/%E6%9C%AC/', 'https://h/calibre/sync/other/'))
+
     def test_plain_http_is_off_by_default(self):
         self.assertFalse(service.ALLOW_HTTP)
         self.assertEqual(service.request_scheme('https'), 'https')

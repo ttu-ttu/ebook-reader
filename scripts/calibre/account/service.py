@@ -413,7 +413,9 @@ def uri_path(uri: str) -> str:
 
 def shared_write_allowed(method: str, uri: str, destination: str | None) -> bool:
     """What the shared sync folder's location refuses on top of auth_status: nginx's upload
-    folder (.tmp), and writes to the folder itself (a DELETE would remove every book's data)."""
+    folder (.tmp), writes to the folder itself (a DELETE would remove every book's data), and
+    MOVEs other than renaming a file within its folder (the client's only use). A MOVE must not
+    land on series.json or metadata.json, which need the series permission."""
     path = uri_path(uri)
     if not (path + '/').startswith(SHARED_SYNC_URI + '/'):
         return True
@@ -421,7 +423,17 @@ def shared_write_allowed(method: str, uri: str, destination: str | None) -> bool
         return False
     if method in READ_METHODS:
         return True
-    return path != SHARED_SYNC_URI
+    if path == SHARED_SYNC_URI:
+        return False
+    if method != 'MOVE':
+        return True
+    # nginx drops a ?query from the destination, so 'series.json?' would land on series.json.
+    if not destination or '?' in destination or '#' in destination or urllib.parse.urlsplit(uri).path.endswith('/'):
+        return False
+    target = uri_path(destination)
+    folder = posixpath.dirname(target)
+    return folder == posixpath.dirname(path) and not (
+        folder == SHARED_SYNC_URI and posixpath.basename(target) in ('series.json', 'metadata.json'))
 
 
 def disk_full(path: str) -> bool:

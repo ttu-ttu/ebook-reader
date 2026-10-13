@@ -332,11 +332,8 @@ server {
   # Synced reader data (processed books, progress, statistics, highlights) for
   # the Calibre storage source. Plain WebDAV writes plus JSON directory listings.
   location /calibre/sync/ {
+    # MOVEs are checked by the account service (shared_write_allowed).
     auth_request /_account_shared;
-    # series.json and metadata.json need the series permission; don't let a MOVE get around it.
-    if ($http_destination ~* "/(series|metadata)(\.|%2e)json$") {
-      return 403;
-    }
     alias ${SYNC_DIR}/;
     dav_methods PUT DELETE MKCOL MOVE;
     create_full_put_path on;

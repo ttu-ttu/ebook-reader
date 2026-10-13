@@ -18,6 +18,9 @@ anything a reader or a server operator would notice.
 - Server: the shared sync folder itself can no longer be deleted or written over
   WebDAV (one DELETE removed every book's data), and nginx's upload folder in it
   (`.tmp`) is no longer reachable. Deleting a book's own folder still works.
+- Server: WebDAV MOVEs in the shared sync folder may only rename a file within its
+  folder, so a MOVE can no longer write `series.json` or `metadata.json` without the
+  series permission.
 
 ### Library
 
