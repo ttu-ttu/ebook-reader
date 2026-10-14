@@ -39,7 +39,7 @@ Front end (Node 24; pnpm 10 comes from `packageManager` via `corepack enable`):
 
 ```sh
 pnpm install
-cd apps/web && pnpm test && pnpm check   # Vitest; svelte-check (30 known errors)
+cd apps/web && pnpm test && pnpm check   # Vitest; svelte-check (13 known errors)
 cd ../.. && npx eslint .                 # clean
 cd apps/web && pnpm dev                  # dev server; the server side needs the Docker stack
 ```
@@ -97,7 +97,7 @@ Run the whole thing: `docker compose up -d --build` (see `docs/INSTALL.md`).
   - The storage handlers import each other: import
     `$lib/data/storage/storage-handler-factory` before a handler, or mock
     `calibre-handler` (see `calibre-handler.test.ts`).
-- `pnpm check` has 30 errors that predate the fork; only new ones matter.
+- `pnpm check` has 13 errors that predate the fork; only new ones matter.
 - Reader changes also need a manual check with a book open (paginated and
   continuous modes), since the reader page has no automated tests.
 
@@ -114,6 +114,11 @@ it), and, to sync it with accounts, the store in `sharedSettings` or
 TypeScript with tests, the UI in `components/book-reader/`, and keep the glue in
 `routes/b/+page.svelte` small. Positions are character counts
 (`text-positions.ts`), never DOM offsets.
+
+**A plugin** - for optional reader features, add a module to `lib/plugins/`
+and list it in `plugins/index.ts`: companion tabs, selection-toolbar actions,
+Listen modes, `onPositionSettled` work and a settings component. Plugins start
+off; hosts read `activePlugins$`, so nothing runs until a reader turns it on.
 
 **A per-reader file for Calibre books** - either a prefix in
 `CalibreStorageHandler.isPersonalFile` (synced like progress), or a file of its
@@ -139,7 +144,7 @@ Adding a "Copy" button to the Ask AI answer:
    `lib/functions/` with a test.
 3. Add the button in `components/book-reader/ask-ai-panel.svelte`, styled with
    theme variables.
-4. Run `pnpm test`, `pnpm check` (still 30 errors) and `npx eslint .` (clean).
+4. Run `pnpm test`, `pnpm check` (still 13 errors) and `npx eslint .` (clean).
 5. Rebuild and restart the stack, then open a book on the HTTPS address, select
    text, ask, and try the button. Check `/version.txt`.
 6. Add a `CHANGELOG.md` line and commit: `feat: copy button for Ask AI answers`.

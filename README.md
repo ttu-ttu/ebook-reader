@@ -5,42 +5,15 @@ A self-hosted Japanese e-book reader for your Calibre library: a fork of
 the browser-based Japanese e-book reader into a reader for your own server: point
 it at a Calibre library and everyone in the house reads from it, with accounts,
 synced progress and highlights, and tools for language learners. The reader
-itself, and its Yomitan support, are upstream's (see [Using the reader](#using-the-reader)).
+itself, and its Yomitan support, are upstream's.
 
 ![Reading 坊っちゃん in vertical text, with a highlight and the selection toolbar](assets/readme/screenshots/reader.png)
 
-| Library                                                       | AI settings                                                       | Phone                                                                     |
-| ------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| ![Library with the Store tab](assets/readme/screenshots/store.png) | ![Settings → AI](assets/readme/screenshots/settings.png) | <img src="assets/readme/screenshots/phone-store.png" alt="Library on a phone" width="200"> |
+Books, manga and ONScripter visual novels from one library; highlights, search,
+audiobooks, AI helpers and Anki mining in the reader; difficulty estimates and
+reading statistics for learners. See [Features](#features).
 
-<sub>Books shown: public-domain texts from [青空文庫](https://www.aozora.gr.jp/).</sub>
-
-**What it adds**
-
-- **Your Calibre library** as the bookshelf: covers (extracted from EPUBs that
-  have none), series (Calibre's or guessed from volume numbers), tags, a
-  Home/Store layout with "Continue reading", filters and sorting. Books open
-  straight from the server; adding a file puts it into Calibre.
-- **Accounts** with an admin panel and per-account permissions; progress,
-  statistics, highlights and settings sync across devices.
-- **Highlights and notes**, full-text search (ignoring furigana), and a reader
-  companion with your highlights.
-- **AI helpers** with your own keys: Ask AI about a selection, "Story so far"
-  spoiler-free recaps, a lorebook of characters and places, and an AI voice that
-  reads aloud with the current line highlighted. Audiobooks with subtitles follow
-  the text too.
-- **Manga** (CBZ/ZIP) in a page-turning reader.
-- **Visual novels** for ONScripter, played in the browser (a WebAssembly build of
-  ONScripter-yuri) with their text laid over the game for Yomitan, an optional
-  text panel below it, and the text counted in progress, reading statistics and
-  kanji met. Games come as ZIPs or unpacked folders on the server (`VN_PATH`);
-  importing a game ZIP unpacks it there. Saves sync across devices, big games can
-  be kept offline, and the library shows VNDB details and difficulty estimates
-  from the script. Games for other engines can often be converted with
-  [conscripter-convert](https://github.com/blankiekun/conscripter-convert).
-- **Difficulty estimates** with [Jiten](https://github.com/Sirush/Jiten)'s
-  features and a model trained on jiten.moe's scores, computed on your server.
-- **App-wide themes** that follow the system's light and dark mode.
+<sub>Books shown: public-domain texts from [青空文庫](https://www.aozora.gr.jp/), with the covers Calibre generates.</sub>
 
 ## Setup
 
@@ -153,58 +126,127 @@ derives; [Jiten](https://github.com/Sirush/Jiten) for the difficulty features an
 deconjugation rules (Apache-2.0, see [NOTICE](NOTICE)). chimimouryou is not
 affiliated with or endorsed by either project.
 
-## Using the reader
+## Features
 
-The reader is upstream's [ッツ Ebook Reader](https://github.com/ttu-ttu/ebook-reader)
-(EPUB, HTMLZ and plain text; continuous or paginated, vertical or horizontal; works
-with Yomitan and other dictionary extensions). Upstream's
-[README](https://github.com/ttu-ttu/ebook-reader#readme) has the full reference:
-the reading tracker, statistics, import/export merge modes and setting up your own
-GDrive or OneDrive credentials (not needed with the Calibre library).
+### Library
 
-Click or tap the top of the page to open the reader header:
+The Calibre library is the bookshelf. **Home** has your reading at a glance:
+characters read today and this week, reading streaks, speed and the number of
+different kanji met, then "Continue reading" and "My books". **Store** is the
+whole library, as books or as series, with filters (type, reading status, last
+read, difficulty, length, tags) and sorting.
 
-| Control                                              | Description                                                         |
-| ---------------------------------------------------- | ------------------------------------------------------------------- |
-| ![Icon](assets/readme/control-toc.svg)               | Table of contents                                                   |
-| ![Icon](assets/readme/control-bookmark.svg)          | Bookmark the current position (<kbd>b</kbd>)                        |
-| ![Icon](assets/readme/control-bookmark-scroll.svg)   | Return to the bookmark (<kbd>r</kbd>)                               |
-| ![Image](assets/readme/book-scroll-speed.png)        | Auto-scroll speed (<kbd>a</kbd>/<kbd>d</kbd>)                       |
-| ![Icon](assets/readme/control-finish.svg)            | Mark the book as finished                                           |
-| ![Icon](assets/readme/control-reading-point.svg)     | Pick a custom reading point (<kbd>t</kbd>)                          |
-| ![Icon](assets/readme/control-fullscreen.svg)        | Fullscreen (<kbd>F11</kbd>)                                         |
-| ![Icon](assets/readme/control-reader-statistics.svg) | Statistics for this book                                            |
-| ![Icon](assets/readme/control-jump.svg)              | Jump to a character position                                        |
-| ![Icon](assets/readme/control-image-gallery.svg)     | Image gallery                                                       |
-| ![Icon](assets/readme/control-settings.svg)          | Settings                                                            |
-| ![Icon](assets/readme/control-manager.svg)           | Library                                                             |
+![Home: today's reading, a week of statistics, Continue reading and My books](assets/readme/screenshots/home.png)
 
-The footer shows the reading tracker
-(![Icon](assets/readme/control-reader-timer-paused.svg) paused: double-tap to
-start, tap for its menu) and the progress
-(![Image](assets/readme/book-progress.png), C = chapter, T = book; tap to copy).
-Progress counts Japanese characters only, without Latin letters or punctuation.
+| Store                                                                  | Series                                                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| ![The Store with filters and sorting](assets/readme/screenshots/store.png) | ![The Store as series](assets/readme/screenshots/store-series.png) |
 
-**Desktop keys** (physical positions, so the same keys on any layout):
+- Covers are extracted from EPUBs that have none in Calibre; series come from
+  Calibre or are guessed from volume numbers in titles, and readers with the
+  `series` permission can group books into series themselves.
+- Adding a file (Import, or dropping it on the library) puts it into Calibre.
+- Books open straight from the server and stay cached in the browser. Books on
+  Home are downloaded in the background, so they can be read offline; progress
+  made offline uploads when the server is back.
 
-| Key                                     | Action                                                   |
-| --------------------------------------- | -------------------------------------------------------- |
-| <kbd>Space</kbd>                        | Toggle auto-scroll (continuous mode)                     |
-| <kbd>a</kbd> / <kbd>d</kbd>             | Auto-scroll faster/slower; paginated: next/previous page |
-| <kbd>PageDown</kbd> / <kbd>PageUp</kbd> | Next/previous page                                       |
-| <kbd>n</kbd> / <kbd>m</kbd>             | Next/previous chapter                                    |
-| <kbd>b</kbd> / <kbd>r</kbd>             | Bookmark / return to bookmark                            |
-| <kbd>t</kbd>                            | Custom reading point                                     |
-| <kbd>p</kbd> / <kbd>f</kbd>             | Toggle the reading tracker / its freeze position         |
-| <kbd>Ctrl</kbd>+<kbd>F</kbd>            | Search the book                                          |
+Clicking a cover opens the book's page: length in characters and the reading
+time at your speed, progress, the difficulty estimate, Calibre's metadata and
+the rest of the series. "Find details" fills in a description, genres and a
+cover from AniList, VNDB or Jiten.
 
-Good to know:
+![A book's page with its difficulty estimate and series](assets/readme/screenshots/details.png)
+
+### Reading
+
+The reader is upstream's: EPUB, HTMLZ and plain text, continuous or paginated,
+vertical or horizontal, made for [Yomitan](https://yomitan.wraith.wtf/) and
+other dictionary extensions. Progress, statistics and settings sync across
+devices with your account, with separate reader styles for phones and larger
+screens.
+
+- **Highlights and notes** in four colours: select text and pick a colour. The
+  reader companion (book icon) lists them by chapter, to jump to, edit, copy or
+  download as Markdown.
+- **Search** the book (<kbd>Ctrl</kbd>+<kbd>F</kbd>), ignoring furigana, with
+  optional kana-insensitive and regular-expression matching.
+- **Listen**: an audiobook with SRT/VTT subtitles follows the text and
+  highlights the line being read. No subtitles? Whisper can make them in the
+  browser. Audiobooks can also come from an
+  [Audiobookshelf](https://www.audiobookshelf.org/) server (plugin).
+- **Anki mining**: cards made with Yomitan get the sentence's audio from the
+  audiobook (or the AI voice) and, in visual novels, a screenshot and the
+  line's voice.
+
+| Search                                                              | Highlights                                                                  |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| ![Search results for 赤シャツ](assets/readme/screenshots/search.png) | ![The reader companion with highlights](assets/readme/screenshots/companion.png) |
+
+Desktop keys (physical positions, the same on any layout): <kbd>PageDown</kbd>/<kbd>PageUp</kbd>
+pages, <kbd>n</kbd>/<kbd>m</kbd> chapters, <kbd>b</kbd>/<kbd>r</kbd> bookmark and return,
+<kbd>Space</kbd> auto-scroll (<kbd>a</kbd>/<kbd>d</kbd> faster/slower), <kbd>p</kbd> the reading
+tracker. Upstream's [README](https://github.com/ttu-ttu/ebook-reader#readme) covers every
+control, the tracker and import/export.
+
+### AI helpers (plugin)
+
+Off until you turn on Settings → General → Plugins → AI tools, and they use your
+own keys ([OpenRouter](https://openrouter.ai/) for text,
+[ElevenLabs](https://elevenlabs.io/) for the voice), called straight from the
+browser:
+
+- **Ask AI** about a selection: explain, translate, nuance, or your own presets,
+  with follow-up questions, in English or Japanese.
+- **Story so far**: a spoiler-free recap of everything before your position, for
+  coming back to a book after a break.
+- **Lorebook**: characters, places and terms collected as you read, exportable
+  as SillyTavern World Info and handed on to the next book of a series.
+- **AI voice**: reads aloud from your position, highlighting each phrase.
+
+![Ask AI on a selection](assets/readme/screenshots/ask-ai.png)
+
+### Manga and visual novels
+
+- **Manga** (CBZ, or ZIPs of images) open in a page-turning reader: right to
+  left, left to right or a vertical strip.
+- **Visual novels** for ONScripter run in the browser on
+  [CONscripter](https://github.com/blankiekun/CONscripter), with the text laid
+  over the game for Yomitan (backlogs and choices too), an optional text panel
+  below it, and the text counted in progress, statistics and kanji met. Games
+  are ZIPs or unpacked folders on the server (`VN_PATH`); saves sync across
+  devices and big games can be kept offline. Games for other engines can often
+  be converted with
+  [conscripter-convert](https://github.com/blankiekun/conscripter-convert).
+
+### For learners
+
+- **Difficulty estimates** with [Jiten](https://github.com/Sirush/Jiten)'s
+  features and a model trained on jiten.moe's scores, computed on your server:
+  a score with its likely range, the vocabulary needed for 95% coverage, and how
+  many of the book's kanji you have already met.
+- **Statistics**: characters, time and speed per day and per book, streaks and
+  reading goals (upstream's, synced per account).
+
+### Accounts, themes and the admin panel
+
+- **Accounts** with per-account permissions (`import`, `series`, `difficulty`);
+  there is no sign-up, admins add readers.
+- **Themes** colour the whole app, follow the system's light and dark mode, and
+  can be written or imported ([themes.md](themes.md)).
+- **Admin panel**: accounts and permissions, updates to the latest release or
+  `main` (on servers set up with `scripts/deploy.sh`), the visual novel engine, catalog and series tools, and difficulty
+  jobs.
+
+| Themes                                                     | Admin panel                                                       | Phone                                                                                 |
+| ---------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| ![Settings → Theme](assets/readme/screenshots/themes.png) | ![Admin panel → Tools](assets/readme/screenshots/admin.png) | <img src="assets/readme/screenshots/phone-home.png" alt="Home on a phone" width="200"> |
+
+### Good to know
 
 - EPUBs that render wrongly (e.g. unclosed links swallowing the text) may import
   correctly with Settings → Data → "Epub Import Fixes" set to standard or extended.
-- Plain-text books are titled after the file name and split into paragraphs at
-  。？！」）.
-- Books read from the Calibre library come back from the server, but other
-  browser data (settings without an account, books imported only into the browser)
+- Progress counts Japanese characters only, without Latin letters or punctuation.
+- Books from the Calibre library come back from the server, but other browser
+  data (settings without an account, books imported only into the browser)
   lives in the browser's storage, which the browser may clear when the disk fills
   up. Settings → Data shows whether storage is persistent.

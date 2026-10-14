@@ -265,6 +265,8 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | RDR-12 | Listen → AI voice (needs an ElevenLabs QA key) | Reads from the current position without furigana; the line being read is highlighted; pages turn |
 | RDR-13 | Listen → Audiobook with an audio file and SRT/VTT | Playback follows the text; position kept across reloads |
 | RDR-14 | Settings → Anki on, Test connection; mine a word with Yomitan in a book (Book audio on, with an audiobook; then a book without one, ElevenLabs fallback on) | Notice "Added to the Anki card: SentenceAudio"; the card plays the sentence |
+| RDR-16 | Settings → General → Plugins: AI tools off, then on | Off: no Ask AI, companion has Highlights only, Settings → AI hidden. On: all back; the choice syncs to another device |
+| RDR-17 | Audiobookshelf plugin on (server with `AUDIOBOOKSHELF_URL`), sign in to ABS, Listen → Audiobookshelf in a book that has an audiobook there | The audiobook is found and plays; with subtitles the line being read is highlighted |
 | RDR-15 | Same in a visual novel with voices | Card gets the screenshot in Picture and the line's sound in SentenceAudio; mining twice from one line gives the same audio |
 
 ## 15. Library and manga
@@ -280,6 +282,9 @@ Needs a book opened in that browser. Use a Japanese EPUB from Calibre.
 | LIB-7 | Inferred series | Titles like "…１", "…２" grouped as one series |
 | LIB-8 | Select a started book → "Clear progress" → confirm | Progress gone; opens at the start; a new `progress_*_0.json`; statistics and highlights unchanged |
 | LIB-9 | After LIB-8, open it on a second device that had it open | Starts at the beginning |
+| LIB-10 | Click a cover (Store or Home) | The book's page: length, reading time, progress, difficulty, series row; Back closes it; "Read" opens the book |
+| LIB-11 | "Find details" on a book's page (`series` permission) | AniList/Jiten candidates (VNDB for games); saving shows the description for everyone |
+| OFF-1 | Add books to Home, wait on `/manage`, then stop the server (or go offline) and reload | Library lists the downloaded books with an offline note and Retry; they open and progress uploads once back online |
 | MAN-1 | Open a CBZ from the catalog (Type → Manga) | Opens in `/m`, right to left; tap sides or swipe to turn; middle tap shows the slider and reading mode |
 | MAN-2 | Switch to left to right and vertical strip | Both work; the mode is remembered per browser |
 | MAN-3 | Reopen the manga | Same page; progress syncs like books |
@@ -334,7 +339,7 @@ On a spare machine or VM, following [INSTALL.md](INSTALL.md):
 
 ## 19. Known issues and expected behaviour (not bugs)
 
-- `pnpm check` (svelte-check) has 30 pre-existing errors in upstream files
+- `pnpm check` (svelte-check) has 13 pre-existing errors in upstream files
   (`dialog-template.svelte` declarations, `PasswordCredential`, `on:swipe`,
   `ripple`, `books-db`, `filesystem-handler`, storage manager types, a `slot` on
   `Fa`). Only new errors count.
@@ -344,8 +349,8 @@ On a spare machine or VM, following [INSTALL.md](INSTALL.md):
   private model.
 - Calibre's own `has_cover` flag stays unset for covers extracted by the catalog
   builder; Calibre desktop may not show them until its cover is refreshed.
-- Recaps are cached per browser and synced per account; audiobooks, lorebook
-  auto-update state and kanji seen are per browser.
+- Recaps and lorebooks are cached per browser and synced per account;
+  audiobooks, lorebook auto-update state and kanji seen are per browser.
 - Reader settings outside Settings → Reader (e.g. custom reading point
   positions) are not synced.
 - AI API keys are stored in plain text in the account's folder on the server.

@@ -6,6 +6,14 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Documentation
+
+- The README has a Features section with new screenshots (Home, Store, a book's page,
+  search, highlights, Ask AI, themes, the admin panel) instead of the reader controls
+  reference, which stays in upstream's README.
+- ARCHITECTURE, CONTRIBUTING, CONFIGURATION and QA brought up to date (plugins,
+  Audiobookshelf, Anki, Whisper, offline reading, the book page, visual novel settings).
+
 ### Fixes
 
 - Admin panel → Tools → Visual novel engine showed the old version after an install (the

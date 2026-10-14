@@ -56,6 +56,7 @@ real-IP settings) go in `/etc/nginx/ebook-reader.d/*.conf`.
 | ----------------------- | ------------------------------------------ |
 | `WEB_ROOT`              | `/srv/www` (the built app)                 |
 | `LIBRARY_DIR`           | `/library`                                 |
+| `VN_DIR`                | `/vn` (`VN_PATH`)                          |
 | `SYNC_DIR`              | `/data/sync`                               |
 | `ACCOUNT_DATA_DIR`      | `/data/accounts`                           |
 | `CATALOG_FILE`          | `/data/state/catalog/catalog.json`         |
@@ -63,7 +64,8 @@ real-IP settings) go in `/etc/nginx/ebook-reader.d/*.conf`.
 | `ACCOUNT_UPSTREAM`      | `account:8766`                             |
 | `IMPORT_UPSTREAM`       | `import:8767`                              |
 | `DIFFICULTY_UPSTREAM`   | `difficulty:8765`                          |
-| `TRUSTED_NETWORKS`, `PUBLIC_READS` | as in `.env`                    |
+| `TRUSTED_NETWORKS`, `PUBLIC_READS`, `AUDIOBOOKSHELF_URL` | as in `.env` |
+| `INTERNAL_TOKEN_FILE`   | `/data/state/internal-token`               |
 
 The web container also reads `PUID`, `PGID` and `REAL_IP_FROM` (above).
 
@@ -75,6 +77,7 @@ code are the same container paths.
 | Variable              | Docker value                               | Used by |
 | --------------------- | ------------------------------------------ | ------- |
 | `CALIBRE_LIBRARY`     | `/library`                                 | import, difficulty |
+| `VN_DIR`              | `/vn` (`VN_PATH`)                          | catalog, import (unpacks game ZIPs there) |
 | `SHARED_SYNC_DIR`     | `/data/sync`                               | account (free-space check) |
 | `ACCOUNT_STATE_DIR`   | `/data/state/account` (`accounts.db`)      | account |
 | `ACCOUNT_DATA_DIR`    | `/data/accounts` (must match nginx's `ACCOUNT_DATA_DIR`) | account |
@@ -93,11 +96,12 @@ code are the same container paths.
 | `UPDATE_STATE_DIR`    | `/data/state/update` (`request.json`, `status.json`, `updater`) | account, `ebook-update` on the host |
 | `CALIBRE_CATALOG`     | `/data/state/catalog/catalog.json`         | difficulty |
 | `JITEN_STATE_DIR`     | `/data/state/difficulty` (results, `frequency-dictionary.zip`) | difficulty |
+| `JITEN_FREQUENCY_DICTIONARY` | `JITEN_STATE_DIR/frequency-dictionary.zip` | difficulty |
 | `JITEN_WORKERS`       | `DIFFICULTY_WORKERS`                       | difficulty |
 | `JITEN_HOST`, `JITEN_PORT` | `0.0.0.0`, `8765`                     | difficulty |
 
 The catalog builder takes the library and the output file as arguments:
-`build-calibre-catalog <library> <catalog.json>`.
+`build-calibre-catalog <library> <catalog.json> [<vn folder>] [--force]`.
 
 ## Accounts
 

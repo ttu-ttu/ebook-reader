@@ -20,7 +20,7 @@ so both images are large; leave them out unless you want those features.
 ## Setup
 
 ```sh
-git clone <this repository> ebook-reader && cd ebook-reader
+git clone https://github.com/blankiekun/chimimouryou && cd chimimouryou
 cp .env.example .env        # set LIBRARY_PATH, PUID/PGID, HTTP_PORT
 docker compose up -d --build
 docker compose exec account ebook-account initial-admin

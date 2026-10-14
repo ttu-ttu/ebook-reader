@@ -18,11 +18,14 @@ nginx: the `web` container (scripts/calibre/nginx-ebook-reader.conf.template)
  ├─ /                       static build (the app)
  ├─ /calibre/catalog.json   ← `catalog` container (build-catalog.py), DATA_PATH/state/catalog
  ├─ /calibre/library/…      book files + cover.jpg, read-only (Calibre library)
+ ├─ /calibre/vn/…           unpacked visual novels (VN_PATH), read-only, JSON listings
  ├─ /calibre/sync/…         shared WebDAV, DATA_PATH/sync: processed books, covers, signed-out data
  ├─ /account/api/…          → `account` container (account:8766)
  ├─ /account/sync/…         per-account WebDAV (auth_request), DATA_PATH/accounts/<id>
  ├─ /calibre/import/api/…   → `import` container (import:8767, optional), writes the library
- └─ /calibre/difficulty/…   → `difficulty` container (difficulty:8765, optional)
+ ├─ /calibre/difficulty/…   → `difficulty` container (difficulty:8765, optional)
+ ├─ /audiobookshelf/…       → AUDIOBOOKSHELF_URL (API and sign-in only, optional)
+ └─ /jiten/search           → jiten.moe search (Find details, `series` permission)
 
 Every location except the app itself is checked by auth_request against the
 account service: reads need an account, a trusted network (TRUSTED_NETWORKS) or
@@ -33,6 +36,8 @@ auth/difficulty/writes, auth/series/writes).
 
 Browser → https://openrouter.ai directly (Ask AI, Story so far, Lorebook)
 Browser → https://api.elevenlabs.io directly (AI voice)
+Browser → AniList / VNDB directly (Find details), huggingface.co (Whisper models),
+          AnkiConnect on the reader's machine, api.github.com (update checks)
 ```
 
 There is no application server: the app is static, and nginx's WebDAV module is
@@ -50,7 +55,7 @@ needs Calibre, difficulty needs Sudachi and ONNX Runtime.
 | Accounts       | `data/account.ts`, `data/account-settings-sync.ts`, `components/settings/settings-{account,admin}.svelte`                                                                                        | Session check, sign-in, settings sync to `settings.json`, admin panel and permissions.     |
 | Book safety    | `functions/file-loaders/utils/sanitize-book-html.ts`, `svelte.config.js` (`kit.csp`)                                                                                                            | Book HTML parsed inert and cleaned; CSP allows only the site's own scripts.                |
 | Manga          | `data/manga.ts`, `functions/file-loaders/cbz/load-cbz.ts`, `routes/m/+page.svelte`                                                                                                              | CBZ/ZIP as ordinary book records; page index as the bookmark.                              |
-| Visual novels  | `data/vn.ts`, `functions/file-loaders/vn/load-vn.ts`, `routes/v/+page.svelte`, `static/vn/` (engine + `player.js`), `scripts/conscripter/`                                                   | ONScripter games as book records (zip blobs, or a `VN_PATH` folder fetched file by file); a patched engine in an iframe sends each page's text. |
+| Visual novels  | `data/vn.ts`, `functions/file-loaders/vn/load-vn.ts`, `routes/v/+page.svelte`, `static/vn/` (engine + `player.js`), `scripts/conscripter/`                                                   | ONScripter games as book records (zip blobs, or a `VN_PATH` folder fetched file by file); CONscripter in an iframe sends each page's text and where it was drawn, laid over the canvas for Yomitan. |
 | Highlights     | `data/annotations.ts`, `functions/book-text/text-positions.ts`, `functions/book-text/css-highlights.ts`, `components/book-reader/{selection-toolbar,highlight-editor,annotations-panel}.svelte` | Anchored by character counts, drawn with the CSS Custom Highlight API.                     |
 | Search         | `functions/book-text/book-search.ts`, `components/book-reader/book-search-panel.svelte`                                                                                                         | Paragraph index without furigana; results are character counts.                            |
 | AI             | `data/ai-settings.ts`, `data/ask-ai.ts`, `data/recap.ts`, `components/book-reader/{ask-ai-panel,recap-panel}.svelte`                                                                            | OpenRouter chat completions, streamed.                                                     |
@@ -60,6 +65,13 @@ needs Calibre, difficulty needs Sudachi and ONNX Runtime.
 | Themes         | `data/theme/*`, `components/theme/theme-style.svelte`, `components/settings/settings-theme*.svelte`                                                                                             | Every colour is a CSS variable (`theme-tokens.ts`); see `themes.md`.                       |
 | Library        | `components/book-card/library-{sort,filters}.ts`, `continue-reading-shelf.svelte`, `difficulty-*.svelte`                                                                                        | Sorting, filters, series and difficulty.                                                   |
 | Settings page  | `routes/settings/+page.svelte`, `components/settings/settings-sections.ts`                                                                                                                      | Sidebar sections; search over `SettingsItemGroup`s.                                        |
+| Plugins        | `plugins/index.ts`, `plugins/plugin-settings.ts`, `plugins/{ai,audiobookshelf}.ts`, `components/settings/settings-plugins.svelte` | Built-in modules (off by default) that add companion tabs, toolbar actions, Listen modes and settings. |
+| Audiobookshelf | `data/audiobookshelf.ts`, `components/book-reader/audiobookshelf-player.svelte` | Finds the book's audiobook on an ABS server through nginx's `/audiobookshelf/`; subtitles drive the highlight. |
+| Anki           | `data/anki.ts`, `components/anki-watcher.svelte`, `components/settings/settings-anki.svelte` | Polls AnkiConnect and fills audio/picture fields of new notes. |
+| Whisper        | `data/whisper.ts`, `functions/audiobook/whisper.worker.ts`, `functions/audiobook/whisper-audio.ts` | Subtitles for audiobooks made in the browser (transformers.js). |
+| Offline        | `data/offline-books.ts`, `cachedBookList` in `calibre-handler.ts` | Home books downloaded in the background; the cached list when the server can't be reached. |
+| Book page      | `components/book-card/book-details.svelte`, `data/book-metadata.ts`, `data/series-overrides.ts` | Details layer over `/manage` (shallow routing); AniList/VNDB/Jiten lookups saved to `metadata.json`; reader-made series in `series.json`. |
+| Admin panel    | `routes/admin/+page.svelte`, `components/admin/*`, `data/app-update.ts` | Accounts, updates, engine, catalog, series and difficulty tools. |
 | Reader page    | `routes/b/+page.svelte`                                                                                                                                                                         | Upstream's reader plus the glue for all reader extras.                                     |
 
 ## Data flow
@@ -160,17 +172,17 @@ section in paginated mode. `annotations.json` is merged per highlight (newest
 - **No quotas.** Any account can fill the disk up to `MIN_FREE_MB`.
 - **Book CSS is applied as-is.** It can restyle the page, though not run script.
 - **No built-in backups.** Back up `DATA_PATH` (and the Calibre library).
-- **`routes/b/+page.svelte`** holds about 300 lines of highlight, search and
-  selection glue inline; it is the most fragile file to change.
+- **`routes/b/+page.svelte`** holds the glue for highlights, search, selection,
+  listening and the plugins inline; it is the most fragile file to change.
 - **Ask AI context** clones the book DOM up to the selection to get the text
   before it, which is slow on very long books in continuous mode.
-- **svelte-check** reports 30 errors that predate the fork (Svelte 4/5 types,
+- **svelte-check** reports 13 errors that predate the fork (Svelte 4/5 types,
   `dialog-template.svelte`, FS Access types). ESLint's Svelte config only matches
   root-level files, so `.svelte` files are not linted (upstream config).
 - Read aloud starts from the beginning of the paragraph containing the position.
 - The AI voice highlight is per phrase (split at 。、 and quotes), from
   ElevenLabs' character timestamps; if they don't line up with the text, the
   whole chunk is highlighted.
-- Audiobooks, lorebooks and kanji seen are per browser (not synced). Highlighting
+- Audiobooks and kanji seen are per browser (not synced). Highlighting
   the line being read walks the rendered text on every line change, which costs
   more in continuous mode on very long books.
