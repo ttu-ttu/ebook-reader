@@ -7,13 +7,13 @@ it at a Calibre library and everyone in the house reads from it, with accounts,
 synced progress and highlights, and tools for language learners. The reader
 itself, and its Yomitan support, are upstream's.
 
-![Reading 坊っちゃん in vertical text, with a highlight and the selection toolbar](assets/readme/screenshots/reader.png)
+![Reading 薬屋のひとりごと in vertical text, with a highlight and the selection toolbar](assets/readme/screenshots/reader.png)
 
 Books, manga and ONScripter visual novels from one library; highlights, search,
 audiobooks, AI helpers and Anki mining in the reader; difficulty estimates and
 reading statistics for learners. See [Features](#features).
 
-<sub>Books shown: public-domain texts from [青空文庫](https://www.aozora.gr.jp/), with the covers Calibre generates.</sub>
+<sub>Screenshots show books from the maintainer's own library; the titles belong to their publishers.</sub>
 
 ## Setup
 
@@ -180,7 +180,7 @@ screens.
 
 | Search                                                              | Highlights                                                                  |
 | ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| ![Search results for 赤シャツ](assets/readme/screenshots/search.png) | ![The reader companion with highlights](assets/readme/screenshots/companion.png) |
+| ![Search results for 猫猫](assets/readme/screenshots/search.png) | ![The reader companion with highlights](assets/readme/screenshots/companion.png) |
 
 Desktop keys (physical positions, the same on any layout): <kbd>PageDown</kbd>/<kbd>PageUp</kbd>
 pages, <kbd>n</kbd>/<kbd>m</kbd> chapters, <kbd>b</kbd>/<kbd>r</kbd> bookmark and return,
@@ -217,6 +217,8 @@ browser:
   devices and big games can be kept offline. Games for other engines can often
   be converted with
   [conscripter-convert](https://github.com/blankiekun/conscripter-convert).
+
+![MONSTER in the manga reader](assets/readme/screenshots/manga.png)
 
 ### For learners
 
