@@ -13,6 +13,7 @@ import {
   findVnRoot,
   fromBase64,
   mergeVnSaves,
+  newerSaveEngine,
   sameVnSaves,
   toBase64,
   newText,
@@ -85,6 +86,20 @@ describe('vn', () => {
     expect(merged).toEqual({ ...remote, ...local });
     expect(sameVnSaves(merged, remote)).toBe(false);
     expect(sameVnSaves(mergeVnSaves(remote, remote), remote)).toBe(true);
+  });
+
+  it('finds saves written by a newer engine', () => {
+    const saves = {
+      'save1.dat': { modified: 1, data: '', engine: 'v0.9.0' },
+      'save2.dat': { modified: 1, data: '', engine: 'v0.18.1' },
+      'save3.dat': { modified: 1, data: '', engine: 'v0.18.0' },
+      'gloval.sav': { modified: 1, data: '' }
+    };
+
+    expect(newerSaveEngine(saves, 'v0.17.0')).toBe('v0.18.1');
+    expect(newerSaveEngine(saves, 'v0.18.1')).toBeUndefined();
+    expect(newerSaveEngine(saves, 'v1.0.0')).toBeUndefined();
+    expect(newerSaveEngine(saves, 'unknown')).toBeUndefined();
   });
 
   it('round-trips bytes through base64', () => {

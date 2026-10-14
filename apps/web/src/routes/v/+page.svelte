@@ -32,6 +32,7 @@
     hashPage,
     loadVnRead,
     mergeVnSaves,
+    newerSaveEngine,
     newText,
     overlayLines,
     vnCacheName,
@@ -97,6 +98,10 @@
   /** Read since the last save, for "Kanji met" */
   let unsavedText = '';
   let lastTextTime = 0;
+  /** CONscripter version of this build, stamped on uploaded saves. */
+  let engineVersion: string | undefined;
+  /** Set when synced saves were written by a newer engine than this one. */
+  let newerEngine: string | undefined;
   let statistics = new Map<string, BooksDbStatistic>();
   let changedDays = new Set<string>();
   let dirty = false;
@@ -226,7 +231,7 @@
     const local: VnSaves = Object.fromEntries(
       Object.entries(files).map(([name, file]) => [
         name,
-        { modified: file.modified, data: toBase64(file.bytes) }
+        { modified: file.modified, data: toBase64(file.bytes), engine: engineVersion }
       ])
     );
 
@@ -281,6 +286,11 @@
       logger.warn(`Visual novel save sync failed: ${error.message}`);
       return {};
     });
+    engineVersion = await fetch(`${pagePath}/vn/conscripter-version.txt`, { cache: 'no-store' })
+      .then((response) => (response.ok ? response.text() : undefined))
+      .then((text) => text?.trim())
+      .catch(() => undefined);
+    newerEngine = engineVersion && newerSaveEngine(saves, engineVersion);
     const cacheName = await gameCache(info.base);
 
     lastTextTime = Date.now();
@@ -448,6 +458,17 @@
       on:load={() =>
         start().catch((error) => logger.error(`Error starting game: ${error.message}`))}
     />
+  {/if}
+
+  {#if newerEngine}
+    <p class="reader-panel px-4 py-2 text-center text-sm">
+      Some saves were made with a newer engine (CONscripter {newerEngine}) than this server's ({engineVersion}).
+      Saves should be backward compatible, so they will most likely still load; if one doesn't, ask
+      an admin to update the engine.
+      <button class="app-button app-button-quiet ml-2" on:click={() => (newerEngine = undefined)}
+        >Dismiss</button
+      >
+    </p>
   {/if}
 
   {#if ended}

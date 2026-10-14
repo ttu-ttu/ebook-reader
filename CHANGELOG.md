@@ -6,6 +6,12 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Visual novels
+
+- Synced saves (`vnsaves.json`) record the CONscripter version that wrote them. Opening a
+  game whose saves come from a newer engine than the server's shows a notice: saves should
+  be backward compatible, but an admin can update the engine if one doesn't load.
+
 ### Documentation
 
 - The README has a Features section with new screenshots (Home, Store, a book's page,

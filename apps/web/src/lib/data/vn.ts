@@ -241,8 +241,29 @@ export function vnBookmark(dataId: number, read: number, total: number): BooksDb
   };
 }
 
-/** The engine's save files (save1.dat, gloval.sav…) as synced in vnsaves.json. */
-export type VnSaves = Record<string, { modified: number; data: string }>;
+/** The engine's save files (save1.dat, gloval.sav…) as synced in vnsaves.json, with the CONscripter version that wrote them. */
+export type VnSaves = Record<string, { modified: number; data: string; engine?: string }>;
+
+/** The newest engine version among the saves if it is newer than `installed` (v1.2.3 tags). */
+export function newerSaveEngine(saves: VnSaves, installed: string) {
+  const parts = (version: string) => version.replace(/^v/, '').split('.').map(Number);
+  const newer = (a: string, b: string) => {
+    const [x, y] = [parts(a), parts(b)];
+    const index = x.findIndex((part, i) => part !== (y[i] ?? 0));
+
+    return index >= 0 && x[index] > (y[index] ?? 0);
+  };
+
+  if (!/^v?\d+(\.\d+)*$/.test(installed)) return undefined;
+
+  return Object.values(saves)
+    .map((file) => file.engine)
+    .filter((engine): engine is string => !!engine && /^v?\d+(\.\d+)*$/.test(engine))
+    .reduce<string | undefined>(
+      (newest, engine) => (newer(engine, newest ?? installed) ? engine : newest),
+      undefined
+    );
+}
 
 /** Per file, the newer copy wins; nothing is ever deleted (the engine doesn't delete saves). */
 export function mergeVnSaves(local: VnSaves, remote: VnSaves): VnSaves {
