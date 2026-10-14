@@ -77,9 +77,10 @@
     Visual novels play on
     <a class="underline" href="https://github.com/{engineRepo}" target="_blank" rel="noreferrer"
       >CONscripter</a
-    >. A new release isn't installed on its own: "Install" downloads it on the server and rebuilds
-    the web container (a few seconds of downtime; other services keep running). Without the server's
-    updater, run <code>scripts/conscripter/build.sh</code>, commit the files it changes and deploy.
+    >. A new release isn't installed on its own: "Install" downloads the release's web build on the
+    server (nothing is compiled) and rebuilds the web container so browsers fetch the new engine (a
+    few seconds of downtime; other services keep running). Without the server's updater, run
+    <code>scripts/conscripter/build.sh</code>, commit the files it changes and deploy.
   </p>
 
   {#if checking}

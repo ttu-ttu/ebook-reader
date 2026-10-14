@@ -6,6 +6,11 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Fixes
+
+- Admin panel → Tools → Visual novel engine showed the old version after an install (the
+  browser's offline copy answered the version check) and offered to install it again.
+
 ## v3.4.0 (2026-10-13)
 
 ### Updates

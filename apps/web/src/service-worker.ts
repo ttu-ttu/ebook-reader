@@ -68,9 +68,14 @@ worker.addEventListener('fetch', (event) => {
   }
 
   if (isSelfHost) {
-    const response = isBuildAsset
-      ? caches.match(url.pathname).then((r) => r ?? fetch(event.request))
-      : selfHostParameterizedUrlResponse(event.request);
+    // A no-store request (version checks) wants the server's copy: the cache is only as new as this worker.
+    const response = !isBuildAsset
+      ? selfHostParameterizedUrlResponse(event.request)
+      : event.request.cache === 'no-store'
+        ? fetch(event.request).catch(
+            async (e) => (await caches.match(url.pathname)) ?? Promise.reject(e)
+          )
+        : caches.match(url.pathname).then((r) => r ?? fetch(event.request));
     if (response) {
       event.respondWith(response);
       return;
