@@ -10,7 +10,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import Fa from 'svelte-fa';
-  import { faArrowLeft, faFont } from '@fortawesome/free-solid-svg-icons';
+  import { faArrowLeft, faBolt, faFont } from '@fortawesome/free-solid-svg-icons';
   import {
     autoReplication$,
     cacheStorageData$,
@@ -82,6 +82,10 @@
   const maxSecondsPerPage = 120;
   /** The text panel below the game; hovering the game's own text works without it. */
   const showText$ = writableBooleanLocalStorageSubject()('vnTextPanel', false);
+  /** Furigana drawn by the game; off, the readings are still in the overlay and text panel. */
+  const furigana$ = writableBooleanLocalStorageSubject()('vnFurigana', true);
+  /** The whole text at once instead of the game's text speed. */
+  const instantText$ = writableBooleanLocalStorageSubject()('vnInstantText', false);
   const defaultSources: Record<string, StorageKey> = {
     [StorageSourceDefault.CALIBRE_DEFAULT]: StorageKey.CALIBRE,
     [StorageSourceDefault.GDRIVE_DEFAULT]: StorageKey.GDRIVE,
@@ -109,6 +113,14 @@
   let external: BaseStorageHandler | undefined;
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   let savesQueue = Promise.resolve();
+  let started = false;
+
+  $: if (started) engineSet('Ruby', $furigana$ ? 1 : 0);
+  $: if (started) engineSet('TextSpeed', $instantText$ ? 0 : -1);
+
+  function engineSet(name: string, value: number) {
+    (frame?.contentWindow as any)?.engineSet(name, value);
+  }
 
   function handler(type: StorageKey, name?: string) {
     return getStorageHandler(
@@ -309,15 +321,16 @@
           { modified: file.modified, bytes: fromBase64(file.data) }
         ])
       ),
-      onText: (bytes: Uint8Array, skipped: number, boxes: Int32Array) => {
+      onText: (bytes: Uint8Array, skipped: number, boxes: Int32Array, readBefore: number) => {
         player.showText(overlayLines(bytes, boxes, info.encoding));
-        onText(decodeText(bytes, info.encoding), !!skipped);
+        onText(decodeText(bytes, info.encoding), !!skipped, readBefore === 1);
       },
       textLines: (bytes: Uint8Array, boxes: Int32Array) =>
         overlayLines(bytes, boxes, info.encoding),
       onSave: uploadSaves,
       onExit: () => (ended = true)
     });
+    started = true;
   }
 
   /** For a note added to Anki while playing: the game screen and the current line's sound. */
@@ -330,13 +343,13 @@
     };
   }
 
-  function onText(text: string, skipped: boolean) {
+  function onText(text: string, skipped: boolean, readBefore: boolean) {
     const now = Date.now();
 
     lines = parseVnPage(text);
 
     if (!skipped) {
-      const added = newText(previousText, text, seen);
+      const added = newText(previousText, text, seen, readBefore);
       const characters = countTextCharacters(added);
       const seconds = Math.min((now - lastTextTime) / 1000, maxSecondsPerPage);
 
@@ -436,6 +449,26 @@
       <Fa icon={faArrowLeft} />
     </button>
     <div class="min-w-0 flex-1 truncate">{book?.title ?? ''}</div>
+    <button
+      class="p-2"
+      title="Furigana in the game (from the next text; readings stay in the text panel)"
+      aria-label="Furigana"
+      aria-pressed={$furigana$}
+      class:opacity-50={!$furigana$}
+      on:click={() => furigana$.next(!$furigana$)}
+    >
+      <ruby class="text-lg">字<rt class="text-[0.55em]">じ</rt></ruby>
+    </button>
+    <button
+      class="p-2"
+      title="Show the whole text at once"
+      aria-label="Instant text"
+      aria-pressed={$instantText$}
+      class:opacity-50={!$instantText$}
+      on:click={() => instantText$.next(!$instantText$)}
+    >
+      <Fa icon={faBolt} />
+    </button>
     <button
       class="p-2"
       title="Show the text below the game"

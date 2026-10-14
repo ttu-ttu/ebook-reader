@@ -2,7 +2,7 @@
  * Shell for the CONscripter web engine (conscripter.js, GPL-2.0, fetched by scripts/conscripter/),
  * loaded by the reader's /v page in a same-origin iframe. The engine calls the globals below
  * (g_onsyuri_*, fetch_file, flush_save, playVideo, scale_full, onsyuriText, onsyuriChoice,
- * onsyuriOverlay, onsyuriBacklog, onsyuriSprites) from its C code; they keep ONScripter-yuri's names, as does its
+ * onsyuriOverlay, onsyuriBacklog, onsyuriSprites, onsyuriVoice, onsyuriPosition, onsyuriMode) from its C code; they keep ONScripter-yuri's names, as does its
  * onsyuri() loader.
  * The page calls startGame() once the frame has loaded.
  */
@@ -103,7 +103,10 @@ function onsyuriOverlay(event) {
   var page = document.getElementById('page-text');
   var choices = document.getElementById('choices');
 
-  if (event === 'page') page.textContent = '';
+  if (event === 'page') {
+    page.textContent = '';
+    lineVoice = null;
+  }
   else if (event === 'choices') choices.textContent = '';
   else if (event === 'hide') windowHidden = true;
   else if (event === 'show') windowHidden = false;
@@ -125,7 +128,8 @@ function onsyuriOverlay(event) {
 }
 
 /** A backlog page (between 'enter' and 'leave'): script bytes and boxes, as for onsyuriText. */
-function onsyuriBacklog(bytes, boxes) {
+function onsyuriBacklog(bytes, boxes, voice) {
+  backlogVoice = voice;
   showText(textLines(bytes, boxes));
   inBacklog = true;
   updateHidden();
@@ -137,6 +141,41 @@ function onsyuriSprites(bytes, boxes) {
 
   layer.replaceChildren.apply(layer, textLines(bytes, boxes).map(overlayLine));
 }
+
+// The voice (dwave channel 0) of the page being read, and of the backlog page shown.
+var lineVoice = null;
+var backlogVoice = null;
+// From onsyuriPosition: 1 if the engine has the text as read before, 0 if not, -1 unknown.
+var textRead = -1;
+var autoMode = false;
+
+function onsyuriVoice(channel, file) {
+  if (channel === 0) lineVoice = file;
+}
+
+function onsyuriPosition(offset, total, label, read) {
+  textRead = read;
+}
+
+function onsyuriMode(auto) {
+  autoMode = !!auto;
+}
+
+/** Calls one of the engine's _onsyuriSet* exports (CONscripter v0.19.0+), e.g. ('Ruby', 0). */
+function engineSet(name, value) {
+  var set = g_onsyuri_module['_onsyuriSet' + name];
+
+  if (typeof set === 'function') set(value);
+}
+
+// Yomitan's scan keys stop auto mode, so the text doesn't move on during a lookup.
+window.addEventListener(
+  'keydown',
+  function (event) {
+    if (autoMode && /^(Shift|Control|Alt|Meta)$/.test(event.key)) engineSet('Auto', 0);
+  },
+  true
+);
 
 // Clicks on the overlay's text go to the game, as if the text weren't there.
 [
@@ -221,8 +260,29 @@ function restartLineRecorder(event) {
   window.addEventListener(type, restartLineRecorder, true);
 });
 
-/** The sound since the last click or key (null without sound), the same until the next one. */
+var voiceTypes = { ogg: 'audio/ogg', wav: 'audio/wav', mp3: 'audio/mpeg' };
+
+/** A voice file named by the script, if it is a plain game file (not in an archive). */
+function voiceFile(file) {
+  var node = file && g_onsyuri_filemap[('/game/' + file.replace(/\\/g, '/')).toLowerCase()];
+  var type = file && voiceTypes[file.split('.').pop().toLowerCase()];
+
+  if (!node || !type) return null;
+  try {
+    return new Blob([g_onsyuri_module.FS.readFile(node.path)], { type: type });
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * The line's voice file, else the sound since the last click or key (null without sound), the
+ * same until the next one.
+ */
 function lineSound() {
+  var voice = voiceFile(inSystem && inBacklog ? backlogVoice : lineVoice);
+
+  if (voice) return Promise.resolve(voice);
   if (!lineAudio) {
     if (!lineRecorder || lineRecorder.state === 'inactive') return Promise.resolve(null);
     lineRecorder.stop();
@@ -386,7 +446,7 @@ function loadScript(src) {
  * 'utf8'), saveDir (unique per game), cacheName (Cache API cache keeping the fetched files, for
  * games served by URL), saves (synced save files, written when newer than
  * this browser's), recordLines (keep the sound of the current line for lineSound()),
- * onText(bytes, skipped), textLines(bytes, boxes) (overlay lines for backlog pages and sprites),
+ * onText(bytes, skipped, boxes, read), textLines(bytes, boxes) (overlay lines for backlog pages and sprites),
  * onSave(saves), onExit(code).
  */
 async function startGame(options) {
@@ -395,7 +455,10 @@ async function startGame(options) {
     return path.toLowerCase() === 'default.ttf';
   });
 
-  onsyuriText = options.onText;
+  // onText also gets whether the engine has the text as read before (onsyuriPosition).
+  onsyuriText = function (bytes, skipped, boxes) {
+    options.onText(bytes, skipped, boxes, textRead);
+  };
   textLines = options.textLines || textLines;
   recordLines = !!options.recordLines && typeof MediaRecorder !== 'undefined';
   if (options.cacheName) fileCache = await caches.open(options.cacheName);

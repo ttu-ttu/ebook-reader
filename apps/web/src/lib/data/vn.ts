@@ -209,14 +209,17 @@ export function hashPage(text: string) {
 /**
  * The text newly read when the engine shows `page` after `previous`: the engine sends
  * the whole page at every click, so only what was added counts, and pages seen before
- * (reread, loaded from a save) add nothing.
+ * (reread, loaded from a save) add nothing, nor do pages the engine has as read before
+ * (`readBefore`, from its kidoku data, which also covers other devices through synced saves).
  */
-export function newText(previous: string, page: string, seen: Set<string>) {
+export function newText(previous: string, page: string, seen: Set<string>, readBefore = false) {
   const hash = hashPage(page);
 
   if (seen.has(hash)) return '';
 
   seen.add(hash);
+
+  if (readBefore) return '';
 
   const before = pageText(previous);
   const now = pageText(page);

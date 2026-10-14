@@ -70,6 +70,7 @@ describe('vn', () => {
     );
     expect(newText('', '吾輩は猫である。', seen)).toBe('');
     expect(newText('', '(猫/ねこ)', seen)).toBe('猫');
+    expect(newText('', '名前はまだ無い。', seen, true)).toBe('');
   });
 
   it('merges save files, the newer copy of each winning', () => {

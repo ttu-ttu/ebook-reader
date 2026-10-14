@@ -11,6 +11,11 @@ anything a reader or a server operator would notice.
 - Synced saves (`vnsaves.json`) record the CONscripter version that wrote them. Opening a
   game whose saves come from a newer engine than the server's shows a notice: saves should
   be backward compatible, but an admin can update the engine if one doesn't load.
+- CONscripter v0.19.0. Anki cards get the line's voice file instead of a live recording
+  (also for backlog pages; voices inside `.nsa` archives are still recorded), text the game
+  has as read before (its kidoku data, also from other devices) no longer counts again,
+  Yomitan's scan keys stop auto mode, and the header has toggles for the game's furigana
+  and instant text.
 
 ### Documentation
 
