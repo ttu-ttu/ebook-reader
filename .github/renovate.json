@@ -1,0 +1,35 @@
+{
+  "extends": ["config:js-app", ":automergeAll", ":automergeBranch"],
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["node"],
+      "enabled": false
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["@zip.js/zip.js"],
+      "enabled": false
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["svelte"],
+      "allowedVersions": "<5.0.0"
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["@sveltejs/vite-plugin-svelte"],
+      "allowedVersions": "<4.0.0"
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["svelte-meta-tags"],
+      "allowedVersions": "<4.0.0"
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["svelte-gestures"],
+      "allowedVersions": "<5.1.0"
+    }
+  ]
+}

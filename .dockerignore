@@ -1,0 +1,5 @@
+.dockerignore
+**/Dockerfile
+**/node_modules
+**/build
+**/.svelte-kit
