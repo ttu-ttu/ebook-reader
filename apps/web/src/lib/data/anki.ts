@@ -120,6 +120,22 @@ export function watchAddedNotes(
   };
 }
 
+/**
+ * Which of a visual novel's recent lines (oldest first, as the player keeps them) the
+ * sentence was mined from, or -1 if none has it. Lines grow click by click within a page, so
+ * of the newest run of lines that have it, the first: the moment the sentence appeared.
+ */
+export function vnLineFor(sentence: string, lines: string[]) {
+  const target = matchableText(sentence);
+  const has = (i: number) => !!target && matchableText(lines[i]).includes(target);
+  let i = lines.length - 1;
+
+  while (i >= 0 && !has(i)) i -= 1;
+  while (i > 0 && has(i - 1)) i -= 1;
+
+  return i;
+}
+
 /** The note's sentence (Settings → Anki) as plain text. */
 export function noteSentence(note: AnkiNote) {
   const html = note.fields[ankiSentenceField$.getValue().trim()]?.value ?? '';

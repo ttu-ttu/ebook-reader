@@ -5,7 +5,43 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addMediaToNote, sentenceClip, watchAddedNotes, type AnkiNote } from '$lib/data/anki';
+import {
+  addMediaToNote,
+  sentenceClip,
+  vnLineFor,
+  watchAddedNotes,
+  type AnkiNote
+} from '$lib/data/anki';
+
+describe('vnLineFor', () => {
+  // A page growing click by click, then the next page.
+  const lines = [
+    '猫がいる。',
+    '猫がいる。犬もいる。',
+    '猫がいる。犬もいる。鳥は？',
+    '新しいページ。'
+  ];
+
+  it('takes the line where the sentence appeared', () => {
+    expect(vnLineFor('犬もいる。', lines)).toBe(1);
+    expect(vnLineFor('猫がいる', lines)).toBe(0);
+    expect(vnLineFor('新しいページ', lines)).toBe(3);
+  });
+
+  it('ignores punctuation, spaces and katakana/hiragana differences', () => {
+    expect(vnLineFor(' 犬も　イル ', lines)).toBe(1);
+  });
+
+  it('prefers the newest page with the sentence', () => {
+    expect(vnLineFor('猫がいる', [...lines, '猫がいる。'])).toBe(4);
+  });
+
+  it('gives -1 for sentences not from the game', () => {
+    expect(vnLineFor('魚', lines)).toBe(-1);
+    expect(vnLineFor('', lines)).toBe(-1);
+    expect(vnLineFor('。', lines)).toBe(-1);
+  });
+});
 
 describe('sentenceClip', () => {
   const cues = [

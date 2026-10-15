@@ -55,7 +55,7 @@
   </SettingsItemGroup>
   <SettingsItemGroup
     title="Sentence field"
-    tooltip="Where the mined sentence is; read aloud by the AI voice or looked up in the audiobook."
+    tooltip="Where the mined sentence is; read aloud by the AI voice or looked up in the audiobook. In visual novels, it picks the line whose screenshot and sound the card gets."
   >
     <input aria-label="Sentence field" class={inputClasses} bind:value={$ankiSentenceField$} />
   </SettingsItemGroup>

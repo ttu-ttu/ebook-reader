@@ -6,6 +6,13 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Visual novels
+
+- Anki mining checks that a new card's sentence is from the game: the player keeps the last
+  30 lines with their screenshot and sound, and the card gets those of the line its Sentence
+  field came from, even when the line has moved on by the time the card is noticed. Cards
+  whose sentence isn't a recent line (mined in another tab, for example) are left alone.
+
 ## v3.5.0 (2026-10-15)
 
 ### Visual novels

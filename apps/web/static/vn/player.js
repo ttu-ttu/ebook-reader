@@ -70,17 +70,15 @@ function showText(lines) {
 
 /** A choice (or system menu item) drawn by the engine: its text in script bytes. */
 function consChoice(bytes, x, y, size, pitch) {
-  document
-    .getElementById('choices')
-    .appendChild(
-      overlayLine({
-        text: new TextDecoder(textEncoding).decode(bytes),
-        x: x,
-        y: y,
-        size: size,
-        pitch: pitch
-      })
-    );
+  document.getElementById('choices').appendChild(
+    overlayLine({
+      text: new TextDecoder(textEncoding).decode(bytes),
+      x: x,
+      y: y,
+      size: size,
+      pitch: pitch
+    })
+  );
 }
 
 var stashedChoices = [];
@@ -108,8 +106,7 @@ function consOverlay(event) {
   if (event === 'page') {
     page.textContent = '';
     lineVoice = null;
-  }
-  else if (event === 'choices') choices.textContent = '';
+  } else if (event === 'choices') choices.textContent = '';
   else if (event === 'hide') windowHidden = true;
   else if (event === 'show') windowHidden = false;
   else if (event === 'enter') {
@@ -131,8 +128,15 @@ function consOverlay(event) {
 
 /** A backlog page (between 'enter' and 'leave'): script bytes and boxes, as for consText. */
 function consBacklog(bytes, boxes, voice) {
+  var lines = textLines(bytes, boxes);
+
   backlogVoice = voice;
-  showText(textLines(bytes, boxes));
+  backlogText = lines
+    .map(function (line) {
+      return line.text;
+    })
+    .join('');
+  showText(lines);
   inBacklog = true;
   updateHidden();
 }
@@ -147,6 +151,7 @@ function consSprites(bytes, boxes) {
 // The voice (dwave channel 0) of the page being read, and of the backlog page shown.
 var lineVoice = null;
 var backlogVoice = null;
+var backlogText = '';
 // From consPosition: 1 if the engine has the text as read before, 0 if not, -1 unknown.
 var textRead = -1;
 var autoMode = false;
@@ -208,10 +213,13 @@ window.addEventListener('resize', function () {
   scale_full(document.getElementById('canvas'), g_screen_width / g_screen_height);
 });
 
-// Anki mining (lib/data/anki.ts): a screenshot, and the game's sound since the last click or key.
+// Anki mining (lib/data/anki.ts): the recent lines, each with its screenshot and sound, so a
+// note gets those of the line it was mined from (vnLineFor), however late it is noticed.
+var KEPT_LINES = 30;
+var keptLines = []; // [{ text, voice, picture: Promise<Blob>, audio?: Promise<Blob> }], oldest first
+var keepLines = false;
 var soundTap;
 var lineRecorder;
-var lineAudio;
 var recordLines = false;
 var nativeConnect = AudioNode.prototype.connect;
 var nativeGetContext = HTMLCanvasElement.prototype.getContext;
@@ -236,11 +244,36 @@ HTMLCanvasElement.prototype.getContext = function (type, attributes) {
   return nativeGetContext.call(this, type, attributes);
 };
 
+/** At each click wait while mining: the page so far, its voice, screen and (being recorded) sound. */
+function keepLine(lines) {
+  if (!keepLines) return;
+
+  var line = {
+    text: lines
+      .map(function (l) {
+        return l.text;
+      })
+      .join(''),
+    voice: lineVoice,
+    picture: screenshot()
+  };
+
+  // The sound recorded since the click that brought this line is its sound.
+  if (lineRecorder && lineRecorder.state !== 'inactive') lineRecorder.line = line;
+  keptLines.push(line);
+  if (keptLines.length > KEPT_LINES) keptLines.shift();
+}
+
+function stopLineRecorder() {
+  if (!lineRecorder || lineRecorder.state === 'inactive') return;
+  lineRecorder.stop();
+  if (lineRecorder.line) lineRecorder.line.audio = lineRecorder.stopped;
+}
+
 function restartLineRecorder(event) {
   // Modifier keys are Yomitan's scan keys, not the game's.
   if (event && /^(Shift|Control|Alt|Meta)$/.test(event.key)) return;
-  if (lineRecorder && lineRecorder.state !== 'inactive') lineRecorder.stop();
-  lineAudio = undefined;
+  stopLineRecorder();
   if (!soundTap) return;
 
   var chunks = [];
@@ -277,20 +310,29 @@ function voiceFile(file) {
   }
 }
 
-/**
- * The line's voice file, else the sound since the last click or key (null without sound), the
- * same until the next one.
- */
-function lineSound() {
-  var voice = voiceFile(inSystem && inBacklog ? backlogVoice : lineVoice);
+/** The kept lines' text for vnLineFor, with the backlog page shown (if any) last. */
+function ankiTexts() {
+  var texts = keptLines.map(function (line) {
+    return line.text;
+  });
 
-  if (voice) return Promise.resolve(voice);
-  if (!lineAudio) {
-    if (!lineRecorder || lineRecorder.state === 'inactive') return Promise.resolve(null);
-    lineRecorder.stop();
-    lineAudio = lineRecorder.stopped;
-  }
-  return lineAudio;
+  return inSystem && inBacklog ? texts.concat(backlogText) : texts;
+}
+
+/**
+ * The screenshot and sound of ankiTexts()[index]: its voice file, else the sound recorded
+ * from the click that brought it to the next (null without sound). The backlog page gets the
+ * screen as it is and its voice file.
+ */
+async function ankiMedia(index, want) {
+  var line = keptLines[index] || { voice: backlogVoice, picture: screenshot() };
+
+  // Still being recorded: stop here, so its sound ends now.
+  if (lineRecorder && lineRecorder.line === line) stopLineRecorder();
+  return {
+    picture: want.picture ? await line.picture : null,
+    audio: want.audio ? voiceFile(line.voice) || (await line.audio) || null : null
+  };
 }
 
 function screenshot() {
@@ -447,7 +489,8 @@ function loadScript(src) {
  * options: files (path → Blob or URL, paths relative to the game folder), encoding ('sjis' |
  * 'utf8'), saveDir (unique per game), cacheName (Cache API cache keeping the fetched files, for
  * games served by URL), saves (synced save files, written when newer than
- * this browser's), recordLines (keep the sound of the current line for lineSound()),
+ * this browser's), keepLines (keep the recent lines with their screenshots for ankiMedia()),
+ * recordLines (and record their sound),
  * onText(bytes, skipped, boxes, read), textLines(bytes, boxes) (overlay lines for backlog pages and sprites),
  * onSave(saves), onExit(code).
  */
@@ -458,10 +501,13 @@ async function startGame(options) {
   });
 
   // onText also gets whether the engine has the text as read before (consPosition).
+  textLines = options.textLines || textLines;
+  keepLines = !!options.keepLines;
   consText = function (bytes, skipped, boxes) {
     options.onText(bytes, skipped, boxes, textRead);
+    // Skipped text goes by too fast to mine.
+    if (!skipped) keepLine(textLines(bytes, boxes));
   };
-  textLines = options.textLines || textLines;
   recordLines = !!options.recordLines && typeof MediaRecorder !== 'undefined';
   if (options.cacheName) fileCache = await caches.open(options.cacheName);
   onSave = options.onSave || onSave;

@@ -75,7 +75,15 @@
     updateStatistic
   } from '$lib/components/book-reader/book-reading-tracker/book-reading-tracker';
   import AnkiWatcher from '$lib/components/anki-watcher.svelte';
-  import { ankiEnabled$, ankiVnAudio$, ankiVnScreenshot$ } from '$lib/data/anki';
+  import {
+    ankiEnabled$,
+    ankiSentenceField$,
+    ankiVnAudio$,
+    ankiVnScreenshot$,
+    noteSentence,
+    vnLineFor,
+    type AnkiNote
+  } from '$lib/data/anki';
   import { writableBooleanLocalStorageSubject } from '$lib/data/internal/writable-boolean-local-storage-subject';
 
   /** Time between two clicks counted as reading at most, so breaks don't count. */
@@ -312,6 +320,7 @@
         ? Object.fromEntries(info.files.map((path) => [path, `${info.base}${encodePath(path)}`]))
         : book.blobs,
       cacheName,
+      keepLines: $ankiEnabled$,
       recordLines: $ankiEnabled$ && $ankiVnAudio$,
       encoding: info.encoding,
       saveDir: `/save/${hashPage(book.title)}`,
@@ -333,14 +342,21 @@
     started = true;
   }
 
-  /** For a note added to Anki while playing: the game screen and the current line's sound. */
-  async function ankiMedia() {
+  /**
+   * For a note added to Anki while playing: the screen and sound of the line its sentence was
+   * mined from, kept by the player as it was shown. Notes from elsewhere are left alone.
+   */
+  async function ankiMedia(note: AnkiNote) {
     const player = frame?.contentWindow as any;
+    const line = player?.ankiTexts ? vnLineFor(noteSentence(note), player.ankiTexts()) : -1;
 
-    return {
-      picture: $ankiVnScreenshot$ ? await player?.screenshot() : undefined,
-      audio: $ankiVnAudio$ ? await player?.lineSound() : undefined
-    };
+    if (line < 0) {
+      throw new Error(
+        `card left alone, its ${$ankiSentenceField$.trim()} field isn't a recent line of this game`
+      );
+    }
+
+    return player.ankiMedia(line, { picture: $ankiVnScreenshot$, audio: $ankiVnAudio$ });
   }
 
   function onText(text: string, skipped: boolean, readBefore: boolean) {
