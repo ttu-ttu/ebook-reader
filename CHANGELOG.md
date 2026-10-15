@@ -6,6 +6,8 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+## v3.6.0 (2026-10-15)
+
 ### Visual novels
 
 - Anki mining checks that a new card's sentence is from the game: the player keeps the last
