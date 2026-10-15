@@ -6,6 +6,8 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+## v3.5.0 (2026-10-15)
+
 ### Visual novels
 
 - Vertical text (e.g. Muramasa) is laid out as columns in the Yomitan overlay
