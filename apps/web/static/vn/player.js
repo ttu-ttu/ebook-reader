@@ -144,14 +144,21 @@ function consBacklog(bytes, boxes, voice) {
 /** The visible string sprites (strsp: script-drawn menus and backlogs) at each wait for input. */
 function consSprites(bytes, boxes) {
   var layer = document.getElementById('sprite-text');
+  var lines = textLines(bytes, boxes);
 
-  layer.replaceChildren.apply(layer, textLines(bytes, boxes).map(overlayLine));
+  spriteText = lines
+    .map(function (line) {
+      return line.text;
+    })
+    .join('');
+  layer.replaceChildren.apply(layer, lines.map(overlayLine));
 }
 
 // The voice (dwave channel 0) of the page being read, and of the backlog page shown.
 var lineVoice = null;
 var backlogVoice = null;
 var backlogText = '';
+var spriteText = '';
 // From consPosition: 1 if the engine has the text as read before, 0 if not, -1 unknown.
 var textRead = -1;
 var autoMode = false;
@@ -213,10 +220,12 @@ window.addEventListener('resize', function () {
   scale_full(document.getElementById('canvas'), g_screen_width / g_screen_height);
 });
 
-// Anki mining (lib/data/anki.ts): the recent lines, each with its screenshot and sound, so a
-// note gets those of the line it was mined from (vnLineFor), however late it is noticed.
-var KEPT_LINES = 30;
-var keptLines = []; // [{ text, voice, picture: Promise<Blob>, audio?: Promise<Blob> }], oldest first
+// Anki mining (lib/data/anki.ts): the recent lines with their voice files, and for the newest
+// their screenshot and sound, so a note gets those of the line it was mined from (vnLineFor),
+// however late it is noticed or from however far back in a backlog.
+var KEPT_LINES = 500;
+var KEPT_MEDIA = 30;
+var keptLines = []; // [{ text, voice, picture?: Promise<Blob>, audio?: Promise<Blob> }], oldest first
 var keepLines = false;
 var soundTap;
 var lineRecorder;
@@ -262,6 +271,10 @@ function keepLine(lines) {
   if (lineRecorder && lineRecorder.state !== 'inactive') lineRecorder.line = line;
   keptLines.push(line);
   if (keptLines.length > KEPT_LINES) keptLines.shift();
+
+  var old = keptLines[keptLines.length - 1 - KEPT_MEDIA];
+
+  if (old) old.picture = old.audio = undefined;
 }
 
 function stopLineRecorder() {
@@ -310,28 +323,46 @@ function voiceFile(file) {
   }
 }
 
-/** The kept lines' text for vnLineFor, with the backlog page shown (if any) last. */
+/** The kept lines' text, oldest first, for vnLineFor. */
 function ankiTexts() {
-  var texts = keptLines.map(function (line) {
+  return keptLines.map(function (line) {
     return line.text;
   });
+}
 
-  return inSystem && inBacklog ? texts.concat(backlogText) : texts;
+/** Backlog text on screen now: the built-in backlog's page, and script-drawn (strsp) text. */
+function shownPages() {
+  var pages = [];
+
+  if (inSystem && inBacklog) pages.push({ text: backlogText, voice: backlogVoice });
+  if (!inSystem && spriteText) pages.push({ text: spriteText, voice: null });
+  return pages;
+}
+
+function ankiShownTexts() {
+  return shownPages().map(function (page) {
+    return page.text;
+  });
 }
 
 /**
- * The screenshot and sound of ankiTexts()[index]: its voice file, else the sound recorded
- * from the click that brought it to the next (null without sound). The backlog page gets the
- * screen as it is and its voice file.
+ * Media for a mined line: kept line ankiTexts()[kept] and/or backlog page
+ * ankiShownTexts()[shown] (-1 for none). The picture is the screen when the line was shown,
+ * if still kept, else the screen as it is now (the backlog). The sound is the line's voice
+ * file, else the sound recorded from the click that brought it to the next, else the backlog
+ * page's voice file (null without sound).
  */
-async function ankiMedia(index, want) {
-  var line = keptLines[index] || { voice: backlogVoice, picture: screenshot() };
+async function ankiMedia(kept, shown, want) {
+  var line = keptLines[kept] || {};
+  var page = shownPages()[shown] || {};
 
   // Still being recorded: stop here, so its sound ends now.
   if (lineRecorder && lineRecorder.line === line) stopLineRecorder();
   return {
-    picture: want.picture ? await line.picture : null,
-    audio: want.audio ? voiceFile(line.voice) || (await line.audio) || null : null
+    picture: want.picture ? (await line.picture) || (await screenshot()) : null,
+    audio: want.audio
+      ? voiceFile(line.voice) || (await line.audio) || voiceFile(page.voice) || null
+      : null
   };
 }
 

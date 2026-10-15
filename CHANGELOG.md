@@ -9,9 +9,12 @@ anything a reader or a server operator would notice.
 ### Visual novels
 
 - Anki mining checks that a new card's sentence is from the game: the player keeps the last
-  30 lines with their screenshot and sound, and the card gets those of the line its Sentence
-  field came from, even when the line has moved on by the time the card is noticed. Cards
-  whose sentence isn't a recent line (mined in another tab, for example) are left alone.
+  500 lines with their voice files (the newest 30 also with their screenshot and sound), and
+  the card gets those of the line its Sentence field came from, even when the line has moved
+  on by the time the card is noticed. Backlogs can be mined too, the built-in one and
+  script-drawn ones: the card gets the line's voice and its screenshot from when it was shown,
+  or the backlog's screen for older lines. Cards whose sentence isn't from the game (mined in
+  another tab, for example) are left alone.
 
 ## v3.5.0 (2026-10-15)
 

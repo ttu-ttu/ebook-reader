@@ -344,19 +344,22 @@
 
   /**
    * For a note added to Anki while playing: the screen and sound of the line its sentence was
-   * mined from, kept by the player as it was shown. Notes from elsewhere are left alone.
+   * mined from, kept by the player as it was shown, or of the backlog it was mined from. Notes
+   * from elsewhere are left alone.
    */
   async function ankiMedia(note: AnkiNote) {
     const player = frame?.contentWindow as any;
-    const line = player?.ankiTexts ? vnLineFor(noteSentence(note), player.ankiTexts()) : -1;
+    const sentence = noteSentence(note);
+    const kept = player?.ankiTexts ? vnLineFor(sentence, player.ankiTexts()) : -1;
+    const shown = player?.ankiShownTexts ? vnLineFor(sentence, player.ankiShownTexts()) : -1;
 
-    if (line < 0) {
+    if (kept < 0 && shown < 0) {
       throw new Error(
-        `card left alone, its ${$ankiSentenceField$.trim()} field isn't a recent line of this game`
+        `card left alone, its ${$ankiSentenceField$.trim()} field isn't a line of this game's recent text or backlog`
       );
     }
 
-    return player.ankiMedia(line, { picture: $ankiVnScreenshot$, audio: $ankiVnAudio$ });
+    return player.ankiMedia(kept, shown, { picture: $ankiVnScreenshot$, audio: $ankiVnAudio$ });
   }
 
   function onText(text: string, skipped: boolean, readBefore: boolean) {
