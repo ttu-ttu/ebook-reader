@@ -6,6 +6,11 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Visual novels
+
+- Game sound no longer hiccups in Firefox (CONscripter v0.25.1 queues its audio ahead instead
+  of filling it at the last moment on a busy page).
+
 ## v3.6.0 (2026-10-15)
 
 ### Visual novels
