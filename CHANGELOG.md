@@ -8,6 +8,9 @@ anything a reader or a server operator would notice.
 
 ### Visual novels
 
+- Vertical text (e.g. Muramasa) is laid out as columns in the Yomitan overlay
+  (`writing-mode: vertical-rl`), so lookups span several characters and the popup opens
+  beside the column instead of over it.
 - Synced saves (`vnsaves.json`) record the CONscripter version that wrote them. Opening a
   game whose saves come from a newer engine than the server's shows a notice: saves should
   be backward compatible, but an admin can update the engine if one doesn't load.

@@ -316,6 +316,8 @@ export interface VnOverlayLine {
   size: number;
   /** Distance between characters */
   pitch: number;
+  /** Drawn top to bottom (vertical text), so Yomitan scans it as a column */
+  vertical?: boolean;
 }
 
 function charLength(lead: number, encoding: VnEncoding) {
@@ -327,7 +329,8 @@ function charLength(lead: number, encoding: VnEncoding) {
 /**
  * The page's characters grouped into screen lines, from the engine's character boxes
  * (byte offset in the page, x, y, font size; four numbers each). Ruby readings have no
- * boxes, so lines hold the base text only.
+ * boxes, so lines hold the base text only. A line whose second character sits right below
+ * its first is vertical and runs downward.
  * shortcut: one pitch per line, from its first and last character, so half-width letters
  * in a full-width line drift a little; give each run its own pitch if that matters.
  */
@@ -336,8 +339,15 @@ export function overlayLines(
   boxes: ArrayLike<number>,
   encoding: VnEncoding
 ): VnOverlayLine[] {
-  const lines: { text: string; x: number; y: number; size: number; last: number; count: number }[] =
-    [];
+  const lines: {
+    text: string;
+    x: number;
+    y: number;
+    size: number;
+    last: number;
+    count: number;
+    vertical: boolean;
+  }[] = [];
 
   for (let index = 0; index + 3 < boxes.length; index += 4) {
     const offset = boxes[index];
@@ -351,20 +361,26 @@ export function overlayLines(
     const [x, y, size] = [boxes[index + 1], boxes[index + 2], boxes[index + 3]];
     const line = lines[lines.length - 1];
 
-    if (line && line.y === y && x > line.last) {
+    if (line && line.count === 1 && line.x === x && y > line.y) {
+      line.vertical = true;
+      line.last = line.y;
+    }
+
+    if (line && (line.vertical ? line.x === x && y > line.last : line.y === y && x > line.last)) {
       line.text += char;
-      line.last = x;
+      line.last = line.vertical ? y : x;
       line.count += 1;
     } else {
-      lines.push({ text: char, x, y, size, last: x, count: 1 });
+      lines.push({ text: char, x, y, size, last: x, count: 1, vertical: false });
     }
   }
 
-  return lines.map(({ text, x, y, size, last, count }) => ({
+  return lines.map(({ text, x, y, size, last, count, vertical }) => ({
     text,
     x,
     y,
     size,
-    pitch: count > 1 ? (last - x) / (count - 1) : size
+    pitch: count > 1 ? (last - (vertical ? y : x)) / (count - 1) : size,
+    ...(vertical && { vertical })
   }));
 }

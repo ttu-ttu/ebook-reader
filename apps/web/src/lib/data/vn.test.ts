@@ -120,6 +120,17 @@ describe('vn', () => {
     ]);
   });
 
+  it('keeps vertical columns together', () => {
+    // 「あい」 down one column, then 「う」 at the top of the next one to the left.
+    const bytes = sjis('82a082a282a4');
+    const boxes = [0, 100, 20, 24, 2, 100, 46, 24, 4, 70, 20, 24];
+
+    expect(overlayLines(bytes, boxes, 'sjis')).toEqual([
+      { text: 'あい', x: 100, y: 20, size: 24, pitch: 26, vertical: true },
+      { text: 'う', x: 70, y: 20, size: 24, pitch: 24 }
+    ]);
+  });
+
   it('deletes kept game files only for games no longer in the library', async () => {
     const deleted: string[] = [];
 

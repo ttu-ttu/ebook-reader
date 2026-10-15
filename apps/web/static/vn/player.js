@@ -56,10 +56,12 @@ function overlayLine(line) {
   div.style.top = (100 * line.y) / g_screen_height + '%';
   div.style.fontSize = 'calc(var(--scale) * ' + line.size + 'px)';
   div.style.letterSpacing = 'calc(var(--scale) * ' + (line.pitch - line.size) + 'px)';
+  // Yomitan reads the writing mode to scan the column and place its popup beside it.
+  if (line.vertical) div.style.writingMode = 'vertical-rl';
   return div;
 }
 
-/** lines: [{ text, x, y, size, pitch }] in screen pixels (overlayLines in lib/data/vn.ts). */
+/** lines: [{ text, x, y, size, pitch, vertical? }] in screen pixels (overlayLines in lib/data/vn.ts). */
 function showText(lines) {
   document
     .getElementById('page-text')
