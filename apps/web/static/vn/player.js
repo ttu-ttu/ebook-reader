@@ -1,18 +1,18 @@
 /**
  * Shell for the CONscripter web engine (conscripter.js, GPL-2.0, fetched by scripts/conscripter/),
  * loaded by the reader's /v page in a same-origin iframe. The engine calls the globals below
- * (g_onsyuri_*, fetch_file, flush_save, playVideo, scale_full, onsyuriText, onsyuriChoice,
- * onsyuriOverlay, onsyuriBacklog, onsyuriSprites, onsyuriVoice, onsyuriPosition, onsyuriMode) from its C code; they keep ONScripter-yuri's names, as does its
- * onsyuri() loader.
+ * (g_cons_*, fetch_file, flush_save, playVideo, scale_full, consText, consChoice,
+ * consOverlay, consBacklog, consSprites, consVoice, consPosition, consMode) from its C code; the loader is
+ * cons() (CONscripter v0.23.0 renamed them from ONScripter-yuri's onsyuri names).
  * The page calls startGame() once the frame has loaded.
  */
 
-var g_onsyuri_module = {};
-var g_onsyuri_index = {};
-var g_onsyuri_filemap = {};
+var g_cons_module = {};
+var g_cons_index = {};
+var g_cons_filemap = {};
 var g_screen_width = 640;
 var g_screen_height = 480;
-var onsyuriText;
+var consText;
 var textLines = function () {
   return [];
 };
@@ -69,7 +69,7 @@ function showText(lines) {
 }
 
 /** A choice (or system menu item) drawn by the engine: its text in script bytes. */
-function onsyuriChoice(bytes, x, y, size, pitch) {
+function consChoice(bytes, x, y, size, pitch) {
   document
     .getElementById('choices')
     .appendChild(
@@ -101,7 +101,7 @@ function updateHidden() {
  * menu or backlog over the page and back), 'reset' (left the system menu elsewhere, e.g. a
  * loaded game).
  */
-function onsyuriOverlay(event) {
+function consOverlay(event) {
   var page = document.getElementById('page-text');
   var choices = document.getElementById('choices');
 
@@ -129,8 +129,8 @@ function onsyuriOverlay(event) {
   updateHidden();
 }
 
-/** A backlog page (between 'enter' and 'leave'): script bytes and boxes, as for onsyuriText. */
-function onsyuriBacklog(bytes, boxes, voice) {
+/** A backlog page (between 'enter' and 'leave'): script bytes and boxes, as for consText. */
+function consBacklog(bytes, boxes, voice) {
   backlogVoice = voice;
   showText(textLines(bytes, boxes));
   inBacklog = true;
@@ -138,7 +138,7 @@ function onsyuriBacklog(bytes, boxes, voice) {
 }
 
 /** The visible string sprites (strsp: script-drawn menus and backlogs) at each wait for input. */
-function onsyuriSprites(bytes, boxes) {
+function consSprites(bytes, boxes) {
   var layer = document.getElementById('sprite-text');
 
   layer.replaceChildren.apply(layer, textLines(bytes, boxes).map(overlayLine));
@@ -147,25 +147,25 @@ function onsyuriSprites(bytes, boxes) {
 // The voice (dwave channel 0) of the page being read, and of the backlog page shown.
 var lineVoice = null;
 var backlogVoice = null;
-// From onsyuriPosition: 1 if the engine has the text as read before, 0 if not, -1 unknown.
+// From consPosition: 1 if the engine has the text as read before, 0 if not, -1 unknown.
 var textRead = -1;
 var autoMode = false;
 
-function onsyuriVoice(channel, file) {
+function consVoice(channel, file) {
   if (channel === 0) lineVoice = file;
 }
 
-function onsyuriPosition(offset, total, label, read) {
+function consPosition(offset, total, label, read) {
   textRead = read;
 }
 
-function onsyuriMode(auto) {
+function consMode(auto) {
   autoMode = !!auto;
 }
 
-/** Calls one of the engine's _onsyuriSet* exports (CONscripter v0.19.0+), e.g. ('Ruby', 0). */
+/** Calls one of the engine's _consSet* exports (CONscripter v0.19.0+), e.g. ('Ruby', 0). */
 function engineSet(name, value) {
-  var set = g_onsyuri_module['_onsyuriSet' + name];
+  var set = g_cons_module['_consSet' + name];
 
   if (typeof set === 'function') set(value);
 }
@@ -266,12 +266,12 @@ var voiceTypes = { ogg: 'audio/ogg', wav: 'audio/wav', mp3: 'audio/mpeg' };
 
 /** A voice file named by the script, if it is a plain game file (not in an archive). */
 function voiceFile(file) {
-  var node = file && g_onsyuri_filemap[('/game/' + file.replace(/\\/g, '/')).toLowerCase()];
+  var node = file && g_cons_filemap[('/game/' + file.replace(/\\/g, '/')).toLowerCase()];
   var type = file && voiceTypes[file.split('.').pop().toLowerCase()];
 
   if (!node || !type) return null;
   try {
-    return new Blob([g_onsyuri_module.FS.readFile(node.path)], { type: type });
+    return new Blob([g_cons_module.FS.readFile(node.path)], { type: type });
   } catch (error) {
     return null;
   }
@@ -385,7 +385,7 @@ function fetch_file(FS, key, filemap) {
 }
 
 function flush_save() {
-  g_onsyuri_module.FS.syncfs(false, function (error) {
+  g_cons_module.FS.syncfs(false, function (error) {
     if (error) console.error(error);
     else onSave(readSaves());
   });
@@ -394,17 +394,17 @@ function flush_save() {
 function playVideo(path, clickFlag, loopFlag) {
   var video = document.getElementById('video');
   var canvas = document.getElementById('canvas');
-  var data = g_onsyuri_module.FS.readFile(path);
+  var data = g_cons_module.FS.readFile(path);
 
   function ended() {
     canvas.style.display = 'block';
     video.style.display = 'none';
     URL.revokeObjectURL(video.src);
     video.removeAttribute('src');
-    g_onsyuri_module.wait_video = false;
+    g_cons_module.wait_video = false;
   }
 
-  g_onsyuri_module.wait_video = true;
+  g_cons_module.wait_video = true;
   video.src = URL.createObjectURL(new Blob([data], { type: 'video/mp4' }));
   video.loop = loopFlag;
   video.onended = ended;
@@ -417,8 +417,8 @@ function playVideo(path, clickFlag, loopFlag) {
 
 /** The save folder's files: name → { modified, bytes }. */
 function readSaves() {
-  var FS = g_onsyuri_module.FS;
-  var dir = g_onsyuri_index.savedir;
+  var FS = g_cons_module.FS;
+  var dir = g_cons_index.savedir;
   var saves = {};
 
   FS.readdir(dir).forEach(function (name) {
@@ -457,8 +457,8 @@ async function startGame(options) {
     return path.toLowerCase() === 'default.ttf';
   });
 
-  // onText also gets whether the engine has the text as read before (onsyuriPosition).
-  onsyuriText = function (bytes, skipped, boxes) {
+  // onText also gets whether the engine has the text as read before (consPosition).
+  consText = function (bytes, skipped, boxes) {
     options.onText(bytes, skipped, boxes, textRead);
   };
   textLines = options.textLines || textLines;
@@ -466,9 +466,9 @@ async function startGame(options) {
   if (options.cacheName) fileCache = await caches.open(options.cacheName);
   onSave = options.onSave || onSave;
   textEncoding = options.encoding === 'utf8' ? 'utf-8' : 'shift_jis';
-  g_onsyuri_index = { gamedir: gameDir, savedir: options.saveDir };
+  g_cons_index = { gamedir: gameDir, savedir: options.saveDir };
   Object.keys(options.files).forEach(function (path) {
-    g_onsyuri_filemap[(gameDir + '/' + path).toLowerCase()] = {
+    g_cons_filemap[(gameDir + '/' + path).toLowerCase()] = {
       path: gameDir + '/' + path,
       url:
         typeof options.files[path] === 'string'
@@ -478,28 +478,28 @@ async function startGame(options) {
     };
   });
   if (!hasFont) {
-    g_onsyuri_filemap[gameDir + '/default.ttf'] = {
+    g_cons_filemap[gameDir + '/default.ttf'] = {
       path: gameDir + '/default.ttf',
       url: 'default.ttf',
       loaded: false
     };
   }
 
-  g_onsyuri_module.canvas = document.getElementById('canvas');
-  g_onsyuri_module.onExit = options.onExit;
+  g_cons_module.canvas = document.getElementById('canvas');
+  g_cons_module.onExit = options.onExit;
   await loadScript('conscripter.js');
   // INVOKE_RUN=0: the runtime is ready here and main() waits for callMain.
-  g_onsyuri_module = await onsyuri(g_onsyuri_module);
+  g_cons_module = await cons(g_cons_module);
 
-  var FS = g_onsyuri_module.FS;
+  var FS = g_cons_module.FS;
 
-  Object.keys(g_onsyuri_filemap).forEach(function (key) {
-    var path = g_onsyuri_filemap[key].path;
+  Object.keys(g_cons_filemap).forEach(function (key) {
+    var path = g_cons_filemap[key].path;
 
     mkdirs(FS, path.slice(0, path.lastIndexOf('/')));
   });
   mkdirs(FS, options.saveDir);
-  FS.mount(g_onsyuri_module.IDBFS, {}, options.saveDir);
+  FS.mount(g_cons_module.IDBFS, {}, options.saveDir);
   await new Promise(function (resolve) {
     FS.syncfs(true, function (error) {
       if (error) console.error(error);
@@ -521,7 +521,7 @@ async function startGame(options) {
   flush_save();
 
   document.getElementById('canvas').focus();
-  g_onsyuri_module.callMain([
+  g_cons_module.callMain([
     '--root',
     gameDir,
     '--font',

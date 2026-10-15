@@ -27,8 +27,8 @@ else
     < "$work/web.7z" | tar -C "$work" -xf -
 fi
 
-# The app's overlay, choices, progress and Anki need the text hooks (CONscripter v0.9.0 and later).
-grep -q onsyuriOverlay "$work/conscripter.js" || { echo "CONscripter $tag has no text hooks" >&2; exit 1; }
+# The app's overlay, choices, progress and Anki need the text hooks under their cons names (CONscripter v0.23.0 and later).
+grep -q consOverlay "$work/conscripter.js" || { echo "CONscripter $tag has no text hooks with the cons names (v0.23.0 and later)" >&2; exit 1; }
 
 mkdir -p "$out"
 cp "$work/conscripter.js" "$work/conscripter.wasm" "$out/"

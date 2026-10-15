@@ -14,6 +14,14 @@ anything a reader or a server operator would notice.
 - Synced saves (`vnsaves.json`) record the CONscripter version that wrote them. Opening a
   game whose saves come from a newer engine than the server's shows a notice: saves should
   be backward compatible, but an admin can update the engine if one doesn't load.
+- CONscripter v0.23.0, which renames its web interface from ONScripter-yuri's `onsyuri*`
+  names to `cons*` (`consText`, `g_cons_module`, `cons()`…); the player uses the new names,
+  so it needs v0.23.0 or later, and `scripts/conscripter/build.sh` (and the admin panel's
+  engine install) refuses older releases. Servers on v3.4.0 or older refuse v0.23.0 the
+  same way, so update chimimouryou to get the new engine. Also new in the engine: sprite
+  motions keep moving during a screen effect, arrows turn in vertical text, `openurl`,
+  `strspoutline`, and global variables (unlocks) are saved at any wait, so auto mode
+  keeps them.
 - CONscripter v0.19.0. Anki cards get the line's voice file instead of a live recording
   (also for backlog pages; voices inside `.nsa` archives are still recorded), text the game
   has as read before (its kidoku data, also from other devices) no longer counts again,
