@@ -8,8 +8,11 @@ Roteiro de chats: docs/FASES.md. Estado atual: docs/PROGRESSO.md (ler no início
 - Dados locais do ttu: IndexedDB (apps/web/src/lib/data/database/books-db).
 - Sincronização do ttu: handlers em apps/web/src/lib/data/storage/handler (gdrive, onedrive...).
   O Supabase entra como um handler novo nesse mesmo padrão.
-- Supabase: Auth, Postgres com RLS, Storage (buckets `epubs` e `audio`), Edge Function `gemini`.
+- Supabase: Auth, Postgres com RLS, Storage (buckets `epubs`, `audio`, `dicts`), Edge Function `gemini`.
   Schema em supabase/migrations/. Cliente: @supabase/supabase-js.
+- Hospedagem: Vercel (build estático do adapter-static).
+- Dicionários: zips Yomitan em dicts/ (local, fora do git) → bucket privado `dicts` → cada aparelho
+  baixa e importa no IndexedDB.
 - Dicionário embutido no formato Yomitan (IndexedDB), glosas em inglês. Busca e deflexão próprias (Yomitan é GPL).
 
 ## Comandos
@@ -22,10 +25,12 @@ Roteiro de chats: docs/FASES.md. Estado atual: docs/PROGRESSO.md (ler no início
 
 ## Regras fixas
 - Nenhuma chamada a Claude/LLM dentro do app. Só Gemini, só pela Edge Function `gemini`.
-- Chaves: GEMINI_API_KEY só como secret do Supabase. No front, só SUPABASE_URL e a anon key
+- Chaves: GEMINI_KEY só como secret do Supabase (já criado; ler com Deno.env.get("GEMINI_KEY")). No front, só SUPABASE_URL e a anon key
   (via .env, PUBLIC_*). Nunca service_role no front. Nunca chaves no código nem no chat.
 - Cards: seguir docs/CARDS.md; não mudar MODEL_ID, IDs dos decks nem prefixo de guid.
-  Deck de destino: 日本語::3. Leitor.
+  Deck de destino: 日本語::1. Dokusho (id 1760101002, guid_for("leituras-igor", palavra)).
+  Onde CARDS.md e ESCOPO.md divergem, no app vale: Word Meaning em inglês, áudio WAV sem
+  conversão (o script do CARDS converte para MP3; o app não), etiqueta só `dokusho`.
 - Estados do hub: conhecida (suspenso ou intervalo >= 21 dias), aprendendo (ativo com
   intervalo < 21 dias, inclusive novos), desconhecida (fora do Anki). Vale o estado mais avançado.
 - Toda tabela: user_id, updated_at, deleted_at; RLS user_id = auth.uid().

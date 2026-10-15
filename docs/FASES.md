@@ -36,8 +36,10 @@ desde que não mexam nos mesmos arquivos.
 
 ### S2 · Schema e Auth
 - Migração em supabase/migrations com as 8 tabelas do ESCOPO ("Arquitetura e modelo de dados"),
-  colunas user_id/updated_at/deleted_at, RLS, trigger de updated_at, buckets `epubs` e `audio`
+  colunas user_id/updated_at/deleted_at, RLS, trigger de updated_at, buckets `epubs`, `audio` e `dicts`
   com política por pasta `<user_id>/`.
+- Script tools/upload-dicts (Node) que sobe os zips de `dicts/` (pasta local, fora do git) para o
+  bucket `dicts`, logado como você.
 - Tipos TS gerados (`npx supabase gen types`).
 - Tela de login simples no app (e-mail + senha ou magic link) e cliente supabase em apps/web/src/lib.
 - **Pronto quando:** `npx supabase db push` aplica; login funciona; outro usuário não lê seus dados.
@@ -57,10 +59,11 @@ Resultados de cada teste vão para docs/PROGRESSO.md, na seção "Testes de risc
   nos decks 日本語::*). Documentar o `webCorsOriginList` necessário.
 - **Pronto quando:** no Chrome do Windows a página lista seus cartões com intervalo e suspensão.
 
-### R3 · Tokenizador e dicionário ∥ R2 👤 (você baixa JMdict EN e uma lista de frequência no formato Yomitan)
+### R3 · Tokenizador e dicionário ∥ R2 👤 (zips já em `dicts/` e no bucket `dicts`: JMdict_english, JPDB v2.2 Frequency Kana)
 - Escolher tokenizador que roda no navegador (comparar kuromoji.js vs. sudachi/lindera wasm:
   tamanho, velocidade, qualidade de leitura). Registrar a escolha no CLAUDE.md.
-- Importador Yomitan → IndexedDB (protótipo) e medição de tempo de import e consulta.
+- Importador Yomitan → IndexedDB (protótipo) que baixa o zip do bucket `dicts`; medir tamanho do
+  download, tempo de import e de consulta.
 - **Pronto quando:** números medidos no PC e na PWA do iPhone anotados.
 
 ### R4 · Casamento texto ↔ Anki (depende de R2 e R3)
@@ -68,8 +71,10 @@ Resultados de cada teste vão para docs/PROGRESSO.md, na seção "Testes de risc
   palavras só em kana. Testes primeiro para as regras de casamento.
 - **Pronto quando:** taxa anotada e regras ajustadas.
 
-### R5 · Edge Function `gemini` 👤 (você roda `npx supabase secrets set GEMINI_API_KEY=...`)
+### R5 · Edge Function `gemini` (secret `GEMINI_KEY` já criado no Supabase)
 - Função Deno com `action: translate | tts`, exige usuário autenticado; cache em `translations`.
+  TTS: modelo e voz de docs/CARDS.md (seção "Áudio": voz Orus); saída WAV, nome
+  `leituras-<sha1(voz|texto)[:12]>.wav` como no script.
 - Script que gera 30 traduções + áudios WAV; medir tamanho médio do áudio e estimar 1 GB.
 - **Pronto quando:** você ouviu/leu as 30 e anotou o veredito; estimativa de storage anotada.
 
@@ -105,7 +110,7 @@ Resultados de cada teste vão para docs/PROGRESSO.md, na seção "Testes de risc
 - Botão "Exportar .apkg" com todas as geradas + mídia; marca como exportada.
 - **Pronto quando:** as 10 cartas importam no Anki com áudio; reimportar não duplica.
 
-### V1.7 · PWA e deploy 👤 (escolher hospedagem: Cloudflare Pages, Vercel ou Netlify)
+### V1.7 · PWA e deploy na Vercel 👤 (você conecta o repo na Vercel e cola as env vars lá)
 - Manifest/ícone, cache offline (service worker do ttu), build estático, deploy, URL de
   redirect do Auth no Supabase.
 - **Pronto quando:** critério da v1 no ESCOPO ("Roadmap por versão") cumprido de ponta a ponta.

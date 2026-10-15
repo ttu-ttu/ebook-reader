@@ -213,7 +213,7 @@ O iPad e o iPhone recebem o estado do vocabulário já sincronizado. O .apkg é 
 | translations | Cache das traduções pedidas na leitura: frase em japonês, tradução e data; chave primária (user_id, sha256 da frase) |
 | batch_items | Campos do card, frase, estado (pendente, gerada, exportada), caminho do áudio no bucket `audio` e data de exportação |
 
-O sync usa a data de atualização (vale a última escrita) e marca exclusões em vez de apagar. O README do ttu avisa que dado apagado pode voltar no merge dele, e isso evita o problema. Toda tabela tem `user_id uuid references auth.users`, `updated_at`, `deleted_at` (soft delete) e RLS `user_id = auth.uid()`. vocab usa upsert na chave (user_id, word, reading), para gravar sem duplicar. Buckets `epubs` e `audio` privados, com política por pasta `<user_id>/...`. O schema vive em `supabase/migrations/`.
+O sync usa a data de atualização (vale a última escrita) e marca exclusões em vez de apagar. O README do ttu avisa que dado apagado pode voltar no merge dele, e isso evita o problema. Toda tabela tem `user_id uuid references auth.users`, `updated_at`, `deleted_at` (soft delete) e RLS `user_id = auth.uid()`. vocab usa upsert na chave (user_id, word, reading), para gravar sem duplicar. Buckets privados `epubs` e `audio` (política por pasta `<user_id>/...`) e `dicts` (os zips Yomitan, enviados uma vez por script; cada aparelho baixa e importa no IndexedDB na primeira vez). O schema vive em `supabase/migrations/`.
 
 ## Riscos e testes antes de construir
 
@@ -239,7 +239,7 @@ Licença (proposta): o ttu é BSD-3, sem restrição para o fork. O código do Y
 
 Nenhuma pergunta ficou em aberto; estas decisões foram tomadas em 15/10.
 
-1. **Deck de destino:** `日本語::3. Leitor`, com ID e prefixo de guid próprios, registrado no documento de cards; a etiqueta é só a do deck, sem origem.
+1. **Deck de destino:** `日本語::1. Dokusho` (ID 1760101002, prefixo de guid `leituras-igor`, conforme docs/CARDS.md); a etiqueta é só `dokusho`, sem origem.
 2. **Cartões novos:** um cartão adicionado como novo e ainda não estudado conta como aprendendo.
 3. **Áudio:** WAV, sem conversão, pela melhor qualidade. O .apkg fica maior; o teste de tamanho dos riscos diz se vale converter para MP3 depois.
 4. **Significado:** o leitor e as cartas usam a glosa em inglês do dicionário; só a tradução da frase é em português.
@@ -255,7 +255,7 @@ Construa em fases pequenas, cada uma com um teste que prova que funciona, usando
 
 Preparação:
 
-1. Fork do ttu e projeto no Supabase: feitos. Falta escolher a hospedagem estática (ver docs/FASES.md).
+1. Fork do ttu e projeto no Supabase: feitos. Hospedagem: Vercel.
 2. Este documento está em `docs/ESCOPO.md`; o documento de cards precisa ir para `docs/CARDS.md`.
 3. `CLAUDE.md` na raiz: feito. O roteiro de chats está em `docs/FASES.md` e o estado em `docs/PROGRESSO.md`.
 
@@ -271,7 +271,7 @@ No Claude Code:
 - Em cada fase, comece no plan mode e leia o plano antes de aprovar.
 - Escreva os testes antes do código nas partes que têm resposta certa: guid e .apkg (compare com a saída do gerador em Python), estados do hub e casamento de palavras.
 - Faça um commit por passo pequeno e use `/clear` ao trocar de fase, com o `CLAUDE.md` atualizado.
-- Nunca cole chaves no chat; o Gemini entra só como secret da Edge Function (`supabase secrets set`).
+- Nunca cole chaves no chat; o Gemini entra só como secret da Edge Function (secret `GEMINI_KEY`, já criado).
 
 Modelos:
 
