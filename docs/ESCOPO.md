@@ -1,10 +1,10 @@
 # Leitor de EPUB japonês com hub de vocabulário: escopo e plano de construção
 
-Atualizado em 2026-10-15. Este arquivo é a especificação do projeto: guarde-o no repositório como `docs/ESCOPO.md`.
+Atualizado em 2026-10-15. Este arquivo é a especificação do projeto. **Backend: Supabase** (o projeto já foi criado); onde versões antigas diziam Appwrite, vale Supabase.
 
 ## Visão
 
-O app é um leitor de EPUB em japonês, instalável como PWA, que reúne leitura, dicionário, criação de cards do Anki e um registro central do vocabulário que você conhece. Ele roda no iPad, no iPhone e no Windows, sincronizado pela sua conta no Appwrite.
+O app é um leitor de EPUB em japonês, instalável como PWA, que reúne leitura, dicionário, criação de cards do Anki e um registro central do vocabulário que você conhece. Ele roda no iPad, no iPhone e no Windows, sincronizado pela sua conta no Supabase.
 
 Princípios:
 
@@ -104,11 +104,11 @@ O projeto é um fork do leitor ttu com backend próprio e dicionário embutido, 
 | Tema | Decisão | Motivo |
 | --- | --- | --- |
 | Base | Fork do ttu ebook-reader (SvelteKit, BSD-3) | O leitor já existe: modo vertical, contagem de caracteres, estatísticas de leitura |
-| Backend | Appwrite (Auth, Databases, Storage, Functions) | O ttu não tem backend; a sincronização dele é export/import por Drive. O plano gratuito do Appwrite cobre o app: 2 GB de storage, 1 banco, 1 bucket e 2 funções por projeto |
+| Backend | Supabase (Auth, Postgres com RLS, Storage, Edge Functions) | O ttu não tem backend; a sincronização dele é export/import por Drive. O plano gratuito do Supabase cobre o app: 500 MB de banco, 1 GB de storage, Edge Functions |
 | Dicionário | Embutido, importando o formato Yomitan; glosas em inglês | Extensões do Safari, pelo que sei, não rodam em PWA instalada no iOS |
 | Cards | Palavras vão para uma fila; as cartas são geradas automaticamente e exportadas em .apkg | O guid fixo evita duplicatas ao reimportar |
 | Hub | Progresso lido do Anki pelo AnkiConnect, no PC | O AnkiWeb não tem API; o Windows já roda o Anki |
-| IA | Gemini no servidor, só para traduzir a frase e gerar o áudio; nada de Claude no app | O significado das palavras fica em inglês e só a tradução da frase é em português; a chave fica numa função do Appwrite |
+| IA | Gemini no servidor, só para traduzir a frase e gerar o áudio; nada de Claude no app | O significado das palavras fica em inglês e só a tradução da frase é em português; a chave fica como secret de uma Edge Function do Supabase |
 | Formatos | Apenas EPUB de texto | Mangá exigiria OCR |
 | Dispositivos | iPad, iPhone e Windows | Os três que você usa |
 
@@ -124,7 +124,7 @@ Cada palavra do texto recebe um de três estados, calculado a partir dos cartõe
 
 Se a palavra tem mais de um cartão, vale o estado mais avançado. A chave é o par (Word, Word Reading), que existe igual no Kaishi e no tipo de nota "Leituras (estilo Kaishi)". Os decks lidos são o 日本語 e seus subdecks, numa lista configurável.
 
-Sincronização: no Windows, um botão "Sincronizar Anki" lê os cartões pelo AnkiConnect (localhost:8765) e grava o resultado no Appwrite. iPad e iPhone só leem. Por isso o estado só muda quando você sincroniza no PC, e o app mostra a data da última sincronização.
+Sincronização: no Windows, um botão "Sincronizar Anki" lê os cartões pelo AnkiConnect (localhost:8765) e grava o resultado no Supabase. iPad e iPhone só leem. Por isso o estado só muda quando você sincroniza no PC, e o app mostra a data da última sincronização.
 
 O que o hub entrega:
 
@@ -162,7 +162,7 @@ Regras da fila:
 - Palavra que já está no Anki (conhecida ou aprendendo) só entra na fila se você confirmar.
 - A geração precisa de internet; sem rede, a carta fica pendente e é gerada depois.
 - Os campos gerados ficam visíveis e editáveis, para você conferir leituras e traduções, como pede o documento de cards.
-- A chave do Gemini fica como segredo numa função do Appwrite; o app nunca a vê.
+- A chave do Gemini fica como secret da Edge Function do Supabase; o app nunca a vê.
 - Mudar o formato continua sendo editar o documento de cards, uma vez só; o app segue o que está lá.
 
 ## Roadmap por versão
@@ -171,7 +171,7 @@ A v1 entrega o leitor sincronizado com criação de cards; a v2 liga o hub ao An
 
 | Versão | O que entra | Pronto quando |
 | --- | --- | --- |
-| v1 | Fork do ttu com biblioteca, bookmark e estatísticas no Appwrite; importação de dicionários Yomitan; tela inicial com calendário, meta, tempo e caracteres lidos; consulta ao tocar na palavra; botão Traduzir frase (Gemini); fila de cartas com geração automática (tradução da frase e áudio pelo Gemini) e exportação .apkg | Você lê no iPad, continua no iPhone no mesmo ponto, e 10 palavras na fila viram cartas com áudio e importam no Anki sem duplicar ao reimportar |
+| v1 | Fork do ttu com biblioteca, bookmark e estatísticas no Supabase; importação de dicionários Yomitan; tela inicial com calendário, meta, tempo e caracteres lidos; consulta ao tocar na palavra; botão Traduzir frase (Gemini); fila de cartas com geração automática (tradução da frase e áudio pelo Gemini) e exportação .apkg | Você lê no iPad, continua no iPhone no mesmo ponto, e 10 palavras na fila viram cartas com áudio e importam no Anki sem duplicar ao reimportar |
 | v2 | Botão Sincronizar Anki; estados conhecida, aprendendo e desconhecida; destaque no texto; aviso de palavra já no Anki; cobertura por livro; lista de desconhecidas por frequência; aba de palavras conhecidas na tela inicial | Abrir um EPUB mostra a cobertura em %, e uma palavra conhecida no Anki aparece destacada no iPad depois de sincronizar no PC |
 | v3 (opcional) | Kanji conhecidos para folhas de escrita; estatísticas cruzando leitura e vocabulário; exportação em CSV das palavras conhecidas e em aprendizado; furigana adaptativo | Cada item funciona sozinho; nenhum bloqueia os outros |
 
@@ -179,15 +179,15 @@ Fora do escopo: mangá e outros formatos, Claude dentro do app, extensão do Yom
 
 ## Arquitetura e modelo de dados
 
-O app grava e lê tudo no Appwrite; só o Windows conversa com o Anki e só o Appwrite conversa com o Gemini.
+O app grava e lê tudo no Supabase; só o Windows conversa com o Anki e só a Edge Function conversa com o Gemini.
 
 ```mermaid
 flowchart LR
-  subgraph AW[Appwrite]
+  subgraph AW[Supabase]
     AU[Auth]
-    DB[(Database - o hub)]
+    DB[(Postgres - o hub)]
     ST[Storage - EPUBs e áudio]
-    FN[Function - traduz frase e gera áudio]
+    FN[Edge Function gemini - traduz frase e gera áudio]
   end
   subgraph DV[Dispositivos - PWA com cache offline]
     IP[iPad e iPhone - só leem o hub]
@@ -200,20 +200,20 @@ flowchart LR
   FN -->|chama| GM
 ```
 
-O iPad e o iPhone recebem o estado do vocabulário já sincronizado. O .apkg é gerado no próprio dispositivo e importado no Anki. A função no Appwrite chama o Gemini para traduzir a frase e gerar o áudio, e a chave fica lá. Uma só função atende as duas ações (traduzir e gerar áudio), porque o plano gratuito permite duas funções por projeto. Os dicionários ficam só no dispositivo (IndexedDB).
+O iPad e o iPhone recebem o estado do vocabulário já sincronizado. O .apkg é gerado no próprio dispositivo e importado no Anki. A Edge Function `gemini` chama o Gemini para traduzir a frase e gerar o áudio, e a chave fica lá como secret. Uma só função atende as duas ações (`action: translate | tts`). Os dicionários ficam só no dispositivo (IndexedDB).
 
-| Coleção (Appwrite) | Conteúdo |
+| Tabela (Supabase/Postgres) | Conteúdo |
 | --- | --- |
-| books | Título, capa, total de caracteres e o ID do arquivo EPUB no bucket |
+| books | Título, capa, total de caracteres e o caminho do EPUB no bucket `epubs` |
 | bookmarks | Posição e progresso, um documento por livro |
 | reading_stats | Tempo, caracteres e velocidade por livro e por dia |
 | reading_goals | Metas de tempo e de caracteres |
-| vocab | Palavra, leitura, estado, intervalo, suspensa e data da sincronização; o ID do documento deriva de (palavra, leitura) |
+| vocab | Palavra, leitura, estado, intervalo, suspensa e data da sincronização; chave primária (user_id, word, reading) |
 | vocab_history | Um retrato por sincronização do Anki: data, total de conhecidas e de aprendendo |
-| translations | Cache das traduções pedidas na leitura: frase em japonês, tradução e data; o ID do documento é o hash da frase |
-| batch_items | Campos do card, frase, estado (pendente, gerada, exportada), ID do áudio no bucket e data de exportação |
+| translations | Cache das traduções pedidas na leitura: frase em japonês, tradução e data; chave primária (user_id, sha256 da frase) |
+| batch_items | Campos do card, frase, estado (pendente, gerada, exportada), caminho do áudio no bucket `audio` e data de exportação |
 
-O sync usa a data de atualização (vale a última escrita) e marca exclusões em vez de apagar. O README do ttu avisa que dado apagado pode voltar no merge dele, e isso evita o problema. No Appwrite não há joins nem regras por linha como no Postgres: o ID de cada documento de vocab deriva de (palavra, leitura), para gravar sem duplicar, e as permissões ficam só com o seu usuário.
+O sync usa a data de atualização (vale a última escrita) e marca exclusões em vez de apagar. O README do ttu avisa que dado apagado pode voltar no merge dele, e isso evita o problema. Toda tabela tem `user_id uuid references auth.users`, `updated_at`, `deleted_at` (soft delete) e RLS `user_id = auth.uid()`. vocab usa upsert na chave (user_id, word, reading), para gravar sem duplicar. Buckets `epubs` e `audio` privados, com política por pasta `<user_id>/...`. O schema vive em `supabase/migrations/`.
 
 ## Riscos e testes antes de construir
 
@@ -221,17 +221,17 @@ Onze testes pequenos, feitos antes da v1, cobrem o que pode derrubar o desenho.
 
 | Risco | Como testar | Se falhar |
 | --- | --- | --- |
-| Dicionário pesado no iPhone | Importar um dicionário e a lista de frequência na PWA instalada; medir tempo de importação e de consulta | Baixar os dicionários do Appwrite sob demanda ou reduzir o conjunto |
-| AnkiConnect a partir do navegador | `fetch` do app em https para localhost:8765 no Chrome, liberando a origem na config do AnkiConnect; o Chrome pode pedir permissão de rede local | Pequeno agente local no PC que envia os dados ao Appwrite |
+| Dicionário pesado no iPhone | Importar um dicionário e a lista de frequência na PWA instalada; medir tempo de importação e de consulta | Baixar os dicionários do Supabase Storage sob demanda ou reduzir o conjunto |
+| AnkiConnect a partir do navegador | `fetch` do app em https para localhost:8765 no Chrome, liberando a origem na config do AnkiConnect; o Chrome pode pedir permissão de rede local | Pequeno agente local no PC que envia os dados ao Supabase |
 | Casar texto com Anki | Tokenizar um EPUB e medir quantas palavras casam com o Anki; checar homófonos e palavras só em kana | Ajustar a chave (Word, Word Reading) e as regras de casamento |
 | Furigana automático | Gerar 30 frases e comparar com o seu padrão | Facilitar a edição manual na tela da carta |
 | Compatibilidade do .apkg | Importar no Anki do PC e no AnkiMobile, reimportar o mesmo lote e conferir que não duplica nem mexe no tipo de nota do Kaishi | Corrigir o port do `guid_for` do genanki, comparando com a saída do Python |
-| Dados apagados no iOS | Usar a PWA instalada e tratar o Appwrite como fonte da verdade | Baixar de novo livros e dicionários |
+| Dados apagados no iOS | Usar a PWA instalada e tratar o Supabase como fonte da verdade | Baixar de novo livros e dicionários |
 | Tradução da frase e voz do Gemini | Gerar 30 cartas e comparar tradução e áudio com o seu padrão; ouvir palavras de leitura ambígua | Editar na carta; escrever o trecho em kana para a voz |
 | Tamanho do áudio | Exportar um lote com áudio em WAV e ver o tamanho do .apkg | Converter para MP3 no navegador |
 | Toque na palavra errada no celular | Ler um capítulo no iPhone tocando em 30 palavras; contar seleções erradas, como partícula junto ou palavra cortada | Ajustar a segmentação e aumentar a área de toque |
-| Projeto pausado por inatividade | O plano gratuito pausa o projeto após uma semana sem uso; deixar o app parado esse tempo e testar a reativação | O app segue funcionando offline com o cache, e a sincronização volta ao reativar o projeto |
-| Espaço no plano gratuito | Somar o tamanho dos EPUBs e estimar o áudio de 100 cartas contra os 2 GB de storage | Apagar do bucket os áudios já exportados ou migrar para o plano pago |
+| Projeto pausado por inatividade | O plano gratuito do Supabase pausa o projeto após uma semana sem uso; deixar o app parado esse tempo e testar a reativação | O app segue funcionando offline com o cache, e a sincronização volta ao reativar o projeto |
+| Espaço no plano gratuito | Somar o tamanho dos EPUBs e estimar o áudio WAV de 100 cartas contra 1 GB de storage (metade do que o Appwrite dava) | Apagar do bucket os áudios já exportados ou migrar para o plano pago |
 
 Licença (proposta): o ttu é BSD-3, sem restrição para o fork. O código do Yomitan é GPL-3.0, então a busca e a deflexão serão implementações próprias.
 
@@ -244,7 +244,7 @@ Nenhuma pergunta ficou em aberto; estas decisões foram tomadas em 15/10.
 3. **Áudio:** WAV, sem conversão, pela melhor qualidade. O .apkg fica maior; o teste de tamanho dos riscos diz se vale converter para MP3 depois.
 4. **Significado:** o leitor e as cartas usam a glosa em inglês do dicionário; só a tradução da frase é em português.
 5. **Decks lidos pelo hub:** o 日本語 e seus subdecks.
-6. **Backend:** Appwrite no lugar do Supabase, porque os projetos gratuitos do Supabase acabaram. Pela página de preços, o plano gratuito do Appwrite dá 2 projetos, 2 GB de storage e, por projeto, 1 banco, 1 bucket e 2 funções.
+6. **Backend:** Supabase (projeto já criado). Plano gratuito: 500 MB de Postgres, 1 GB de storage, Edge Functions; pausa após 1 semana sem uso.
 7. **Tela inicial:** sem lembretes nem notificações; a aba de palavras mostra as palavras conhecidas, não as lidas.
 8. **Navegação:** Início, Biblioteca, Fila de cartas e Vocabulário.
 9. **Tradução da frase na leitura:** botão "Traduzir frase" no painel da palavra, feito pelo Gemini e guardado em cache; a carta reaproveita a tradução já pedida.
@@ -255,14 +255,14 @@ Construa em fases pequenas, cada uma com um teste que prova que funciona, usando
 
 Preparação:
 
-1. Faça o fork do ttu, crie o projeto no Appwrite e escolha uma hospedagem estática para o build do app.
-2. Guarde este documento no repositório como `docs/ESCOPO.md` e o documento de cards como `docs/CARDS.md`.
-3. Crie um `CLAUDE.md` na raiz com a stack, os comandos para rodar e testar e as regras fixas: sem Claude no app, formato dos cards vindo de `docs/CARDS.md`, `MODEL_ID` e IDs dos decks intocados, chaves só como segredo do Appwrite (modelo no anexo abaixo).
+1. Fork do ttu e projeto no Supabase: feitos. Falta escolher a hospedagem estática (ver docs/FASES.md).
+2. Este documento está em `docs/ESCOPO.md`; o documento de cards precisa ir para `docs/CARDS.md`.
+3. `CLAUDE.md` na raiz: feito. O roteiro de chats está em `docs/FASES.md` e o estado em `docs/PROGRESSO.md`.
 
 | Fase | O que fazer | Como saber que terminou |
 | --- | --- | --- |
 | 0. Testes de risco | Um script ou página pequena para cada teste da lista de riscos, começando por .apkg e guid, AnkiConnect e casamento texto-Anki | Cada teste tem o resultado anotado; se algum falha, entra o plano de contingência da tabela |
-| 1. v1 | Rodar o ttu local; Appwrite com Auth, coleções e permissões; trocar a sincronização; dicionário embutido; tela inicial; toque na palavra com painel; fila de cartas e função do Gemini; exportar .apkg | O critério "pronto quando" da v1 |
+| 1. v1 | Rodar o ttu local; Supabase com Auth, tabelas e RLS; trocar a sincronização; dicionário embutido; tela inicial; toque na palavra com painel; fila de cartas e função do Gemini; exportar .apkg | O critério "pronto quando" da v1 |
 | 2. v2 | Botão Sincronizar Anki; estados da palavra; destaque no texto; cobertura por livro; aba de palavras conhecidas | O critério "pronto quando" da v2 |
 | 3. v3 | Os itens opcionais, um de cada vez | Cada item funciona sozinho |
 
@@ -271,7 +271,7 @@ No Claude Code:
 - Em cada fase, comece no plan mode e leia o plano antes de aprovar.
 - Escreva os testes antes do código nas partes que têm resposta certa: guid e .apkg (compare com a saída do gerador em Python), estados do hub e casamento de palavras.
 - Faça um commit por passo pequeno e use `/clear` ao trocar de fase, com o `CLAUDE.md` atualizado.
-- Nunca cole chaves no chat; o Gemini entra só como segredo da função no Appwrite.
+- Nunca cole chaves no chat; o Gemini entra só como secret da Edge Function (`supabase secrets set`).
 
 Modelos:
 
@@ -283,39 +283,6 @@ Modelos:
 
 O alias `opusplan` do Claude Code já faz isso sozinho: Opus no plan mode e Sonnet na execução (`/model opusplan`). Planejar dentro do Claude Code rende mais que no chat, porque ele lê o código; o chat serve para decisões de escopo como estas. A documentação avisa que o Claude Code pode voltar para o Sonnet se você atingir o limite de uso do Opus.
 
-## Anexo: modelo de CLAUDE.md
-
-```markdown
-# Leitor de EPUB japonês
-
-Especificação: docs/ESCOPO.md. Formato dos cards: docs/CARDS.md (fonte única).
-
-## Stack
-- Fork do ttu ebook-reader (SvelteKit, pnpm). App em apps/web.
-- Appwrite: Auth, Databases (1 banco), Storage (1 bucket), Functions.
-- Dicionário embutido no formato Yomitan (IndexedDB), glosas em inglês.
-
-## Comandos
-- Instalar: cd apps/web && pnpm install --frozen-lockfile
-- Rodar: pnpm dev
-- Build: pnpm build
-- Testes: (preencher quando existirem)
-
-## Regras fixas
-- Nenhuma chamada a Claude/LLM dentro do app. Só Gemini, só pela Function do Appwrite.
-- Chaves só como variável de ambiente da Function; nunca no código nem no chat.
-- Cards: seguir docs/CARDS.md; não mudar MODEL_ID nem os IDs dos decks.
-- Estados do hub: conhecida (suspenso ou intervalo >= 21 dias), aprendendo (ativo com
-  intervalo < 21 dias, inclusive novos), desconhecida (fora do Anki).
-- Sem joins no Appwrite: ID do documento de vocab = derivado de (palavra, leitura).
-- Exclusões com marca (soft delete); sincronização por data de atualização.
-- Escrever teste antes do código em: guid/.apkg, estados do hub, casamento de palavras.
-
-## Fluxo
-- Cada fase começa em plan mode. Um commit por passo pequeno.
-- Ao terminar uma fase, atualizar este arquivo com o que mudou.
-```
-
 ## Fontes
 
 - [Yomu Yomu na App Store](https://apps.apple.com/us/app/yomu-yomu-%EC%9D%BC%EB%B3%B8%EC%96%B4-%EC%9D%BD%EA%B8%B0/id1636640840?l=ko)
@@ -326,5 +293,4 @@ Especificação: docs/ESCOPO.md. Formato dos cards: docs/CARDS.md (fonte única)
 - [Relato sobre toque na palavra em um leitor parecido](https://community.wanikani.com/t/new-ios-app-for-japanese-reading-with-adjustable-furigana-%E2%80%93-looking-for-testers/72834)
 - [Claude Code: configuração de modelo](https://code.claude.com/docs/en/model-config)
 - [ttu ebook-reader](https://github.com/ttu-ttu/ebook-reader)
-- [Appwrite: preços](https://appwrite.io/pricing)
-- [Appwrite: plano gratuito](https://appwrite.io/docs/advanced/billing/free)
+- [Supabase: preços](https://supabase.com/pricing)
