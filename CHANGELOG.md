@@ -6,6 +6,16 @@ anything a reader or a server operator would notice.
 
 ## Unreleased
 
+### Library
+
+- Deleting books in the Calibre library (select mode → Delete) now removes them from the
+  library for admins, after a confirmation: books go to Calibre's recycle bin
+  (`calibredb remove`), visual novel folders are deleted, and the catalog is rebuilt
+  (`POST /calibre/import/api/remove`, admins only). For other accounts, Delete still
+  removes only the synced data. The import service empties Calibre's recycle bin of books
+  deleted more than 14 days ago once a day (Calibre itself only does so when the library
+  is opened).
+
 ### Visual novels
 
 - Game sound no longer hiccups in Firefox (CONscripter v0.25.1 queues its audio ahead instead

@@ -36,6 +36,8 @@ if 'add' in args:
         print('The following books were not added as they already exist in the database')
     else:
         print('Added book ids: 42')
+elif 'remove' in args:
+    open({ADDS!r}, 'a').write('remove ' + args[-1] + '\\n')
 elif 'list' in args:
     print('[{{"id": 42, "title": "テスト"}}]')
 """)
@@ -129,7 +131,7 @@ class ImportServiceTest(unittest.TestCase):
         self.assertEqual(self.request('/series', b'{}', origin=False, admin=True)[0], 403)
 
     def test_admin_tools_need_admin(self):
-        for path in ('/series', '/catalog'):
+        for path in ('/series', '/catalog', '/remove'):
             self.assertEqual(self.request(path, b'{}')[0], 403)
             # nginx's exact-match admin locations miss these; the service must not see '/series'.
             for variant in (';x', ';', '/'):
@@ -214,6 +216,28 @@ class ImportServiceTest(unittest.TestCase):
         with open(BUILDS) as f:
             self.assertIn('--force', f.read().splitlines()[-1])
         self.assertEqual(self.request('/catalog', b'', origin=False, admin=True)[0], 403)
+
+    def test_remove_books_and_games(self):
+        os.makedirs(os.path.join(VN_DIR, 'ゲーム'))
+        game = service.vn_folder_id('ゲーム')
+        status, body = self.request('/remove', json.dumps({'ids': [7, 9, game, -5]}).encode(), admin=True)
+        self.assertEqual((status, body), (200, {'removed': [7, 9, game], 'failed': [-5]}))
+        self.assertFalse(os.path.exists(os.path.join(VN_DIR, 'ゲーム')))
+        with open(ADDS) as f:
+            self.assertEqual(f.read().splitlines()[-1], 'remove 7,9')
+        for bad in (b'{}', b'{"ids": ["1"]}', b'{"ids": [0]}', b'{"ids": [true]}', b'x'):
+            self.assertEqual(self.request('/remove', bad, admin=True)[0], 400)
+        self.assertEqual(self.request('/remove', b'{"ids": [1]}', origin=False, admin=True)[0], 403)
+
+    def test_expire_trash_runs_calibre(self):
+        with mock.patch.object(service.subprocess, 'run') as run, \
+                mock.patch.object(service.time, 'sleep', side_effect=StopIteration):
+            run.return_value.returncode = 0
+            with self.assertRaises(StopIteration):
+                service.expire_trash()
+        command = run.call_args[0][0]
+        self.assertEqual(command[:2], [FAKE_CALIBRE_DEBUG, '-c'])
+        self.assertIn(f'db({STATE!r}).new_api.expire_old_trash()', command[2])
 
     def test_jobs_are_per_account(self):
         _, body = self.request('/add?name=b.epub', epub())

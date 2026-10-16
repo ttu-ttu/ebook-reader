@@ -69,6 +69,7 @@
   import { account$, currentAccount, hasPermission } from '$lib/data/account';
   import {
     isFinished,
+    removeFromCalibre,
     uploadToCalibre,
     waitForImportJobs,
     type CalibreImportJob
@@ -723,14 +724,37 @@
       return;
     }
 
+    const cards = $bookCards$.filter((card) => bookIds.includes(card.id));
+    // Not part of upstream: admins delete Calibre books and games from the library itself;
+    // otherwise only their synced data goes and the catalog lists them again.
+    const fromLibrary = $storageSource$ === StorageKey.CALIBRE && !!currentAccount()?.admin;
+
+    if (
+      fromLibrary &&
+      (await new Promise<boolean>((resolver) => {
+        dialogManager.dialogs$.next([
+          {
+            component: ConfirmDialog,
+            props: {
+              dialogHeader: 'Delete from the library',
+              dialogMessage: `This removes ${pluralize(cards.length, 'title', false)} from the Calibre library for every reader, with their shared reader data.\n\nBooks go to Calibre's recycle bin; visual novel folders are deleted for good.`,
+              contentStyles: 'white-space: pre-line;',
+              resolver
+            }
+          }
+        ]);
+      }))
+    ) {
+      return;
+    }
+
     cancelTooltip = `Cancels the Deletion\nAlready deleted data will not be restored`;
 
     initializeReplicationProgressData();
 
     const currentBookCount = $bookCards$.length;
     const handler = getStorageHandler(window, $storageSource$, '');
-    const cards = $bookCards$.filter((card) => bookIds.includes(card.id));
-    const { error, deleted } = await handler.deleteBookData(
+    let { error, deleted } = await handler.deleteBookData(
       cards.map((card) => card.title),
       cancelSignal,
       $keepLocalStatisticsOnDeletion$
@@ -739,6 +763,25 @@
     cards
       .filter((card) => deleted.includes(card.id))
       .forEach((card) => deleteVnCache(card.title).catch(() => {}));
+
+    if (fromLibrary && !cancelSignal.aborted) {
+      const calibreIds = cards
+        .filter((card) => deleted.includes(card.id) && card.calibreId !== undefined)
+        .map((card) => card.calibreId!);
+
+      try {
+        const { failed } = calibreIds.length ? await removeFromCalibre(calibreIds) : { failed: [] };
+
+        if (failed.length) {
+          error = `${pluralize(failed.length, 'title', false)} could not be removed from Calibre`;
+        }
+      } catch (removeError: any) {
+        error = removeError.message;
+      }
+      handler.clearData();
+      await handler.getBookList().catch(() => {});
+      database.dataListChanged$.next(handler);
+    }
 
     resetProgress();
 

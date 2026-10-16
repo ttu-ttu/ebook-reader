@@ -164,6 +164,22 @@ server {
     client_max_body_size 16k;
   }
 
+  # Library → Delete: removes books from metadata.db and game folders, so admins only.
+  location = /calibre/import/api/remove {
+    auth_request /_account_admin;
+    auth_request_set $account_id $upstream_http_x_account_id;
+    auth_request_set $account_admin $upstream_http_x_account_admin;
+    proxy_pass http://$import_upstream/remove;
+    proxy_set_header X-Internal-Token "${INTERNAL_TOKEN}";
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Account-Id $account_id;
+    proxy_set_header X-Account-Admin $account_admin;
+    proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    proxy_read_timeout 600s;
+    client_max_body_size 64k;
+  }
+
   # Accounts. The service checks HTTPS, Origin and Host ($http_host keeps the port,
   # which the browser's Origin has on non-standard ports).
   location /account/api/ {

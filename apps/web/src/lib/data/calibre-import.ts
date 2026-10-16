@@ -137,3 +137,27 @@ export async function rebuildCatalog(): Promise<{ books: number; visualNovels: n
 
   return response.json();
 }
+
+/**
+ * Takes books (Calibre's recycle bin) and game folders (deleted) out of the library
+ * by catalog id, then the catalog is rebuilt (admins only).
+ */
+export async function removeFromCalibre(
+  ids: number[]
+): Promise<{ removed: number[]; failed: number[] }> {
+  const response = await fetch(`${apiUrl}remove`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids })
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 502
+        ? 'The import service is not running (add import to COMPOSE_PROFILES)'
+        : await errorMessage(response)
+    );
+  }
+
+  return response.json();
+}

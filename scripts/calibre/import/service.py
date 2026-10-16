@@ -16,6 +16,10 @@ rebuilt so the books show up in the library.
        catalog rebuilt
   POST catalog                                 -> {"books": n} after a full catalog
        rebuild (admins only)
+  POST remove   {"ids": [catalog ids]}         -> {"removed": [...], "failed": [...]}
+       (admins only): books go to Calibre's recycle bin (`calibredb remove`), game
+       folders (negative ids) are deleted from VN_DIR; then the catalog is rebuilt.
+       Books older than 14 days are emptied from the recycle bin daily (expire_trash).
 
 A ZIP holding an ONScripter game (a script such as 0.txt or nscript.dat) is not
 added to Calibre: the worker unpacks its game folder into VN_DIR, named after the
@@ -333,6 +337,65 @@ def worker():
             finish_batch()
 
 
+def vn_folder_id(name: str) -> int:
+    """build-catalog.py's id for a game folder."""
+    return -(zlib.crc32(name.encode()) & 0x7fffffff) or -1
+
+
+def remove_books(ids: list[int]) -> dict:
+    """Library select mode → Delete (admins): takes books and games out of the library."""
+    removed, failed = [], []
+    books = [i for i in ids if i > 0]
+    if books:
+        with open(WRITE_LOCK, 'a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            # No --permanent: Calibre keeps them in its recycle bin (.caltrash) for a while.
+            result = subprocess.run(
+                [CALIBREDB, '--library-path', LIBRARY, 'remove', ','.join(map(str, books))],
+                capture_output=True, text=True, timeout=ADD_TIMEOUT_SECONDS, check=False)
+        if result.returncode:
+            print(f'calibredb remove: {result.stderr.strip()[-500:]}', file=sys.stderr)
+            failed += books
+        else:
+            removed += books
+    games = {i for i in ids if i < 0}
+    if games and os.path.isdir(VN_DIR):
+        for entry in os.scandir(VN_DIR):
+            if entry.name.startswith('.') or vn_folder_id(entry.name) not in games:
+                continue
+            games.discard(vn_folder_id(entry.name))
+            try:
+                if entry.is_symlink() or not entry.is_dir():
+                    raise OSError('not a folder')
+                shutil.rmtree(entry.path)
+                removed.append(vn_folder_id(entry.name))
+            except OSError as error:
+                print(f'remove game {entry.name}: {error}', file=sys.stderr)
+                failed.append(vn_folder_id(entry.name))
+    failed += sorted(games)
+    if removed:
+        rebuild_catalog()
+    return {'removed': removed, 'failed': failed}
+
+
+def expire_trash():
+    """Calibre empties its recycle bin of books older than 14 days (the library's
+    expire_old_trash_after) only while something opens the library; do it daily."""
+    while True:
+        try:
+            with open(WRITE_LOCK, 'a') as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                result = subprocess.run(
+                    [CALIBRE_DEBUG, '-c',
+                     f'from calibre.library import db; db({LIBRARY!r}).new_api.expire_old_trash()'],
+                    capture_output=True, text=True, timeout=ADD_TIMEOUT_SECONDS, check=False)
+            if result.returncode:
+                print(f'expire trash: {result.stderr.strip()[-500:]}', file=sys.stderr)
+        except (OSError, subprocess.SubprocessError) as error:
+            print(f'expire trash: {error}', file=sys.stderr)
+        time.sleep(24 * 3600)
+
+
 def run_series(apply: bool) -> dict:
     """Runs assign-series.py through Calibre's Python; it takes the write lock itself."""
     if not series_busy.acquire(blocking=False):
@@ -424,6 +487,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.handle_api(self.series)
         if path == '/catalog':
             return self.handle_api(self.catalog)
+        if path == '/remove':
+            return self.handle_api(self.remove)
         return self.send(404, {'error': 'not found'})
 
     def same_origin(self):
@@ -444,6 +509,17 @@ class Handler(BaseHTTPRequestHandler):
         self.require_admin()
         self.same_origin()
         return run_catalog()
+
+    def remove(self):
+        self.require_admin()
+        self.same_origin()
+        try:
+            ids = json.loads(self.rfile.read(min(int(self.headers.get('Content-Length') or 0), 1 << 16)))['ids']
+            if not isinstance(ids, list) or not all(type(i) is int and i for i in ids):
+                raise ValueError
+        except (ValueError, KeyError, TypeError) as error:
+            raise ApiError(400, 'Invalid request') from error
+        return remove_books(ids)
 
     def add(self, url):
         account = self.account()
@@ -538,6 +614,7 @@ def main():
             if entry.name.startswith('.importing-'):
                 shutil.rmtree(entry.path, ignore_errors=True)
     threading.Thread(target=worker, daemon=True).start()
+    threading.Thread(target=expire_trash, daemon=True).start()
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
 
 
