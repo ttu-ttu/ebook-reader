@@ -1,5 +1,5 @@
 # Publishes the Docker images to GitHub's container registry when a version tag
-# is pushed (git tag v1.2.3 && git push origin v1.2.3):
+# is pushed (git tag -a v1.2.3 -m v1.2.3 && git push origin v1.2.3), once CI passes:
 #   ghcr.io/<owner>/<repository>-{web,services,import,difficulty}:{1.2.3,1.2,latest}
 # for linux/amd64 and linux/arm64. docker-compose.yml uses them with
 # IMAGE_PREFIX=ghcr.io/<owner>/<repository> (see docs/INSTALL.md).
@@ -13,7 +13,11 @@ permissions:
   packages: write
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   image:
+    needs: ci
     name: Image ${{ matrix.image }}
     runs-on: ubuntu-latest
     strategy:

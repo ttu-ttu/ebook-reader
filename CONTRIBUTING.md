@@ -68,7 +68,7 @@ Run the whole thing: `docker compose up -d --build` (see `docs/INSTALL.md`).
   GitHub's container registry when a version tag is pushed:
 
   ```sh
-  git tag v1.2.0 && git push origin v1.2.0
+  git tag -a v1.2.0 -m v1.2.0 && git push origin v1.2.0
   ```
 
   gives `ghcr.io/<owner>/<repository>-{web,services,import,difficulty}` tagged
