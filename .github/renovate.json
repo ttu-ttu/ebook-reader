@@ -1,5 +1,5 @@
 {
-  "extends": ["config:js-app", ":automergeAll", ":automergeBranch"],
+  "extends": ["config:js-app", ":automergeMinor"],
   "packageRules": [
     {
       "matchDatasources": ["docker"],

@@ -20,7 +20,8 @@ The details of a particular deployment (hosts, addresses, how it is deployed and
 ## Git workflow
 
 - The fork's branch is `main` on GitHub; upstream is the `upstream` remote. Internal names (`ebook-reader` compose project, `/opt/ebook-reader`, `ttu-reader-data` sync root, `ttu_session` cookies) predate the name and stay: changing them would break existing installs.
-- To pull upstream updates: `git fetch upstream && git merge upstream/main`.
+- `main` only changes through pull requests with green CI (CONTRIBUTING.md → Pull requests): branch from `origin/main`, push, `gh pr create`, squash-merge. Never push to `main` directly.
+- To pull upstream updates: a `sync/upstream` branch with `git merge upstream/main`, merged with a merge commit (`gh pr merge --merge`), never squashed.
 - Commit with clear messages (`feat:`, `fix:`, `docs:` …) so changes are easy to rebase or merge against upstream.
 
 ## Server

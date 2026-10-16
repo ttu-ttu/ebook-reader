@@ -1,9 +1,15 @@
 name: CI
 on:
+  # Branches are checked through their pull request, main after each merge.
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   test:
     name: Front end
@@ -33,7 +39,7 @@ jobs:
       - name: Lint
         run: pnpm eslint .
 
-      # svelte-check isn't run: it has 30 known errors from upstream files.
+      # svelte-check isn't run: it has 13 known errors from upstream files.
       - name: Unit tests
         run: pnpm test
         working-directory: apps/web

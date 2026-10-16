@@ -59,9 +59,24 @@ python3 -m unittest discover -s scripts/calibre/tests
 
 Run the whole thing: `docker compose up -d --build` (see `docs/INSTALL.md`).
 
+## Pull requests
+
+`main` only changes through pull requests (ruleset "protect main"): its six CI
+checks must pass, nothing is force-pushed or deleted, and branches are deleted
+once merged.
+
+1. `git switch -c fix/short-name origin/main`, commit, `git push -u origin HEAD`.
+2. `gh pr create --fill`: the title becomes the squashed commit's message, so
+   write it like one (`fix(vn): …`). Fill in the template's checklist.
+3. When CI is green, **Squash and merge** (`gh pr merge --squash`).
+4. Upstream syncs are the exception: `git switch -c sync/upstream origin/main &&
+   git merge upstream/main`, open a PR and merge it with **Create a merge
+   commit** (`gh pr merge --merge`). Squashing it would lose upstream's history,
+   and every later sync would conflict again.
+
 ## CI and releases
 
-- `.github/workflows/ci.yml` runs on every push and pull request: ESLint, unit
+- `.github/workflows/ci.yml` runs on every pull request and on `main`: ESLint, unit
   tests and a production build of the front end; the Python tests and an nginx
   config render; the compose files and a build of all four images.
 - `.github/workflows/release.yml` publishes the images for amd64 and arm64 to
@@ -139,7 +154,7 @@ stack. Account POST routes get the HTTPS and Origin checks automatically.
 
 Adding a "Copy" button to the Ask AI answer:
 
-1. `git switch -c copy-button && git status` - a branch, starting clean.
+1. `git switch -c feat/copy-button origin/main && git status` - a branch, starting clean.
 2. If the logic is more than a line, add it to a module in `lib/data/` or
    `lib/functions/` with a test.
 3. Add the button in `components/book-reader/ask-ai-panel.svelte`, styled with
@@ -147,4 +162,5 @@ Adding a "Copy" button to the Ask AI answer:
 4. Run `pnpm test`, `pnpm check` (still 13 errors) and `npx eslint .` (clean).
 5. Rebuild and restart the stack, then open a book on the HTTPS address, select
    text, ask, and try the button. Check `/version.txt`.
-6. Add a `CHANGELOG.md` line and commit: `feat: copy button for Ask AI answers`.
+6. Add a `CHANGELOG.md` line, commit (`feat: copy button for Ask AI answers`)
+   and open a pull request (see Pull requests).
