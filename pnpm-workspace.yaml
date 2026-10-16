@@ -4,3 +4,11 @@ allowBuilds:
   esbuild: true
   svelte-preprocess: true
   unrs-resolver: true
+# Security fixes the parents have not picked up yet (Dependabot alerts).
+overrides:
+  '@babel/traverse@<7.23.2': ^7.23.2
+  'ajv@>=8 <8.18.0': ^8.18.0
+  'yaml@<1.10.3': ^1.10.3
+  'tinypool@<2.1.2': ^2.1.2
+  # 4.64.6+ breaks the build ($state is not defined in kit's state.svelte.js).
+  rollup: 4.64.5
