@@ -25,7 +25,7 @@
     "postcss": "8.5.30",
     "sass": "1.104.0",
     "svelte": "4.2.20",
-    "svelte-check": "4.7.6",
+    "svelte-check": "4.7.7",
     "svelte-preprocess": "6.0.5",
     "tailwindcss": "3.4.19",
     "tslib": "2.8.1",
