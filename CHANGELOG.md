@@ -16,6 +16,16 @@ anything a reader or a server operator would notice.
   deleted more than 14 days ago once a day (Calibre itself only does so when the library
   is opened).
 
+### Manga
+
+- The manga reader works more like Mihon: pinch, double tap or Ctrl+wheel to zoom, and drag
+  a zoomed page around; swipes drag the page along with the finger; scale types (fit screen,
+  width, height, original size, smart fit); two-page spreads on screens wider than tall (the
+  cover and wide pages stand alone, Shift fixes pairs that are off by one); and a settings
+  sheet (gear in the menu) for these, the background (black, gray, white or matched to the
+  page), double tap to zoom, keeping the screen on and the page number. Full screen is in the
+  menu. The next few pages are decoded ahead, so turning is instant.
+
 ### Visual novels
 
 - Game sound no longer hiccups in Firefox (CONscripter v0.25.1 queues its audio ahead instead
