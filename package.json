@@ -32,6 +32,7 @@
     "prettier": "3.6.2",
     "prettier-plugin-svelte": "4.1.1",
     "prettier-plugin-tailwindcss": "0.7.2",
+    "supabase": "2.121.0",
     "svelte": "5.0.5",
     "svelte-eslint-parser": "1.8.1",
     "typescript": "6.0.3",
@@ -49,5 +50,6 @@
       "svelte-preprocess",
       "unrs-resolver"
     ]
-  }
+  },
+  "packageManager": "pnpm@12.14.0+sha512.c18ba6d87993d3d164cb5e8948f32b2c06ee854487e06cd8d86781342fb3e5bb4634367034711e86802baa9c37bea906ce1929ad08d70884c97d801df13389a6"
 }
