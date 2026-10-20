@@ -14,6 +14,10 @@ const config = {
     // https://github.com/FortAwesome/Font-Awesome/issues/18677
     noExternal: ['@fortawesome/*', '@popperjs/*']
   },
+  // O lindera carrega o próprio wasm; o pré-empacotamento do Vite quebra o caminho.
+  optimizeDeps: {
+    exclude: ['lindera-wasm-ipadic']
+  },
   experimental: {
     prebundleSvelteLibraries: true
   },

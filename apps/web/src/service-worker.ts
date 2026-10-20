@@ -12,7 +12,12 @@ const BUILD_CACHE_NAME = `build:${version}`;
 
 const prerenderedSet = new Set(prerendered);
 
-const assetsToCache = build.concat(files).concat(prerendered);
+// O wasm do tokenizador (~18 MB) fica fora do cache de build: o app o guarda no cache próprio
+// `dokusho-tokenizador`, que sobrevive aos deploys (ADR 0012).
+const assetsToCache = build
+  .filter((path) => !path.includes('lindera_wasm'))
+  .concat(files)
+  .concat(prerendered);
 const cachedAssets = new Set(assetsToCache);
 
 worker.addEventListener('install', (event) => {
@@ -24,7 +29,8 @@ worker.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       const keysWithOldCache = keys.filter(
-        (key) => key !== BUILD_CACHE_NAME && key !== userFontsCacheName
+        (key) =>
+          key !== BUILD_CACHE_NAME && key !== userFontsCacheName && !key.startsWith('dokusho-')
       );
       return Promise.all(keysWithOldCache.map((key) => caches.delete(key)));
     })
