@@ -21,6 +21,8 @@ desfazer um ADR sem um novo ADR).
 - Dicionários: zips Yomitan em dicts/ (local, fora do git) → script em tools/ converte para o formato
   do app (JMdict + JPDB + JmdictFurigana) → bucket privado `dicts` → cada aparelho baixa e grava no
   IndexedDB (ADR 0004). Nada pesado em `static/` (o service worker rebaixa tudo a cada deploy).
+- Tokenizador: lindera-wasm-ipadic (wasm com IPADIC embutido; forma de dicionário em `details[6]`,
+  leitura em `details[7]`), guardado num cache próprio fora do cache de build (ADR 0012).
 - Glosas do painel em inglês (JMdict). Busca própria; deflexão pela forma de dicionário do
   tokenizador, com regras próprias de reserva (ADR 0005). Não copiar código do Yomitan (GPL).
 
