@@ -12,7 +12,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; Anki do PC ok; falta AnkiMobile e iPhone  |
 | R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
 | R3        | quase    | 2026-10-20 | lindera; 32 MB; PC pelo bucket dentro das metas; falta iPhone (👤)          |
-| R4        | pendente |            | depende de R2 e R3                                                          |
+| R4        | feito    | 2026-10-20 | 97,5% do texto acha entrada; 0 Cards sem entrada; regras ajustadas          |
 | R5        | pendente |            |                                                                             |
 | V1.1–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
@@ -92,6 +92,19 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   > app lê para saber a versão. JmdictFurigana 2.3.1+2026-09-25 baixado em `dicts/`. `tools/` fora do
   > eslint (fora do tsconfig dele); `tools/package.json` com `"type": "module"`. Página provisória
   > `/teste/dicionario` (apagar no V1.2), com opção de preparar um arquivo local sem login.
+- 2026-10-20: R4. Casamento em `apps/web/src/lib/data/vocabulario/casamento.ts` (funções puras com
+  `consultar` injetado). Palavra do hub = `{ seq, leitura }` (`chavePalavra` = `seq|leitura`, leitura em
+  hiragana). `casarCard(consultar, Word, Word Reading)`: limpa HTML e `〜`, separa leituras por `・`/`、`
+  (uma Palavra por leitura); liga as entradas com a escrita do Card e a leitura; Card só em kana (ou sem
+  entrada com a escrita) liga também a mais frequente com a leitura, que é a que o texto escolhe
+  (なる → 成る). `casarPedaco(consultar, pedaco)`: `null` para gramática (`ehGramatica`: 助詞, 助動詞,
+  記号, 接頭詞, フィラー, その他, qualquer 非自立, 動詞 接尾 como せる/れる, e o que não tem kana nem
+  kanji; 名詞 接尾 como さん conta); consulta a forma de dicionário, depois o verbo de origem do
+  potencial (会える → 会う: o IPADIC dá o potencial como verbo e o JMdict não tem), depois a superfície;
+  desempata pela leitura (no conjugado, pelo radical: 行っ いっ → いく, não ゆく) e, sem desempate, fica
+  a mais frequente (`candidatas` traz as outras). `Pedaco` ganhou `subclasse` (detalhes[1] do IPADIC).
+  `ordenarPorFrequencia` exportado do banco.ts. Medição em `casamento.medicao.test.ts` (pulada sem
+  `MEDIR_CASAMENTO`; lê `dicts/saida/`, o EPUB e o AnkiConnect pelo Node, sem CORS).
 - 2026-10-20: o servidor do Vite manda `.gz` com `Content-Encoding: gzip` e o navegador já entrega
   descompactado; `prepararArquivo` olha os bytes mágicos antes de descompactar.
 - 2026-10-20: o `pnpm dev` de outro chat na mesma pasta ocupa a 5173 e o novo sobe na 5174, que não
@@ -144,6 +157,35 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - Falta (👤): medir na PWA do iPhone (depois da Vercel, V1.7). No iPhone, atenção à memória: wasm
   (~140 MB no Node) + IndexedDB.
 
+### R4 · Casamento texto ↔ Anki (2026-10-20)
+
+- Rodar (em apps/web, Anki aberto): `$env:MEDIR_CASAMENTO="<livro.epub>"; npx vitest run casamento.medicao`
+  (`MEDIR_SAIDA=<arquivo.json>` grava as listas completas). ~40 s no PC.
+- Livro: また、同じ夢を見ていた (152 mil caracteres, 86.947 pedaços; 53.616 de gramática, 33.331 de
+  conteúdo). Testes de regra: 23 em `casamento.test.ts`. ✅
+- Texto → JMdict: **97,5%** dos pedaços de conteúdo acham entrada; 2,5% sem entrada, quase tudo nome
+  próprio (桐生 ×455, 荻原, 小柳, なっちゃん), onomatopeia e grafia mista (立ちあがる, 生みだす). ✅
+- Anki → JMdict: 1514 Cards, 1502 pares (Word, Word Reading), **0 sem entrada**; 17 ambíguos (mesma
+  escrita e leitura em 2+ entradas: これ, それ, 三 さん, 妻, パン…), ligados a todas. ✅
+- Texto ↔ Anki: 3021 Palavras distintas no livro; **1086 (36%) caem num Card**, 24.442 ocorrências
+  (73% dos pedaços de conteúdo). Pela escrita seriam 1068: o JMdict ganha 48 (ない = 無い ×203, なん = 何,
+  子ども = 子供, たくさん = 沢山, かける = 掛ける, 走れる = 走る…) e perde 30, quase todas sufixo ou
+  contador com outra leitura e outra entrada (人 にん ×71, 日 にち, 中 ちゅう, 後 ご), que de fato são
+  outra entrada do JMdict.
+- Só em kana: 36% dos pedaços casados; 177 Palavras só em kana caem num Card.
+- Homófonos em kana: 22,6% dos pedaços casados têm mais de uma entrada candidata e ficam com a mais
+  frequente. Em 22 Palavras outra candidata está no Anki (さ → 差, え → 絵, いや → 嫌, こ → 子): quase
+  sempre a escolhida está certa (interjeição, pedaço de palavra); não usar "qualquer candidata".
+  Erro conhecido: なれる (potencial de なる) cai em 慣れる.
+- Primeira rodada (antes dos ajustes): Card em kana ligava todas as entradas da leitura (さん → 12,
+  incluindo 三; こう → 51); só pela escrita, なる ×347 deixava de casar (o texto escolhe 成る). Potencial
+  (会える, 書ける) sem entrada; お ×475 e せる (de させる) ×73 contavam como palavra.
+- Sem decisão: 16 Palavras (171 ocorrências) caem na mesma entrada de um Card com **outra leitura**:
+  皆 みな × みんな ×66, じゃあ × じゃ ×40, こっち × こちら, とっても × とても, どっち, あんまり,
+  入り口 いりくち (leitura errada do IPADIC), 日本 にっぽん, 一言 いちげん (idem). Quase todas são a mesma
+  palavra; falsas: しかして × そして, せる × 迫る (×1). O ADR 0008 pede a mesma leitura; aceitar a mesma
+  entrada com qualquer leitura pede um ADR novo (decidir até o V2.1).
+
 ## Pendências do usuário
 
 - [x] docs/CARDS.md
@@ -166,6 +208,9 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
 ## Sem decisão (da entrevista de 20/10)
+
+- R4: casar pela entrada do JMdict com qualquer leitura (ganha 171 ocorrências no livro de teste, quase
+  todas certas) ou manter a mesma leitura do ADR 0008. Decidir antes do V2.1.
 
 - Modo de leitura no PC; como mostrar a barra do topo onde não há rolagem (modo de páginas, começo de
   capítulo): decidir no V1.3 (sugestão: faixa do topo ou mouse no topo).
