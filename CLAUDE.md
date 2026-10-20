@@ -33,6 +33,8 @@ desfazer um ADR sem um novo ADR).
 - Supabase: npx supabase <cmd> (link, db push, functions deploy gemini, secrets set). CLI fixado
   como devDependency da raiz. Projeto já linkado (ref em supabase/.temp, fora do git); checar o link
   com `npx supabase migration list` (`supabase status` é da stack local em Docker).
+- Tipos do banco: npx supabase gen types typescript --linked --schema public >
+  apps/web/src/lib/data/supabase/database.types.ts (rodar depois de cada migração).
 
 ## Regras fixas
 
