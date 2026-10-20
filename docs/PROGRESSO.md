@@ -10,7 +10,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | S2        | quase    | 2026-10-20 | schema aplicado, login ok; falta conta + cadastro desligado (👤)            |
 | D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
 | R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; Anki do PC ok; falta AnkiMobile e iPhone  |
-| R2        | pendente |            |                                                                             |
+| R2        | quase    | 2026-10-20 | cliente e `/teste/anki` prontos; falta você rodar com o Anki aberto (👤)    |
 | R3        | pendente |            | zips em dicts/; subir para o bucket no S2                                   |
 | R4        | pendente |            | depende de R2 e R3                                                          |
 | R5        | pendente |            |                                                                             |
@@ -63,6 +63,17 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   segundo toque (vale para o V1.6). `resolveJsonModule` ligado no tsconfig. Página provisória
   `/teste/apkg` (apagar no V1.6) gera um Lote falso com WAV sintético, no deck `日本語::0. Dokusho teste`
   por padrão (opção `deck` do `gerarApkg`, só para testes).
+- 2026-10-20: R2. Cliente em `apps/web/src/lib/functions/anki/anki-connect.ts`
+  (`criarAnkiConnect({ url, fetch })`): lista fixa de ações (`version`, `sync`, `deckNamesAndIds`,
+  `findCards`, `cardsInfo`, `notesInfo`); qualquer outra, `getDeckStats` inclusive, é recusada antes
+  do `fetch`. URL padrão `http://127.0.0.1:8765`. `buscarCards(raiz)` faz `findCards "deck:日本語"`
+  (pega os subdecks) e `cardsInfo` + `notesInfo` em lotes de 200; `leech` vem das etiquetas da nota,
+  suspenso é `queue = -1`, intervalo negativo é segundos. Tipo de nota sem `Word` usa o primeiro
+  campo. Erros com `tipo`: `rede` (Anki fechado, CORS ou rede local: o navegador não diferencia),
+  `tempo`, `anki`, `acao-proibida`. `sync` com limite de 5 min. Configuração e regras em
+  docs/ANKI-CONNECT.md. Página provisória `/teste/anki` (apagar no V2.1).
+- 2026-10-20: o `pnpm dev` de outro chat na mesma pasta ocupa a 5173 e o novo sobe na 5174, que não
+  está no `webCorsOriginList`. Para o R2, rodar o dev só na 5173.
 
 ## Testes de risco
 
@@ -76,6 +87,15 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   nota só "Kaishi 1.5k" e "Leituras (estilo Kaishi)" (sem cópia); frente, verso e os dois áudios ok. ✅
 - 👤 Falta: AnkiMobile e o Lote de 100 no iPhone a partir da PWA (precisa de HTTPS: Vercel ligada).
 
+### R2 · AnkiConnect pelo navegador (2026-10-20)
+
+- Cliente: 7 testes com `fetch` simulado (lista de ações, erros, lotes, etiquetas, leech). ✅
+- `/teste/anki` no Chrome sem o Anki ouvindo: mostra o erro `rede`. ✅
+- 👤 Falta: Anki aberto com o AnkiConnect, `http://localhost:5173` no `webCorsOriginList`,
+  `pnpm dev` na 5173, abrir `/teste/anki` e "Testar". Conferir que o sync passa, que os Cards dos três
+  subdecks aparecem com intervalo, suspensão e leech, e anotar os tempos aqui. A URL de produção entra
+  na lista no V1.7, e aí o teste se repete pela Vercel, com o prompt de rede local do Chrome.
+
 ## Pendências do usuário
 
 - [x] docs/CARDS.md
@@ -88,6 +108,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Colar `supabase/tests/rls_check.sql` no SQL Editor e conferir dono = 1, outro = 0 (S2)
 - [x] R1: importar o Lote de teste no Anki do PC, reimportar e conferir tipos de nota
 - [ ] R1: AnkiMobile e Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste (passo a passo no V1.7 do FASES.md)
+- [ ] R2: rodar `/teste/anki` com o Anki aberto (passo a passo em "Testes de risco" › R2)
+- [ ] V1.7: pôr a URL de produção no `webCorsOriginList` (docs/ANKI-CONNECT.md)
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_KEY é do projeto pago (R5)
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 

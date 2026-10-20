@@ -59,7 +59,8 @@ desfazer um ADR sem um novo ADR).
   desconhecida (fora do Anki e sem "Já sei"). Vale o estado mais avançado. Texto e Anki casam pela
   entrada do JMdict (ADR 0008). Gramática fora da cobertura.
 - AnkiConnect: nunca `getDeckStats` (cria deck quando o nome não existe). `webCorsOriginList` só
-  com as URLs exatas, nunca `*`.
+  com as URLs exatas, nunca `*`. O cliente (functions/anki/anki-connect.ts) só aceita uma lista
+  fixa de ações de leitura mais `sync`; configuração em docs/ANKI-CONNECT.md.
 - Toda tabela: user_id, updated_at, deleted_at; RLS user_id = auth.uid(). Exclusão = soft delete.
   Última escrita vence pelo horário do aparelho; updated_at do servidor só como cursor (ADR 0002).
 - Livro identificado pelo hash do EPUB, nunca pelo título (ADR 0001).
