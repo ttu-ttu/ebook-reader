@@ -1,0 +1,511 @@
+{
+  "genanki": "0.13.1",
+  "guids": [
+    {
+      "valores": ["leituras-igor", "開く", "あく"],
+      "guid": "n1wtyc4))`"
+    },
+    {
+      "valores": ["leituras-igor", "開く", "ひらく"],
+      "guid": "qo5H(rPj(`"
+    },
+    {
+      "valores": ["leituras-igor", "止める", "とめる"],
+      "guid": "GEs-%:3]jR"
+    },
+    {
+      "valores": ["leituras-igor", "止める", "やめる"],
+      "guid": "Gh7V_X(LKu"
+    },
+    {
+      "valores": ["leituras-igor", "方", "かた"],
+      "guid": "JD]RJtAC>M"
+    },
+    {
+      "valores": ["leituras-igor", "方", "ほう"],
+      "guid": "sh6|[Q@2*"
+    },
+    {
+      "valores": ["leituras-igor", "気のせい", "きのせい"],
+      "guid": "dI8s+Irqj^"
+    },
+    {
+      "valores": ["leituras-igor", "ありがとう", "ありがとう"],
+      "guid": "hDRV9#srVI"
+    },
+    {
+      "valores": ["leituras-igor", "気のせい"],
+      "guid": "tX:iKHZUn&"
+    },
+    {
+      "valores": ["leituras-igor", "café", "ação"],
+      "guid": "Qt$Km$;dXb"
+    },
+    {
+      "valores": ["a"],
+      "guid": "IkF(BOZ;]l"
+    },
+    {
+      "valores": [""],
+      "guid": "ME_YHw2?15"
+    }
+  ],
+  "entrada": {
+    "timestamp": 1760900000.5,
+    "notas": [
+      {
+        "campos": [
+          "気のせい",
+          "きのせい",
+          "impressão minha, coisa da cabeça",
+          "気[き]のせい",
+          "[sound:leituras-aaaaaaaaaaaa.wav]",
+          "最初は<b>気のせい</b>だと思って無視した。",
+          "No começo achei que era impressão minha e ignorei.",
+          "最[さい] 初[しょ]は<b>気[き]のせい</b>だと 思[おも]って 無[む] 視[し]した。",
+          "[sound:leituras-bbbbbbbbbbbb.wav]",
+          "",
+          "",
+          "",
+          "319",
+          ""
+        ],
+        "etiquetas": ["dokusho", "dokusho::Livro_de_Teste"]
+      },
+      {
+        "campos": [
+          "開く",
+          "あく",
+          "abrir",
+          "開[あ]く",
+          "",
+          "ドアが<b>開いた</b>。",
+          "A porta abriu.",
+          "ドアが<b>開[あ]いた</b>。",
+          "",
+          "Nota",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "etiquetas": ["dokusho", "dokusho::Livro_de_Teste"]
+      },
+      {
+        "campos": [
+          "開く",
+          "ひらく",
+          "abrir (livro)",
+          "開[ひら]く",
+          "",
+          "本を<b>開く</b>。",
+          "Abro o livro.",
+          "本[ほん]を<b>開[ひら]く</b>。",
+          "",
+          "",
+          "",
+          "",
+          "1200",
+          ""
+        ],
+        "etiquetas": ["dokusho"]
+      }
+    ],
+    "midias": [
+      {
+        "nome": "leituras-aaaaaaaaaaaa.wav",
+        "bytes": [82, 73, 70, 70, 1, 2, 3]
+      },
+      {
+        "nome": "leituras-bbbbbbbbbbbb.wav",
+        "bytes": [82, 73, 70, 70, 4, 5, 6, 7]
+      }
+    ]
+  },
+  "apkg": {
+    "entradas": ["collection.anki2", "media", "0", "1"],
+    "media": {
+      "0": "leituras-aaaaaaaaaaaa.wav",
+      "1": "leituras-bbbbbbbbbbbb.wav"
+    },
+    "arquivos": {
+      "0": [82, 73, 70, 70, 1, 2, 3],
+      "1": [82, 73, 70, 70, 4, 5, 6, 7]
+    },
+    "schema": [
+      "CREATE TABLE cards (\n    id              integer primary key,   /* 0 */\n    nid             integer not null,      /* 1 */\n    did             integer not null,      /* 2 */\n    ord             integer not null,      /* 3 */\n    mod             integer not null,      /* 4 */\n    usn             integer not null,      /* 5 */\n    type            integer not null,      /* 6 */\n    queue           integer not null,      /* 7 */\n    due             integer not null,      /* 8 */\n    ivl             integer not null,      /* 9 */\n    factor          integer not null,      /* 10 */\n    reps            integer not null,      /* 11 */\n    lapses          integer not null,      /* 12 */\n    left            integer not null,      /* 13 */\n    odue            integer not null,      /* 14 */\n    odid            integer not null,      /* 15 */\n    flags           integer not null,      /* 16 */\n    data            text not null          /* 17 */\n)",
+      "CREATE TABLE col (\n    id              integer primary key,\n    crt             integer not null,\n    mod             integer not null,\n    scm             integer not null,\n    ver             integer not null,\n    dty             integer not null,\n    usn             integer not null,\n    ls              integer not null,\n    conf            text not null,\n    models          text not null,\n    decks           text not null,\n    dconf           text not null,\n    tags            text not null\n)",
+      "CREATE TABLE graves (\n    usn             integer not null,\n    oid             integer not null,\n    type            integer not null\n)",
+      "CREATE INDEX ix_cards_nid on cards (nid)",
+      "CREATE INDEX ix_cards_sched on cards (did, queue, due)",
+      "CREATE INDEX ix_cards_usn on cards (usn)",
+      "CREATE INDEX ix_notes_csum on notes (csum)",
+      "CREATE INDEX ix_notes_usn on notes (usn)",
+      "CREATE INDEX ix_revlog_cid on revlog (cid)",
+      "CREATE INDEX ix_revlog_usn on revlog (usn)",
+      "CREATE TABLE notes (\n    id              integer primary key,   /* 0 */\n    guid            text not null,         /* 1 */\n    mid             integer not null,      /* 2 */\n    mod             integer not null,      /* 3 */\n    usn             integer not null,      /* 4 */\n    tags            text not null,         /* 5 */\n    flds            text not null,         /* 6 */\n    sfld            integer not null,      /* 7 */\n    csum            integer not null,      /* 8 */\n    flags           integer not null,      /* 9 */\n    data            text not null          /* 10 */\n)",
+      "CREATE TABLE revlog (\n    id              integer primary key,\n    cid             integer not null,\n    usn             integer not null,\n    ease            integer not null,\n    ivl             integer not null,\n    lastIvl         integer not null,\n    factor          integer not null,\n    time            integer not null,\n    type            integer not null\n)"
+    ],
+    "col": [
+      {
+        "id": 1,
+        "crt": 1411124400,
+        "mod": 1425279151694,
+        "scm": 1425279151690,
+        "ver": 11,
+        "dty": 0,
+        "usn": 0,
+        "ls": 0,
+        "conf": {
+          "activeDecks": [1],
+          "addToCur": true,
+          "collapseTime": 1200,
+          "curDeck": 1,
+          "curModel": "1425279151691",
+          "dueCounts": true,
+          "estTimes": true,
+          "newBury": true,
+          "newSpread": 0,
+          "nextPos": 1,
+          "sortBackwards": false,
+          "sortType": "noteFld",
+          "timeLim": 0
+        },
+        "models": {
+          "1760101001": {
+            "css": ".card {\n font-family: \"ヒラギノ角ゴ Pro W3\", \"Hiragino Kaku Gothic Pro\", \"Noto Sans JP\", Osaka, \"メイリオ\", Meiryo, \"ＭＳ Ｐゴシック\", \"MS PGothic\", \"MS UI Gothic\", sans-serif;\n font-size: 44px;\n text-align: center;\n}\n\nimg {\nmax-width: 300px;\nmax-height: 250px;\n}\n\n.mobile img {\nmax-width: 50vw;\n}\n\n/* This part defines the bold color. */\nb{color: #5586cd}\n",
+            "did": 1760101002,
+            "flds": [
+              {
+                "name": "Word",
+                "ord": 0,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Word Reading",
+                "ord": 1,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Word Meaning",
+                "ord": 2,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Word Furigana",
+                "ord": 3,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Word Audio",
+                "ord": 4,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Sentence",
+                "ord": 5,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Sentence Meaning",
+                "ord": 6,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Sentence Furigana",
+                "ord": 7,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Sentence Audio",
+                "ord": 8,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Notes",
+                "ord": 9,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Pitch Accent",
+                "ord": 10,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Pitch Accent Notes",
+                "ord": 11,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Frequency",
+                "ord": 12,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              },
+              {
+                "name": "Picture",
+                "ord": 13,
+                "font": "Liberation Sans",
+                "media": [],
+                "rtl": false,
+                "size": 20,
+                "sticky": false
+              }
+            ],
+            "id": "1760101001",
+            "latexPost": "\\end{document}",
+            "latexPre": "\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n",
+            "latexsvg": false,
+            "mod": 1760900000,
+            "name": "Leituras (estilo Kaishi)",
+            "req": [[0, "any", [0, 5]]],
+            "sortf": 0,
+            "tags": [],
+            "tmpls": [
+              {
+                "name": "Card 1",
+                "qfmt": "<div lang=\"ja\">\n{{Word}}\n<div style='font-size: 20px;'>{{Sentence}}</div>\n</div>",
+                "afmt": "<div lang=\"ja\">\n{{furigana:Word Furigana}}\n\n<!-- This part enables pitch accent.\n\n{{#Pitch Accent}}\n\t<br><div style='font-size: 24px'>{{Pitch Accent}}</div>\n{{/Pitch Accent}}\n\n-->\n\n<div style='font-size: 25px; padding-bottom:20px'>{{Word Meaning}}</div>\n<div style='font-size: 25px;'>{{furigana:Sentence Furigana}}</div>\n<div style='font-size: 25px; padding-bottom:10px'>{{Sentence Meaning}}</div>\n\n{{Word Audio}}\n{{Sentence Audio}}\n<br>\n{{Picture}}\n\n{{#Notes}}\n\t<br>\n\t<div style=\"font-size: 20px; padding-top:12px\">Note: {{Notes}}</div>\n{{/Notes}}\n\n<!-- This part enables pitch accent notes.\n\n{{#Pitch Accent Notes}}\n<div style=\"font-size: 20px; width: fit-content; max-width:40vw; margin: auto\">\n\t<details><summary>Pitch Accent Notes</summary>\n\t\t<br>{{Pitch Accent Notes}}\n\t</details>\n</div>\n{{/Pitch Accent Notes}}\n\n-->\n\n</div>",
+                "ord": 0,
+                "bafmt": "",
+                "bqfmt": "",
+                "bfont": "",
+                "bsize": 0,
+                "did": null
+              }
+            ],
+            "type": 0,
+            "usn": -1,
+            "vers": []
+          }
+        },
+        "decks": {
+          "1": {
+            "collapsed": false,
+            "conf": 1,
+            "desc": "",
+            "dyn": 0,
+            "extendNew": 10,
+            "extendRev": 50,
+            "id": 1,
+            "lrnToday": [0, 0],
+            "mod": 1425279151,
+            "name": "Default",
+            "newToday": [0, 0],
+            "revToday": [0, 0],
+            "timeToday": [0, 0],
+            "usn": 0
+          },
+          "1760101002": {
+            "collapsed": false,
+            "conf": 1,
+            "desc": "",
+            "dyn": 0,
+            "extendNew": 0,
+            "extendRev": 50,
+            "id": 1760101002,
+            "lrnToday": [163, 2],
+            "mod": 1425278051,
+            "name": "日本語::1. Dokusho",
+            "newToday": [163, 2],
+            "revToday": [163, 0],
+            "timeToday": [163, 23598],
+            "usn": -1
+          }
+        },
+        "dconf": {
+          "1": {
+            "autoplay": true,
+            "id": 1,
+            "lapse": {
+              "delays": [10],
+              "leechAction": 0,
+              "leechFails": 8,
+              "minInt": 1,
+              "mult": 0
+            },
+            "maxTaken": 60,
+            "mod": 0,
+            "name": "Default",
+            "new": {
+              "bury": true,
+              "delays": [1, 10],
+              "initialFactor": 2500,
+              "ints": [1, 4, 7],
+              "order": 1,
+              "perDay": 20,
+              "separate": true
+            },
+            "replayq": true,
+            "rev": {
+              "bury": true,
+              "ease4": 1.3,
+              "fuzz": 0.05,
+              "ivlFct": 1,
+              "maxIvl": 36500,
+              "minSpace": 1,
+              "perDay": 100
+            },
+            "timer": 0,
+            "usn": 0
+          }
+        },
+        "tags": {}
+      }
+    ],
+    "notes": [
+      {
+        "id": 1760900000500,
+        "guid": "dI8s+Irqj^",
+        "mid": 1760101001,
+        "mod": 1760900000,
+        "usn": -1,
+        "tags": " dokusho dokusho::Livro_de_Teste ",
+        "flds": "気のせい\u001fきのせい\u001fimpressão minha, coisa da cabeça\u001f気[き]のせい\u001f[sound:leituras-aaaaaaaaaaaa.wav]\u001f最初は<b>気のせい</b>だと思って無視した。\u001fNo começo achei que era impressão minha e ignorei.\u001f最[さい] 初[しょ]は<b>気[き]のせい</b>だと 思[おも]って 無[む] 視[し]した。\u001f[sound:leituras-bbbbbbbbbbbb.wav]\u001f\u001f\u001f\u001f319\u001f",
+        "sfld": "気のせい",
+        "csum": 0,
+        "flags": 0,
+        "data": ""
+      },
+      {
+        "id": 1760900000502,
+        "guid": "n1wtyc4))`",
+        "mid": 1760101001,
+        "mod": 1760900000,
+        "usn": -1,
+        "tags": " dokusho dokusho::Livro_de_Teste ",
+        "flds": "開く\u001fあく\u001fabrir\u001f開[あ]く\u001f\u001fドアが<b>開いた</b>。\u001fA porta abriu.\u001fドアが<b>開[あ]いた</b>。\u001f\u001fNota\u001f\u001f\u001f\u001f",
+        "sfld": "開く",
+        "csum": 0,
+        "flags": 0,
+        "data": ""
+      },
+      {
+        "id": 1760900000504,
+        "guid": "qo5H(rPj(`",
+        "mid": 1760101001,
+        "mod": 1760900000,
+        "usn": -1,
+        "tags": " dokusho ",
+        "flds": "開く\u001fひらく\u001fabrir (livro)\u001f開[ひら]く\u001f\u001f本を<b>開く</b>。\u001fAbro o livro.\u001f本[ほん]を<b>開[ひら]く</b>。\u001f\u001f\u001f\u001f\u001f1200\u001f",
+        "sfld": "開く",
+        "csum": 0,
+        "flags": 0,
+        "data": ""
+      }
+    ],
+    "cards": [
+      {
+        "id": 1760900000501,
+        "nid": 1760900000500,
+        "did": 1760101002,
+        "ord": 0,
+        "mod": 1760900000,
+        "usn": -1,
+        "type": 0,
+        "queue": 0,
+        "due": 0,
+        "ivl": 0,
+        "factor": 0,
+        "reps": 0,
+        "lapses": 0,
+        "left": 0,
+        "odue": 0,
+        "odid": 0,
+        "flags": 0,
+        "data": ""
+      },
+      {
+        "id": 1760900000503,
+        "nid": 1760900000502,
+        "did": 1760101002,
+        "ord": 0,
+        "mod": 1760900000,
+        "usn": -1,
+        "type": 0,
+        "queue": 0,
+        "due": 0,
+        "ivl": 0,
+        "factor": 0,
+        "reps": 0,
+        "lapses": 0,
+        "left": 0,
+        "odue": 0,
+        "odid": 0,
+        "flags": 0,
+        "data": ""
+      },
+      {
+        "id": 1760900000505,
+        "nid": 1760900000504,
+        "did": 1760101002,
+        "ord": 0,
+        "mod": 1760900000,
+        "usn": -1,
+        "type": 0,
+        "queue": 0,
+        "due": 0,
+        "ivl": 0,
+        "factor": 0,
+        "reps": 0,
+        "lapses": 0,
+        "left": 0,
+        "odue": 0,
+        "odid": 0,
+        "flags": 0,
+        "data": ""
+      }
+    ]
+  }
+}

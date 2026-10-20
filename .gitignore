@@ -6,3 +6,5 @@ node_modules
 supabase/.temp
 supabase/.branches
 dicts/
+tools/.venv
+__pycache__/
