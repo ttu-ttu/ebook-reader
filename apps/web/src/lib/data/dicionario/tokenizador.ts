@@ -29,7 +29,7 @@ export interface Tokenizador {
   tokenizar(texto: string): Pedaco[];
 }
 
-const paraHiragana = (texto: string) =>
+export const paraHiragana = (texto: string) =>
   texto.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 
 // Inicialização assíncrona: o Chrome recusa compilar wasm > 8 MB de forma síncrona na thread principal.
