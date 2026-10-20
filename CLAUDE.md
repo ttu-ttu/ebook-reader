@@ -6,6 +6,7 @@ Termos: GLOSSARY.md (usar esses nomes no código e nos docs). Decisões com moti
 desfazer um ADR sem um novo ADR).
 
 ## Stack
+
 - Fork do ttu ebook-reader (SvelteKit 2 + Svelte 4, Tailwind, adapter-static, pnpm). App em apps/web.
 - Dados locais do ttu: IndexedDB (apps/web/src/lib/data/database/books-db).
 - Sincronização do ttu: handlers em apps/web/src/lib/data/storage/handler. O Supabase entra como um
@@ -22,19 +23,24 @@ desfazer um ADR sem um novo ADR).
   tokenizador, com regras próprias de reserva (ADR 0005). Não copiar código do Yomitan (GPL).
 
 ## Comandos
-- Instalar: pnpm install --frozen-lockfile (na raiz; pnpm via `corepack enable`)
+
+- Instalar: pnpm install --frozen-lockfile (na raiz; pnpm 12.14.0 fixado em `packageManager`, via
+  `corepack enable`; sem admin no Windows: `corepack enable --install-directory "$env:APPDATA\npm"`)
 - Rodar: pnpm dev
 - Build: pnpm build
 - Checagem de tipos: cd apps/web && pnpm check
-- Testes: (preencher quando existirem — vitest em apps/web)
-- Supabase: npx supabase <cmd> (link, db push, functions deploy gemini, secrets set)
+- Testes: pnpm test (na raiz; vitest em apps/web, arquivos `src/**/*.test.ts`)
+- Supabase: npx supabase <cmd> (link, db push, functions deploy gemini, secrets set). CLI fixado
+  como devDependency da raiz. Projeto já linkado (ref em supabase/.temp, fora do git); checar o link
+  com `npx supabase migration list` (`supabase status` é da stack local em Docker).
 
 ## Regras fixas
+
 - Repositório público: nunca chave, dado pessoal ou link privado em arquivo versionado.
 - Nenhuma chamada a Claude/LLM dentro do app. Só Gemini, só pela Edge Function `gemini`.
-- Chaves: GEMINI_KEY só como secret do Supabase (ler com Deno.env.get("GEMINI_KEY")). A função
+- Chaves: GEMINI*KEY só como secret do Supabase (ler com Deno.env.get("GEMINI_KEY")). A função
   aceita só o usuário do secret ALLOWED_USER_ID e respeita um teto diário. Nomes de modelo em
-  configuração, nunca no código. No front, só SUPABASE_URL e a anon key (via .env, PUBLIC_*).
+  configuração, nunca no código. No front, só SUPABASE_URL e a anon key (via .env, PUBLIC*\*).
   Nunca service_role no front. Nunca chaves no código nem no chat.
 - Termos: **Carta** = item da fila no app; **Card** = o que existe no Anki.
 - Cards: seguir docs/CARDS.md; não mudar MODEL_ID nem o prefixo de guid `leituras-igor`.
@@ -55,6 +61,7 @@ desfazer um ADR sem um novo ADR).
 - Escrever teste antes do código em: guid/.apkg, estados do hub, casamento de palavras, deflexão.
 
 ## Fluxo
+
 - Um chat por item de docs/FASES.md. Começar em plan mode, implementar, testar.
 - Um commit por passo pequeno (Conventional Commits: o repo usa commitlint).
 - Ao terminar o item: atualizar docs/PROGRESSO.md (feito, decisões, pendências) e este arquivo

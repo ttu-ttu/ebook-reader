@@ -4,18 +4,18 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 
 ## Estado
 
-| Item | Status | Data | Observação |
-| --- | --- | --- | --- |
-| S1 | pendente | | |
-| S2 | pendente | | |
-| D1 | feito | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
-| R1 | pendente | | |
-| R2 | pendente | | |
-| R3 | pendente | | zips em dicts/; subir para o bucket no S2 |
-| R4 | pendente | | depende de R2 e R3 |
-| R5 | pendente | | |
-| V1.1–V1.7 | pendente | | |
-| V2.1–V2.4 | pendente | | |
+| Item      | Status   | Data       | Observação                                                                  |
+| --------- | -------- | ---------- | --------------------------------------------------------------------------- |
+| S1        | feito    | 2026-10-20 | ttu roda; vitest; supabase init + link                                      |
+| S2        | pendente |            |                                                                             |
+| D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
+| R1        | pendente |            |                                                                             |
+| R2        | pendente |            |                                                                             |
+| R3        | pendente |            | zips em dicts/; subir para o bucket no S2                                   |
+| R4        | pendente |            | depende de R2 e R3                                                          |
+| R5        | pendente |            |                                                                             |
+| V1.1–V1.7 | pendente |            |                                                                             |
+| V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
 
@@ -31,6 +31,13 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   tocar fora do texto ou na pontuação só fecha o painel. Painel e telas aprovados sem mudanças.
   Detalhes em ESCOPO "Toque e painel" e logo abaixo da tabela de telas. Protótipo (descartável) no
   branch prototype/d1-telas, publicado como artifact privado.
+- 2026-10-20: S1. pnpm 12.14.0 fixado em `packageManager` (avisa que ignora `pnpm.onlyBuiltDependencies`;
+  o `allowBuilds` do pnpm-workspace.yaml cobre). vitest 3.2.4 (compatível com o vite 5.4). Supabase CLI
+  2.121.0 como devDependency da raiz. `supabase status` não serve de prova de link (é da stack local);
+  usar `npx supabase migration list`. No Windows, `corepack enable` sem admin dá EPERM: usar
+  `--install-directory "$env:APPDATA\npm"`; `npx.ps1` exige ExecutionPolicy RemoteSigned (já feito).
+- 2026-10-20: na primeira carga do `pnpm dev` o console mostra erros de HMR (o Vite reotimiza as
+  dependências no meio); some ao recarregar. Não é bug do app.
 
 ## Testes de risco
 
