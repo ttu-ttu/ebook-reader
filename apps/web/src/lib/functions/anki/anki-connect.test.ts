@@ -65,6 +65,57 @@ describe('criarAnkiConnect', () => {
     await expect(anki.invocar('version')).rejects.toMatchObject({ tipo: 'rede' });
   });
 
+  it('depois do sync, espera a coleção sair da sincronização da interface', async () => {
+    let ocupada = 3;
+    const fetch = (async (_url: string, init: RequestInit) => {
+      const { action } = JSON.parse(String(init.body)) as Pedido;
+      if (action === 'sync') return new Response(JSON.stringify({ result: null, error: null }));
+      if (ocupada > 0) {
+        ocupada -= 1;
+        return new Response(
+          JSON.stringify({ result: null, error: 'Collection lifecycle operation is active.' })
+        );
+      }
+      return new Response(JSON.stringify({ result: {}, error: null }));
+    }) as typeof globalThis.fetch;
+    const esperas: number[] = [];
+    const anki = criarAnkiConnect({
+      fetch,
+      esperar: async (ms) => {
+        esperas.push(ms);
+      }
+    });
+
+    await anki.sincronizar();
+    expect(ocupada).toBe(0);
+    expect(esperas).toEqual([500, 500, 500]);
+  });
+
+  it('desiste de esperar a coleção depois do tempo limite do sync', async () => {
+    const fetch = (async (_url: string, init: RequestInit) => {
+      const { action } = JSON.parse(String(init.body)) as Pedido;
+      const error = action === 'sync' ? null : 'Collection lifecycle operation is active.';
+      return new Response(JSON.stringify({ result: null, error }));
+    }) as typeof globalThis.fetch;
+    const anki = criarAnkiConnect({ fetch, tempoLimiteSync: 1_000, esperar: async () => {} });
+
+    await expect(anki.sincronizar()).rejects.toMatchObject({ tipo: 'tempo' });
+  });
+
+  it('não espera em outros erros depois do sync', async () => {
+    const fetch = (async (_url: string, init: RequestInit) => {
+      const { action } = JSON.parse(String(init.body)) as Pedido;
+      const error = action === 'sync' ? null : 'collection is not available';
+      return new Response(JSON.stringify({ result: null, error }));
+    }) as typeof globalThis.fetch;
+    const anki = criarAnkiConnect({ fetch, esperar: async () => {} });
+
+    await expect(anki.sincronizar()).rejects.toMatchObject({
+      tipo: 'anki',
+      message: 'collection is not available'
+    });
+  });
+
   it('lista só o deck raiz e os subdecks', async () => {
     const { fetch } = fetchFalso({
       deckNamesAndIds: () => ({

@@ -40,7 +40,9 @@ Se a permissão for negada, liberar em Configurações do site (cadeado na barra
   `deckNamesAndIds`, `findCards`, `cardsInfo` e `notesInfo`. Nada que escreva na coleção: os Cards
   chegam ao Anki só pelo .apkg.
 - `sync` sincroniza o Anki do PC com o AnkiWeb (pega as revisões do celular) e volta quando a coleção
-  terminou; exige estar logado no AnkiWeb dentro do Anki.
+  terminou; exige estar logado no AnkiWeb dentro do Anki. Logo depois o Anki roda a sincronização da
+  interface e recusa leituras com "Collection lifecycle operation is active": o cliente repete
+  `deckNamesAndIds` a cada 0,5 s até a coleção liberar (no máximo o tempo limite do sync).
 - Leitura: `findCards` com `"deck:日本語"` (inclui os subdecks), depois `cardsInfo` (intervalo,
   `queue`, campos) e `notesInfo` (etiquetas, onde está o `leech`), em lotes de 200 ids.
 - `queue = -1` é suspenso; `interval` negativo é segundos (Card em aprendizado), positivo é dias.

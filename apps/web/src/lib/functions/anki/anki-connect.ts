@@ -81,16 +81,21 @@ export interface OpcoesAnkiConnect {
   tempoLimite?: number;
   /** Tempo máximo do `sync` com o AnkiWeb, em ms. */
   tempoLimiteSync?: number;
+  /** Pausa entre as tentativas depois do sync (trocada nos testes). */
+  esperar?: (ms: number) => Promise<void>;
 }
 
 export const URL_ANKI_CONNECT = 'http://127.0.0.1:8765';
+
+const INTERVALO_DA_ESPERA = 500;
 
 export function criarAnkiConnect({
   url = URL_ANKI_CONNECT,
   fetch = globalThis.fetch.bind(globalThis),
   tamanhoDoLote = 200,
   tempoLimite = 30_000,
-  tempoLimiteSync = 300_000
+  tempoLimiteSync = 300_000,
+  esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 }: OpcoesAnkiConnect = {}) {
   async function invocar<T = unknown>(
     acao: AcaoPermitida,
@@ -134,9 +139,29 @@ export function criarAnkiConnect({
     return saida;
   }
 
-  /** Sincroniza o Anki do PC com o AnkiWeb; volta quando a coleção terminou. */
-  function sincronizar() {
-    return invocar<null>('sync', undefined, tempoLimiteSync);
+  /**
+   * Sincroniza o Anki do PC com o AnkiWeb e espera a coleção ficar livre. O `sync` volta quando a
+   * coleção terminou, mas o Anki ainda dispara a sincronização da interface, e até ela acabar toda
+   * leitura falha com "Collection lifecycle operation is active".
+   */
+  async function sincronizar() {
+    await invocar<null>('sync', undefined, tempoLimiteSync);
+    for (let esperado = 0; ; esperado += INTERVALO_DA_ESPERA) {
+      try {
+        await invocar('deckNamesAndIds');
+        return;
+      } catch (erro) {
+        const ocupada = erro instanceof ErroAnkiConnect && /lifecycle/i.test(erro.message);
+        if (!ocupada) throw erro;
+        if (esperado >= tempoLimiteSync) {
+          throw new ErroAnkiConnect(
+            `A coleção continuou ocupada ${Math.round(tempoLimiteSync / 1000)} s depois do sync`,
+            'tempo'
+          );
+        }
+        await esperar(INTERVALO_DA_ESPERA);
+      }
+    }
   }
 
   async function listarDecks(raiz: string): Promise<DeckAnki[]> {
