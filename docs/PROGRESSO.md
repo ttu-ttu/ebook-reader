@@ -10,7 +10,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | S2        | quase    | 2026-10-20 | schema aplicado, login ok; falta conta + cadastro desligado (👤)            |
 | D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
 | R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; Anki do PC ok; falta AnkiMobile e iPhone  |
-| R2        | quase    | 2026-10-20 | cliente e `/teste/anki` prontos; falta você rodar com o Anki aberto (👤)    |
+| R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
 | R3        | pendente |            | zips em dicts/; subir para o bucket no S2                                   |
 | R4        | pendente |            | depende de R2 e R3                                                          |
 | R5        | pendente |            |                                                                             |
@@ -70,7 +70,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   (pega os subdecks) e `cardsInfo` + `notesInfo` em lotes de 200; `leech` vem das etiquetas da nota,
   suspenso é `queue = -1`, intervalo negativo é segundos. Tipo de nota sem `Word` usa o primeiro
   campo. Erros com `tipo`: `rede` (Anki fechado, CORS ou rede local: o navegador não diferencia),
-  `tempo`, `anki`, `acao-proibida`. `sync` com limite de 5 min. Configuração e regras em
+  `tempo`, `anki`, `acao-proibida`. `sync` com limite de 5 min, incluindo a espera da coleção. Configuração e regras em
   docs/ANKI-CONNECT.md. Página provisória `/teste/anki` (apagar no V2.1).
 - 2026-10-20: o `pnpm dev` de outro chat na mesma pasta ocupa a 5173 e o novo sobe na 5174, que não
   está no `webCorsOriginList`. Para o R2, rodar o dev só na 5173.
@@ -91,10 +91,17 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 
 - Cliente: 7 testes com `fetch` simulado (lista de ações, erros, lotes, etiquetas, leech). ✅
 - `/teste/anki` no Chrome sem o Anki ouvindo: mostra o erro `rede`. ✅
-- 👤 Falta: Anki aberto com o AnkiConnect, `http://localhost:5173` no `webCorsOriginList`,
-  `pnpm dev` na 5173, abrir `/teste/anki` e "Testar". Conferir que o sync passa, que os Cards dos três
-  subdecks aparecem com intervalo, suspensão e leech, e anotar os tempos aqui. A URL de produção entra
-  na lista no V1.7, e aí o teste se repete pela Vercel, com o prompt de rede local do Chrome.
+- Chrome do Windows, `http://localhost:5173` no `webCorsOriginList`: CORS ok, `version` e `sync` ok. ✅
+- Primeira rodada falhou logo depois do `sync`: "Collection lifecycle operation is active" (o Anki
+  roda a sincronização da interface depois do `sync`). Corrigido: o cliente repete `deckNamesAndIds`
+  a cada 0,5 s até a coleção liberar. ✅
+- Leitura: 1514 Cards (`2. Kaishi 1.5k` 1500, `3. Old` 14, `1. Dokusho` 0, `日本語` 0); 71
+  suspensos, 0 leech, 245 novos, 932 com intervalo ≥ 21 d. Intervalo e suspensão aparecem certos. ✅
+- Leech: nenhum Card real tem a etiqueta; o caminho só está coberto pelo teste unitário.
+- Para o R4: o Kaishi tem Word Reading com mais de uma leitura no mesmo campo (何 → `なに・なん`);
+  o casamento pela entrada do JMdict precisa separar por `・`.
+- Falta (V1.7): pôr a URL de produção no `webCorsOriginList` e repetir pela Vercel, com o prompt de
+  rede local do Chrome.
 
 ## Pendências do usuário
 
@@ -108,7 +115,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Colar `supabase/tests/rls_check.sql` no SQL Editor e conferir dono = 1, outro = 0 (S2)
 - [x] R1: importar o Lote de teste no Anki do PC, reimportar e conferir tipos de nota
 - [ ] R1: AnkiMobile e Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste (passo a passo no V1.7 do FASES.md)
-- [ ] R2: rodar `/teste/anki` com o Anki aberto (passo a passo em "Testes de risco" › R2)
+- [x] R2: rodar `/teste/anki` com o Anki aberto
 - [ ] V1.7: pôr a URL de produção no `webCorsOriginList` (docs/ANKI-CONNECT.md)
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_KEY é do projeto pago (R5)
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
