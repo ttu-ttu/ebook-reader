@@ -39,6 +39,7 @@
     "@fortawesome/free-regular-svg-icons": "7.3.1",
     "@fortawesome/free-solid-svg-icons": "7.3.1",
     "@popperjs/core": "2.11.8",
+    "@supabase/supabase-js": "2.118.0",
     "@zip.js/zip.js": "2.4.26",
     "balanced-match": "3.0.1",
     "fake-indexeddb": "6.2.5",
