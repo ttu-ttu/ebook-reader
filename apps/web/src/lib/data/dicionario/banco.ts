@@ -138,6 +138,11 @@ export async function consultar(db: BancoDicionario, termo: string): Promise<Ent
   const entradas = ids
     .map((id) => blocos.get(Math.floor(id / TAMANHO_BLOCO))?.[id % TAMANHO_BLOCO])
     .filter((e): e is Entrada => !!e);
+  return ordenarPorFrequencia(entradas, termo);
+}
+
+/** Da entrada mais frequente para a menos, pela forma que bate com o termo (estável). */
+export function ordenarPorFrequencia(entradas: Entrada[], termo: string) {
   return entradas
     .map((entrada, ordem) => ({ entrada, ordem, f: frequencia(entrada, termo) }))
     .sort((a, b) => a.f - b.f || a.ordem - b.ordem)
