@@ -11,7 +11,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
 | R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; Anki do PC ok; falta AnkiMobile e iPhone  |
 | R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
-| R3        | quase    | 2026-10-20 | lindera; 32 MB baixados; PC dentro das metas; falta bucket e iPhone (👤)    |
+| R3        | quase    | 2026-10-20 | lindera; 32 MB; PC pelo bucket dentro das metas; falta iPhone (👤)          |
 | R4        | pendente |            | depende de R2 e R3                                                          |
 | R5        | pendente |            |                                                                             |
 | V1.1–V1.7 | pendente |            |                                                                             |
@@ -138,8 +138,11 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - Primeira versão media 33 s de preparação: 107 mil registros no IndexedDB (índice com chave de 2
   caracteres). Índice em blocos ordenados: 4,3 mil registros. Blocos de 256 entradas espalhavam
   homófonos (こう: 51 entradas em 34 blocos, 100 ms); ordenar pela leitura + blocos de 64 resolveu.
-- Falta (👤): subir ao bucket e baixar pela página (download real pelo Supabase); medir na PWA do
-  iPhone (depois da Vercel, V1.7). No iPhone, atenção à memória: wasm (~140 MB no Node) + IndexedDB.
+- PC pelo bucket (Chrome, dev, logado; 2026-10-20): `atual.json` lido; download 15,9 MB em 2,4 s;
+  preparação 3,2 s; tokenizador 18,0 MB da rede, pronto em 2,8 s; 77 consultas: média 6 ms, p95 12 ms,
+  máx 29–40 ms, 77/77 com entrada; espaço do site 33 MB. ✅
+- Falta (👤): medir na PWA do iPhone (depois da Vercel, V1.7). No iPhone, atenção à memória: wasm
+  (~140 MB no Node) + IndexedDB.
 
 ## Pendências do usuário
 
@@ -155,7 +158,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] R1: AnkiMobile e Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste (passo a passo no V1.7 do FASES.md)
 - [x] R2: rodar `/teste/anki` com o Anki aberto
 - [ ] V1.7: pôr a URL de produção no `webCorsOriginList` (docs/ANKI-CONNECT.md)
-- [ ] R3: na raiz, `node tools/subir-dicionario.ts` (e-mail e senha no terminal); depois, logado no
+- [x] R3: na raiz, `node tools/subir-dicionario.ts` (e-mail e senha no terminal); depois, logado no
       app, `/teste/dicionario` → "Baixar dicionário" e anotar download e preparação
 - [ ] R3: na PWA do iPhone (depois da Vercel), `/teste/dicionario`: baixar, carregar tokenizador,
       "Medir consultas"; anotar em "Testes de risco" › R3 e marcar R3 como feito
