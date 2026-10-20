@@ -64,8 +64,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [x] Secret GEMINI_KEY no Supabase
 - [x] Hospedagem: Vercel
 - [ ] Conectar o repo na Vercel e cadastrar as env vars (V1.7)
-- [ ] Criar a sua conta (Auth → Add user), entrar em `/login`, desligar o cadastro (Auth → Sign In /
-      Providers → "Allow new users to sign up") e rodar `pnpm test` + `supabase/tests/rls_check.sql` (S2)
+- [x] Criar a conta, entrar em `/login` e desligar o cadastro (S2)
+- [ ] Colar `supabase/tests/rls_check.sql` no SQL Editor e conferir dono = 1, outro = 0 (S2)
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_KEY é do projeto pago (R5)
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
