@@ -693,6 +693,7 @@
     : undefined}
   style:max-width={width ? `${width}px` : undefined}
   style:max-height={verticalMode && height ? `${height}px` : undefined}
+  style:height={verticalMode && height ? `${height}px` : undefined}
   style:--font-family-serif={fontFamilyGroupOne}
   style:--font-family-sans-serif={fontFamilyGroupTwo}
   style:--font-weight={fontWeight}
