@@ -68,16 +68,21 @@ export async function baixarArquivo(
   return new Blob(pedacos as BlobPart[], { type: 'application/gzip' });
 }
 
-/** Descompacta e grava no IndexedDB, em fluxo. */
-export function prepararArquivo(
+/**
+ * Descompacta e grava no IndexedDB, em fluxo. Aceita o arquivo já descompactado (um servidor
+ * pode mandar o .gz com Content-Encoding e o navegador abre sozinho).
+ */
+export async function prepararArquivo(
   db: BancoDicionario,
   arquivo: Blob,
   aoProgredir?: (fracao: number) => void
 ) {
-  const texto = arquivo
-    .stream()
-    .pipeThrough(new DecompressionStream('gzip'))
-    .pipeThrough(new TextDecoderStream());
+  const inicio = new Uint8Array(await arquivo.slice(0, 2).arrayBuffer());
+  const emGzip = inicio[0] === 0x1f && inicio[1] === 0x8b;
+  const bytes = arquivo.stream();
+  const texto = (emGzip ? bytes.pipeThrough(new DecompressionStream('gzip')) : bytes).pipeThrough(
+    new TextDecoderStream()
+  );
   return gravarDicionario(db, linhasDoFluxo(texto), aoProgredir);
 }
 

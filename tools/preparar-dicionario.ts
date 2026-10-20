@@ -95,6 +95,6 @@ writeFileSync(join(saida, 'manifesto.json'), JSON.stringify(manifesto, null, 2))
 
 const mb = (n: number) => `${(n / 1e6).toFixed(1)} MB`;
 console.log(
-  `${versao}: ${preparado.entradas.length} entradas, ${preparado.indice.size} chaves, ` +
+  `${versao}: ${preparado.entradas.length} entradas, ${preparado.indice.length} blocos de índice, ` +
     `${mb(manifesto.bytesDescompactado)} → ${mb(gz.length)} em ${saida}`
 );

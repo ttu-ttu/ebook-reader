@@ -8,7 +8,10 @@
 // arquivo direto no Node (que só remove os tipos), por isso ele não importa nada.
 
 export const FORMATO = 1;
-export const TAMANHO_BLOCO = 256;
+// Blocos pequenos: ler um bloco custa pelo tamanho dele (R3: 256 entradas = 54 KB ≈ 3 ms no PC).
+export const TAMANHO_BLOCO = 64;
+// Poucos registros: gravar no IndexedDB custa por registro (R3: 107 mil registros ≈ 30 s no PC).
+export const TERMOS_POR_BLOCO = 512;
 
 /** Pedaço do furigana: texto sem leitura (kana) ou [kanji, leitura]. */
 export type PedacoFurigana = string | [string, string];
@@ -48,10 +51,11 @@ export interface Cabecalho {
   fontes: Record<string, string>;
   entradas: number;
   blocos: number;
-  chaves: number;
+  /** Primeiro termo de cada bloco do índice, em ordem; o bloco de um termo sai por busca binária. */
+  limitesIndice: string[];
 }
 
-/** Termo → ids das entradas, para todos os termos que começam pela chave do bloco. */
+/** Termo → ids das entradas, para um trecho dos termos em ordem. */
 export type BlocoIndice = Record<string, number[]>;
 
 // Linhas dos arquivos Yomitan e do JmdictFurigana.
@@ -70,9 +74,20 @@ export interface LinhaFurigana {
   furigana: { ruby: string; rt?: string }[];
 }
 
-/** Chave do bloco do índice: os dois primeiros caracteres do termo. */
-export function chaveDoBloco(termo: string) {
-  return Array.from(termo).slice(0, 2).join('');
+/** Número do bloco do índice onde o termo estaria; -1 se vem antes de todos. */
+export function blocoDoTermo(limites: string[], termo: string) {
+  let [baixo, alto] = [0, limites.length - 1];
+  let achado = -1;
+  while (baixo <= alto) {
+    const meio = (baixo + alto) >> 1;
+    if (limites[meio] <= termo) {
+      achado = meio;
+      baixo = meio + 1;
+    } else {
+      alto = meio - 1;
+    }
+  }
+  return achado;
 }
 
 /** Glosas em inglês de uma linha do JMdict do Yomitan (ignora notas, referências e formas). */
@@ -111,7 +126,7 @@ export function glosasDe(definicoes: unknown[]): string[] {
 export interface Preparado {
   cabecalho: Cabecalho;
   entradas: Entrada[];
-  indice: Map<string, BlocoIndice>;
+  indice: BlocoIndice[];
 }
 
 export function prepararDicionario(fontes: {
@@ -191,17 +206,23 @@ export function prepararDicionario(fontes: {
       vistosSentidos.add(chaveSentido);
       sentidos.push({ t, g });
     }
-    idPorSeq.set(seq, entradas.length);
-    entradas.push({ id: entradas.length, seq, formas, sentidos });
+    entradas.push({ id: 0, seq, formas, sentidos });
   }
+  // Pela leitura: os homófonos (こう tem 51 entradas) ficam em poucos blocos.
+  entradas.sort((a, b) => {
+    const [la, lb] = [a.formas[0].l, b.formas[0].l];
+    return la < lb ? -1 : la > lb ? 1 : a.seq - b.seq;
+  });
+  entradas.forEach((entrada, id) => {
+    entrada.id = id;
+    idPorSeq.set(entrada.seq, id);
+  });
 
-  const indice = new Map<string, BlocoIndice>();
+  const idsPorTermo = new Map<string, number[]>();
   const indexar = (termo: string, id: number) => {
-    const chave = chaveDoBloco(termo);
-    let bloco = indice.get(chave);
-    if (!bloco) indice.set(chave, (bloco = {}));
-    const ids = (bloco[termo] ??= []);
-    if (!ids.includes(id)) ids.push(id);
+    const ids = idsPorTermo.get(termo);
+    if (!ids) idsPorTermo.set(termo, [id]);
+    else if (!ids.includes(id)) ids.push(id);
   };
   for (const entrada of entradas) {
     for (const { e, l } of entrada.formas) {
@@ -214,6 +235,15 @@ export function prepararDicionario(fontes: {
     if (id !== undefined) indexar(escrita, id);
   }
 
+  const termosEmOrdem = [...idsPorTermo.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const indice: BlocoIndice[] = [];
+  const limitesIndice: string[] = [];
+  for (let i = 0; i < termosEmOrdem.length; i += TERMOS_POR_BLOCO) {
+    const trecho = termosEmOrdem.slice(i, i + TERMOS_POR_BLOCO);
+    limitesIndice.push(trecho[0]);
+    indice.push(Object.fromEntries(trecho.map((termo) => [termo, idsPorTermo.get(termo)!])));
+  }
+
   return {
     cabecalho: {
       formato: FORMATO,
@@ -221,7 +251,7 @@ export function prepararDicionario(fontes: {
       fontes: fontes.fontes,
       entradas: entradas.length,
       blocos: Math.ceil(entradas.length / TAMANHO_BLOCO),
-      chaves: indice.size
+      limitesIndice
     },
     entradas,
     indice
@@ -229,19 +259,32 @@ export function prepararDicionario(fontes: {
 }
 
 // Arquivo: uma linha JSON por registro (lido em fluxo no aparelho). A primeira é o cabeçalho;
-// depois ["e", bloco, entradas] e ["i", chave, termos].
-export type LinhaArquivo = ['e', number, Entrada[]] | ['i', string, BlocoIndice];
+// depois ["e", bloco, entradas] e ["i", bloco, termos].
+export type LinhaArquivo = ['e', number, Entrada[]] | ['i', number, BlocoIndice];
 
 export function* linhasDoArquivo({ cabecalho, entradas, indice }: Preparado): Generator<string> {
   yield JSON.stringify(cabecalho);
   for (let i = 0; i < entradas.length; i += TAMANHO_BLOCO) {
     yield JSON.stringify(['e', i / TAMANHO_BLOCO, entradas.slice(i, i + TAMANHO_BLOCO)]);
   }
-  for (const [chave, bloco] of indice) yield JSON.stringify(['i', chave, bloco]);
+  for (const [i, bloco] of indice.entries()) yield JSON.stringify(['i', i, bloco]);
 }
 
 export function lerLinha(linha: string): LinhaArquivo {
   return JSON.parse(linha);
+}
+
+/**
+ * Tipo, número do bloco e o texto JSON do valor, sem fazer o parse do valor: o aparelho grava o texto e só
+ * lê o bloco na consulta (preparação mais rápida).
+ */
+export function separarLinha(linha: string) {
+  const fimChave = linha.indexOf(',', 5);
+  return {
+    tipo: linha[2] as 'e' | 'i',
+    bloco: Number(linha.slice(5, fimChave)),
+    json: linha.slice(fimChave + 1, -1)
+  };
 }
 
 export function lerArquivo(linhas: Iterable<string>) {
@@ -249,7 +292,7 @@ export function lerArquivo(linhas: Iterable<string>) {
   const cabecalho: Cabecalho = JSON.parse(primeira);
   if (cabecalho.formato !== FORMATO) throw new Error(`Formato ${cabecalho.formato} desconhecido`);
   const blocosEntradas: [number, Entrada[]][] = [];
-  const blocosIndice: [string, BlocoIndice][] = [];
+  const blocosIndice: [number, BlocoIndice][] = [];
   for (const linha of resto) {
     const registro = lerLinha(linha);
     if (registro[0] === 'e') blocosEntradas.push([registro[1], registro[2]]);

@@ -92,6 +92,21 @@
       if (espaco?.usage) anotar(`Espaço usado pelo site: ${mb(espaco.usage)}`);
     });
 
+  // Mede só a preparação, com o arquivo de dicts/saida (sem login nem bucket).
+  const prepararLocal = (evento: Event) =>
+    executar(async () => {
+      const arquivo = (evento.target as HTMLInputElement).files?.[0];
+      if (!db || !arquivo) return;
+      const t = performance.now();
+      await prepararArquivo(db, arquivo, (fracao) => {
+        progresso = `Preparando ${Math.round(fracao * 100)}%`;
+      });
+      anotar(
+        `Preparação do arquivo local (${mb(arquivo.size)}): ${((performance.now() - t) / 1000).toFixed(1)} s`
+      );
+      versao = (await versaoGravada(db)) ?? '';
+    });
+
   const carregar = () =>
     executar(async () => {
       const t = performance.now();
@@ -170,6 +185,10 @@
     <button class={buttonClasses} disabled={ocupado} on:click={apagar}>Apagar deste aparelho</button
     >
   </div>
+  <label class="mb-6 block text-sm">
+    Ou preparar um arquivo local (dicts/saida/…/dicionario.ndjson.gz):
+    <input type="file" accept=".gz" disabled={ocupado} on:change={prepararLocal} />
+  </label>
 
   {#if progresso}
     <p class="mb-4">{progresso}</p>

@@ -11,11 +11,11 @@ import { criarTokenizador, type Tokenizador } from './tokenizador';
 
 let tokenizador: Tokenizador;
 
-beforeAll(() => {
+beforeAll(async () => {
   const caminho = createRequire(import.meta.url).resolve(
     'lindera-wasm-ipadic/lindera_wasm_ipadic_bg.wasm'
   );
-  tokenizador = criarTokenizador(readFileSync(caminho));
+  tokenizador = await criarTokenizador(readFileSync(caminho));
 });
 
 describe('tokenizador', () => {

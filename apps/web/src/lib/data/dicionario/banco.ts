@@ -6,9 +6,9 @@
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import {
-  chaveDoBloco,
+  blocoDoTermo,
   FORMATO,
-  lerLinha,
+  separarLinha,
   TAMANHO_BLOCO,
   type BlocoIndice,
   type Cabecalho,
@@ -16,9 +16,11 @@ import {
 } from './formato';
 
 // Banco próprio, separado do books-db do ttu: o dicionário é trocado inteiro a cada versão.
+// Os blocos ficam como texto JSON (Entrada[] e BlocoIndice): gravar texto é bem mais rápido que
+// ler e gravar objetos, e a consulta só lê os blocos de que precisa.
 interface DicionarioDb extends DBSchema {
-  entradas: { key: number; value: Entrada[] };
-  indice: { key: string; value: BlocoIndice };
+  entradas: { key: number; value: string };
+  indice: { key: number; value: string };
   meta: { key: 'cabecalho'; value: Cabecalho };
 }
 
@@ -26,10 +28,12 @@ export type BancoDicionario = IDBPDatabase<DicionarioDb>;
 
 export const NOME_BANCO = 'dokusho-dicionario';
 const POR_TRANSACAO = 500;
+const cabecalhos = new WeakMap<BancoDicionario, Cabecalho>();
 
 export function abrirDicionario(nome = NOME_BANCO) {
-  return openDB<DicionarioDb>(nome, 1, {
+  return openDB<DicionarioDb>(nome, 3, {
     upgrade(db) {
+      for (const store of [...db.objectStoreNames]) db.deleteObjectStore(store);
       db.createObjectStore('entradas');
       db.createObjectStore('indice');
       db.createObjectStore('meta');
@@ -58,6 +62,7 @@ export async function gravarDicionario(
   linhas: AsyncIterable<string>,
   aoProgredir?: (fracao: number) => void
 ) {
+  cabecalhos.delete(db);
   await db.clear('meta');
   await db.clear('entradas');
   await db.clear('indice');
@@ -70,9 +75,8 @@ export async function gravarDicionario(
   const gravarLote = async () => {
     const tx = db.transaction(['entradas', 'indice'], 'readwrite');
     for (const linha of lote) {
-      const registro = lerLinha(linha);
-      if (registro[0] === 'e') tx.objectStore('entradas').put(registro[2], registro[1]);
-      else tx.objectStore('indice').put(registro[2], registro[1]);
+      const { tipo, bloco, json } = separarLinha(linha);
+      tx.objectStore(tipo === 'e' ? 'entradas' : 'indice').put(json, bloco);
     }
     await tx.done;
     feitos += lote.length;
@@ -86,7 +90,7 @@ export async function gravarDicionario(
       cabecalho = JSON.parse(linha) as Cabecalho;
       if (cabecalho.formato !== FORMATO)
         throw new Error(`Formato ${cabecalho.formato} desconhecido`);
-      total = cabecalho.blocos + cabecalho.chaves;
+      total = cabecalho.blocos + cabecalho.limitesIndice.length;
       continue;
     }
     lote.push(linha);
@@ -95,6 +99,7 @@ export async function gravarDicionario(
   if (!cabecalho) throw new Error('Arquivo do dicionário vazio');
   if (lote.length) await gravarLote();
   await db.put('meta', cabecalho, 'cabecalho');
+  cabecalhos.set(db, cabecalho);
   aoProgredir?.(1);
   return cabecalho;
 }
@@ -111,13 +116,23 @@ function frequencia(entrada: Entrada, termo: string) {
 
 /** Entradas cuja escrita ou leitura é exatamente o termo, da mais frequente para a menos. */
 export async function consultar(db: BancoDicionario, termo: string): Promise<Entrada[]> {
-  const ids = (await db.get('indice', chaveDoBloco(termo)))?.[termo];
+  let cabecalho = cabecalhos.get(db);
+  if (!cabecalho) {
+    cabecalho = await db.get('meta', 'cabecalho');
+    if (!cabecalho) return [];
+    cabecalhos.set(db, cabecalho);
+  }
+  const bloco = blocoDoTermo(cabecalho.limitesIndice, termo);
+  if (bloco < 0) return [];
+  const blocoIndice = await db.get('indice', bloco);
+  const ids = blocoIndice ? (JSON.parse(blocoIndice) as BlocoIndice)[termo] : undefined;
   if (!ids?.length) return [];
   const blocos = new Map<number, Entrada[]>();
   const tx = db.transaction('entradas');
   await Promise.all(
     [...new Set(ids.map((id) => Math.floor(id / TAMANHO_BLOCO)))].map(async (bloco) => {
-      blocos.set(bloco, (await tx.store.get(bloco)) ?? []);
+      const json = await tx.store.get(bloco);
+      blocos.set(bloco, json ? JSON.parse(json) : []);
     })
   );
   const entradas = ids

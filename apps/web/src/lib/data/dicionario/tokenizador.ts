@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-import { initSync, TokenizerBuilder } from 'lindera-wasm-ipadic';
+import iniciarLindera, { TokenizerBuilder } from 'lindera-wasm-ipadic';
 
 // Tokenizador lindera com IPADIC (ADR 0012). O wasm (~18 MB) fica num cache próprio, que o
 // service worker não apaga a cada deploy; o nome do arquivo muda quando o pacote muda.
@@ -30,8 +30,9 @@ export interface Tokenizador {
 const paraHiragana = (texto: string) =>
   texto.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 
-export function criarTokenizador(wasm: BufferSource): Tokenizador {
-  initSync({ module: wasm });
+// Inicialização assíncrona: o Chrome recusa compilar wasm > 8 MB de forma síncrona na thread principal.
+export async function criarTokenizador(wasm: BufferSource): Promise<Tokenizador> {
+  await iniciarLindera({ module_or_path: wasm });
   const construtor = new TokenizerBuilder();
   construtor.setDictionary('embedded://ipadic');
   construtor.setMode('normal');
@@ -81,5 +82,5 @@ export async function carregarTokenizador(): Promise<TokenizadorCarregado> {
     resposta = daRede;
   }
   const wasm = await resposta.arrayBuffer();
-  return { tokenizador: criarTokenizador(wasm), bytes: wasm.byteLength, doCache };
+  return { tokenizador: await criarTokenizador(wasm), bytes: wasm.byteLength, doCache };
 }

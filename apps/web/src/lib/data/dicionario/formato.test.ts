@@ -6,14 +6,17 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  chaveDoBloco,
+  blocoDoTermo,
   glosasDe,
   lerArquivo,
+  lerLinha,
   linhasDoArquivo,
   prepararDicionario,
+  separarLinha,
   type LinhaFrequencia,
   type LinhaFurigana,
-  type LinhaTermo
+  type LinhaTermo,
+  type Preparado
 } from './formato';
 
 const lista = (...itens: string[]) => ({
@@ -116,6 +119,10 @@ const furiganas: LinhaFurigana[] = [
   { text: '何', reading: 'なに', furigana: [{ ruby: '何', rt: 'なに' }] }
 ];
 
+function idsDe({ cabecalho, indice }: Preparado, termo: string) {
+  return indice[blocoDoTermo(cabecalho.limitesIndice, termo)]?.[termo];
+}
+
 const preparar = () =>
   prepararDicionario({ termos, frequencias, furiganas, versao: 'teste', fontes: { JMdict: 'x' } });
 
@@ -187,13 +194,21 @@ describe('prepararDicionario', () => {
   });
 
   it('indexa escritas, leituras e redirecionamentos', () => {
-    const { entradas, indice } = preparar();
+    const prep = preparar();
+    const { entradas } = prep;
     const id = entradas.find((e) => e.seq === 1606560)!.id;
-    expect(indice.get(chaveDoBloco('分かる'))!['分かる']).toEqual([id]);
-    expect(indice.get(chaveDoBloco('わかる'))!['わかる']).toEqual([id]);
-    expect(indice.get(chaveDoBloco('判る'))!['判る']).toEqual([id]);
+    expect(idsDe(prep, '分かる')).toEqual([id]);
+    expect(idsDe(prep, 'わかる')).toEqual([id]);
+    expect(idsDe(prep, '判る')).toEqual([id]);
     const nani = entradas.filter((e) => e.formas.some((f) => f.e === '何')).map((e) => e.id);
-    expect(indice.get('何')!['何']).toEqual(nani);
+    expect(idsDe(prep, '何')).toEqual(nani);
+  });
+
+  it('ordena as entradas pela leitura, para homófonos caírem no mesmo bloco', () => {
+    const { entradas } = preparar();
+    const leituras = entradas.map((e) => e.formas[0].l);
+    expect(leituras).toEqual([...leituras].sort());
+    expect(entradas.map((e) => e.id)).toEqual(entradas.map((_, i) => i));
   });
 
   it('palavra só em kana tem escrita igual à leitura', () => {
@@ -202,11 +217,42 @@ describe('prepararDicionario', () => {
   });
 });
 
-describe('chaveDoBloco', () => {
-  it('usa os dois primeiros caracteres', () => {
-    expect(chaveDoBloco('気がつく')).toBe('気が');
-    expect(chaveDoBloco('気')).toBe('気');
-    expect(chaveDoBloco('𠮟る')).toBe('𠮟る');
+describe('blocoDoTermo', () => {
+  it('acha o último bloco cujo primeiro termo não passa do termo', () => {
+    const limites = ['あ', 'か', 'さ'];
+    expect(blocoDoTermo(limites, 'ぁ')).toBe(-1);
+    expect(blocoDoTermo(limites, 'あ')).toBe(0);
+    expect(blocoDoTermo(limites, 'きく')).toBe(1);
+    expect(blocoDoTermo(limites, 'さ')).toBe(2);
+    expect(blocoDoTermo(limites, '漢字')).toBe(2);
+  });
+
+  it('acha todos os termos num índice de vários blocos', () => {
+    const muitos: LinhaTermo[] = Array.from({ length: 1500 }, (_, i) => {
+      const termo = String.fromCodePoint(0x4e00 + i) + 'る';
+      return [termo, 'る', '1 v1', 'v1', 1, ['x'], 1000 + i, ''];
+    });
+    const prep = prepararDicionario({
+      termos: muitos,
+      frequencias: [],
+      furiganas: [],
+      versao: 'v',
+      fontes: {}
+    });
+    expect(prep.cabecalho.limitesIndice.length).toBe(prep.indice.length);
+    expect(prep.indice.length).toBeGreaterThan(2);
+    for (const [termo] of muitos) expect(idsDe(prep, termo)).toHaveLength(1);
+    expect(idsDe(prep, 'る')).toHaveLength(1500);
+  });
+});
+
+describe('separarLinha', () => {
+  it('tira tipo, bloco e o JSON do valor sem ler o valor', () => {
+    for (const linha of [...linhasDoArquivo(preparar())].slice(1)) {
+      const lida = lerLinha(linha);
+      const { tipo, bloco, json } = separarLinha(linha);
+      expect([tipo, bloco, JSON.parse(json)]).toEqual(lida);
+    }
   });
 });
 
@@ -217,6 +263,6 @@ describe('arquivo', () => {
     expect(lido.cabecalho.versao).toBe('teste');
     expect(lido.cabecalho.entradas).toBe(prep.entradas.length);
     expect(lido.blocosEntradas.flatMap(([, v]) => v)).toEqual(prep.entradas);
-    expect(new Map(lido.blocosIndice)).toEqual(prep.indice);
+    expect(lido.blocosIndice.map(([, v]) => v)).toEqual(prep.indice);
   });
 });
