@@ -8,7 +8,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | --- | --- | --- | --- |
 | S1 | pendente | | |
 | S2 | pendente | | |
-| D1 | pendente | | protótipo das telas; pode rodar em paralelo |
+| D1 | feito | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
 | R1 | pendente | | |
 | R2 | pendente | | |
 | R3 | pendente | | zips em dicts/; subir para o bucket no S2 |
@@ -27,6 +27,10 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   docs/ENTREVISTA.md, 11 ADRs em docs/adr/, termos em GLOSSARY.md. Principais mudanças: significado
   da carta em português pelo Gemini; guid com leitura; dicionário preparado no PC; "Já sei"; cards
   pelas conversas do Claude abandonados; Anki renomeado para 1. Dokusho / 2. Kaishi 1.5k / 3. Old.
+- 2026-10-20: D1 aprovado no iPhone. Regra dos toques B: a barra do topo vem pela rolagem para cima;
+  tocar fora do texto ou na pontuação só fecha o painel. Painel e telas aprovados sem mudanças.
+  Detalhes em ESCOPO "Toque e painel" e logo abaixo da tabela de telas. Protótipo (descartável) no
+  branch prototype/d1-telas, publicado como artifact privado.
 
 ## Testes de risco
 
@@ -46,7 +50,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 
 ## Sem decisão (da entrevista de 20/10)
 
-- Modo de leitura no PC; regra dos toques (confirmar no D1).
+- Modo de leitura no PC; como mostrar a barra do topo onde não há rolagem (modo de páginas, começo de
+  capítulo): decidir no V1.3 (sugestão: faixa do topo ou mouse no topo).
 - Números: frequência N do "Já sei" inicial, teto diário do Gemini, valor do alerta, corte da frase,
   intervalo do marcador, prazo do áudio.
 - Não discutidos: detalhes da tela inicial (início da semana, virada do dia, fuso em viagem), metas,

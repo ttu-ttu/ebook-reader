@@ -23,7 +23,7 @@ A interface segue os leitores graduados Yomu Yomu e DuChinese: tela de leitura l
 | --- | --- |
 | Início | Calendário da semana, meta, progresso de leitura (tempo, caracteres e palavras conhecidas) e a navegação inferior |
 | Biblioteca | Capas dos livros, progresso, cobertura de vocabulário (v2), ícone de nuvem nos livros ainda não baixados no aparelho e o botão "Importar EPUB" |
-| Leitor | Texto limpo, com barra verde nos parágrafos já lidos; barra do topo (Aa, furigana); ao tocar numa palavra, painel inferior com a palavra, a leitura, a glosa em inglês, o estado, "Já sei" (v2), a marca "na fila" ou "exportada em <data>", o botão "Traduzir frase" e o botão "Criar carta" |
+| Leitor | Texto limpo, com barra verde nos parágrafos já lidos; barra do topo (voltar, título, Aa, furigana, menu com "Desmarcar a partir daqui"); ao tocar numa palavra, painel inferior com a palavra, a leitura, a glosa em inglês, o estado, "Já sei" (v2), a marca "na fila" ou "exportada em <data>", o botão "Traduzir frase" e o botão "Criar carta" |
 | Fila de cartas | Lista das cartas com o estado (pendente, gerando, gerada, erro, exportada), a opção de abrir e editar, os Lotes já exportados (data e aparelho) e o botão "Exportar .apkg" |
 
 Navegação inferior: Início, Biblioteca, Fila de cartas e Vocabulário (a tela de Vocabulário chega com o hub, na v2).
@@ -49,10 +49,24 @@ Esboço de três das telas:
 
 No painel da palavra, o botão "Traduzir frase" fica ao lado do estado. Sem rede, ele aparece desativado com "sem conexão".
 
+As telas foram aprovadas no protótipo D1 (20/10/2026), sem mudanças de conteúdo. O protótipo está no branch `prototype/d1-telas` (fora do `main`) e serve de referência visual para os itens V1.3 a V1.5. Detalhes que ele fixou:
+
+- A Fila de cartas tem duas abas: "Na fila" (com "Exportar .apkg" fixo embaixo, mostrando o número de cartas e o tamanho estimado) e "Lotes" (cada Lote abre a lista das cartas e tem "Baixar este Lote de novo").
+- Quando há carta com erro, a exportação mostra a opção "Incluir a carta com erro (sem o áudio que faltou)".
+- Carta exportada abre só para leitura, com "Reexportar (sobrescreve o Card no Anki)". Criar carta de uma palavra já exportada pede confirmação no próprio painel.
+- Na edição da carta, cada campo mostra de onde vem (dicionário, livro, JmdictFurigana, JPDB, Gemini, você ou vazio).
+- Na Biblioteca, o livro na nuvem mostra o tamanho e o progresso do download ao ser tocado; o menu ⋯ do livro tem "Apagar livro".
+- O que é da v2 ("Já sei", a aba de palavras na Início, a tela Vocabulário) aparece desativado com a marca v2 até lá.
+
 ### Toque e painel
 
-- Tocar numa palavra abre o painel. Tocar fora do texto (margem, espaço entre parágrafos) ou no topo da tela mostra a barra. Tocar fora do painel ou arrastá-lo para baixo fecha. Com o painel aberto, tocar em outra palavra troca o conteúdo. (Confirmar ao desenhar as telas.)
-- A seleção é híbrida: o tokenizador decide onde a palavra começa e a busca no dicionário decide onde termina; setas ‹ › ajustam a seleção (ADR 0003).
+- Regra dos toques (confirmada no protótipo D1, em 20/10; foi escolhida a variante B):
+  - Tocar numa palavra abre o painel. Com o painel aberto, tocar em outra palavra troca o conteúdo.
+  - A barra do topo aparece ao rolar o texto para cima e some ao rolar para baixo.
+  - Tocar fora do texto (margem, espaço entre parágrafos, fim de linha) ou na pontuação (。、「」) só fecha o painel; com o painel fechado, não faz nada. Arrastar o painel para baixo também fecha.
+  - Pendente para o V1.3: no modo de páginas (PC) e no começo de um capítulo não há rolagem para cima. Sugestão: nesses casos, a barra aparece ao tocar na faixa do topo ou ao levar o mouse até ela.
+- A seleção é híbrida: o tokenizador decide onde a palavra começa e a busca no dicionário decide onde termina; setas ‹ › ajustam a seleção (ADR 0003). O painel mostra a parte selecionada e, quando difere, a forma de dicionário (ex.: "seleção: 立ち止まった → 立ち止まる").
+- Partículas e auxiliares abrem o painel normalmente, com a marca "gramática · fora da cobertura" no lugar do estado.
 - Quando a escrita tem várias leituras, o painel lista as entradas do dicionário pela frequência do JPDB; a que bate com o furigana do EPUB vem primeiro. "Criar carta" usa a entrada aberta.
 - Palavra fora do dicionário (nomes em katakana, por exemplo): o painel mostra "não está no dicionário" e mantém "Traduzir frase" e "Criar carta".
 - O toque não pode depender do modo de leitura (horizontal ou vertical, rolagem ou páginas). iPhone e iPad: horizontal com rolagem; PC: provavelmente vertical com páginas.
@@ -69,7 +83,7 @@ O que copiar dos apps de referência:
 
 | O que copiar | De onde vem | Como entra no app |
 | --- | --- | --- |
-| Leitura limpa, com informação escondida até o toque | Yomu Yomu | Texto sem controles; a barra do topo aparece ao tocar fora do texto |
+| Leitura limpa, com informação escondida até o toque | Yomu Yomu | Texto sem controles; a barra do topo aparece ao rolar para cima |
 | Painel da palavra sem sair do texto | Yomu Yomu e DuChinese | Painel inferior com leitura, glosa em inglês, estado, "Traduzir frase" e "Criar carta" |
 | Tamanho da fonte e furigana do livro ajustáveis | DuChinese | Botões Aa e furigana no topo; o ttu já tem essas opções para o furigana do EPUB |
 | Furigana só onde precisa | Yomu – Japanese Reader | v3: gerar furigana e esconder o das palavras conhecidas |
