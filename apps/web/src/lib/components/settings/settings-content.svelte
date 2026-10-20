@@ -25,6 +25,7 @@
   import { LocalFont } from '$lib/data/fonts';
   import { FuriganaStyle } from '$lib/data/furigana-style';
   import { ImportHTMLFixMode } from '$lib/data/import-html-fix-mode';
+  import { pagePath } from '$lib/data/env';
   import { logger } from '$lib/data/logger';
   import { MergeMode } from '$lib/data/merge-mode';
   import { isAppDefault } from '$lib/data/storage/storage-source-manager';
@@ -946,6 +947,9 @@
       {/if}
     {/if}
   {:else if activeSettings === 'Data'}
+    <SettingsItemGroup title="Conta" tooltip="Login no Supabase, usado na sincronização">
+      <a class="underline" href="{pagePath}/login">Entrar ou sair</a>
+    </SettingsItemGroup>
     <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
       <div class="flex items-center">
         <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={persistentStorage} />
