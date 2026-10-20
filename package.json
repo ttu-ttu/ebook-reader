@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "cd apps/web && pnpm dev",
     "build": "cd apps/web && pnpm build",
+    "test": "cd apps/web && pnpm test",
     "prepare": "husky",
     "check": "eslint --fix-dry-run .",
     "check:pretty": "prettier --debug-check .",

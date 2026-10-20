@@ -16,6 +16,9 @@ const config = {
   },
   experimental: {
     prebundleSvelteLibraries: true
+  },
+  test: {
+    include: ['src/**/*.test.ts']
   }
 };
 
