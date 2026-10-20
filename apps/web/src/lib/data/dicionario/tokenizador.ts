@@ -19,6 +19,8 @@ export interface Pedaco {
   leitura: string;
   /** Classe gramatical do IPADIC (名詞, 動詞, 助詞…). */
   classe: string;
+  /** Subclasse do IPADIC (非自立, 接尾, 数…); '*' quando não há. */
+  subclasse: string;
   /** Posição do começo no texto, em unidades de string do JS. */
   inicio: number;
 }
@@ -52,7 +54,14 @@ export async function criarTokenizador(wasm: BufferSource): Promise<Tokenizador>
         if (!superficie.trim()) continue;
         const base = detalhes[6] && detalhes[6] !== '*' ? detalhes[6] : superficie;
         const leitura = detalhes[7] && detalhes[7] !== '*' ? paraHiragana(detalhes[7]) : '';
-        pedacos.push({ superficie, base, leitura, classe: detalhes[0] ?? '', inicio });
+        pedacos.push({
+          superficie,
+          base,
+          leitura,
+          classe: detalhes[0] ?? '',
+          subclasse: detalhes[1] ?? '*',
+          inicio
+        });
       }
       return pedacos;
     }

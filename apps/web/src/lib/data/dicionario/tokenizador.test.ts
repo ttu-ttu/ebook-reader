@@ -33,6 +33,11 @@ describe('tokenizador', () => {
     expect(pedacos.at(-1)!.superficie).toBe('少女');
   });
 
+  it('devolve a subclasse do IPADIC', () => {
+    const pedacos = tokenizador.tokenizar('食べている');
+    expect(pedacos.at(-1)).toMatchObject({ base: 'いる', classe: '動詞', subclasse: '非自立' });
+  });
+
   it('palavra desconhecida usa a própria superfície como base', () => {
     const [pedaco] = tokenizador.tokenizar('ぴえん');
     expect(pedaco.base).toBeTruthy();
