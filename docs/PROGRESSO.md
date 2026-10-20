@@ -11,7 +11,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
 | R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; Anki do PC ok; falta AnkiMobile e iPhone  |
 | R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
-| R3        | pendente |            | zips em dicts/; subir para o bucket no S2                                   |
+| R3        | quase    | 2026-10-20 | lindera; 32 MB baixados; PC dentro das metas; falta bucket e iPhone (👤)    |
 | R4        | pendente |            | depende de R2 e R3                                                          |
 | R5        | pendente |            |                                                                             |
 | V1.1–V1.7 | pendente |            |                                                                             |
@@ -72,6 +72,28 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   campo. Erros com `tipo`: `rede` (Anki fechado, CORS ou rede local: o navegador não diferencia),
   `tempo`, `anki`, `acao-proibida`. `sync` com limite de 5 min, incluindo a espera da coleção. Configuração e regras em
   docs/ANKI-CONNECT.md. Página provisória `/teste/anki` (apagar no V2.1).
+- 2026-10-20: R3. Tokenizador `lindera-wasm-ipadic` 2.1.0 (ADR 0012; bancada contra o kuromoji no
+  ADR). Wrapper em `apps/web/src/lib/data/dicionario/tokenizador.ts` (`Pedaco`: superfície, base,
+  leitura em hiragana, classe, início). Init do wasm **assíncrono** (o Chrome recusa compilar wasm
+  > 8 MB de forma síncrona na thread principal). O wasm sai como asset do Vite
+  > (`_app/immutable/assets/lindera_wasm_ipadic_bg.<hash>.wasm`); o service worker o tira do cache de
+  > build e não apaga caches `dokusho-*`; o app o guarda no cache `dokusho-tokenizador`.
+  > `optimizeDeps.exclude` no vite.config. Dicionário: `formato.ts` (tipos + conversor, sem imports para
+  > o Node rodar o .ts direto) e `tools/preparar-dicionario.ts` → `dicts/saida/<versao>/` com
+  > `dicionario.ndjson.gz` e `manifesto.json`; versão `jmdict-<data>-f<FORMATO>`. Cada entrada é um
+  > `seq` do JMdict com formas (escrita, leitura, `f` = JPDB da escrita, `fk` = JPDB da palavra em kana,
+  > `fu` = furigana só quando não cobre a palavra inteira) e sentidos (etiquetas + glosas EN; notas,
+  > referências e tabelas de formas ficam fora). Entradas ordenadas pela leitura (homófonos no mesmo
+  > bloco), blocos de 64; índice termo → ids em blocos de 512 termos ordenados, limites no cabeçalho,
+  > busca binária (serve para a busca por prefixo da seleção híbrida). No IndexedDB
+  > (`dokusho-dicionario`, separado do books-db) os blocos ficam como texto JSON; a versão só é
+  > gravada no fim (gravação interrompida recomeça). `tools/subir-dicionario.ts` sobe para
+  > `dicts/<user_id>/dicionario/<versao>/` e grava `<user_id>/dicionario/atual.json` (cache 0), que o
+  > app lê para saber a versão. JmdictFurigana 2.3.1+2026-09-25 baixado em `dicts/`. `tools/` fora do
+  > eslint (fora do tsconfig dele); `tools/package.json` com `"type": "module"`. Página provisória
+  > `/teste/dicionario` (apagar no V1.2), com opção de preparar um arquivo local sem login.
+- 2026-10-20: o servidor do Vite manda `.gz` com `Content-Encoding: gzip` e o navegador já entrega
+  descompactado; `prepararArquivo` olha os bytes mágicos antes de descompactar.
 - 2026-10-20: o `pnpm dev` de outro chat na mesma pasta ocupa a 5173 e o novo sobe na 5174, que não
   está no `webCorsOriginList`. Para o R2, rodar o dev só na 5173.
 
@@ -103,6 +125,22 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - Falta (V1.7): pôr a URL de produção no `webCorsOriginList` e repetir pela Vercel, com o prompt de
   rede local do Chrome.
 
+### R3 · Tokenizador e dicionário (2026-10-20)
+
+- Tokenizador: kuromoji.js e lindera (IPADIC nos dois) cortam igual; lindera carrega em 1,1 s contra
+  3,6 s, tokeniza 10× mais rápido e usa 137 MB contra 320 MB (Node). Escolha no ADR 0012. ✅
+- Dicionário: 218.914 entradas do JMdict, 67,1 MB de texto → **15,9 MB** gzip; conversão no PC em ~50 s.
+- Download total: 15,9 MB (dicionário) + 16,5 MB (wasm em gzip; 18,0 MB sem compressão) ≈ **32 MB**
+  ≤ 60 MB. ✅ Não conferido se a Vercel comprime o `.wasm`; se não comprimir, são 34 MB.
+- PC (Chrome, dev): preparação (descompactar + IndexedDB) **5,6 s** ≤ 1 min ✅; tokenizador pronto em
+  1,0 s a partir do cache; 77 consultas pela forma de dicionário de um texto de amostra: média 5 ms,
+  p95 10 ms, máx 61–68 ms (a primeira consulta, com o cache frio) ≤ 100 ms ✅. 77/77 acharam entrada.
+- Primeira versão media 33 s de preparação: 107 mil registros no IndexedDB (índice com chave de 2
+  caracteres). Índice em blocos ordenados: 4,3 mil registros. Blocos de 256 entradas espalhavam
+  homófonos (こう: 51 entradas em 34 blocos, 100 ms); ordenar pela leitura + blocos de 64 resolveu.
+- Falta (👤): subir ao bucket e baixar pela página (download real pelo Supabase); medir na PWA do
+  iPhone (depois da Vercel, V1.7). No iPhone, atenção à memória: wasm (~140 MB no Node) + IndexedDB.
+
 ## Pendências do usuário
 
 - [x] docs/CARDS.md
@@ -117,6 +155,10 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] R1: AnkiMobile e Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste (passo a passo no V1.7 do FASES.md)
 - [x] R2: rodar `/teste/anki` com o Anki aberto
 - [ ] V1.7: pôr a URL de produção no `webCorsOriginList` (docs/ANKI-CONNECT.md)
+- [ ] R3: na raiz, `node tools/subir-dicionario.ts` (e-mail e senha no terminal); depois, logado no
+      app, `/teste/dicionario` → "Baixar dicionário" e anotar download e preparação
+- [ ] R3: na PWA do iPhone (depois da Vercel), `/teste/dicionario`: baixar, carregar tokenizador,
+      "Medir consultas"; anotar em "Testes de risco" › R3 e marcar R3 como feito
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_KEY é do projeto pago (R5)
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 

@@ -42,6 +42,9 @@ desfazer um ADR sem um novo ADR).
   a fixture dos testes do .apkg; Python 3.15 não serve).
 - Tipos do banco: npx supabase gen types typescript --linked --schema public >
   apps/web/src/lib/data/supabase/database.types.ts (rodar depois de cada migração).
+- Dicionário (na raiz, Node 24): node tools/preparar-dicionario.ts (zips de dicts/ → dicts/saida/<versao>/);
+  node tools/subir-dicionario.ts (pede e-mail e senha no terminal; quem roda é o usuário). Formato em
+  apps/web/src/lib/data/dicionario/formato.ts (sem imports: o Node roda o .ts direto).
 
 ## Regras fixas
 
