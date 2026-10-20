@@ -49,6 +49,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   você desligar o cadastro. Verificação entre usuários: colar `supabase/tests/rls_check.sql` no SQL Editor.
 - 2026-10-20: na primeira carga do `pnpm dev` o console mostra erros de HMR (o Vite reotimiza as
   dependências no meio); some ao recarregar. Não é bug do app.
+- 2026-10-20: `pnpm build` com o `pnpm dev` rodando derruba o dev no Windows (EBUSY ao vigiar
+  `apps/web/build/`). Rodar o build com o dev parado, ou subir o dev de novo depois.
 
 ## Testes de risco
 
