@@ -16,6 +16,8 @@ desfazer um ADR sem um novo ADR).
   `audio`, `dicts`), Edge Function `gemini` (ações `translate` e `generate`).
   Schema em supabase/migrations/. Cliente: @supabase/supabase-js.
 - Hospedagem: Vercel (build estático do adapter-static), só `main`, sem previews.
+- .apkg: port do genanki em apps/web/src/lib/functions/anki (sql.js + @zip.js), testado contra a
+  saída do genanki.
 - Dicionários: zips Yomitan em dicts/ (local, fora do git) → script em tools/ converte para o formato
   do app (JMdict + JPDB + JmdictFurigana) → bucket privado `dicts` → cada aparelho baixa e grava no
   IndexedDB (ADR 0004). Nada pesado em `static/` (o service worker rebaixa tudo a cada deploy).
@@ -33,6 +35,9 @@ desfazer um ADR sem um novo ADR).
 - Supabase: npx supabase <cmd> (link, db push, functions deploy gemini, secrets set). CLI fixado
   como devDependency da raiz. Projeto já linkado (ref em supabase/.temp, fora do git); checar o link
   com `npx supabase migration list` (`supabase status` é da stack local em Docker).
+- Referência do genanki (R1): py -3.14 -m venv tools/.venv; tools/.venv/Scripts/python -m pip
+  install -r tools/requirements.txt; tools/.venv/Scripts/python tools/genanki_referencia.py (regrava
+  a fixture dos testes do .apkg; Python 3.15 não serve).
 - Tipos do banco: npx supabase gen types typescript --linked --schema public >
   apps/web/src/lib/data/supabase/database.types.ts (rodar depois de cada migração).
 

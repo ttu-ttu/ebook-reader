@@ -9,7 +9,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | S1        | feito    | 2026-10-20 | ttu roda; vitest; supabase init + link                                      |
 | S2        | quase    | 2026-10-20 | schema aplicado, login ok; falta conta + cadastro desligado (👤)            |
 | D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
-| R1        | pendente |            |                                                                             |
+| R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; falta importar no Anki e testar no iPhone |
 | R2        | pendente |            |                                                                             |
 | R3        | pendente |            | zips em dicts/; subir para o bucket no S2                                   |
 | R4        | pendente |            | depende de R2 e R3                                                          |
@@ -51,10 +51,30 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   dependências no meio); some ao recarregar. Não é bug do app.
 - 2026-10-20: `pnpm build` com o `pnpm dev` rodando derruba o dev no Windows (EBUSY ao vigiar
   `apps/web/build/`). Rodar o build com o dev parado, ou subir o dev de novo depois.
+- 2026-10-20: R1. Port em `apps/web/src/lib/functions/anki/`: `guidFor` (guid.ts), constantes do
+  CARDS.md (modelo.ts), `gerarApkg(SQL, { notas, midias, timestamp })` (apkg.ts), `entregarArquivo`
+  (Web Share se `canShare` aceita o arquivo, senão download). O guid é calculado dentro do `gerarApkg`
+  pela Word e Word Reading (ADR 0006). Referência: `tools/genanki_referencia.py` (genanki 0.13.1, venv em
+  `tools/.venv` com **Python 3.14**: o pyyaml não compila no 3.15) grava `genanki-referencia.json`, que
+  os testes comparam linha a linha (col, notes, cards, media, schema). sql.js 1.15.1 carregado por
+  import dinâmico (wasm de 685 KB, entra no cache do service worker). Zip sem compressão na mídia.
+  Notas e cards usam `mod = timestamp` da geração: reimportar o mesmo arquivo não altera nada.
+  O Safari só aceita `navigator.share` logo após um toque: gerar o arquivo antes e compartilhar num
+  segundo toque (vale para o V1.6). `resolveJsonModule` ligado no tsconfig. Página provisória
+  `/teste/apkg` (apagar no V1.6) gera um Lote falso com WAV sintético, no deck `日本語::0. Dokusho teste`
+  por padrão (opção `deck` do `gerarApkg`, só para testes).
 
 ## Testes de risco
 
-(resultados de R1–R5 aqui)
+### R1 · guid e .apkg (2026-10-20)
+
+- guid: 12 casos (開く あく/ひらく, 止める, 方, kana, acentos, um valor só) iguais ao genanki. ✅
+- .apkg: mesmas linhas de `col`, `notes` e `cards`, mesmo `media` e mesmos arquivos que o genanki. ✅
+- PC (Chrome, dev): Lote de 100 cartas com 1 s + 4 s de áudio: sql.js 0,3 s, .apkg 3,3 s, 22,9 MB.
+  Áudio real deve ser menor (silêncio cortado); medir de novo no R5.
+- 👤 Falta: importar no Anki do PC e no AnkiMobile, reimportar (não duplica, não altera o tipo de
+  nota do Kaishi, não cria cópia "Leituras (estilo Kaishi)-…"), e gerar o Lote de 100 no iPhone a
+  partir da PWA (precisa de HTTPS: Vercel ligada).
 
 ## Pendências do usuário
 
@@ -66,6 +86,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Conectar o repo na Vercel e cadastrar as env vars (V1.7)
 - [x] Criar a conta, entrar em `/login` e desligar o cadastro (S2)
 - [ ] Colar `supabase/tests/rls_check.sql` no SQL Editor e conferir dono = 1, outro = 0 (S2)
+- [ ] R1: abrir `/teste/apkg`, exportar e importar no Anki do PC e no AnkiMobile; reimportar; conferir
+      tipos de nota; Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_KEY é do projeto pago (R5)
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
