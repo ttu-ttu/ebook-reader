@@ -9,7 +9,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | S1        | feito    | 2026-10-20 | ttu roda; vitest; supabase init + link                                      |
 | S2        | quase    | 2026-10-20 | schema aplicado, login ok; falta conta + cadastro desligado (👤)            |
 | D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
-| R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; falta importar no Anki e testar no iPhone |
+| R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; Anki do PC ok; falta AnkiMobile e iPhone  |
 | R2        | pendente |            |                                                                             |
 | R3        | pendente |            | zips em dicts/; subir para o bucket no S2                                   |
 | R4        | pendente |            | depende de R2 e R3                                                          |
@@ -72,9 +72,9 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - .apkg: mesmas linhas de `col`, `notes` e `cards`, mesmo `media` e mesmos arquivos que o genanki. ✅
 - PC (Chrome, dev): Lote de 100 cartas com 1 s + 4 s de áudio: sql.js 0,3 s, .apkg 3,3 s, 22,9 MB.
   Áudio real deve ser menor (silêncio cortado); medir de novo no R5.
-- 👤 Falta: importar no Anki do PC e no AnkiMobile, reimportar (não duplica, não altera o tipo de
-  nota do Kaishi, não cria cópia "Leituras (estilo Kaishi)-…"), e gerar o Lote de 100 no iPhone a
-  partir da PWA (precisa de HTTPS: Vercel ligada).
+- Anki do PC (2026-10-20): Lote de 100 importado; reimportar não duplica nem atualiza notas; tipos de
+  nota só "Kaishi 1.5k" e "Leituras (estilo Kaishi)" (sem cópia); frente, verso e os dois áudios ok. ✅
+- 👤 Falta: AnkiMobile e o Lote de 100 no iPhone a partir da PWA (precisa de HTTPS: Vercel ligada).
 
 ## Pendências do usuário
 
@@ -86,8 +86,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Conectar o repo na Vercel e cadastrar as env vars (V1.7)
 - [x] Criar a conta, entrar em `/login` e desligar o cadastro (S2)
 - [ ] Colar `supabase/tests/rls_check.sql` no SQL Editor e conferir dono = 1, outro = 0 (S2)
-- [ ] R1: abrir `/teste/apkg`, exportar e importar no Anki do PC e no AnkiMobile; reimportar; conferir
-      tipos de nota; Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste
+- [x] R1: importar o Lote de teste no Anki do PC, reimportar e conferir tipos de nota
+- [ ] R1: AnkiMobile e Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_KEY é do projeto pago (R5)
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
