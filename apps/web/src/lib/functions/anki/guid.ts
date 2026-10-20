@@ -4,6 +4,7 @@
  * All rights reserved.
  */
 
+// Port do genanki.guid_for (0.13.1): SHA-256 dos valores unidos por "__", 8 primeiros bytes em base91.
 const BASE91 =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&()*+,-./:;<=>?@[]^_`{|}~';
 

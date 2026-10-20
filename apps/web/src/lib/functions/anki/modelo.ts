@@ -4,6 +4,8 @@
  * All rights reserved.
  */
 
+// Tipo de nota e deck do Dokusho. Valores exatos de docs/CARDS.md (fonte única); não mudar os IDs.
+
 export const MODEL_ID = 1760101001;
 export const MODEL_NAME = 'Leituras (estilo Kaishi)';
 export const DECK = {
@@ -106,10 +108,10 @@ const LATEX_PRE =
   '\\begin{document}\n';
 
 // Model.to_json do genanki. "req": a frente tem conteúdo com Word ou Sentence (calculado pelo genanki).
-export function modeloJson(timestamp: number) {
+export function modeloJson(timestamp: number, deckId: number = DECK.id) {
   return {
     css: ESTILO,
-    did: DECK.id,
+    did: deckId,
     flds: CAMPOS.map((name, ord) => ({
       name,
       ord,
@@ -147,8 +149,13 @@ export function modeloJson(timestamp: number) {
   };
 }
 
+export interface DeckAnki {
+  id: number;
+  nome: string;
+}
+
 // Deck.to_json do genanki.
-export function deckJson() {
+export function deckJson(deck: DeckAnki = DECK) {
   return {
     collapsed: false,
     conf: 1,
@@ -156,10 +163,10 @@ export function deckJson() {
     dyn: 0,
     extendNew: 0,
     extendRev: 50,
-    id: DECK.id,
+    id: deck.id,
     lrnToday: [163, 2],
     mod: 1425278051,
-    name: DECK.nome,
+    name: deck.nome,
     newToday: [163, 2],
     revToday: [163, 0],
     timeToday: [163, 23598],

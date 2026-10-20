@@ -4,10 +4,21 @@
  * All rights reserved.
  */
 
+// Port do genanki.Package.write_to_file (0.13.1): collection.anki2 (schema 11) + media + arquivos 0..n.
+// Testado contra a saída do genanki em genanki-referencia.json (tools/genanki_referencia.py).
+
 import type { SqlJsStatic } from 'sql.js';
 import { BlobWriter, Uint8ArrayReader, BlobReader, ZipWriter } from '@zip.js/zip.js';
 import { guidFor } from './guid';
-import { CAMPOS, DECK, MODEL_ID, deckJson, modeloJson, type CamposCarta } from './modelo';
+import {
+  CAMPOS,
+  DECK,
+  MODEL_ID,
+  deckJson,
+  modeloJson,
+  type CamposCarta,
+  type DeckAnki
+} from './modelo';
 
 export interface NotaApkg {
   campos: CamposCarta;
@@ -24,6 +35,8 @@ export interface EntradaApkg {
   midias: MidiaApkg[];
   /** Segundos desde a época; padrão: agora. Reimportar o mesmo arquivo não altera as notas. */
   timestamp?: number;
+  /** Só para testes; o app usa sempre DECK (o Anki casa o deck pelo nome). */
+  deck?: DeckAnki;
 }
 
 const SCHEMA = `
@@ -130,6 +143,7 @@ const COL_DCONF = {
 
 export async function gerarApkg(SQL: SqlJsStatic, entrada: EntradaApkg): Promise<Blob> {
   const timestamp = entrada.timestamp ?? Date.now() / 1000;
+  const deck = entrada.deck ?? DECK;
   const mod = Math.floor(timestamp);
   let proximoId = Math.floor(timestamp * 1000);
 
@@ -145,8 +159,8 @@ export async function gerarApkg(SQL: SqlJsStatic, entrada: EntradaApkg): Promise
       0,
       0,
       JSON.stringify(COL_CONF),
-      JSON.stringify({ [MODEL_ID]: modeloJson(timestamp) }),
-      JSON.stringify({ '1': COL_DECK_PADRAO, [DECK.id]: deckJson() }),
+      JSON.stringify({ [MODEL_ID]: modeloJson(timestamp, deck.id) }),
+      JSON.stringify({ '1': COL_DECK_PADRAO, [deck.id]: deckJson(deck) }),
       JSON.stringify(COL_DCONF),
       '{}'
     ]);
@@ -174,11 +188,11 @@ export async function gerarApkg(SQL: SqlJsStatic, entrada: EntradaApkg): Promise
         0,
         ''
       ]);
-      // Um card (frente/verso), novo, no deck do Dokusho.
+      // Um card (frente/verso), novo.
       db.run('INSERT INTO cards VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
         proximoId++,
         idNota,
-        DECK.id,
+        deck.id,
         0,
         mod,
         -1,
