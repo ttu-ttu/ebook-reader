@@ -30,7 +30,13 @@ const SEQ = {
   biiru: 4,
   nama1: 5,
   nama2: 6,
-  taberu: 7
+  taberu: 7,
+  sanSufixo: 1005340,
+  sanNumero: 1579350,
+  au: 8,
+  tsukuru: 9,
+  naru: 1375610,
+  naruRara: 10
 };
 
 const entrada = (seq: number, ...formas: Forma[]): Entrada => ({
@@ -57,7 +63,13 @@ const entradas: Entrada[] = [
   entrada(SEQ.biiru, { e: 'ビール', l: 'ビール', f: 3000 }),
   entrada(SEQ.nama1, { e: '生', l: 'なま', f: 1500 }),
   entrada(SEQ.nama2, { e: '生', l: 'なま', f: 4000 }),
-  entrada(SEQ.taberu, { e: '食べる', l: 'たべる', f: 200 })
+  entrada(SEQ.taberu, { e: '食べる', l: 'たべる', f: 200 }),
+  entrada(SEQ.sanSufixo, { e: 'さん', l: 'さん', fk: 10 }),
+  entrada(SEQ.sanNumero, { e: '三', l: 'さん', f: 100, fk: 5000 }),
+  entrada(SEQ.naru, { e: '成る', l: 'なる', f: 400, fk: 20 }),
+  entrada(SEQ.naruRara, { e: 'なる', l: 'なる', fk: 9000 }),
+  entrada(SEQ.au, { e: '会う', l: 'あう', f: 90 }),
+  entrada(SEQ.tsukuru, { e: '作る', l: 'つくる', f: 150 })
 ];
 
 // Como o banco: escrita ou leitura igual ao termo, da mais frequente para a menos.
@@ -126,6 +138,20 @@ describe('Card → entrada do JMdict', () => {
     });
   });
 
+  it('Card só em kana fica com as entradas escritas assim, não com os homófonos em kanji', async () => {
+    expect(await casarCard(consultar, 'さん', 'さん')).toEqual({
+      palavras: [{ seq: SEQ.sanSufixo, leitura: 'さん' }],
+      ambiguo: false
+    });
+  });
+
+  it('Card só em kana também liga a entrada que o texto escolhe para a mesma palavra', async () => {
+    const card = await casarCard(consultar, 'なる', 'なる');
+    const texto = await casarPedaco(consultar, pedaco('なる', 'なる', 'なる'));
+    expect(texto?.palavra).toEqual({ seq: SEQ.naru, leitura: 'なる' });
+    expect(card.palavras.map(chavePalavra)).toContain(chavePalavra(texto!.palavra!));
+  });
+
   it('katakana casa com a leitura em katakana', async () => {
     const { palavras } = await casarCard(consultar, 'ビール', 'ビール');
     expect(palavras).toEqual([{ seq: SEQ.biiru, leitura: 'びーる' }]);
@@ -150,11 +176,14 @@ describe('gramática', () => {
     expect(ehGramatica(pedaco('い', 'いる', 'い', '動詞', '非自立'))).toBe(true);
     expect(ehGramatica(pedaco('こと', 'こと', 'こと', '名詞', '非自立'))).toBe(true);
     expect(ehGramatica(pedaco('2024', '2024', '', '名詞', '数'))).toBe(true);
+    expect(ehGramatica(pedaco('お', 'お', 'お', '接頭詞', '名詞接続'))).toBe(true);
+    expect(ehGramatica(pedaco('せる', 'せる', 'せる', '動詞', '接尾'))).toBe(true);
   });
 
   it('palavras de conteúdo contam', () => {
     expect(ehGramatica(pedaco('食べ', '食べる', 'たべ'))).toBe(false);
     expect(ehGramatica(pedaco('七', '七', 'なな', '名詞', '数'))).toBe(false);
+    expect(ehGramatica(pedaco('さん', 'さん', 'さん', '名詞', '接尾'))).toBe(false);
   });
 });
 
@@ -194,6 +223,13 @@ describe('pedaço do texto → entrada do JMdict', () => {
       pedaco('ビール', 'ビール', 'びーる', '名詞', '一般')
     );
     expect(texto?.palavra).toEqual({ seq: SEQ.biiru, leitura: 'びーる' });
+  });
+
+  it('forma potencial que o JMdict não tem cai no verbo de origem', async () => {
+    const aeru = await casarPedaco(consultar, pedaco('会え', '会える', 'あえ'));
+    expect(aeru?.palavra).toEqual({ seq: SEQ.au, leitura: 'あう' });
+    const tsukureru = await casarPedaco(consultar, pedaco('作れる', '作れる', 'つくれる'));
+    expect(tsukureru?.palavra).toEqual({ seq: SEQ.tsukuru, leitura: 'つくる' });
   });
 
   it('fora do dicionário: sem Palavra', async () => {

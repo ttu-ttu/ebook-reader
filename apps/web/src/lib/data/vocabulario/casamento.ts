@@ -49,6 +49,9 @@ const sem = <T>(lista: T[], chave: (x: T) => string) => {
 
 /**
  * Liga um Card (Word, Word Reading) às entradas do JMdict: uma Palavra por leitura do campo.
+ * Valem as entradas que têm a escrita do Card (R4: ligar todas as da leitura punha 三 no Card さん e
+ * 51 entradas no こう). Card só em kana, ou sem entrada com a escrita dele, liga também a mais
+ * frequente com a leitura: a mesma que `casarPedaco` escolhe no texto (なる → 成る).
  * Mesma escrita e mesma leitura em mais de uma entrada liga todas e marca `ambiguo`.
  * Sem Palavras: o Card fica guardado pela escrita.
  */
@@ -60,18 +63,32 @@ export async function casarCard(consultar: Consulta, word: string, wordReading: 
   const palavras: PalavraJmdict[] = [];
   let ambiguo = false;
   for (const leitura of leituras) {
-    const achadas = entradas.filter((e) => e.formas.some((f) => paraHiragana(f.l) === leitura));
-    if (achadas.length > 1) ambiguo = true;
+    const daLeitura = entradas.filter((e) => e.formas.some((f) => paraHiragana(f.l) === leitura));
+    const daEscrita = daLeitura.filter((e) =>
+      e.formas.some((f) => f.e === escrita && paraHiragana(f.l) === leitura)
+    );
+    if (daEscrita.length > 1) ambiguo = true;
+    const achadas = [...daEscrita];
+    if (daLeitura.length && (SO_KANA.test(escrita) || !daEscrita.length))
+      achadas.push(daLeitura[0]);
     palavras.push(...achadas.map(({ seq }) => ({ seq, leitura })));
   }
   return { palavras: sem(palavras, chavePalavra), ambiguo };
 }
 
-const CLASSES_GRAMATICA = new Set(['助詞', '助動詞', '記号', 'フィラー', 'その他']);
+const CLASSES_GRAMATICA = new Set(['助詞', '助動詞', '記号', 'フィラー', 'その他', '接頭詞']);
 
-/** Partículas, auxiliares, símbolos, 非自立 (ている, こと) e o que não tem kana nem kanji (ADR 0007). */
+/**
+ * Partículas, auxiliares, símbolos, prefixos (お, ご), 非自立 (ている, こと), verbos sufixo (せる de
+ * させる, れる) e o que não tem kana nem kanji (ADR 0007). Substantivo sufixo (さん) conta.
+ */
 export function ehGramatica({ classe, subclasse, superficie }: Pedaco) {
-  return CLASSES_GRAMATICA.has(classe) || subclasse === '非自立' || !JAPONES.test(superficie);
+  return (
+    CLASSES_GRAMATICA.has(classe) ||
+    subclasse === '非自立' ||
+    (classe === '動詞' && subclasse === '接尾') ||
+    !JAPONES.test(superficie)
+  );
 }
 
 /** Parte da leitura antes do okurigana que a escrita e a leitura têm em comum (行く/いく → い). */
@@ -82,18 +99,41 @@ function radical(escrita: string, leitura: string) {
   return l.slice(0, l.length - comum);
 }
 
+// O IPADIC dá a forma potencial como verbo próprio (会える, 作れる), que o JMdict não tem.
+const POTENCIAL: Record<string, string> = {
+  える: 'う',
+  ける: 'く',
+  げる: 'ぐ',
+  せる: 'す',
+  てる: 'つ',
+  ねる: 'ぬ',
+  べる: 'ぶ',
+  める: 'む',
+  れる: 'る'
+};
+
+/** Termos a consultar, em ordem: forma de dicionário, verbo de origem do potencial, superfície. */
+function termosDoPedaco({ base, superficie, classe }: Pedaco) {
+  const termos = [base];
+  const fim = POTENCIAL[base.slice(-2)];
+  if (classe === '動詞' && fim && base.length > 2) termos.push(base.slice(0, -2) + fim);
+  if (superficie !== base) termos.push(superficie);
+  return termos;
+}
+
 /**
- * Liga um pedaço do texto a uma entrada do JMdict pela forma de dicionário (ADR 0005). Desempata
+ * Liga um pedaço do texto a uma entrada do JMdict pela forma de dicionário (ADR 0005), com o
+ * potencial como reserva. Desempata
  * pela leitura do pedaço (no conjugado, só o radical); se nada bate, ficam todas, e a Palavra é a
  * mais frequente. Devolve null para gramática.
  */
 export async function casarPedaco(consultar: Consulta, pedaco: Pedaco) {
   if (ehGramatica(pedaco)) return null;
   let termo = pedaco.base;
-  let entradas = await consultar(termo);
-  if (!entradas.length && pedaco.superficie !== termo) {
-    termo = pedaco.superficie;
+  let entradas: Entrada[] = [];
+  for (termo of termosDoPedaco(pedaco)) {
     entradas = await consultar(termo);
+    if (entradas.length) break;
   }
   const conjugado = pedaco.superficie !== termo;
   const leitura = paraHiragana(pedaco.leitura);
