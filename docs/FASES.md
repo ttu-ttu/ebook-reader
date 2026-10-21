@@ -93,7 +93,7 @@ Resultados de cada teste vão para docs/PROGRESSO.md, na seção "Testes de risc
   medir a taxa; contar Cards sem entrada; listar homófonos e palavras só em kana. Testes primeiro.
 - **Pronto quando:** taxa anotada e regras ajustadas.
 
-### R5 · Edge Function `gemini` (secret `GEMINI_KEY` já criado; ADR 0009, 0010)
+### R5 · Edge Function `gemini` (secret `GEMINI_API_KEY` já criado; ADR 0009, 0010)
 
 - Função Deno com `action: translate | generate`; aceita só `ALLOWED_USER_ID`; teto diário em
   `gemini_usage`; nomes de modelo em configuração com lista de reserva; cache em `translations`.

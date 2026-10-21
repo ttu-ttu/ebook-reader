@@ -26,26 +26,26 @@ O que fica diferente do Kaishi: não há imagem nem pitch accent (os campos exis
 
 Confira a leitura de cada kanji: furigana errado no card ensina errado, e um kanji lido errado pela voz também. Todos os campos ficam editáveis na carta antes da exportação.
 
-| Campo | Conteúdo | Exemplo |
-| --- | --- | --- |
-| Word | Forma de dicionário, escrita como no dicionário | `気のせい` |
-| Word Reading | Leitura em hiragana | `きのせい` |
-| Word Meaning | Significado em português, curto, no sentido da frase (Gemini) | `impressão minha, coisa da cabeça` |
-| Word Furigana | Formato de furigana do Anki, kanji por kanji, como no Kaishi | `気[き]のせい`, `最[さい] 初[しょ]` |
-| Word Audio | `[sound:<arquivo>.wav]` | |
-| Sentence | A frase do livro, com a palavra entre `<b>` e `</b>` na forma em que está (se conjugada, o negrito cobre a forma conjugada) | `最初は<b>気のせい</b>だと思って無視した。` |
-| Sentence Meaning | Tradução da frase em português (Gemini) | `No começo achei que era impressão minha e ignorei.` |
-| Sentence Furigana | A mesma frase com furigana em todos os kanji; um espaço antes de cada kanji que vem depois de kana, para o furigana ficar só sobre o kanji | `最[さい] 初[しょ]は<b>気[き]のせい</b>だと 思[おも]って 無[む] 視[し]した。` |
-| Sentence Audio | `[sound:<arquivo>.wav]` | |
-| Notes | Opcional; aparece no verso como "Note: ..." | |
-| Frequency | Ranking do JPDB, só o número, como no Kaishi; vazio se não houver | `319` |
-| Pitch Accent, Pitch Accent Notes, Picture | Vazios | |
+| Campo                                     | Conteúdo                                                                                                                                   | Exemplo                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Word                                      | Forma de dicionário, escrita como no dicionário                                                                                            | `気のせい`                                                                    |
+| Word Reading                              | Leitura em hiragana                                                                                                                        | `きのせい`                                                                    |
+| Word Meaning                              | Significado em português, curto, no sentido da frase (Gemini)                                                                              | `impressão minha, coisa da cabeça`                                            |
+| Word Furigana                             | Formato de furigana do Anki, kanji por kanji, como no Kaishi                                                                               | `気[き]のせい`, `最[さい] 初[しょ]`                                           |
+| Word Audio                                | `[sound:<arquivo>.wav]`                                                                                                                    |                                                                               |
+| Sentence                                  | A frase do livro, com a palavra entre `<b>` e `</b>` na forma em que está (se conjugada, o negrito cobre a forma conjugada)                | `最初は<b>気のせい</b>だと思って無視した。`                                   |
+| Sentence Meaning                          | Tradução da frase em português (Gemini)                                                                                                    | `No começo achei que era impressão minha e ignorei.`                          |
+| Sentence Furigana                         | A mesma frase com furigana em todos os kanji; um espaço antes de cada kanji que vem depois de kana, para o furigana ficar só sobre o kanji | `最[さい] 初[しょ]は<b>気[き]のせい</b>だと 思[おも]って 無[む] 視[し]した。` |
+| Sentence Audio                            | `[sound:<arquivo>.wav]`                                                                                                                    |                                                                               |
+| Notes                                     | Opcional; aparece no verso como "Note: ..."                                                                                                |                                                                               |
+| Frequency                                 | Ranking do JPDB, só o número, como no Kaishi; vazio se não houver                                                                          | `319`                                                                         |
+| Pitch Accent, Pitch Accent Notes, Picture | Vazios                                                                                                                                     |                                                                               |
 
 ## Áudio
 
 - Gemini TTS, voz Orus, pela Edge Function `gemini`. Os nomes dos modelos ficam na configuração da função, com lista de reserva.
 - O Gemini devolve PCM (24 kHz, 16 bits, mono); a função grava WAV (cabeçalho de 44 bytes) com o silêncio das pontas cortado. Sem conversão para MP3.
-- Nome do arquivo: `leituras-<sha1("Orus|" + texto)[:12]>.wav`, o que evita colisão com a mídia do Kaishi.
+- Nome do arquivo: `leituras-<sha1("Orus|" + texto)[:12]>.wav`, o que evita colisão com a mídia do Kaishi. `texto` é o que vai ao TTS: na palavra, o pedido com a instrução de pronúncia (開く あく e ひらく dão arquivos diferentes); na frase, a frase sem HTML ou o "Texto para a voz".
 - A voz lê a palavra e a frase sem HTML. O pedido da palavra leva a leitura como instrução de pronúncia. Quando a voz ainda erra (大家さん lido たいか), o campo "Texto para a voz" da carta recebe o trecho em kana (`おおやさんはすぐに濃いコーヒーを作ってくれた。`) e "Refazer áudio" gera de novo.
 
 ## Modelo do tipo de nota

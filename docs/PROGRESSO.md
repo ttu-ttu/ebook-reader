@@ -13,7 +13,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
 | R3        | quase    | 2026-10-20 | lindera; 32 MB; PC pelo bucket dentro das metas; falta iPhone (👤)          |
 | R4        | feito    | 2026-10-20 | 97,5% do texto acha entrada; 0 Cards sem entrada; regras ajustadas          |
-| R5        | pendente |            |                                                                             |
+| R5        | quase    | 2026-10-20 | função no ar; recusa sem usuário ok; falta rodar as 30 cartas e o veredito  |
 | V1.1–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
@@ -21,7 +21,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 
 - 2026-10-15: backend trocado de Appwrite para Supabase (projeto já criado). ESCOPO atualizado.
 - 2026-10-15: dicionários num bucket privado `dicts` do Supabase (não no git nem no site público).
-- 2026-10-15: hospedagem na Vercel. Secret do Gemini se chama `GEMINI_KEY`.
+- 2026-10-15: hospedagem na Vercel. Secret do Gemini se chama `GEMINI_KEY` (na verdade foi criado como `GEMINI_API_KEY`; ver R5).
 - 2026-10-15: deck `日本語::1. Dokusho` (CARDS.md manda nos IDs); no app, áudio WAV e etiqueta só `dokusho`.
 - 2026-10-20: entrevista de escopo. ESCOPO, CLAUDE.md, CARDS.md e FASES.md reescritos; registro em
   docs/ENTREVISTA.md, 11 ADRs em docs/adr/, termos em GLOSSARY.md. Principais mudanças: significado
@@ -113,6 +113,24 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   descompactado; `prepararArquivo` olha os bytes mágicos antes de descompactar.
 - 2026-10-20: o `pnpm dev` de outro chat na mesma pasta ocupa a 5173 e o novo sobe na 5174, que não
   está no `webCorsOriginList`. Para o R2, rodar o dev só na 5173.
+- 2026-10-20: R5. Edge Function em `supabase/functions/gemini/`; lógica pura sem imports (`wav.ts`,
+  `textos.ts`, `modelos.ts`, testada pelo vitest, que agora inclui `supabase/functions/**/*.test.ts`) e
+  `index.ts` (Deno). Deploy com `--use-api` (sem Docker nem Deno no PC). O secret da chave é
+  **`GEMINI_API_KEY`** (foi criado assim em 15/10; docs corrigidos). Configuração em secrets:
+  `GEMINI_MODELOS_TEXTO=gemini-3.8-flash,gemini-3.5-flash-lite`,
+  `GEMINI_MODELOS_TTS=gemini-3.8-flash-tts,gemini-3.8-flash-lite-tts` (os 2.5 só servem a quem já usava),
+  `GEMINI_TETO_DIARIO=300`. API `generateContent` (a Interactions é a recomendada, mas o
+  generateContent "remains fully supported"); o TTS pode vir como PCM cru ou WAV, `extrairPcm` aceita os dois.
+  Migração `20261020180000_gemini.sql`: `sentence_before`/`sentence_after` em `batch_items` (contexto que
+  o aparelho grava na parte local, V1.3); RPCs `gemini_reservar` (teto atômico, dia UTC) e `gemini_travar`
+  (pendente/erro → gerando; trava com mais de 5 min é retomada), só para `service_role`. Cada chamada
+  HTTP ao Gemini (inclusive tentativa e reserva) conta no teto. `generate` faz só o que falta (num "Tentar
+  de novo" o que deu certo fica) e aceita `refazer: [texto | audio]` para o "Refazer áudio" do V1.5;
+  reaproveita a tradução de `translations` e grava a sua lá. Erro de modelo (404, 429, 5xx, rede) passa
+  para o de reserva; 3 rodadas com espera de 2 s e 6 s; 400/401/403 e teto param na hora. Áudio em
+  `audio/<user_id>/leituras-<hash>.wav`; o hash da palavra inclui a instrução com a leitura. Instrução de
+  pronúncia (em inglês, como nos exemplos do Google): `Say this Japanese word, pronounced 「<leitura>」: <palavra>`.
+  Resposta do `generate`: `{ estado, motivo?, campos, medidas }` (409 `ocupada` se outra chamada gera).
 
 ## Testes de risco
 
@@ -191,12 +209,23 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   qualquer leitura. Com ele: **1102 Palavras** do livro no Anki (1086 pela regra antiga), 24.613
   ocorrências (73,8% do conteúdo); pela escrita seriam 1068 (JMdict ganha 60, perde 26).
 
+### R5 · Edge Function `gemini` (2026-10-20)
+
+- Testes de regra: 22 (WAV, corte de silêncio, nomes, pedidos, reserva, acesso). ✅
+- Recusa (chamada real): sem token → 401 do gateway; chave pública sem usuário → 401 `sem login`; JWT
+  falso → 401. A recusa de outro usuário logado (403) só pelo teste unitário: o cadastro está desligado. ✅
+- 30 cartas: `dicts/r5/cartas.json` (fora do git) com palavras do また、同じ夢を見ていた, várias de leitura
+  ambígua (辛い つらい, 開く あく, 風 ふう, 上手い うまい, 一日 いちにち, 明日 あした, 何度, 下手 へた).
+  Preços de `dicts/r5/precos.json` (US$/1M tokens, tabela de out/2026). 👤 Falta rodar e anotar aqui:
+  áudio médio, tokens, custo por 100 cartas, storage por 100 cartas e o veredito (inclusive se a voz lê a
+  instrução de pronúncia em voz alta).
+
 ## Pendências do usuário
 
 - [x] docs/CARDS.md
 - [x] apps/web/.env com URL e anon key
 - [x] Dicionários em dicts/ (JMdict_english, JPDB v2.2 Frequency Kana)
-- [x] Secret GEMINI_KEY no Supabase
+- [x] Secret GEMINI_API_KEY no Supabase
 - [x] Hospedagem: Vercel
 - [ ] Conectar o repo na Vercel e cadastrar as env vars (V1.7)
 - [x] Criar a conta, entrar em `/login` e desligar o cadastro (S2)
@@ -209,7 +238,9 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
       app, `/teste/dicionario` → "Baixar dicionário" e anotar download e preparação
 - [ ] R3: na PWA do iPhone (depois da Vercel), `/teste/dicionario`: baixar, carregar tokenizador,
       "Medir consultas"; anotar em "Testes de risco" › R3 e marcar R3 como feito
-- [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_KEY é do projeto pago (R5)
+- [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_API_KEY é do projeto pago (R5)
+- [ ] R5: na raiz, `node tools/gerar-cartas-teste.ts` (e-mail e senha no terminal; ~10 min); abrir o
+      `relatorio.html` que ele indica, ouvir e ler as 30 e passar o veredito para o chat
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
 ## Sem decisão (da entrevista de 20/10)

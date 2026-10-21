@@ -288,7 +288,7 @@ O iPad e o iPhone recebem o estado do vocabulário já sincronizado. O .apkg é 
 
 **Buckets privados:** `epubs` e `audio` (política por pasta `<user_id>/...`) e `dicts` (o dicionário no formato do app, gerado pelo script `tools/` a partir dos zips Yomitan da pasta local `dicts/`). Os arquivos pesados (dicionário e tokenizador) ficam fora de `static/`, porque o service worker baixa tudo de `static/` de novo a cada deploy; o dicionário vai para o IndexedDB e o tokenizador para um cache versionado com nome próprio que o deploy não apaga. O schema vive em `supabase/migrations/`.
 
-**Segurança:** login por e-mail e senha (sem magic link: no iOS o link abre no Safari, que não compartilha dados com a PWA). O cadastro fica desligado no Supabase depois de criada a sua conta. A Edge Function aceita só o usuário do secret `ALLOWED_USER_ID` e respeita um teto diário de chamadas (ex.: 300). A `GEMINI_KEY` é do projeto pago do Google, com alerta de orçamento (ex.: US$ 5 por mês). Os nomes dos modelos ficam em configuração da função, com lista de reserva. O `webCorsOriginList` do AnkiConnect libera só a URL de produção e `http://localhost:5173`, nunca `*`. A leitura funciona com sessão vencida; a sincronização espera a rede.
+**Segurança:** login por e-mail e senha (sem magic link: no iOS o link abre no Safari, que não compartilha dados com a PWA). O cadastro fica desligado no Supabase depois de criada a sua conta. A Edge Function aceita só o usuário do secret `ALLOWED_USER_ID` e respeita um teto diário de chamadas (ex.: 300). A `GEMINI_API_KEY` é do projeto pago do Google, com alerta de orçamento (ex.: US$ 5 por mês). Os nomes dos modelos ficam em configuração da função, com lista de reserva. O `webCorsOriginList` do AnkiConnect libera só a URL de produção e `http://localhost:5173`, nunca `*`. A leitura funciona com sessão vencida; a sincronização espera a rede.
 
 **Backup:** o plano gratuito do Supabase não dá backups para baixar. "Baixar backup" gera um zip com todas as tabelas em JSON (sem EPUBs e áudios), e "Restaurar backup" volta a partir dele.
 
@@ -344,7 +344,7 @@ No Claude Code:
 - Em cada fase, comece no plan mode e leia o plano antes de aprovar.
 - Escreva os testes antes do código nas partes que têm resposta certa: guid e .apkg (compare com a saída do genanki em Python), estados do hub, casamento de palavras e deflexão.
 - Faça um commit por passo pequeno e use `/clear` ao trocar de fase, com o `CLAUDE.md` atualizado.
-- Nunca cole chaves no chat; o Gemini entra só como secret da Edge Function (`GEMINI_KEY`).
+- Nunca cole chaves no chat; o Gemini entra só como secret da Edge Function (`GEMINI_API_KEY`).
 
 Modelos:
 

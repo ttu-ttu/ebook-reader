@@ -37,6 +37,12 @@ desfazer um ADR sem um novo ADR).
 - Supabase: npx supabase <cmd> (link, db push, functions deploy gemini, secrets set). CLI fixado
   como devDependency da raiz. Projeto já linkado (ref em supabase/.temp, fora do git); checar o link
   com `npx supabase migration list` (`supabase status` é da stack local em Docker).
+- Edge Function: npx supabase functions deploy gemini --use-api (sem Docker). Secrets de configuração:
+  GEMINI_MODELOS_TEXTO e GEMINI_MODELOS_TTS (listas com reserva, separadas por vírgula),
+  GEMINI_TETO_DIARIO. Lógica pura em supabase/functions/gemini/\*.ts sem imports (testada pelo vitest);
+  só o index.ts usa Deno.
+- Cartas de teste (R5): node tools/gerar-cartas-teste.ts [dicts/r5] (pede e-mail e senha; quem roda é
+  o usuário); lê cartas.json e precos.json da pasta e grava relatorio.html.
 - Referência do genanki (R1): py -3.14 -m venv tools/.venv; tools/.venv/Scripts/python -m pip
   install -r tools/requirements.txt; tools/.venv/Scripts/python tools/genanki_referencia.py (regrava
   a fixture dos testes do .apkg; Python 3.15 não serve).
@@ -50,9 +56,9 @@ desfazer um ADR sem um novo ADR).
 
 - Repositório público: nunca chave, dado pessoal ou link privado em arquivo versionado.
 - Nenhuma chamada a Claude/LLM dentro do app. Só Gemini, só pela Edge Function `gemini`.
-- Chaves: GEMINI*KEY só como secret do Supabase (ler com Deno.env.get("GEMINI_KEY")). A função
+- Chaves: GEMINI_API_KEY só como secret do Supabase (ler com Deno.env.get("GEMINI_API_KEY")). A função
   aceita só o usuário do secret ALLOWED_USER_ID e respeita um teto diário. Nomes de modelo em
-  configuração, nunca no código. No front, só SUPABASE_URL e a anon key (via .env, PUBLIC*\*).
+  configuração, nunca no código. No front, só SUPABASE_URL e a anon key (via .env, PUBLIC\*\*).
   Nunca service_role no front. Nunca chaves no código nem no chat.
 - Termos: **Carta** = item da fila no app; **Card** = o que existe no Anki.
 - Cards: seguir docs/CARDS.md; não mudar MODEL_ID nem o prefixo de guid `leituras-igor`.
