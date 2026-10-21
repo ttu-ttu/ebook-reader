@@ -9,9 +9,10 @@ desfazer um ADR sem um novo ADR).
 
 - Fork do ttu ebook-reader (SvelteKit 2 + Svelte 4, Tailwind, adapter-static, pnpm). App em apps/web.
 - Dados locais do ttu: IndexedDB (apps/web/src/lib/data/database/books-db).
-- Sincronização do ttu: handlers em apps/web/src/lib/data/storage/handler. O Supabase entra como um
-  handler novo nesse padrão e é a única sincronização (Drive, OneDrive e pasta local saem da interface;
-  audiobook e legendas viram no-op).
+- Sincronização: módulo próprio em apps/web/src/lib/data/supabase/sincronizacao (ADR 0014), por linha,
+  ao lado do IndexedDB do ttu, com banco próprio `dokusho-sinc`. É a única sincronização (os handlers
+  de Drive, OneDrive e pasta local do ttu ficam no código e saem da interface; audiobook e legendas
+  também).
 - Supabase: Auth (e-mail + senha, cadastro desligado), Postgres com RLS, Storage (buckets `epubs`,
   `audio`, `dicts`), Edge Function `gemini` (ações `translate` e `generate`).
   Schema em supabase/migrations/. Cliente: @supabase/supabase-js.

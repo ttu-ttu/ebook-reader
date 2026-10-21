@@ -14,7 +14,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | R3        | quase    | 2026-10-20 | lindera; 32 MB; PC pelo bucket dentro das metas; falta iPhone (👤)          |
 | R4        | feito    | 2026-10-20 | 97,5% do texto acha entrada; 0 Cards sem entrada; regras ajustadas          |
 | R5        | feito    | 2026-10-21 | 30 cartas aprovadas; US$ 0,0038/carta; 31 MB/100 cartas; falta alerta (👤)  |
-| V1.1–V1.7 | pendente |            |                                                                             |
+| V1.1      | feito    | 2026-10-21 | sincronização por linha (ADR 0014); falta o teste em dois aparelhos (👤)    |
+| V1.2–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
@@ -131,6 +132,37 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   `audio/<user_id>/leituras-<hash>.wav`; o hash da palavra inclui a instrução com a leitura. Instrução de
   pronúncia (em inglês, como nos exemplos do Google): `Say this Japanese word, pronounced 「<leitura>」: <palavra>`.
   Resposta do `generate`: `{ estado, motivo?, campos, medidas }` (409 `ocupada` se outra chamada gera).
+
+- 2026-10-21: V1.1 (autônomo, revisar). **ADR 0014**: a sincronização não é um handler do ttu (eles
+  copiam arquivos, pelo título, num gesto manual); é o módulo `lib/data/supabase/sincronizacao/`, que lê
+  e grava o IndexedDB do ttu direto e troca linhas com o Supabase. `sincronizador.ts` (motor, testado com
+  um servidor falso e dois aparelhos), `regras.ts` (LWW, Alcance, conversões), `banco.ts` (IndexedDB
+  `dokusho-sinc`: título → hash, enviados, cursores, EPUB até subir, Alcance, estatísticas dos outros
+  aparelhos, marcador remoto pendente), `servidor-supabase.ts`, `iniciar.ts` (gatilhos). Cada rodada
+  recebe (cursor `updated_at`, páginas por posição) e depois envia o que mudou desde o último envio.
+  Gatilhos: ao abrir o app, ao voltar a rede, ao trocar de plano (ida e volta), a cada 5 min em primeiro
+  plano e ~15 s depois de uma mudança no banco do ttu (`database.mudou$`, novo). Migração
+  `20261021120000_sincronizacao.sql`: `bookmarks.device_id/device_name`, `books.processed_size`,
+  `reading_goals.goal_frequency`.
+  Livro: hash SHA-256 do EPUB calculado na importação (antes de gravar no ttu); livros sem EPUB (de antes
+  do V1.1, TXT, HTMLZ) usam o hash do texto processado e sobem sem original. No bucket `epubs`:
+  `<user_id>/<hash>/processado.zip` (mesmo desenho do zip do ttu), `original.epub`, `capa`. No aparelho
+  novo o livro vira um placeholder do ttu (sem texto, com capa) com ícone de nuvem; tocar baixa o
+  processado com progresso. Dois livros com o mesmo título continuam impossíveis no mesmo aparelho (o
+  ttu indexa pelo título); o segundo não desce.
+  Marcador: sobe com Alcance (máximo pela leitura; um "desmarcar" mais novo vence), aparelho e nome. Ao
+  abrir o livro, o leitor espera até 4 s pela sincronização; se outro aparelho tem marcador mais novo,
+  pergunta "Você parou no iPad, cap. 3 (42%). Ir para lá?" (Ficar aqui / Ir para lá). Aparelho sem
+  marcador recebe direto.
+  Estatísticas: as do ttu são só deste aparelho (`device_id` aleatório no localStorage); as dos outros
+  ficam em `dokusho-sinc` para a tela inicial somar (V1.4). Estatística apagada aqui é apagada no
+  servidor. Aparelho que perdeu o banco recebe de volta as próprias. Metas: por `goal_start_date`, LWW.
+  Apagar livro: confirmação ("some de todos os aparelhos… estatísticas e cartas ficam"), soft delete do
+  livro e do marcador, arquivos do bucket apagados; reimportar depois devolve o livro.
+  Padrões mudados no ttu: estatísticas ligadas e livros "placeholder" visíveis. `ConfirmDialog` aceita
+  rótulos. Sem login, nada é sincronizado (o app segue local).
+- 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
+  (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
 ## Testes de risco
 
@@ -266,6 +298,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_API_KEY é do projeto pago (R5)
 - [x] R5: rodada final das 30 cartas e veredito
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
+- [ ] V1.1: importar um livro no PC, abrir no iPad no mesmo ponto; ler o mesmo livro no mesmo dia nos
+      dois e conferir a soma do tempo (V1.4); apagar um livro e ver sumir no outro
 
 ## Sem decisão (da entrevista de 20/10)
 
