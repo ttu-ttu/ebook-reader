@@ -241,3 +241,36 @@
   background: #3a9866;
   pointer-events: none;
 }
+
+// Dokusho: estado da carta na Fila (desenho do D1).
+.dokusho-estado {
+  display: inline-flex;
+  align-items: center;
+  height: fit-content;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #edf0ee;
+  color: #59635f;
+}
+
+.dokusho-estado--gerando {
+  background: #e2e8f3;
+  color: #2d4f86;
+}
+
+.dokusho-estado--gerada {
+  background: #e0f1e7;
+  color: #3a9866;
+}
+
+.dokusho-estado--erro {
+  background: #f8e1dd;
+  color: #b93a2e;
+}
+
+.dokusho-estado--exportada {
+  color: #8c9591;
+}

@@ -10,6 +10,7 @@
   import { paraHiragana, type Pedaco } from '$lib/data/dicionario/tokenizador';
   import { contextoDaFrase, fraseEm } from '$lib/data/cartas/frase';
   import { formaDaEntrada, montarCarta, ordenarEntradas } from '$lib/data/cartas/palavra';
+  import { gerarPendentes } from '$lib/data/cartas/fila';
   import { traducaoEmCache, traduzirFrase } from '$lib/data/cartas/traduzir';
   import {
     cartasRecebidas$,
@@ -300,7 +301,8 @@
 
       await sincronizador().salvar('cartas', { ...carta, book_id: carta.book_id || null });
       confirmarDuplicada = false;
-      sincronizarEmBreve();
+      // Sobe a carta e pede a parte do Gemini (ADR 0010); offline, fica pendente.
+      gerarPendentes();
       await atualizarCartas();
     } catch (e) {
       erro = `Criar carta: ${e instanceof Error ? e.message : String(e)}`;

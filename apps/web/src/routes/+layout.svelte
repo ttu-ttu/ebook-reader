@@ -6,6 +6,7 @@
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { userFontsCacheName, type UserFont } from '$lib/data/fonts';
   import { fontFamilyGroupOne$, isOnline$, userFonts$ } from '$lib/data/store';
+  import { gerarPendentes } from '$lib/data/cartas/fila';
   import { iniciarSincronizacao } from '$lib/data/supabase/sincronizacao/iniciar';
   import { dummyFn, isMobile, isMobile$ } from '$lib/functions/utils';
   import { onMount } from 'svelte';
@@ -85,7 +86,14 @@
 
   page.subscribe((p) => (path = p.url.pathname));
 
-  onMount(iniciarSincronizacao);
+  onMount(() => {
+    iniciarSincronizacao();
+    // Cartas criadas offline (ou em outro aparelho) geram quando há rede (ADR 0010).
+    gerarPendentes();
+    window.addEventListener('online', gerarPendentes);
+
+    return () => window.removeEventListener('online', gerarPendentes);
+  });
 </script>
 
 <svelte:window bind:online={$isOnline$} />
