@@ -24,9 +24,9 @@ import {
 import {
   estiloPalavra,
   lerAudioInteraction,
-  mesmaLeitura,
   pedidoConferencia,
-  pedidoVozInteraction
+  pedidoVozInteraction,
+  vozDaPalavra
 } from './voz.ts';
 import { cortarSilencio, duracaoSegundos, extrairPcm, pcmParaWav } from './wav.ts';
 
@@ -116,7 +116,7 @@ function criarGemini(usuario: string) {
         medida: { modelo, uso: valor.uso }
       };
     },
-    // Voz pela API Interactions (R5, teste da dica de leitura fora do texto falado).
+    // Voz pela API Interactions: a dica de leitura vai fora do texto falado (voz da palavra).
     async audioInteraction(corpo: (modelo: string) => unknown) {
       const lista = lerLista('GEMINI_MODELOS_TTS', Deno.env.get('GEMINI_MODELOS_TTS'));
       const { valor, modelo } = await comReserva(lista, async (m) =>
@@ -197,13 +197,16 @@ async function gerar(usuario: string, pedido: Record<string, unknown>) {
   if (!carta) return responder(409, { estado: 'ocupada' });
 
   if (refazer.includes('texto')) carta.word_meaning = carta.sentence_meaning = null;
-  if (refazer.includes('audio')) carta.word_audio_path = carta.sentence_audio_path = null;
+  if (refazer.includes('audio')) {
+    carta.word_audio_path = carta.sentence_audio_path = carta.word_audio_check = null;
+  }
 
   const feito: Record<string, string | null> = {
     word_meaning: carta.word_meaning,
     sentence_meaning: carta.sentence_meaning,
     word_audio_path: carta.word_audio_path,
-    sentence_audio_path: carta.sentence_audio_path
+    sentence_audio_path: carta.sentence_audio_path,
+    word_audio_check: carta.word_audio_check
   };
   const medidas: Record<string, unknown> = {};
   let modificada = carta.modified_at;
@@ -247,11 +250,35 @@ async function gerar(usuario: string, pedido: Record<string, unknown>) {
     }
 
     if (!feito.word_audio_path) {
-      const corpo = pedidoVozPalavra(VOZ, carta.word_reading);
-      const { wav, segundos, medida } = await gemini.audio(corpo);
-      const nome = await nomeAudio(VOZ, corpo.contents[0].parts[0].text);
-      feito.word_audio_path = await subirAudio(usuario, nome, wav);
-      medidas.palavra = { ...medida, bytes: wav.byteLength, segundos };
+      const palavra = carta.word;
+      const leitura = carta.word_reading;
+      const {
+        voz,
+        via,
+        tentativas,
+        medidas: partes
+      } = await vozDaPalavra(leitura, {
+        dica: () =>
+          gemini.audioInteraction((m) =>
+            pedidoVozInteraction(m, VOZ, palavra, estiloPalavra(palavra, leitura))
+          ),
+        kana: () => gemini.audio(pedidoVozPalavra(VOZ, leitura)),
+        ouvir: async (wav) => {
+          const { dados, medida } = await gemini.json(pedidoConferencia(wav));
+          return { ouvido: String(dados.ouvido ?? ''), medida };
+        }
+      });
+      // Nome pelo que a voz recebeu: a dica leva a palavra e a leitura; a kana, só a leitura.
+      const nome = await nomeAudio(VOZ, via === 'dica' ? `${palavra}（${leitura}）` : leitura);
+      feito.word_audio_path = await subirAudio(usuario, nome, voz.wav);
+      feito.word_audio_check = via;
+      medidas.palavra = {
+        via,
+        tentativas,
+        partes,
+        bytes: voz.wav.byteLength,
+        segundos: voz.segundos
+      };
     }
 
     if (!feito.sentence_audio_path) {
@@ -271,46 +298,6 @@ async function gerar(usuario: string, pedido: Record<string, unknown>) {
   }
 }
 
-// TEMPORÁRIO (R5): compara três vozes da palavra e confere a leitura de cada uma. Apagar depois
-// da decisão.
-async function vozTeste(usuario: string, pedido: Record<string, unknown>) {
-  const palavra = String(pedido.palavra ?? '').trim();
-  const leitura = String(pedido.leitura ?? '').trim();
-  if (!palavra || !leitura) return responder(400, { erro: 'palavra e leitura' });
-  const gemini = criarGemini(usuario);
-  const variantes = {
-    kanji: () => gemini.audio(pedidoVozFrase(VOZ, palavra)),
-    dica: () =>
-      gemini.audioInteraction((m) =>
-        pedidoVozInteraction(m, VOZ, palavra, estiloPalavra(palavra, leitura))
-      ),
-    kana: () => gemini.audio(pedidoVozPalavra(VOZ, leitura))
-  };
-  const saida: Record<string, unknown> = {};
-  for (const [nome, gerarVoz] of Object.entries(variantes)) {
-    try {
-      const { wav, segundos, medida } = await gerarVoz();
-      const conferencia = await gemini.json(pedidoConferencia(wav));
-      const ouvido = String(conferencia.dados.ouvido ?? '');
-      let binario = '';
-      for (let i = 0; i < wav.length; i += 0x8000) {
-        binario += String.fromCharCode(...wav.subarray(i, i + 0x8000));
-      }
-      saida[nome] = {
-        wav: btoa(binario),
-        segundos,
-        medida,
-        ouvido,
-        confere: mesmaLeitura(leitura, ouvido),
-        medidaConferencia: conferencia.medida
-      };
-    } catch (erro) {
-      saida[nome] = { erro: erro instanceof Error ? erro.message : String(erro) };
-    }
-  }
-  return responder(200, saida);
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return responder(405, { erro: 'só POST' });
@@ -327,7 +314,6 @@ Deno.serve(async (req) => {
     const pedido = await req.json().catch(() => ({}));
     if (pedido.action === 'translate') return await traduzir(usuario, pedido);
     if (pedido.action === 'generate') return await gerar(usuario, pedido);
-    if (pedido.action === 'voz-teste') return await vozTeste(usuario, pedido);
     return responder(400, { erro: 'action deve ser translate ou generate' });
   } catch (erro) {
     const status = erro instanceof ErroGemini && erro.status === 429 ? 429 : 500;
