@@ -123,6 +123,9 @@ export class DatabaseService {
     shareReplay({ refCount: true, bufferSize: 1 })
   );
 
+  /** Livro, marcador, estatística ou meta mudou neste aparelho: a sincronização envia. */
+  mudou$ = new Subject<void>();
+
   lastItemChanged$ = new Subject<void>();
 
   lastItem$ = this.lastItemChanged$.pipe(
@@ -207,6 +210,8 @@ export class DatabaseService {
       throw error;
     }
 
+    this.mudou$.next();
+
     return [dateKey, true];
   }
 
@@ -260,6 +265,8 @@ export class DatabaseService {
       bookData = { ...data, id: dataId };
     }
     await tx.done;
+
+    this.mudou$.next();
 
     return bookData;
   }
@@ -321,8 +328,11 @@ export class DatabaseService {
 
   async putBookmark(bookmarkData: BooksDbBookmarkData) {
     const db = await this.db;
+    const result = await db.put('bookmark', bookmarkData);
 
-    return db.put('bookmark', bookmarkData);
+    this.mudou$.next();
+
+    return result;
   }
 
   async putAudioBook(audioBook: BooksDbAudioBook) {
@@ -615,6 +625,7 @@ export class DatabaseService {
 
       await Promise.all(tasks);
       await tx.done;
+      this.mudou$.next();
     } catch (error: any) {
       try {
         tx.abort();
@@ -648,6 +659,8 @@ export class DatabaseService {
     };
 
     await db.put('statistic', existingStatistic);
+
+    this.mudou$.next();
   }
 
   async clearZombieStatistics() {
@@ -740,6 +753,7 @@ export class DatabaseService {
 
       await Promise.all(tasks);
       await tx.done;
+      this.mudou$.next();
     } catch (error: any) {
       try {
         tx.abort();
@@ -842,6 +856,7 @@ export class DatabaseService {
 
       await Promise.all(tasks);
       await tx.done;
+      this.mudou$.next();
     } catch (error: any) {
       try {
         tx.abort();
@@ -945,6 +960,7 @@ export class DatabaseService {
       await tx.done;
 
       lastReadingGoalsModified$.next(Date.now());
+      this.mudou$.next();
     } catch (error: any) {
       try {
         tx.abort();
@@ -1022,6 +1038,7 @@ export class DatabaseService {
       const currentUserGoal = await getCurrentReadingGoal();
 
       readingGoal$.next(currentUserGoal);
+      this.mudou$.next();
     } catch (error: any) {
       try {
         tx.abort();
@@ -1044,6 +1061,7 @@ export class DatabaseService {
     }
 
     lastReadingGoalsModified$.next(Date.now());
+    this.mudou$.next();
   }
 
   async getAudioBook(title: string) {

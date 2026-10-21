@@ -20,6 +20,7 @@ import {
   paraIso,
   precisaEnviar,
   remotoVence,
+  textoMarcadorRemoto,
   type LinhaEstatistica,
   type LinhaMarcador,
   type LinhaMeta
@@ -173,6 +174,30 @@ describe('conversões', () => {
 
   it('horário em ISO', () => {
     expect(paraIso(0)).toBe('1970-01-01T00:00:00.000Z');
+  });
+});
+
+describe('pergunta do marcador de outro aparelho', () => {
+  it('diz o aparelho, o capítulo e a porcentagem', () => {
+    const livro = {
+      characters: 1000,
+      sections: [
+        { startCharacter: 0 },
+        { startCharacter: 100 },
+        { startCharacter: 150, parentChapter: 'c2' },
+        { startCharacter: 400 }
+      ]
+    };
+
+    expect(textoMarcadorRemoto({ device_name: 'iPad', explored_char_count: 420 }, livro)).toBe(
+      'Você parou no iPad, cap. 3 (42%). Ir para lá?'
+    );
+    expect(textoMarcadorRemoto({ device_name: null, explored_char_count: null }, livro)).toBe(
+      'Você parou no outro aparelho, cap. 1 (0%). Ir para lá?'
+    );
+    expect(
+      textoMarcadorRemoto({ device_name: 'iPhone', explored_char_count: 50 }, { characters: 0 })
+    ).toBe('Você parou no iPhone (0%). Ir para lá?');
   });
 });
 

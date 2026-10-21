@@ -6,7 +6,9 @@
   import { dialogManager, type Dialog } from '$lib/data/dialog-manager';
   import { userFontsCacheName, type UserFont } from '$lib/data/fonts';
   import { fontFamilyGroupOne$, isOnline$, userFonts$ } from '$lib/data/store';
+  import { iniciarSincronizacao } from '$lib/data/supabase/sincronizacao/iniciar';
   import { dummyFn, isMobile, isMobile$ } from '$lib/functions/utils';
+  import { onMount } from 'svelte';
   import { MetaTags } from 'svelte-meta-tags';
   import '../app.scss';
 
@@ -82,6 +84,8 @@
   });
 
   page.subscribe((p) => (path = p.url.pathname));
+
+  onMount(iniciarSincronizacao);
 </script>
 
 <svelte:window bind:online={$isOnline$} />

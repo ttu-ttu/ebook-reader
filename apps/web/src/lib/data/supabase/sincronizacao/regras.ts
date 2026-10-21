@@ -188,6 +188,25 @@ export function linhaParaMeta(linha: LinhaMeta): BooksDbReadingGoal {
   };
 }
 
+/** "Você parou no iPad, cap. 3 (42%). Ir para lá?" (ESCOPO "Continuar em outro aparelho"). */
+export function textoMarcadorRemoto(
+  linha: Pick<LinhaMarcador, 'device_name' | 'explored_char_count'>,
+  livro: { characters: number; sections?: { startCharacter?: number; parentChapter?: string }[] }
+) {
+  const lido = linha.explored_char_count || 0;
+  const capitulos = (livro.sections || []).filter(
+    (secao) => !secao.parentChapter && secao.startCharacter !== undefined
+  );
+  const indice = capitulos.reduce(
+    (atual, secao, posicao) => ((secao.startCharacter as number) <= lido ? posicao : atual),
+    -1
+  );
+  const porcentagem = livro.characters ? Math.floor((100 * lido) / livro.characters) : 0;
+  const capitulo = indice >= 0 ? `, cap. ${indice + 1}` : '';
+
+  return `Você parou no ${linha.device_name || 'outro aparelho'}${capitulo} (${porcentagem}%). Ir para lá?`;
+}
+
 /** Nome do aparelho pelo navegador. O iPadOS se apresenta como Mac, mas tem toque. */
 export function nomeDoAparelho(userAgent: string, pontosDeToque: number) {
   if (/iPhone/.test(userAgent)) return 'iPhone';

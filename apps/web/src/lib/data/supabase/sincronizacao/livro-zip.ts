@@ -72,15 +72,15 @@ export async function deszipLivro(arquivo: Blob): Promise<LivroProcessado> {
       if (entrada.directory) continue;
 
       if (entrada.filename === 'staticdata.json') {
-        const fixos = JSON.parse(await entrada.getData(new TextWriter())) as DadosFixos;
+        const fixos = JSON.parse(await entrada.getData!(new TextWriter())) as DadosFixos;
 
         Object.assign(livro, fixos);
       } else if (entrada.filename.startsWith('blobs/')) {
         const nome = entrada.filename.slice('blobs/'.length);
 
-        livro.blobs[nome] = await entrada.getData(new BlobWriter(tipoDaImagem(nome)));
+        livro.blobs[nome] = await entrada.getData!(new BlobWriter(tipoDaImagem(nome)));
       } else if (entrada.filename.startsWith('cover.')) {
-        livro.coverImage = await entrada.getData(new BlobWriter(tipoDaImagem(entrada.filename)));
+        livro.coverImage = await entrada.getData!(new BlobWriter(tipoDaImagem(entrada.filename)));
       }
     }
   } finally {
