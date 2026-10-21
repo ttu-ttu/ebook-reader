@@ -125,9 +125,10 @@ function pedidoVoz(voz: string, texto: string) {
   };
 }
 
-// A palavra leva a leitura como instrução de pronúncia (CARDS.md "Áudio").
-export function pedidoVozPalavra(voz: string, palavra: string, leitura: string) {
-  return pedidoVoz(voz, `Say this Japanese word, pronounced 「${leitura}」: ${palavra}`);
+// A voz da palavra lê só a leitura em kana (CARDS.md "Áudio"): o TTS 3.8 lê em voz alta qualquer
+// instrução que vá junto (R5), e a kana fixa a pronúncia (辛い つらい, 開く あく, 風 ふう).
+export function pedidoVozPalavra(voz: string, leitura: string) {
+  return pedidoVoz(voz, leitura.trim());
 }
 
 // A frase vai sem HTML; o "Texto para a voz" (em kana) a substitui quando preenchido.

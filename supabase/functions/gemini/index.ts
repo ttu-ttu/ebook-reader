@@ -225,7 +225,7 @@ async function gerar(usuario: string, pedido: Record<string, unknown>) {
     }
 
     if (!feito.word_audio_path) {
-      const corpo = pedidoVozPalavra(VOZ, carta.word, carta.word_reading);
+      const corpo = pedidoVozPalavra(VOZ, carta.word_reading);
       const { wav, segundos, medida } = await gemini.audio(corpo);
       const nome = await nomeAudio(VOZ, corpo.contents[0].parts[0].text);
       feito.word_audio_path = await subirAudio(usuario, nome, wav);

@@ -78,10 +78,9 @@ describe('pedidoTraducao', () => {
 });
 
 describe('pedidoVozPalavra', () => {
-  it('leva a leitura como instrução de pronúncia e pede a voz Orus', () => {
-    const pedido = pedidoVozPalavra('Orus', '大家', 'おおや');
-    expect(pedido.contents[0].parts[0].text).toContain('おおや');
-    expect(pedido.contents[0].parts[0].text).toContain('大家');
+  it('manda só a leitura em kana (o TTS lê tudo o que recebe) e pede a voz Orus', () => {
+    const pedido = pedidoVozPalavra('Orus', ' おおや ');
+    expect(pedido.contents[0].parts[0].text).toBe('おおや');
     expect(pedido.generationConfig.responseModalities).toEqual(['AUDIO']);
     expect(pedido.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName).toBe(
       'Orus'
