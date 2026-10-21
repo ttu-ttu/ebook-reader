@@ -21,10 +21,17 @@ import {
   semHtml,
   type Uso
 } from './textos.ts';
+import {
+  estiloPalavra,
+  lerAudioInteraction,
+  mesmaLeitura,
+  pedidoConferencia,
+  pedidoVozInteraction
+} from './voz.ts';
 import { cortarSilencio, duracaoSegundos, extrairPcm, pcmParaWav } from './wav.ts';
 
 const VOZ = 'Orus';
-const API = 'https://generativelanguage.googleapis.com/v1beta/models';
+const API = 'https://generativelanguage.googleapis.com/v1beta';
 
 // Chave de serviço: a legada (SUPABASE_SERVICE_ROLE_KEY) ou a nova (SUPABASE_SECRET_KEYS, JSON).
 function chaveServico() {
@@ -61,7 +68,8 @@ function criarGemini(usuario: string) {
   if (!chave) throw new Error('Secret GEMINI_API_KEY ausente');
   if (!(teto > 0)) throw new Error('Configuração GEMINI_TETO_DIARIO ausente');
 
-  async function chamar(modelo: string, corpo: unknown) {
+  // interaction: a API Interactions (o modelo vai no corpo); senão, generateContent.
+  async function chamar(modelo: string, corpo: unknown, interaction = false) {
     const { data: total, error } = await supabase.rpc('gemini_reservar', {
       p_user: usuario,
       p_n: 1,
@@ -70,7 +78,8 @@ function criarGemini(usuario: string) {
     if (error) throw new ErroGemini(0, `teto: ${error.message}`, true);
     if (total === null) throw new ErroGemini(429, `teto diário de ${teto} chamadas atingido`, true);
 
-    const resposta = await fetch(`${API}/${modelo}:generateContent`, {
+    const url = interaction ? `${API}/interactions` : `${API}/models/${modelo}:generateContent`;
+    const resposta = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chave! },
       body: JSON.stringify(corpo)
@@ -99,6 +108,19 @@ function criarGemini(usuario: string) {
       const lista = lerLista('GEMINI_MODELOS_TTS', Deno.env.get('GEMINI_MODELOS_TTS'));
       const { valor, modelo } = await comReserva(lista, async (m) =>
         lerAudio(await chamar(m, corpo))
+      );
+      const pcm = cortarSilencio(extrairPcm(valor.bytes));
+      return {
+        wav: pcmParaWav(pcm),
+        segundos: duracaoSegundos(pcm),
+        medida: { modelo, uso: valor.uso }
+      };
+    },
+    // Voz pela API Interactions (R5, teste da dica de leitura fora do texto falado).
+    async audioInteraction(corpo: (modelo: string) => unknown) {
+      const lista = lerLista('GEMINI_MODELOS_TTS', Deno.env.get('GEMINI_MODELOS_TTS'));
+      const { valor, modelo } = await comReserva(lista, async (m) =>
+        lerAudioInteraction(await chamar(m, corpo(m), true))
       );
       const pcm = cortarSilencio(extrairPcm(valor.bytes));
       return {
@@ -249,6 +271,46 @@ async function gerar(usuario: string, pedido: Record<string, unknown>) {
   }
 }
 
+// TEMPORÁRIO (R5): compara três vozes da palavra e confere a leitura de cada uma. Apagar depois
+// da decisão.
+async function vozTeste(usuario: string, pedido: Record<string, unknown>) {
+  const palavra = String(pedido.palavra ?? '').trim();
+  const leitura = String(pedido.leitura ?? '').trim();
+  if (!palavra || !leitura) return responder(400, { erro: 'palavra e leitura' });
+  const gemini = criarGemini(usuario);
+  const variantes = {
+    kanji: () => gemini.audio(pedidoVozFrase(VOZ, palavra)),
+    dica: () =>
+      gemini.audioInteraction((m) =>
+        pedidoVozInteraction(m, VOZ, palavra, estiloPalavra(palavra, leitura))
+      ),
+    kana: () => gemini.audio(pedidoVozPalavra(VOZ, leitura))
+  };
+  const saida: Record<string, unknown> = {};
+  for (const [nome, gerarVoz] of Object.entries(variantes)) {
+    try {
+      const { wav, segundos, medida } = await gerarVoz();
+      const conferencia = await gemini.json(pedidoConferencia(wav));
+      const ouvido = String(conferencia.dados.ouvido ?? '');
+      let binario = '';
+      for (let i = 0; i < wav.length; i += 0x8000) {
+        binario += String.fromCharCode(...wav.subarray(i, i + 0x8000));
+      }
+      saida[nome] = {
+        wav: btoa(binario),
+        segundos,
+        medida,
+        ouvido,
+        confere: mesmaLeitura(leitura, ouvido),
+        medidaConferencia: conferencia.medida
+      };
+    } catch (erro) {
+      saida[nome] = { erro: erro instanceof Error ? erro.message : String(erro) };
+    }
+  }
+  return responder(200, saida);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return responder(405, { erro: 'só POST' });
@@ -265,6 +327,7 @@ Deno.serve(async (req) => {
     const pedido = await req.json().catch(() => ({}));
     if (pedido.action === 'translate') return await traduzir(usuario, pedido);
     if (pedido.action === 'generate') return await gerar(usuario, pedido);
+    if (pedido.action === 'voz-teste') return await vozTeste(usuario, pedido);
     return responder(400, { erro: 'action deve ser translate ou generate' });
   } catch (erro) {
     const status = erro instanceof ErroGemini && erro.status === 429 ? 429 : 500;
