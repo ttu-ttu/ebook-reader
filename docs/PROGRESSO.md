@@ -19,7 +19,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | V1.3      | feito    | 2026-10-21 | toque, painel, carta local, barra verde; falta o teste de 30 toques (👤)    |
 | V1.4      | feito    | 2026-10-21 | Início somando os aparelhos; navegação inferior; raiz abre o Início         |
 | V1.5      | feito    | 2026-10-21 | Fila, geração, edição, Refazer áudio; falta gerar 10 cartas logado (👤)     |
-| V1.6–V1.7 | pendente |            |                                                                             |
+| V1.6      | feito    | 2026-10-21 | .apkg do Lote, Lotes, reexportar, áudio sai após 30 dias; falta Anki (👤)   |
+| V1.7      | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
@@ -242,6 +243,23 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   bucket `audio` com URL assinada de 1 h, marca "confira a voz" na lista e na edição, "Tirar da fila"
   (soft delete), carta exportada só para leitura. A Frase na lista mostra só o `<b>` (o resto do texto
   é escapado). A edição fica bloqueada enquanto a carta gera.
+- 2026-10-21: V1.6 (autônomo, revisar). Regras em `lib/data/cartas/exportar.ts` (testadas): entram as
+  geradas sem Lote (e as com erro, se marcar "Incluir a carta com erro"); nota com os 14 campos do
+  CARDS.md, `[sound:<arquivo do bucket>]`, Frequency em texto, etiquetas `dokusho` e
+  `dokusho::<título>` (livro desconhecido: só `dokusho`); tamanho estimado pelos áudios presentes
+  (36 KB + 279 KB, R5); aviso acima de 100 cartas. `lib/data/cartas/lotes.ts`: baixa os áudios do
+  bucket `audio` (o que faltar sai da nota e é contado), monta com o `gerarApkg` do R1 e só grava o
+  Lote (`lotes`: data, `device_id`, `device_name`) e marca as cartas `exportada` + `lote_id` **depois**
+  que o arquivo é entregue (compartilhar cancelado não marca nada). Dois toques: "Exportar .apkg"
+  monta, "Compartilhar com o Anki"/"Baixar .apkg" entrega (Safari, R1). Aba "Lotes": data, aparelho,
+  cartas, "Baixar este Lote de novo" (com aviso "Importe cada Lote num lugar só" quando o Lote é de
+  outro aparelho). Carta exportada: "Reexportar (sobrescreve o Card no Anki)" volta para gerada sem
+  Lote (se o áudio do Lote já saiu do bucket, refaz o áudio antes). Áudio: ao abrir a Fila, Lotes com
+  mais de 30 dias têm os áudios apagados do bucket (menos os que outra carta ainda usa: mesmo nome de
+  arquivo) e ganham `audio_deleted_at`. Migração `20261021180000_lotes.sql`. Saíram a `/teste/apkg`,
+  o `wav-teste.ts` e a opção `deck` do `gerarApkg`; o R1 no iPhone passa a ser pela exportação de
+  verdade (FASES V1.7 atualizado). Testado no navegador: o .apkg de uma carta abre no sql.js com o deck
+  `日本語::1. Dokusho`, as etiquetas e os campos certos; o Lote aparece na aba.
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
@@ -369,7 +387,9 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [x] Criar a conta, entrar em `/login` e desligar o cadastro (S2)
 - [ ] Colar `supabase/tests/rls_check.sql` no SQL Editor e conferir dono = 1, outro = 0 (S2)
 - [x] R1: importar o Lote de teste no Anki do PC, reimportar e conferir tipos de nota
-- [ ] R1: AnkiMobile e Lote de 100 no iPhone pela PWA (depois de ligar a Vercel); apagar o deck de teste (passo a passo no V1.7 do FASES.md)
+- [ ] R1 e V1.6: no iPhone pela PWA (depois de ligar a Vercel), exportar o Lote das cartas do V1.5
+      para o AnkiMobile; "Baixar este Lote de novo" e reimportar não duplica; no PC, o mesmo com o
+      Anki do Windows (as 10 cartas importam com áudio). Lote de 100 quando a fila tiver 100
 - [x] R2: rodar `/teste/anki` com o Anki aberto
 - [ ] V1.7: pôr a URL de produção no `webCorsOriginList` (docs/ANKI-CONNECT.md)
 - [x] R3: na raiz, `node tools/subir-dicionario.ts` (e-mail e senha no terminal); depois, logado no
