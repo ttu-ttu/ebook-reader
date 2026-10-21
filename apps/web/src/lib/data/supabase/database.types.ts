@@ -214,9 +214,11 @@ export type Database = {
       };
       lotes: {
         Row: {
+          audio_deleted_at: string | null;
           confirmed_in_anki_at: string | null;
           deleted_at: string | null;
           device_id: string;
+          device_name: string | null;
           exported_at: string;
           id: string;
           modified_at: string;
@@ -224,9 +226,11 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          audio_deleted_at?: string | null;
           confirmed_in_anki_at?: string | null;
           deleted_at?: string | null;
           device_id: string;
+          device_name?: string | null;
           exported_at: string;
           id?: string;
           modified_at?: string;
@@ -234,9 +238,11 @@ export type Database = {
           user_id?: string;
         };
         Update: {
+          audio_deleted_at?: string | null;
           confirmed_in_anki_at?: string | null;
           deleted_at?: string | null;
           device_id?: string;
+          device_name?: string | null;
           exported_at?: string;
           id?: string;
           modified_at?: string;
