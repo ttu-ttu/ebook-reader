@@ -13,7 +13,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
 | R3        | quase    | 2026-10-20 | lindera; 32 MB; PC pelo bucket dentro das metas; falta iPhone (👤)          |
 | R4        | feito    | 2026-10-20 | 97,5% do texto acha entrada; 0 Cards sem entrada; regras ajustadas          |
-| R5        | quase    | 2026-10-20 | função no ar; recusa sem usuário ok; falta rodar as 30 cartas e o veredito  |
+| R5        | quase    | 2026-10-21 | cadeia da voz da palavra decidida; falta a rodada final e o veredito        |
 | V1.1–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
@@ -211,7 +211,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 
 ### R5 · Edge Function `gemini` (2026-10-20)
 
-- Testes de regra: 29 (WAV, corte de silêncio, nomes, pedidos, reserva, acesso). ✅
+- Testes de regra: 41 (WAV, corte de silêncio, nomes, pedidos, reserva, acesso, conferência, cadeia). ✅
 - Primeira rodada das 30: todas recusadas pelo gateway. Os tokens do Auth são ES256 (chaves de
   assinatura novas) e o `verify_jwt` do gateway só aceita os antigos (HS256). Corrigido:
   `verify_jwt = false` em `[functions.gemini]` do config.toml; a função confere o login com
@@ -220,9 +220,24 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   `sem login` da própria função. A recusa de outro usuário logado (403) só pelo teste unitário: o cadastro está desligado. ✅
 - 30 cartas: `dicts/r5/cartas.json` (fora do git) com palavras do また、同じ夢を見ていた, várias de leitura
   ambígua (辛い つらい, 開く あく, 風 ふう, 上手い うまい, 一日 いちにち, 明日 あした, 何度, 下手 へた).
-  Preços de `dicts/r5/precos.json` (US$/1M tokens, tabela de out/2026). 👤 Falta rodar e anotar aqui:
-  áudio médio, tokens, custo por 100 cartas, storage por 100 cartas e o veredito (inclusive se a voz lê a
-  instrução de pronúncia em voz alta).
+  Preços de `dicts/r5/precos.json` (US$/1M tokens, tabela de out/2026).
+- Rodada 1 (2026-10-21, voz da palavra com a instrução no texto): 30/30 geradas, 14 s por carta. A voz da
+  palavra **lia a instrução em inglês** ("Say this Japanese word, pronounced...", ~4 s, 190 KB). Vozes das
+  frases ótimas (6,0 s e 282 KB em média). Texto: US$ 0,0024 por carta (765 tokens); voz da frase US$ 0,0014.
+  Muitas chamadas caíram no modelo de reserva `flash-lite-tts` (limite de frequência do principal).
+- Comparação da voz da palavra (20 palavras: 11 de leitura ambígua do livro + 橋/箸/端, 雨/飴, 神/紙, 柿/牡蠣;
+  conferência = o modelo de texto ouve e escreve em hiragana):
+  kanji puro 14/20 (方, 橋, 端, 神, 風 **lidos em chinês**: fang, qiao, duan, shen, feng);
+  kanji + dica de leitura na anotação de estilo (API Interactions) 17/20 (ignorou a dica em 方 かた,
+  明日 あす, 風 ふ; nunca chinês); só kana 18/20 (風 e 橋 provavelmente erro da conferência). No ouvido do
+  Igor, a dica muda o acento entre os pares e parece certo; a kana não tem como saber o acento.
+  ~0,6 s e ~30 KB por voz de palavra.
+- Decisão (custo-benefício): cadeia dica → conferência → kana → marca `confira` (`word_audio_check`).
+  Voz da palavra: US$ 0,00064 por carta (só kana: 0,00022); total ~US$ 0,0045 por carta (+10%), ~US$ 2,7/mês
+  a 20 cartas/dia. ~4,3 chamadas por carta: teto de 300 ≈ 70 cartas/dia. Storage: ~31 MB por 100 cartas.
+- Para o V1.5: mostrar a marca `confira` na fila (ouvir, "Texto para a voz", "Refazer áudio";
+  `refazer: [audio]` limpa a marca). Para o V1.6: o .apkg de 100 cartas fica perto de 31 MB.
+- 👤 Falta a rodada final das 30 com a cadeia e o veredito do texto (significados e traduções).
 
 ## Pendências do usuário
 
@@ -243,8 +258,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] R3: na PWA do iPhone (depois da Vercel), `/teste/dicionario`: baixar, carregar tokenizador,
       "Medir consultas"; anotar em "Testes de risco" › R3 e marcar R3 como feito
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_API_KEY é do projeto pago (R5)
-- [ ] R5: na raiz, `node tools/gerar-cartas-teste.ts` (e-mail e senha no terminal; ~10 min); abrir o
-      `relatorio.html` que ele indica, ouvir e ler as 30 e passar o veredito para o chat
+- [ ] R5: rodada final, `node tools/gerar-cartas-teste.ts` (e-mail e senha; ~10 min); ouvir e ler as 30
+      no `relatorio.html` e dar o veredito do texto e das vozes
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
 ## Sem decisão (da entrevista de 20/10)

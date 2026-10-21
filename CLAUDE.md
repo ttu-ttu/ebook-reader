@@ -40,7 +40,8 @@ desfazer um ADR sem um novo ADR).
 - Edge Function: npx supabase functions deploy gemini --use-api (sem Docker). Secrets de configuração:
   GEMINI_MODELOS_TEXTO e GEMINI_MODELOS_TTS (listas com reserva, separadas por vírgula),
   GEMINI_TETO_DIARIO. Lógica pura em supabase/functions/gemini/\*.ts sem imports (testada pelo vitest);
-  só o index.ts usa Deno.
+  só o index.ts usa Deno. verify_jwt = false em toda função (os tokens do Auth são ES256 e o gateway
+  só aceita os antigos); a função confere o login com auth.getUser.
 - Cartas de teste (R5): node tools/gerar-cartas-teste.ts [dicts/r5] (pede e-mail e senha; quem roda é
   o usuário); lê cartas.json e precos.json da pasta e grava relatorio.html.
 - Referência do genanki (R1): py -3.14 -m venv tools/.venv; tools/.venv/Scripts/python -m pip

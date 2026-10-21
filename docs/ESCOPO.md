@@ -215,7 +215,7 @@ Termos: **Carta** é o item da fila no app; **Card** é o que existe no Anki.
 
 **Significado e tradução:** um só pedido ao Gemini devolve a tradução da frase e o significado da palavra, em português do Brasil natural mas próximo da estrutura. O pedido leva a frase anterior e a seguinte só como contexto. A glosa em inglês do dicionário fica no painel e não vai para a carta (ADR 0009).
 
-**Áudio:** o Gemini devolve PCM (24 kHz, 16 bits, mono); a Edge Function acrescenta o cabeçalho WAV e corta o silêncio das pontas. A voz da palavra lê só a leitura em kana (instrução junto do texto é lida em voz alta; R5). A carta tem o campo opcional "Texto para a voz" (em kana) e o botão "Refazer áudio". O áudio fica no bucket até 30 dias depois de o Lote ser baixado; reexportar depois disso gera o áudio de novo.
+**Áudio:** o Gemini devolve PCM (24 kHz, 16 bits, mono); a Edge Function acrescenta o cabeçalho WAV e corta o silêncio das pontas. A voz da palavra sai em cadeia: a palavra escrita com a leitura como dica (dá o acento), conferida por um modelo que ouve o áudio; se a leitura não bate, a voz lê a kana; se nem assim bate, a carta fica marcada "confira a voz" na fila (CARDS.md; R5). A carta tem o campo opcional "Texto para a voz" (em kana) e o botão "Refazer áudio". O áudio fica no bucket até 30 dias depois de o Lote ser baixado; reexportar depois disso gera o áudio de novo.
 
 **Etiquetas:** `dokusho` e `dokusho::<título do livro>` (espaços trocados por `_`).
 

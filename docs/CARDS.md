@@ -45,8 +45,8 @@ Confira a leitura de cada kanji: furigana errado no card ensina errado, e um kan
 
 - Gemini TTS, voz Orus, pela Edge Function `gemini`. Os nomes dos modelos ficam na configuração da função, com lista de reserva.
 - O Gemini devolve PCM (24 kHz, 16 bits, mono); a função grava WAV (cabeçalho de 44 bytes) com o silêncio das pontas cortado. Sem conversão para MP3.
-- Nome do arquivo: `leituras-<sha1("Orus|" + texto)[:12]>.wav`, o que evita colisão com a mídia do Kaishi. `texto` é o que vai ao TTS: na palavra, a leitura em kana (palavras com a mesma leitura dividem o arquivo, que tem o mesmo som); na frase, a frase sem HTML ou o "Texto para a voz".
-- A voz da palavra lê só a leitura em kana (`つらい` para 辛い); a da frase, a frase sem HTML. Instrução de pronúncia junto do texto não serve: o TTS lê a instrução em voz alta (R5). Quando a voz ainda erra (大家さん lido たいか), o campo "Texto para a voz" da carta recebe o trecho em kana (`おおやさんはすぐに濃いコーヒーを作ってくれた。`) e "Refazer áudio" gera de novo.
+- Nome do arquivo: `leituras-<sha1("Orus|" + texto)[:12]>.wav`, o que evita colisão com a mídia do Kaishi. `texto` é o que a voz recebeu: na palavra pela dica, `palavra（leitura）`; na palavra pela kana, a leitura; na frase, a frase sem HTML ou o "Texto para a voz".
+- Voz da palavra, em cadeia (R5): (1) **dica**: a voz lê a palavra escrita (`辛い`) com a leitura como dica fora do texto falado (anotação de estilo da API Interactions), o que dá o acento da palavra; (2) a **conferência**: o modelo de texto ouve o áudio e escreve em hiragana o que ouviu; se bate com a leitura, fica; (3) senão, **kana**: a voz lê só a leitura (`つらい`), com nova conferência; (4) se nem a kana bate, fica a kana com a marca **confira** (`word_audio_check`), que a fila mostra. Instrução junto do texto falado não serve (o TTS a lê em voz alta), e o kanji sozinho às vezes sai lido em chinês. A voz da frase lê a frase sem HTML. Quando a voz ainda erra (大家さん lido たいか), o campo "Texto para a voz" da carta recebe o trecho em kana (`おおやさんはすぐに濃いコーヒーを作ってくれた。`) e "Refazer áudio" gera de novo.
 
 ## Modelo do tipo de nota
 
