@@ -26,7 +26,9 @@ export type Database = {
           modified_at: string;
           notes: string | null;
           sentence: string;
+          sentence_after: string | null;
           sentence_audio_path: string | null;
+          sentence_before: string | null;
           sentence_furigana: string | null;
           sentence_meaning: string | null;
           state: string;
@@ -50,7 +52,9 @@ export type Database = {
           modified_at?: string;
           notes?: string | null;
           sentence: string;
+          sentence_after?: string | null;
           sentence_audio_path?: string | null;
+          sentence_before?: string | null;
           sentence_furigana?: string | null;
           sentence_meaning?: string | null;
           state?: string;
@@ -74,7 +78,9 @@ export type Database = {
           modified_at?: string;
           notes?: string | null;
           sentence?: string;
+          sentence_after?: string | null;
           sentence_audio_path?: string | null;
+          sentence_before?: string | null;
           sentence_furigana?: string | null;
           sentence_meaning?: string | null;
           state?: string;
@@ -436,7 +442,45 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      gemini_reservar: {
+        Args: { p_n: number; p_teto: number; p_user: string };
+        Returns: number;
+      };
+      gemini_travar: {
+        Args: { p_id: string; p_user: string };
+        Returns: {
+          book_id: string | null;
+          deleted_at: string | null;
+          error_reason: string | null;
+          frequency: number | null;
+          id: string;
+          jmdict_id: number | null;
+          lote_id: string | null;
+          modified_at: string;
+          notes: string | null;
+          sentence: string;
+          sentence_after: string | null;
+          sentence_audio_path: string | null;
+          sentence_before: string | null;
+          sentence_furigana: string | null;
+          sentence_meaning: string | null;
+          state: string;
+          updated_at: string;
+          user_id: string;
+          voice_text: string | null;
+          word: string;
+          word_audio_path: string | null;
+          word_furigana: string | null;
+          word_meaning: string | null;
+          word_reading: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'batch_items';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
     };
     Enums: {
       [_ in never]: never;
