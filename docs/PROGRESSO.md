@@ -238,6 +238,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - Para o V1.5: mostrar a marca `confira` na fila (ouvir, "Texto para a voz", "Refazer áudio";
   `refazer: [audio]` limpa a marca). Para o V1.6: o .apkg de 100 cartas fica perto de 31 MB.
 - 👤 Falta a rodada final das 30 com a cadeia e o veredito do texto (significados e traduções).
+- `GEMINI_TETO_DIARIO` está em **2000** durante os testes (a rodada final bateu nos 300 do dia, gastos
+  nos testes anteriores). Voltar para 300 ao fechar o R5: `npx supabase secrets set GEMINI_TETO_DIARIO=300`.
 
 ## Pendências do usuário
 
