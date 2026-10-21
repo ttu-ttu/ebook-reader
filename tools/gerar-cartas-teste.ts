@@ -67,7 +67,16 @@ const saida = join(pasta, new Date().toISOString().replace(/[:.]/g, '-').slice(0
 mkdirSync(saida, { recursive: true });
 
 type Uso = { entrada: number; saida: number; total: number };
-type Medida = { modelo: string; uso: Uso; bytes?: number; segundos?: number };
+type Medida = {
+  modelo: string;
+  uso: Uso;
+  bytes?: number;
+  segundos?: number;
+  // Voz da palavra: a cadeia dica → conferência → kana devolve as chamadas em partes.
+  partes?: Medida[];
+  via?: 'dica' | 'kana' | 'confira';
+  tentativas?: { via: string; ouvido?: string; erro?: string }[];
+};
 type Resultado = Entrada & {
   id: string;
   estado: string;
@@ -80,7 +89,8 @@ type Resultado = Entrada & {
   medidas: Record<string, Medida>;
 };
 
-const custo = (m?: Medida) => {
+const custo = (m?: Medida): number => {
+  if (m?.partes) return m.partes.reduce((s, parte) => s + custo(parte), 0);
   const p = m && precos[m.modelo];
   return p ? (m.uso.entrada * p.entrada + (m.uso.total - m.uso.entrada) * p.saida) / 1e6 : 0;
 };
@@ -159,6 +169,7 @@ for (const [i, carta] of cartas.entries()) {
   console.log(
     `${i + 1}/${cartas.length} ${carta.word} ${resultado.estado} ${segundosGeracao.toFixed(1)} s` +
       (total ? ` US$ ${total.toFixed(5)}` : '') +
+      (resultado.medidas.palavra?.via ? ` voz da palavra: ${resultado.medidas.palavra.via}` : '') +
       (resultado.motivo ? ` (${resultado.motivo})` : '')
   );
   if (resultado.motivo?.startsWith('403')) {
@@ -207,10 +218,22 @@ const resumo = {
   segundosPalavra: media((r) => r.medidas.palavra?.segundos ?? 0),
   segundosFrase: media((r) => r.medidas.frase?.segundos ?? 0),
   tokensTexto: media((r) => r.medidas.texto?.uso.total ?? 0),
-  tokensPalavra: media((r) => r.medidas.palavra?.uso.total ?? 0),
+  tokensPalavra: media((r) => r.medidas.palavra?.partes?.reduce((s, m) => s + m.uso.total, 0) ?? 0),
   tokensFrase: media((r) => r.medidas.frase?.uso.total ?? 0),
   custoPorCarta: media((r) => Object.values(r.medidas).reduce((s, m) => s + custo(m), 0)),
-  modelos: [...new Set(geradas.flatMap((r) => Object.values(r.medidas).map((m) => m.modelo)))]
+  modelos: [
+    ...new Set(
+      geradas.flatMap((r) =>
+        Object.values(r.medidas).flatMap((m) => (m.partes ?? [m]).map((p) => p.modelo))
+      )
+    )
+  ],
+  vias: Object.fromEntries(
+    (['dica', 'kana', 'confira'] as const).map((v) => [
+      v,
+      geradas.filter((r) => r.medidas.palavra?.via === v).length
+    ])
+  )
 };
 writeFileSync(join(saida, 'medidas.json'), JSON.stringify({ resumo, resultados }, null, 1));
 
@@ -224,12 +247,19 @@ const linhas = resultados
 <td class="ja"><b>${html(r.word)}</b><br>${html(r.reading)}</td>
 <td>${html(r.significado)}${r.motivo ? `<p class="erro">${html(r.motivo)}</p>` : ''}</td>
 <td><span class="ja">${negrito(r.sentence)}</span><br>${html(r.traducao)}</td>
-<td>${r.audioPalavra ? `<audio controls preload="none" src="${r.audioPalavra}"></audio>` : ''}</td>
+<td>${r.audioPalavra ? `<audio controls preload="none" src="${r.audioPalavra}"></audio>` : ''}${vozDaPalavra(r.medidas.palavra)}</td>
 <td>${r.audioFrase ? `<audio controls preload="none" src="${r.audioFrase}"></audio>` : ''}</td>
 </tr>`
   )
   .join('\n');
 const por100 = (x: number) => x * 100;
+function vozDaPalavra(m?: Medida) {
+  if (!m?.via) return '';
+  const passos = (m.tentativas ?? [])
+    .map((t) => `${t.via}: ${t.erro ? 'erro' : 'ouviu ' + t.ouvido}`)
+    .join('; ');
+  return `<br><span class="${m.via === 'confira' ? 'erro' : ''}">${m.via}</span> <small>(${html(passos)})</small>`;
+}
 writeFileSync(
   join(saida, 'relatorio.html'),
   `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>R5 · cartas de teste</title>
@@ -244,6 +274,7 @@ audio{width:160px}
 <li>Áudio médio: palavra ${kb(resumo.bytesPalavra)} (${resumo.segundosPalavra.toFixed(1)} s), frase ${kb(resumo.bytesFrase)} (${resumo.segundosFrase.toFixed(1)} s); por 100 cartas: ${(por100(resumo.bytesPalavra + resumo.bytesFrase) / 1024 / 1024).toFixed(1)} MB</li>
 <li>Tokens médios: texto ${resumo.tokensTexto.toFixed(0)}, voz da palavra ${resumo.tokensPalavra.toFixed(0)}, voz da frase ${resumo.tokensFrase.toFixed(0)}</li>
 <li>Custo médio por carta: US$ ${resumo.custoPorCarta.toFixed(5)}; por 100 cartas: US$ ${por100(resumo.custoPorCarta).toFixed(3)}${Object.keys(precos).length ? '' : ' (sem precos.json)'}</li>
+<li>Voz da palavra: dica ${resumo.vias.dica}, kana ${resumo.vias.kana}, confira ${resumo.vias.confira}</li>
 <li>Geração: ${resumo.segundosGeracao.toFixed(1)} s por carta; modelos: ${html(resumo.modelos.join(', '))}</li>
 </ul>
 <table><tr><th>#</th><th>Palavra</th><th>Significado</th><th>Frase e tradução</th><th>Voz da palavra</th><th>Voz da frase</th></tr>
