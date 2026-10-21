@@ -25,7 +25,8 @@ module.exports = (async () => {
         '**/vite.config.js',
         '**/eslint.config.js',
         '**/tailwind.config.cjs',
-        'tools/**'
+        'tools/**',
+        'supabase/functions/**'
       ]
     },
     {
