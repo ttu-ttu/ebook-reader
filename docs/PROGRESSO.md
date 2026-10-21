@@ -105,6 +105,10 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   a mais frequente (`candidatas` traz as outras). `Pedaco` ganhou `subclasse` (detalhes[1] do IPADIC).
   `ordenarPorFrequencia` exportado do banco.ts. Medição em `casamento.medicao.test.ts` (pulada sem
   `MEDIR_CASAMENTO`; lê `dicts/saida/`, o EPUB e o AnkiConnect pelo Node, sem CORS).
+- 2026-10-20: ADR 0013 (substitui a leitura do ADR 0008): texto e Anki casam pela entrada (seq) com
+  qualquer leitura; a leitura só escolhe a entrada no texto. `indexarAnki(palavras)` → seq → leituras do
+  Anki; `noAnki(indice, palavra)` → `{ leituras, outraLeitura }` ou undefined. O painel do V2.2 mostra
+  "no Anki como <leitura>" quando `outraLeitura`; "Já sei" vale para a entrada (V2.2).
 - 2026-10-20: o servidor do Vite manda `.gz` com `Content-Encoding: gzip` e o navegador já entrega
   descompactado; `prepararArquivo` olha os bytes mágicos antes de descompactar.
 - 2026-10-20: o `pnpm dev` de outro chat na mesma pasta ocupa a 5173 e o novo sobe na 5174, que não
@@ -180,11 +184,12 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - Primeira rodada (antes dos ajustes): Card em kana ligava todas as entradas da leitura (さん → 12,
   incluindo 三; こう → 51); só pela escrita, なる ×347 deixava de casar (o texto escolhe 成る). Potencial
   (会える, 書ける) sem entrada; お ×475 e せる (de させる) ×73 contavam como palavra.
-- Sem decisão: 16 Palavras (171 ocorrências) caem na mesma entrada de um Card com **outra leitura**:
+- 16 Palavras (171 ocorrências) caem na mesma entrada de um Card com **outra leitura**:
   皆 みな × みんな ×66, じゃあ × じゃ ×40, こっち × こちら, とっても × とても, どっち, あんまり,
   入り口 いりくち (leitura errada do IPADIC), 日本 にっぽん, 一言 いちげん (idem). Quase todas são a mesma
-  palavra; falsas: しかして × そして, せる × 迫る (×1). O ADR 0008 pede a mesma leitura; aceitar a mesma
-  entrada com qualquer leitura pede um ADR novo (decidir até o V2.1).
+  palavra; falsas: しかして × そして, せる × 迫る (×1). Decidido no ADR 0013: casa pela entrada com
+  qualquer leitura. Com ele: **1102 Palavras** do livro no Anki (1086 pela regra antiga), 24.613
+  ocorrências (73,8% do conteúdo); pela escrita seriam 1068 (JMdict ganha 60, perde 26).
 
 ## Pendências do usuário
 
@@ -208,9 +213,6 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
 ## Sem decisão (da entrevista de 20/10)
-
-- R4: casar pela entrada do JMdict com qualquer leitura (ganha 171 ocorrências no livro de teste, quase
-  todas certas) ou manter a mesma leitura do ADR 0008. Decidir antes do V2.1.
 
 - Modo de leitura no PC; como mostrar a barra do topo onde não há rolagem (modo de páginas, começo de
   capítulo): decidir no V1.3 (sugestão: faixa do topo ou mouse no topo).

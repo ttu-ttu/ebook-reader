@@ -17,7 +17,7 @@ O registro central das Palavras e dos seus Estados, alimentado pela Sincronizaç
 _Avoid_: banco de vocabulário
 
 **Já sei**:
-A marca que você dá no app a uma Palavra que conhece mas que não está no Anki; conta como conhecida.
+A marca que você dá no app a uma Palavra que conhece mas que não está no Anki; conta como conhecida e vale para todas as leituras da mesma entrada do JMdict.
 _Avoid_: ignorar, conhecida manual
 
 **Cobertura**:

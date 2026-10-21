@@ -178,7 +178,7 @@ Resultados de cada teste vão para docs/PROGRESSO.md, na seção "Testes de risc
 
 ## 2. v2
 
-### V2.1 · Sincronizar Anki e estados (usa R2 e R4; ADR 0007, 0008)
+### V2.1 · Sincronizar Anki e estados (usa R2 e R4; ADR 0007, 0008, 0013)
 
 - Botão "Sincronizar Anki" (só Windows): `sync` do AnkiWeb antes, leitura completa dos decks, cálculo
   de estado com testes primeiro (incluindo leech), upsert em vocab, soft delete do que sumiu, retrato em
@@ -187,7 +187,8 @@ Resultados de cada teste vão para docs/PROGRESSO.md, na seção "Testes de risc
 ### V2.2 · Destaque no texto, "Já sei" e aviso na fila
 
 - Destaque por estado (sem gramática); botão "Já sei"; importação inicial por frequência JPDB; aviso
-  ao criar carta de palavra já no Anki; "na fila" / "exportada em" no painel.
+  ao criar carta de palavra já no Anki; "na fila" / "exportada em" no painel; "no Anki como <leitura>"
+  quando o Card da entrada tem outra leitura; "Já sei" por entrada (ADR 0013).
 
 ### V2.3 · Cobertura por livro e lista de desconhecidas por frequência
 

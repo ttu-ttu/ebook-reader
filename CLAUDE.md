@@ -62,7 +62,7 @@ desfazer um ADR sem um novo ADR).
 - Estados do hub: conhecida (suspenso sem etiqueta `leech`, intervalo >= 21 dias, ou "Já sei"),
   aprendendo (ativo com intervalo < 21 dias, inclusive novos, ou suspenso com `leech`),
   desconhecida (fora do Anki e sem "Já sei"). Vale o estado mais avançado. Texto e Anki casam pela
-  entrada do JMdict (ADR 0008). Gramática fora da cobertura.
+  entrada do JMdict, com qualquer leitura (ADR 0008, 0013). Gramática fora da cobertura.
 - AnkiConnect: nunca `getDeckStats` (cria deck quando o nome não existe). `webCorsOriginList` só
   com as URLs exatas, nunca `*`. O cliente (functions/anki/anki-connect.ts) só aceita uma lista
   fixa de ações de leitura mais `sync`; configuração em docs/ANKI-CONNECT.md.
