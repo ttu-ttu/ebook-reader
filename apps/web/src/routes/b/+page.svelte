@@ -120,6 +120,7 @@
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
   import { sincronizador } from '$lib/data/supabase/sincronizacao/iniciar';
+  import LeitorDokusho from '$lib/components/painel-palavra/leitor-dokusho.svelte';
   import { textoMarcadorRemoto } from '$lib/data/supabase/sincronizacao/regras';
   import NumberDialog from '$lib/components/number-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
@@ -186,6 +187,7 @@
 
   let showSpinner = true;
   let showHeader = false;
+  let leitorDokusho: LeitorDokusho | undefined;
   let isBookmarkScreen = false;
   let showFooter = true;
   let exploredCharCount = 0;
@@ -1641,6 +1643,12 @@
         showHeader = false;
         tocIsOpen$.next(true);
       }}
+      on:desmarcarClick={async () => {
+        showHeader = false;
+        await leitorDokusho?.desmarcarAPartirDaqui();
+        // O marcador leva o Alcance novo aos outros aparelhos.
+        await bookmarkPage();
+      }}
       on:jumpClick={handleJump}
       on:completeBook={completeBook}
       on:setCustomReadingPoint={handleSetCustomReadingPoint}
@@ -1775,6 +1783,17 @@
     bind:showCustomReadingPoint
     on:bookmark={bookmarkPage}
     on:trackerPause={() => pauseTracker(true)}
+  />
+  <LeitorDokusho
+    titulo={$rawBookData$.title}
+    htmlContent={$bookData$.htmlContent}
+    {exploredCharCount}
+    verticalMode={$verticalMode$}
+    {isPaginated}
+    corFundo={$backgroundColor$}
+    corTexto={$themeOption$?.fontColor ?? 'rgba(0, 0, 0, 0.87)'}
+    bind:mostrarBarra={showHeader}
+    bind:this={leitorDokusho}
   />
   {$initBookmarkData$ ?? ''}
   {$setBackgroundColor$ ?? ''}

@@ -5,6 +5,7 @@
     faBookmark as fasBookmark,
     faCrosshairs,
     faExpand,
+    faEraser,
     faFlag,
     faList,
     faRotateLeft,
@@ -36,6 +37,7 @@
 
   const dispatch = createEventDispatcher<{
     tocClick: void;
+    desmarcarClick: void;
     bookmarkClick: void;
     scrollToBookmarkClick: void;
     jumpClick: void;
@@ -146,6 +148,16 @@
   </div>
 
   <div class="flex transform-gpu {translateXHeaderFa}">
+    <div
+      tabindex="0"
+      role="button"
+      title="Desmarcar a partir daqui"
+      class={baseIconClasses}
+      on:click={() => dispatch('desmarcarClick')}
+      on:keyup={dummyFn}
+    >
+      <Fa icon={faEraser} />
+    </div>
     <div
       tabindex="0"
       role="button"

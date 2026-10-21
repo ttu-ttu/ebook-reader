@@ -217,3 +217,27 @@
     url('$lib/assets/fonts/ShipporiMincho-Bold.woff2') format('woff2'),
     url('$lib/assets/fonts/ShipporiMincho-Bold.woff') format('woff');
 }
+
+// Dokusho: palavra selecionada pelo toque (CSS Custom Highlight API) e barra verde dos parágrafos
+// lidos pelo Alcance (V1.3). A barra fica no começo da linha: à esquerda no horizontal, em cima no
+// vertical; não muda o layout (o ttu conta os caracteres pelo layout).
+::highlight(dokusho-selecao) {
+  background-color: rgba(255, 214, 92, 0.75);
+  color: inherit;
+}
+
+.book-content .dokusho-lido {
+  position: relative;
+}
+
+.book-content .dokusho-lido::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -8px;
+  inset-block-start: 0.3em;
+  inset-block-end: 0.3em;
+  inline-size: 3px;
+  border-radius: 2px;
+  background: #3a9866;
+  pointer-events: none;
+}
