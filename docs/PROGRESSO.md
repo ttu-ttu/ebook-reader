@@ -17,7 +17,9 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | V1.1      | feito    | 2026-10-21 | sincronização por linha (ADR 0014); falta o teste em dois aparelhos (👤)    |
 | V1.2      | feito    | 2026-10-21 | 103/103 formas com o JMdict inteiro; falta medir no iPhone (👤)             |
 | V1.3      | feito    | 2026-10-21 | toque, painel, carta local, barra verde; falta o teste de 30 toques (👤)    |
-| V1.4–V1.7 | pendente |            |                                                                             |
+| V1.4      | feito    | 2026-10-21 | Início somando os aparelhos; navegação inferior; raiz abre o Início         |
+| V1.5      | feito    | 2026-10-21 | Fila, geração, edição, Refazer áudio; falta gerar 10 cartas logado (👤)     |
+| V1.6–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
@@ -219,6 +221,27 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   (substituindo o `requestAnimationFrame`, que não roda com a janela oculta): 食べた → 食べる,
   気がついた → 気がつく, 漢字 com o furigana do livro, setas, pontuação fechando, carta gravada como o
   CARDS.md pede.
+- 2026-10-21: V1.4 (autônomo, revisar). Rota `/inicio` (a raiz `/` passou a abrir o Início; o ttu
+  abria o último livro). Navegação inferior (`lib/components/navegacao/`) em Início, Biblioteca
+  (`/manage`) e Fila, com o número de cartas na fila; Vocabulário aparece desativado (v2). Contas em
+  `lib/data/estatisticas/inicio.ts` (testadas): soma das linhas por dia e livro (as do ttu, que são
+  deste aparelho, mais as dos outros aparelhos da sincronização), semana de segunda a domingo com
+  setas, 7/30 dias/tudo (desde o primeiro dia lido), uma barra por dia (acima de 60 dias, por semana),
+  lista por livro (com a capa do ttu; livro de outro aparelho que já foi apagado aparece como "Livro
+  apagado"). Meta: a do ttu (`readingGoal$`, janela diária/semanal/mensal pelo `getReadingGoalWindow`),
+  tempo e/ou caracteres; "Definir meta" abre Configurações na aba Statistics (`/settings?aba=`). Dias
+  pela chave do ttu (com a hora de virada do dia das configurações). Tela clara, sem tema escuro.
+- 2026-10-21: V1.5 (autônomo, revisar). Rota `/fila` (lista "Na fila") e `/fila?carta=<id>` (edição).
+  Geração em `lib/data/cartas/geracao.ts` (testada): uma carta por vez, só com rede e login;
+  sincroniza antes (a carta tem que estar no servidor) e depois (traz os campos); 409 `ocupada` fica
+  para depois; as 3 tentativas ficam na função (R5). Gatilhos: ao abrir o app, ao voltar a rede, ao
+  criar a carta no painel e ao abrir a Fila. "Tentar de novo" e "Refazer áudio" voltam a carta para
+  `pendente` (a trava da função só aceita pendente/erro) e chamam `generate` (com `refazer: ['audio']`
+  no segundo, levando o "Texto para a voz"). Edição: cada campo com a origem (dicionário, livro,
+  JmdictFurigana, Gemini, JPDB, você, vazio), gravação ao sair do campo (LWW por linha), áudios pelo
+  bucket `audio` com URL assinada de 1 h, marca "confira a voz" na lista e na edição, "Tirar da fila"
+  (soft delete), carta exportada só para leitura. A Frase na lista mostra só o `<b>` (o resto do texto
+  é escapado). A edição fica bloqueada enquanto a carta gera.
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
@@ -361,6 +384,9 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
       dois e conferir a soma do tempo (V1.4); apagar um livro e ver sumir no outro
 - [ ] V1.3: teste de 30 toques no iPhone (horizontal com rolagem) e no PC (modo que for usar);
       anotar quantas seleções saíram erradas em "Testes de risco"
+- [ ] V1.4: conferir os números do Início contra a tela de estatísticas do ttu (um aparelho só)
+- [ ] V1.5: logado, criar 10 cartas no leitor e ver as 10 virarem "gerada" com significado em
+      português e os dois áudios; editar uma; "Refazer áudio" numa
 
 ## Sem decisão (da entrevista de 20/10)
 
