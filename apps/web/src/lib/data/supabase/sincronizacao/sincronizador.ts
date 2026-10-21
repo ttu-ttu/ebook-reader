@@ -330,6 +330,13 @@ export class Sincronizador {
     if (mapa) await sinc.put('alcances', { valor, baixadoEm: Date.now() }, mapa.id);
   }
 
+  /** Hash → título dos livros conhecidos (inclusive os só na nuvem). */
+  async titulosDosLivros() {
+    const sinc = await this.opcoes.sinc;
+
+    return new Map((await sinc.getAll('livros')).map((livro) => [livro.id, livro.titulo]));
+  }
+
   /** Estatísticas dos outros aparelhos num intervalo de datas (inclusive). */
   async estatisticasDeOutrosAparelhos(inicio = '', fim = '￿') {
     const sinc = await this.opcoes.sinc;
