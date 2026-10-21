@@ -271,6 +271,15 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   backup: há N dias" (por aparelho). **Falta**: mensagem "servidor pausado; reative no painel" (ideia:
   erro de rede com navigator.onLine → aviso com o link do painel, ref tirado do PUBLIC_SUPABASE_URL);
   tudo o que é 👤 (Vercel, subdomínio, redirect do Auth, webCorsOriginList, testes no iPhone).
+- 2026-10-21: o teto diário de 300 bateu ao criar cartas: `GEMINI_TETO_DIARIO` subiu para 100000
+  (na prática, sem teto) a pedido do Igor, por enquanto. A Fila e o "Traduzir frase" agora mostram a
+  mensagem da função (ex.: "teto diário … atingido") em vez de "non-2xx status code". Cartas que
+  ficaram em erro pelo teto voltam com "Tentar de novo".
+- 2026-10-21: modo escuro (pedido do Igor): cores do protótipo D1 como variáveis `--dk-*` no
+  app.scss, escuras com o sistema em modo escuro; Configurações › Data › Aparência escolhe Sistema,
+  Claro ou Escuro (`lib/data/tema.ts`, aplicado no app.html antes de desenhar). Vale para Início,
+  Fila, edição, navegação e as telas do ttu que usam --background-color/--font-color (Biblioteca,
+  Configurações). O leitor e o painel da palavra seguem o tema do ttu (aba Reader).
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
@@ -393,6 +402,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Reorganizar docs/: PROGRESSO.md está longo; mover as 'Decisões' e 'Testes de risco' já
       resolvidas para um histórico (ou ADRs) e deixar no PROGRESSO só estado e pendências
 - [ ] V1.7: terminar a mensagem de servidor pausado (próximo chat)
+- [ ] Voltar o teto do Gemini: `npx supabase secrets set GEMINI_TETO_DIARIO=300` (hoje está 100000)
 
 - [x] docs/CARDS.md
 - [x] apps/web/.env com URL e anon key
