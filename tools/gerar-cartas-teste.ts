@@ -1,12 +1,12 @@
 // Teste do R5: gera cartas pela Edge Function gemini e grava um relatório para ouvir e ler.
-// Uso (na raiz): node tools/gerar-cartas-teste.ts [pasta]   (padrão: dicts/r5)
+// Uso (na raiz): node tools/gerar-cartas-teste.ts [pasta] [--continuar] [--manter]   (pasta: dicts/r5)
 // Lê <pasta>/cartas.json ([{ word, reading, sentence (com <b>), before, after }]) e, se existir,
 // <pasta>/precos.json ({ "<modelo>": { "entrada": US$/1M, "saida": US$/1M } }). Pede e-mail e senha
 // no terminal; lê a URL e a anon key de apps/web/.env. Grava em <pasta>/<data-hora>/: os WAV,
 // medidas.json e relatorio.html. No fim, marca as cartas como apagadas e tira os áudios do bucket
 // (--manter deixa tudo lá). Fora do git: as frases são do livro.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { argv, stdin, stdout } from 'node:process';
@@ -26,6 +26,8 @@ const env = Object.fromEntries(
 );
 
 const manter = argv.includes('--manter');
+// --continuar: grava na pasta da última rodada e reaproveita as cartas que ela já gerou.
+const continuar = argv.includes('--continuar');
 const pasta = join(raiz, argv.slice(2).find((a) => !a.startsWith('--')) ?? 'dicts/r5');
 type Entrada = {
   word: string;
@@ -63,7 +65,14 @@ const senha = await perguntar('Senha: ', true);
 const { error: erroLogin } = await supabase.auth.signInWithPassword({ email, password: senha });
 if (erroLogin) throw erroLogin;
 
-const saida = join(pasta, new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19));
+const anterior = continuar
+  ? readdirSync(pasta)
+      .filter((d) => /^d{4}-/.test(d) && existsSync(join(pasta, d, 'medidas.json')))
+      .sort()
+      .at(-1)
+  : undefined;
+if (continuar && !anterior) throw new Error('Nenhuma rodada anterior com medidas.json');
+const saida = join(pasta, anterior ?? new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19));
 mkdirSync(saida, { recursive: true });
 
 type Uso = { entrada: number; saida: number; total: number };
@@ -87,6 +96,7 @@ type Resultado = Entrada & {
   audioPalavra?: string;
   audioFrase?: string;
   medidas: Record<string, Medida>;
+  reaproveitada?: boolean;
 };
 
 const custo = (m?: Medida): number => {
@@ -117,9 +127,21 @@ async function corpoDoErro(erro: { context?: Response; message: string } | null)
   }
 }
 
+const jaGeradas: Resultado[] = anterior
+  ? JSON.parse(readFileSync(join(saida, 'medidas.json'), 'utf8')).resultados.filter(
+      (r: Resultado) => r.estado === 'gerada'
+    )
+  : [];
+if (anterior) console.log(`Continuando ${anterior}: ${jaGeradas.length} cartas já geradas.`);
+
 const resultados: Resultado[] = [];
 let errosSeguidos = 0;
 for (const [i, carta] of cartas.entries()) {
+  const feita = jaGeradas.find((r) => r.word === carta.word && r.sentence === carta.sentence);
+  if (feita) {
+    resultados.push({ ...feita, reaproveitada: true });
+    continue;
+  }
   const { data: linha, error } = await supabase
     .from('batch_items')
     .insert({
@@ -237,7 +259,8 @@ const resumo = {
 };
 writeFileSync(join(saida, 'medidas.json'), JSON.stringify({ resumo, resultados }, null, 1));
 
-const html = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const html = (s?: string | null) =>
+  (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const negrito = (s: string) => html(s).replace(/&lt;b&gt;(.*?)&lt;\/b&gt;/g, '<b>$1</b>');
 const kb = (b: number) => `${(b / 1024).toFixed(0)} KB`;
 const linhas = resultados
