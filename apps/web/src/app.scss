@@ -274,8 +274,21 @@
 // lidos pelo Alcance (V1.3). A barra fica no começo da linha: à esquerda no horizontal, em cima no
 // vertical; não muda o layout (o ttu conta os caracteres pelo layout).
 ::highlight(dokusho-selecao) {
-  background-color: rgba(255, 214, 92, 0.75);
+  background-color: rgba(255, 210, 70, 0.5);
   color: inherit;
+}
+
+// Leitura no celular como no protótipo D1: margens largas, espaço entre parágrafos e folga no fim
+// para o painel da palavra não cobrir as últimas linhas.
+@media (max-width: 767px) {
+  .book-content--writing-horizontal-rl {
+    padding-inline: 14px;
+    padding-bottom: 55vh;
+  }
+
+  .book-content--writing-horizontal-rl p {
+    margin-block-end: 1.15em;
+  }
 }
 
 .book-content .dokusho-lido {
@@ -285,9 +298,9 @@
 .book-content .dokusho-lido::before {
   content: '';
   position: absolute;
-  inset-inline-start: -8px;
-  inset-block-start: 0.3em;
-  inset-block-end: 0.3em;
+  inset-inline-start: -14px;
+  inset-block-start: 0.5em;
+  inset-block-end: 0.5em;
   inline-size: 3px;
   border-radius: 2px;
   background: #3a9866;

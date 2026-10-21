@@ -5,6 +5,7 @@
  */
 
 import { BehaviorSubject } from 'rxjs';
+import { theme$ } from '$lib/data/store';
 
 // Tema das telas do Dokusho (como no protótipo D1): segue o sistema, ou fica claro ou escuro. O
 // app.html aplica antes de desenhar (sem piscar claro); aqui é a escolha nas Configurações.
@@ -37,4 +38,13 @@ export function escolherTema(tema: Tema) {
   else document.documentElement.dataset.tema = tema;
 
   tema$.next(tema);
+
+  // O leitor acompanha, se estiver num dos dois temas padrão do ttu (um tema próprio fica).
+  const escuro =
+    tema === 'escuro' ||
+    (tema === 'sistema' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  if (['light-theme', 'dark-theme'].includes(theme$.getValue())) {
+    theme$.next(escuro ? 'dark-theme' : 'light-theme');
+  }
 }
