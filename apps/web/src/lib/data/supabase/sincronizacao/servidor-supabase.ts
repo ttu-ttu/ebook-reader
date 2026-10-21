@@ -13,14 +13,20 @@ const CONFLITO: Record<TabelaSinc, string> = {
   books: 'user_id,id',
   bookmarks: 'user_id,book_id',
   reading_stats: 'user_id,book_id,date_key,device_id',
-  reading_goals: 'user_id,goal_start_date'
+  reading_goals: 'user_id,goal_start_date',
+  batch_items: 'user_id,id',
+  lotes: 'user_id,id',
+  translations: 'user_id,sentence_sha256'
 };
 
 const CHAVE: Record<TabelaSinc, string[]> = {
   books: ['id'],
   bookmarks: ['book_id'],
   reading_stats: ['book_id', 'date_key', 'device_id'],
-  reading_goals: ['goal_start_date']
+  reading_goals: ['goal_start_date'],
+  batch_items: ['id'],
+  lotes: ['id'],
+  translations: ['sentence_sha256']
 };
 
 const POR_ENVIO = 500;

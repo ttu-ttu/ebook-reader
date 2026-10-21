@@ -28,6 +28,9 @@ export const estadoSinc$ = new BehaviorSubject<EstadoSinc>({ tipo: 'parado' });
 /** Estatísticas de outro aparelho chegaram (a tela inicial soma). */
 export const estatisticasRecebidas$ = new Subject<void>();
 
+/** Cartas, Lotes ou traduções chegaram do servidor (a Fila e o painel releem). */
+export const cartasRecebidas$ = new Subject<void>();
+
 const CHAVE_APARELHO = 'dokusho-aparelho';
 const ESPERA_DEPOIS_DE_MUDAR = 15_000;
 const INTERVALO_EM_PRIMEIRO_PLANO = 5 * 60_000;
@@ -72,7 +75,8 @@ export function sincronizador() {
         livros: atualizarListaDeLivros,
         marcadores: () => database.bookmarksChanged$.next(),
         metas: async () => readingGoal$.next(await getCurrentReadingGoal()),
-        estatisticas: () => estatisticasRecebidas$.next()
+        estatisticas: () => estatisticasRecebidas$.next(),
+        cartas: () => cartasRecebidas$.next()
       },
       apagarLivroLocal: async (dataId) => {
         const livro = await database.getData(dataId);

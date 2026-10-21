@@ -27,14 +27,20 @@ const CHAVES: Record<TabelaSinc, string[]> = {
   books: ['id'],
   bookmarks: ['book_id'],
   reading_stats: ['book_id', 'date_key', 'device_id'],
-  reading_goals: ['goal_start_date']
+  reading_goals: ['goal_start_date'],
+  batch_items: ['id'],
+  lotes: ['id'],
+  translations: ['sentence_sha256']
 };
 
 const PADRAO: Record<TabelaSinc, Record<string, unknown>> = {
   books: { characters: 0, cover_path: null, processed_path: null, original_path: null },
   bookmarks: { reach_char_count: null, device_id: null, device_name: null },
   reading_stats: { characters_read: 0, reading_time: 0, completed_book: false },
-  reading_goals: { time_goal: 0, character_goal: 0 }
+  reading_goals: { time_goal: 0, character_goal: 0 },
+  batch_items: {},
+  lotes: {},
+  translations: {}
 };
 
 class ServidorFalso {
@@ -115,7 +121,7 @@ function criarAparelho(servidorFalso: ServidorFalso, nome: string, limite?: numb
 
   const ttu = createBooksDb(`books-${nome}-${contador}`);
   const sinc = abrirBancoSinc(`sinc-${nome}-${contador}`);
-  const avisos = { livros: 0, marcadores: 0, metas: 0, estatisticas: 0 };
+  const avisos = { livros: 0, marcadores: 0, metas: 0, estatisticas: 0, cartas: 0 };
   const sincronizador = new Sincronizador({
     ttu,
     sinc,
@@ -125,7 +131,8 @@ function criarAparelho(servidorFalso: ServidorFalso, nome: string, limite?: numb
       livros: () => (avisos.livros += 1),
       marcadores: () => (avisos.marcadores += 1),
       metas: () => (avisos.metas += 1),
-      estatisticas: () => (avisos.estatisticas += 1)
+      estatisticas: () => (avisos.estatisticas += 1),
+      cartas: () => (avisos.cartas += 1)
     },
     apagarLivroLocal: async (dataId) => {
       const db = await ttu;
@@ -513,6 +520,115 @@ describe('estatísticas e metas', () => {
   });
 });
 
+describe('cartas e traduções', () => {
+  const carta = (id: string, quando: string) => ({
+    id,
+    user_id: 'u1',
+    book_id: 'livro',
+    jmdict_id: 1,
+    word: '気のせい',
+    word_reading: 'きのせい',
+    word_meaning: null,
+    word_furigana: '気[き]のせい',
+    word_audio_path: null,
+    word_audio_check: null,
+    sentence: '<b>気のせい</b>だ。',
+    sentence_meaning: null,
+    sentence_furigana: '<b>気[き]のせい</b>だ。',
+    sentence_audio_path: null,
+    sentence_before: null,
+    sentence_after: null,
+    notes: null,
+    frequency: 100,
+    voice_text: null,
+    state: 'pendente',
+    error_reason: null,
+    lote_id: null,
+    modified_at: quando,
+    updated_at: quando,
+    deleted_at: null
+  });
+
+  it('carta criada num aparelho chega ao outro; a geração do servidor volta; a edição mais nova vence', async () => {
+    const iphone = criarAparelho(servidor, 'iPhone');
+    const ipad = criarAparelho(servidor, 'iPad');
+
+    await iphone.sincronizador.salvar('cartas', carta('c1', '2026-10-21T10:00:00.000Z'));
+    await iphone.sincronizador.sincronizar();
+
+    expect(servidor.tabela('batch_items').get('c1')).toMatchObject({ state: 'pendente' });
+
+    // A Edge Function gera e grava com modified_at mais novo.
+    await servidor.servidor().enviar('batch_items', [
+      {
+        ...carta('c1', '2026-10-21T10:01:00.000Z'),
+        state: 'gerada',
+        word_meaning: 'impressão minha'
+      }
+    ]);
+    await iphone.sincronizador.sincronizar();
+    await ipad.sincronizador.sincronizar();
+
+    for (const aparelho of [iphone, ipad]) {
+      expect(await aparelho.sincronizador.ler('cartas', 'c1')).toMatchObject({
+        state: 'gerada',
+        word_meaning: 'impressão minha'
+      });
+      expect(aparelho.avisos.cartas).toBeGreaterThan(0);
+    }
+
+    expect(await ipad.sincronizador.cartasDaPalavra('気のせい', 'きのせい')).toHaveLength(1);
+
+    // Edição no iPad depois da geração.
+    const gerada = await ipad.sincronizador.ler('cartas', 'c1');
+
+    await ipad.sincronizador.salvar('cartas', {
+      ...gerada!,
+      notes: 'nota',
+      modified_at: '2026-10-21T10:05:00.000Z'
+    });
+    await ipad.sincronizador.sincronizar();
+    await iphone.sincronizador.sincronizar();
+
+    expect(await iphone.sincronizador.ler('cartas', 'c1')).toMatchObject({
+      notes: 'nota',
+      word_meaning: 'impressão minha'
+    });
+  });
+
+  it('carta apagada (soft delete) some das listas', async () => {
+    const iphone = criarAparelho(servidor, 'iPhone');
+
+    await iphone.sincronizador.salvar('cartas', {
+      ...carta('c2', '2026-10-21T10:00:00.000Z'),
+      deleted_at: '2026-10-21T10:00:00.000Z'
+    });
+
+    expect(await iphone.sincronizador.listar('cartas')).toEqual([]);
+    expect(await iphone.sincronizador.cartasDaPalavra('気のせい', 'きのせい')).toEqual([]);
+  });
+
+  it('traduções do servidor ficam no cache local', async () => {
+    const pc = criarAparelho(servidor, 'Windows');
+
+    servidor.tabela('translations').set('h1', {
+      sentence_sha256: 'h1',
+      sentence: '雨だ。',
+      translation: 'Está chovendo.',
+      translated_at: '2026-10-21T10:00:00.000Z',
+      modified_at: '2026-10-21T10:00:00.000Z',
+      updated_at: '2026-10-21T10:00:00.000Z',
+      deleted_at: null,
+      user_id: 'u1'
+    });
+    await pc.sincronizador.sincronizar();
+
+    expect(await pc.sincronizador.ler('traducoes', 'h1')).toMatchObject({
+      translation: 'Está chovendo.'
+    });
+  });
+});
+
 describe('cursor', () => {
   it('recebe tudo em páginas, mesmo com linhas no mesmo updated_at', async () => {
     const pc = criarAparelho(servidor, 'Windows');
@@ -538,7 +654,7 @@ describe('cursor', () => {
       sinc: abrirBancoSinc('sinc-sem-login'),
       servidor: async () => undefined,
       aparelho: { id: 'x', nome: 'x' },
-      avisos: { livros() {}, marcadores() {}, metas() {}, estatisticas() {} },
+      avisos: { livros() {}, marcadores() {}, metas() {}, estatisticas() {}, cartas() {} },
       apagarLivroLocal: async () => {}
     });
 

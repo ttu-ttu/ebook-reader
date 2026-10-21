@@ -5,7 +5,14 @@
  */
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { AlcanceLocal, LinhaEstatistica, LinhaMarcador } from './regras';
+import type {
+  AlcanceLocal,
+  LinhaCarta,
+  LinhaEstatistica,
+  LinhaLote,
+  LinhaMarcador,
+  LinhaTraducao
+} from './regras';
 
 // Banco próprio da sincronização, ao lado do books-db do ttu (ADR 0014).
 
@@ -40,6 +47,11 @@ interface SincDb extends DBSchema {
   /** Marcador mais novo de outro aparelho, para perguntar ao abrir o livro. */
   marcadoresRemotos: { key: string; value: LinhaMarcador };
   alcances: { key: string; value: AlcanceLocal };
+  /** Cartas da Fila (batch_items), como no servidor; o aparelho cria e edita aqui. */
+  cartas: { key: string; value: LinhaCarta; indexes: { palavra: [string, string] } };
+  lotes: { key: string; value: LinhaLote };
+  /** Cache das Traduções da frase (só o servidor grava). */
+  traducoes: { key: string; value: LinhaTraducao };
 }
 
 export type BancoSinc = IDBPDatabase<SincDb>;
@@ -47,16 +59,27 @@ export type BancoSinc = IDBPDatabase<SincDb>;
 export const NOME_BANCO_SINC = 'dokusho-sinc';
 
 export function abrirBancoSinc(nome = NOME_BANCO_SINC) {
-  return openDB<SincDb>(nome, 1, {
-    upgrade(db) {
-      db.createObjectStore('livros', { keyPath: 'id' }).createIndex('titulo', 'titulo');
-      db.createObjectStore('enviados');
-      db.createObjectStore('cursores');
-      db.createObjectStore('estatisticasOutras', {
-        keyPath: ['book_id', 'date_key', 'device_id']
-      }).createIndex('date_key', 'date_key');
-      db.createObjectStore('marcadoresRemotos');
-      db.createObjectStore('alcances');
+  return openDB<SincDb>(nome, 2, {
+    upgrade(db, versaoAntiga) {
+      if (versaoAntiga < 1) {
+        db.createObjectStore('livros', { keyPath: 'id' }).createIndex('titulo', 'titulo');
+        db.createObjectStore('enviados');
+        db.createObjectStore('cursores');
+        db.createObjectStore('estatisticasOutras', {
+          keyPath: ['book_id', 'date_key', 'device_id']
+        }).createIndex('date_key', 'date_key');
+        db.createObjectStore('marcadoresRemotos');
+        db.createObjectStore('alcances');
+      }
+
+      if (versaoAntiga < 2) {
+        db.createObjectStore('cartas', { keyPath: 'id' }).createIndex('palavra', [
+          'word',
+          'word_reading'
+        ]);
+        db.createObjectStore('lotes', { keyPath: 'id' });
+        db.createObjectStore('traducoes', { keyPath: 'sentence_sha256' });
+      }
     }
   });
 }

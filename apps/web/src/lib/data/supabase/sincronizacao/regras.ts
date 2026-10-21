@@ -20,6 +20,10 @@ export type LinhaMarcador = Tabelas['bookmarks']['Row'];
 export type LinhaEstatistica = Tabelas['reading_stats']['Row'];
 export type LinhaMeta = Tabelas['reading_goals']['Row'];
 
+export type LinhaCarta = Tabelas['batch_items']['Row'];
+export type LinhaLote = Tabelas['lotes']['Row'];
+export type LinhaTraducao = Tabelas['translations']['Row'];
+
 export type NovaLinhaLivro = Tabelas['books']['Insert'];
 export type NovaLinhaMarcador = Tabelas['bookmarks']['Insert'];
 export type NovaLinhaEstatistica = Tabelas['reading_stats']['Insert'];

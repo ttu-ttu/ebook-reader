@@ -30,6 +30,9 @@ import {
   type LinhaLivro,
   type LinhaMarcador,
   type LinhaMeta,
+  type LinhaCarta,
+  type LinhaLote,
+  type LinhaTraducao,
   type NovaLinhaEstatistica,
   type NovaLinhaLivro,
   type NovaLinhaMarcador,
@@ -45,6 +48,9 @@ export interface Linhas {
   bookmarks: LinhaMarcador;
   reading_stats: LinhaEstatistica;
   reading_goals: LinhaMeta;
+  batch_items: LinhaCarta;
+  lotes: LinhaLote;
+  translations: LinhaTraducao;
 }
 
 export interface NovasLinhas {
@@ -52,9 +58,30 @@ export interface NovasLinhas {
   bookmarks: NovaLinhaMarcador;
   reading_stats: NovaLinhaEstatistica;
   reading_goals: NovaLinhaMeta;
+  batch_items: Omit<LinhaCarta, 'user_id' | 'updated_at'>;
+  lotes: Omit<LinhaLote, 'user_id' | 'updated_at'>;
+  translations: never;
 }
 
 export type TabelaSinc = keyof Linhas;
+
+interface LojasDeLinhas {
+  cartas: LinhaCarta;
+  lotes: LinhaLote;
+  traducoes: LinhaTraducao;
+}
+
+const TABELA_DA_LOJA: Record<keyof LojasDeLinhas, TabelaSinc> = {
+  cartas: 'batch_items',
+  lotes: 'lotes',
+  traducoes: 'translations'
+};
+
+function chaveDaLinha<L extends keyof LojasDeLinhas>(loja: L, linha: LojasDeLinhas[L]) {
+  return loja === 'traducoes'
+    ? (linha as LinhaTraducao).sentence_sha256
+    : (linha as LinhaCarta | LinhaLote).id;
+}
 
 export interface Servidor {
   userId: string;
@@ -80,6 +107,8 @@ export interface Avisos {
   marcadores(): void;
   metas(): void;
   estatisticas(): void;
+  /** Cartas, Lotes ou traduções chegaram do servidor. */
+  cartas(): void;
 }
 
 export interface OpcoesSincronizador {
@@ -283,6 +312,11 @@ export class Sincronizador {
     await this.receber(servidor, 'bookmarks', (linhas) => this.receberMarcadores(linhas));
     await this.receber(servidor, 'reading_stats', (linhas) => this.receberEstatisticas(linhas));
     await this.receber(servidor, 'reading_goals', (linhas) => this.receberMetas(linhas));
+    await this.receber(servidor, 'batch_items', (linhas) => this.receberLinhas('cartas', linhas));
+    await this.receber(servidor, 'lotes', (linhas) => this.receberLinhas('lotes', linhas));
+    await this.receber(servidor, 'translations', (linhas) =>
+      this.receberLinhas('traducoes', linhas)
+    );
 
     await this.registrarLivrosLocais();
     await this.enviarApagamentos(servidor);
@@ -290,8 +324,89 @@ export class Sincronizador {
     await this.enviarMarcadores(servidor);
     await this.enviarEstatisticas(servidor);
     await this.enviarMetas(servidor);
+    await this.enviarLinhas(servidor, 'batch_items', 'cartas');
+    await this.enviarLinhas(servidor, 'lotes', 'lotes');
 
     return 'feito';
+  }
+
+  /** Grava uma Carta ou um Lote feito ou editado aqui; a próxima rodada envia. */
+  async salvar<L extends 'cartas' | 'lotes'>(loja: L, linha: LojasDeLinhas[L]) {
+    const sinc = await this.opcoes.sinc;
+
+    await sinc.put(loja, linha as never);
+  }
+
+  async listar<L extends keyof LojasDeLinhas>(loja: L): Promise<LojasDeLinhas[L][]> {
+    const sinc = await this.opcoes.sinc;
+    const linhas = (await sinc.getAll(loja)) as LojasDeLinhas[L][];
+
+    return linhas.filter((linha) => !linha.deleted_at);
+  }
+
+  async ler<L extends keyof LojasDeLinhas>(loja: L, chave: string) {
+    const sinc = await this.opcoes.sinc;
+    const linha = (await sinc.get(loja, chave)) as LojasDeLinhas[L] | undefined;
+
+    return linha?.deleted_at ? undefined : linha;
+  }
+
+  /** Cartas (não apagadas) de uma Palavra, para o painel mostrar "na fila" ou "exportada em". */
+  async cartasDaPalavra(palavra: string, leitura: string) {
+    const sinc = await this.opcoes.sinc;
+    const cartas = await sinc.getAllFromIndex('cartas', 'palavra', [palavra, leitura]);
+
+    return cartas.filter((carta) => !carta.deleted_at);
+  }
+
+  /** Linhas que só têm a última escrita (Cartas, Lotes, traduções): vale a mais nova. */
+  private async receberLinhas<L extends keyof LojasDeLinhas>(loja: L, linhas: LojasDeLinhas[L][]) {
+    const sinc = await this.opcoes.sinc;
+    const tabela = TABELA_DA_LOJA[loja];
+
+    let mudou = false;
+
+    for (const linha of linhas) {
+      const chaveLinha = chaveDaLinha(loja, linha);
+      const local = (await sinc.get(loja, chaveLinha)) as LojasDeLinhas[L] | undefined;
+
+      if (local && !remotoVence(deIso(local.modified_at), linha.modified_at)) continue;
+
+      await sinc.put(loja, linha as never);
+      await sinc.put('enviados', deIso(linha.modified_at), chave(tabela, chaveLinha));
+      mudou = true;
+    }
+
+    if (mudou) this.opcoes.avisos.cartas();
+  }
+
+  private async enviarLinhas<T extends 'batch_items' | 'lotes'>(
+    servidor: Servidor,
+    tabela: T,
+    loja: 'cartas' | 'lotes'
+  ) {
+    const sinc = await this.opcoes.sinc;
+    const linhas: NovasLinhas[T][] = [];
+
+    for (const linha of await sinc.getAll(loja)) {
+      const chaveLinha = chave(tabela, linha.id);
+
+      if (!precisaEnviar(deIso(linha.modified_at), await sinc.get('enviados', chaveLinha))) {
+        continue;
+      }
+
+      const { user_id: _, updated_at: __, ...semServidor } = linha;
+
+      linhas.push(semServidor as NovasLinhas[T]);
+    }
+
+    if (!linhas.length) return;
+
+    await servidor.enviar(tabela, linhas);
+
+    for (const linha of linhas as { id: string; modified_at: string }[]) {
+      await sinc.put('enviados', deIso(linha.modified_at), chave(tabela, linha.id));
+    }
   }
 
   private async receber<T extends TabelaSinc>(
