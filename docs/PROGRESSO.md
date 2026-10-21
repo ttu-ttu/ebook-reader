@@ -15,7 +15,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | R4        | feito    | 2026-10-20 | 97,5% do texto acha entrada; 0 Cards sem entrada; regras ajustadas          |
 | R5        | feito    | 2026-10-21 | 30 cartas aprovadas; US$ 0,0038/carta; 31 MB/100 cartas; falta alerta (👤)  |
 | V1.1      | feito    | 2026-10-21 | sincronização por linha (ADR 0014); falta o teste em dois aparelhos (👤)    |
-| V1.2–V1.7 | pendente |            |                                                                             |
+| V1.2      | feito    | 2026-10-21 | 103/103 formas com o JMdict inteiro; falta medir no iPhone (👤)             |
+| V1.3–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
@@ -161,6 +162,27 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   livro e do marcador, arquivos do bucket apagados; reimportar depois devolve o livro.
   Padrões mudados no ttu: estatísticas ligadas e livros "placeholder" visíveis. `ConfirmDialog` aceita
   rótulos. Sem login, nada é sincronizado (o app segue local).
+- 2026-10-21: V1.2 (autônomo, revisar). Busca em `lib/data/dicionario/busca.ts`: o toque escolhe o
+  pedaço do tokenizador (começo); o fim é o trecho mais longo (até 6 pedaços, 14 caracteres, sem
+  atravessar pontuação ou espaço) cujo termo "pedaços inteiros + forma de dicionário do último" está
+  no dicionário; depois a superfície e as reservas (verbo do potencial, sem alongamento すごーい, sem っ
+  final, katakana → hiragana). **Regra nova**: um trecho que só acrescenta flexão ao verbo ou adjetivo
+  (auxiliar, て/で, verbo sufixo, verbo auxiliar depois de て) não vale, mesmo que o JMdict tenha a
+  expressão (知らず, 急いで, 信じられない, 持ってくる, 呼ばれる): a palavra a estudar é o verbo; a seta ›
+  alcança a expressão. Verbo composto (読み|終わる) continua inteiro. A seleção cobre a forma conjugada
+  (立ち止まった, 食べさせられたくなかった), que vai em `<b>` na Frase. Setas: ‹ encurta e › alonga o
+  fim em um pedaço; o começo é sempre o do pedaço tocado. Casos em `busca.casos.ts` (103 frases no
+  estilo dos romances; o EPUB do R4 não está no repositório): 103/103 com um dicionário mínimo e com o
+  JMdict inteiro (`busca.medicao.test.ts`, `MEDIR_DEFLEXAO=1`), busca no toque com mediana 0,08 ms e
+  máximo 2,5 ms no Node. Lexicalizadas aceitas: 眠れる (o JMdict tem; o IPADIC dá o potencial como
+  verbo), すごーい e カワイイ (formas do JMdict). O casamento do R4 usa as mesmas regras (potencial e
+  gramática). `banco.ts` guarda na memória os últimos 64 blocos de índice e de entradas.
+  `servico.ts`: estado do dicionário, `pedirDicionario()` (diálogo com o tamanho: dicionário + 18 MB do
+  tokenizador se ainda não está no cache), `consultarPalavra` com as últimas 500 respostas,
+  `medirConsultas()`. Configurações › Data › Dicionário: versão, data da versão, data do download,
+  Baixar/Atualizar (compara com `atual.json`), Apagar deste aparelho, Medir velocidade (substitui a
+  `/teste/dicionario`, que saiu). `dialog-template.svelte` ganhou `<script lang="ts">`: `pnpm check`
+  caiu de 27 para **15** erros, todos antigos do ttu.
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
@@ -293,8 +315,9 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] V1.7: pôr a URL de produção no `webCorsOriginList` (docs/ANKI-CONNECT.md)
 - [x] R3: na raiz, `node tools/subir-dicionario.ts` (e-mail e senha no terminal); depois, logado no
       app, `/teste/dicionario` → "Baixar dicionário" e anotar download e preparação
-- [ ] R3: na PWA do iPhone (depois da Vercel), `/teste/dicionario`: baixar, carregar tokenizador,
-      "Medir consultas"; anotar em "Testes de risco" › R3 e marcar R3 como feito
+- [ ] R3 e V1.2: na PWA do iPhone (depois da Vercel), Configurações › Data › Dicionário: "Baixar"
+      (anotar o tempo) e "Medir velocidade"; anotar em "Testes de risco" › R3 e marcar R3 como feito
+      (a página `/teste/dicionario` saiu no V1.2)
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_API_KEY é do projeto pago (R5)
 - [x] R5: rodada final das 30 cartas e veredito
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)

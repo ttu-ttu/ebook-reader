@@ -53,6 +53,9 @@ desfazer um ADR sem um novo ADR).
 - Dicionário (na raiz, Node 24): node tools/preparar-dicionario.ts (zips de dicts/ → dicts/saida/<versao>/);
   node tools/subir-dicionario.ts (pede e-mail e senha no terminal; quem roda é o usuário). Formato em
   apps/web/src/lib/data/dicionario/formato.ts (sem imports: o Node roda o .ts direto).
+- Deflexão contra o JMdict inteiro (em apps/web, depois de preparar o dicionário):
+  `$env:MEDIR_DEFLEXAO="1"; npx vitest run busca.medicao` (casos em dicionario/busca.casos.ts).
+- `pnpm check`: 15 erros antigos do ttu são o normal (não criar novos).
 
 ## Regras fixas
 
