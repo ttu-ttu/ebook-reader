@@ -109,8 +109,8 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px 18px;
-    background: #fff;
-    border-top: 1px solid #dce1de;
+    background: var(--dk-surface);
+    border-top: 1px solid var(--dk-line);
     font-family: 'Noto Sans JP', system-ui, sans-serif;
     font-size: 14px;
 
@@ -118,7 +118,7 @@
       min-height: 44px;
       border-radius: 12px;
       font-weight: 700;
-      background: #edf0ee;
+      background: var(--dk-sunk);
 
       &:disabled {
         opacity: 0.45;
@@ -127,8 +127,8 @@
   }
 
   .dokusho-exportar__principal {
-    background: #2d4f86 !important;
-    color: #fff;
+    background: var(--dk-accent) !important;
+    color: var(--dk-accent-ink);
   }
 
   .dokusho-exportar__botoes {
@@ -142,14 +142,14 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #59635f;
+    color: var(--dk-ink2);
   }
 
   .dokusho-exportar__aviso {
-    color: #a66a12;
+    color: var(--dk-warn);
   }
 
   .dokusho-exportar__mensagem {
-    color: #59635f;
+    color: var(--dk-ink2);
   }
 </style>

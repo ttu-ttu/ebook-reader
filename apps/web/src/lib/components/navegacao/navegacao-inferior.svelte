@@ -76,9 +76,9 @@
     z-index: 30;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    border-top: 1px solid rgba(128, 128, 128, 0.25);
-    background: #fff;
-    color: #8c9591;
+    border-top: 1px solid var(--dk-line);
+    background: var(--dk-surface);
+    color: var(--dk-ink3);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     font-family: 'Noto Sans JP', system-ui, sans-serif;
 
@@ -105,7 +105,7 @@
   }
 
   .dokusho-nav--atual {
-    color: #2d4f86;
+    color: var(--dk-accent);
   }
 
   .dokusho-nav__desativado {
@@ -120,8 +120,8 @@
     height: 18px;
     padding: 0 5px !important;
     border-radius: 9px;
-    background: #2d4f86;
-    color: #fff;
+    background: var(--dk-accent);
+    color: var(--dk-accent-ink);
     font-size: 11px !important;
     font-weight: 700;
     justify-content: center;

@@ -259,7 +259,7 @@
     margin: 0 auto;
     padding: 0 18px calc(96px + env(safe-area-inset-bottom, 0px));
     font-family: 'Noto Sans JP', system-ui, sans-serif;
-    color: #1b2220;
+    color: var(--dk-ink);
 
     header {
       display: flex;
@@ -279,22 +279,22 @@
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: #59635f;
+      color: var(--dk-ink2);
     }
   }
 
   .dokusho-inicio__icone {
     font-size: 22px;
     padding: 8px;
-    color: #59635f;
+    color: var(--dk-ink2);
   }
 
   .dokusho-cartao {
-    background: #fff;
+    background: var(--dk-surface);
     border-radius: 16px;
     padding: 14px;
     margin-top: 12px;
-    box-shadow: 0 1px 3px rgba(20, 32, 28, 0.08);
+    box-shadow: 0 1px 3px var(--dk-shadow);
   }
 
   .dokusho-inicio__semana-cabeca {
@@ -316,7 +316,7 @@
 
     small {
       display: block;
-      color: #8c9591;
+      color: var(--dk-ink3);
     }
   }
 
@@ -329,7 +329,7 @@
 
     small {
       font-size: 12px;
-      color: #8c9591;
+      color: var(--dk-ink3);
     }
 
     button {
@@ -340,21 +340,21 @@
       margin: 4px auto 0;
       border-radius: 50%;
       font-size: 14px;
-      box-shadow: inset 0 0 0 1.5px #dce1de;
+      box-shadow: inset 0 0 0 1.5px var(--dk-line);
 
       &.lido {
-        background: #2d4f86;
-        color: #fff;
+        background: var(--dk-accent);
+        color: var(--dk-accent-ink);
         box-shadow: none;
       }
 
       &.hoje {
-        outline: 2px solid #2d4f86;
+        outline: 2px solid var(--dk-accent);
         outline-offset: 2px;
       }
 
       &.escolhido {
-        outline: 2px dashed #8c9591;
+        outline: 2px dashed var(--dk-ink3);
         outline-offset: 3px;
       }
 
@@ -368,7 +368,7 @@
     margin-top: 12px;
     padding: 10px 12px;
     border-radius: 10px;
-    background: #edf0ee;
+    background: var(--dk-sunk);
     font-size: 14px;
   }
 
@@ -382,7 +382,7 @@
     }
 
     small {
-      color: #59635f;
+      color: var(--dk-ink2);
     }
 
     p {
@@ -398,14 +398,14 @@
   .dokusho-inicio__parte {
     height: 8px;
     border-radius: 4px;
-    background: #edf0ee;
+    background: var(--dk-sunk);
     overflow: hidden;
     margin-top: 6px;
 
     i {
       display: block;
       height: 100%;
-      background: #3a9866;
+      background: var(--dk-read);
     }
   }
 
@@ -413,7 +413,7 @@
     height: 4px;
 
     i {
-      background: #2d4f86;
+      background: var(--dk-accent);
       opacity: 0.55;
     }
   }
@@ -425,7 +425,7 @@
     padding: 0 16px;
     border-radius: 12px;
     font-weight: 700;
-    background: #edf0ee;
+    background: var(--dk-sunk);
   }
 
   .dokusho-abas {
@@ -433,7 +433,7 @@
     gap: 2px;
     padding: 3px;
     border-radius: 11px;
-    background: #edf0ee;
+    background: var(--dk-sunk);
     margin-top: 10px;
 
     button {
@@ -441,12 +441,12 @@
       min-height: 34px;
       border-radius: 9px;
       font-size: 14px;
-      color: #59635f;
+      color: var(--dk-ink2);
 
       &.ativa {
-        background: #fff;
-        color: #1b2220;
-        box-shadow: 0 1px 3px rgba(20, 32, 28, 0.16);
+        background: var(--dk-surface);
+        color: var(--dk-ink);
+        box-shadow: 0 1px 3px var(--dk-shadow);
       }
 
       &:disabled {
@@ -457,11 +457,11 @@
 
   .dokusho-inicio__total {
     margin: 14px 0 4px;
-    color: #59635f;
+    color: var(--dk-ink2);
 
     b {
       font-size: 30px;
-      color: #1b2220;
+      color: var(--dk-ink);
       margin-right: 6px;
     }
   }
@@ -471,20 +471,20 @@
     height: auto;
 
     rect {
-      fill: #2d4f86;
+      fill: var(--dk-accent);
 
       &.hoje {
-        fill: #3a9866;
+        fill: var(--dk-read);
       }
     }
 
     line {
-      stroke: #dce1de;
+      stroke: var(--dk-line);
     }
 
     text {
       font-size: 10px;
-      fill: #8c9591;
+      fill: var(--dk-ink3);
     }
   }
 
@@ -501,11 +501,11 @@
       height: 48px;
       border-radius: 4px;
       object-fit: cover;
-      background: #dce1de;
+      background: var(--dk-line);
     }
 
     small {
-      color: #59635f;
+      color: var(--dk-ink2);
     }
   }
 
@@ -519,7 +519,7 @@
   .dokusho-inicio__vazio {
     padding: 28px 10px;
     text-align: center;
-    color: #8c9591;
+    color: var(--dk-ink3);
     font-size: 14px;
   }
 </style>

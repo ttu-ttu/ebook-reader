@@ -20,19 +20,19 @@
     z-index: 35;
     max-width: 616px;
     margin: 0 auto;
-    box-shadow: 0 4px 16px rgba(20, 32, 28, 0.18);
+    box-shadow: 0 4px 16px var(--dk-shadow);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     padding: 10px 12px;
     border-radius: 12px;
-    background: #e2e8f3;
+    background: var(--dk-accent-soft);
     font-size: 14px;
 
     button {
       font-weight: 700;
-      color: #2d4f86;
+      color: var(--dk-accent);
     }
   }
 </style>

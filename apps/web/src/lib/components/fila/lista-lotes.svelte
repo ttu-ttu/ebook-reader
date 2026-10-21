@@ -109,15 +109,15 @@
   .dokusho-lote {
     margin-top: 10px;
     border-radius: 14px;
-    background: #fff;
+    background: var(--dk-surface);
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(20, 32, 28, 0.08);
+    box-shadow: 0 1px 3px var(--dk-shadow);
 
     button {
       min-height: 40px;
       border-radius: 10px;
       font-weight: 700;
-      background: #edf0ee;
+      background: var(--dk-sunk);
       padding: 0 12px;
 
       &:disabled {
@@ -128,7 +128,7 @@
     small {
       display: block;
       font-size: 13px;
-      color: #59635f;
+      color: var(--dk-ink2);
     }
   }
 
@@ -144,7 +144,7 @@
   }
 
   .dokusho-lote__corpo {
-    border-top: 1px solid #dce1de;
+    border-top: 1px solid var(--dk-line);
     padding: 4px 14px 14px;
   }
 
@@ -153,7 +153,7 @@
     gap: 8px;
     align-items: baseline;
     padding: 8px 0;
-    border-bottom: 1px solid #dce1de;
+    border-bottom: 1px solid var(--dk-line);
 
     small {
       display: inline !important;
@@ -164,7 +164,7 @@
     margin: 10px 0;
     padding: 10px 12px;
     border-radius: 12px;
-    background: #fbefd8;
+    background: var(--dk-warn-soft);
     font-size: 14px;
 
     button {
@@ -174,8 +174,8 @@
   }
 
   .dokusho-lote__principal {
-    background: #2d4f86 !important;
-    color: #fff;
+    background: var(--dk-accent) !important;
+    color: var(--dk-accent-ink);
     margin-top: 10px;
   }
 
@@ -183,7 +183,7 @@
   .dokusho-lote__mensagem {
     padding: 28px 10px;
     text-align: center;
-    color: #8c9591;
+    color: var(--dk-ink3);
     font-size: 14px;
   }
 </style>

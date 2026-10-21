@@ -19,6 +19,7 @@
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import SettingsDicionario from '$lib/components/settings/settings-dicionario.svelte';
   import SettingsBackup from '$lib/components/settings/settings-backup.svelte';
+  import SettingsTema from '$lib/components/settings/settings-tema.svelte';
 
   // Dokusho: a sincronização do ttu (Drive, OneDrive, pasta local, merge por arquivo) sai da
   // interface; a do Supabase não tem opções (ADR 0014).
@@ -955,6 +956,12 @@
   {:else if activeSettings === 'Data'}
     <SettingsItemGroup title="Conta" tooltip="Login no Supabase, usado na sincronização">
       <a class="underline" href="{pagePath}/login">Entrar ou sair</a>
+    </SettingsItemGroup>
+    <SettingsItemGroup
+      title="Aparência"
+      tooltip="Telas do Dokusho; o leitor segue o tema da aba Reader"
+    >
+      <SettingsTema />
     </SettingsItemGroup>
     <SettingsItemGroup title="Dicionário" tooltip="JMdict + JPDB + JmdictFurigana, do bucket dicts">
       <SettingsDicionario />

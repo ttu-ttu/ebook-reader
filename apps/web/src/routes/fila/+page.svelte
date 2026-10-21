@@ -145,7 +145,7 @@
     margin: 0 auto;
     padding: 0 18px calc(200px + env(safe-area-inset-bottom, 0px));
     font-family: 'Noto Sans JP', system-ui, sans-serif;
-    color: #1b2220;
+    color: var(--dk-ink);
 
     header {
       padding: 22px 0 10px;
@@ -162,19 +162,19 @@
     gap: 2px;
     padding: 3px;
     border-radius: 11px;
-    background: #edf0ee;
+    background: var(--dk-sunk);
 
     button {
       flex: 1;
       min-height: 34px;
       border-radius: 9px;
       font-size: 14px;
-      color: #59635f;
+      color: var(--dk-ink2);
 
       &.ativa {
-        background: #fff;
-        color: #1b2220;
-        box-shadow: 0 1px 3px rgba(20, 32, 28, 0.16);
+        background: var(--dk-surface);
+        color: var(--dk-ink);
+        box-shadow: 0 1px 3px var(--dk-shadow);
       }
     }
   }
@@ -186,8 +186,8 @@
     margin-top: 10px;
     padding: 12px 14px;
     border-radius: 14px;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(20, 32, 28, 0.08);
+    background: var(--dk-surface);
+    box-shadow: 0 1px 3px var(--dk-shadow);
     cursor: pointer;
   }
 
@@ -198,7 +198,7 @@
     small {
       font-size: 13px;
       font-weight: 400;
-      color: #59635f;
+      color: var(--dk-ink2);
       margin-left: 6px;
     }
   }
@@ -211,13 +211,13 @@
 
   .dokusho-fila__frase {
     font-size: 14px;
-    color: #59635f;
+    color: var(--dk-ink2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 
     :global(b) {
-      color: #2d4f86;
+      color: var(--dk-accent);
       font-weight: 600;
     }
   }
@@ -227,7 +227,7 @@
   }
 
   .dokusho-fila__apagado {
-    color: #8c9591;
+    color: var(--dk-ink3);
   }
 
   .dokusho-fila__confira {
@@ -235,8 +235,8 @@
     font-size: 12px;
     padding: 2px 8px;
     border-radius: 99px;
-    background: #fbefd8;
-    color: #a66a12;
+    background: var(--dk-warn-soft);
+    color: var(--dk-warn);
   }
 
   .dokusho-fila__erro {
@@ -245,14 +245,14 @@
     justify-content: space-between;
     gap: 8px;
     font-size: 13px;
-    color: #b93a2e;
+    color: var(--dk-err);
 
     button {
       flex: none;
       font-weight: 700;
       padding: 6px 10px;
       border-radius: 8px;
-      background: #f8e1dd;
+      background: var(--dk-err-soft);
 
       &:disabled {
         opacity: 0.5;
@@ -263,7 +263,7 @@
   .dokusho-fila__vazia {
     padding: 28px 10px;
     text-align: center;
-    color: #8c9591;
+    color: var(--dk-ink3);
     font-size: 14px;
   }
 </style>

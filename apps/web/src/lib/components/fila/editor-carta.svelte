@@ -201,29 +201,31 @@
     flex-direction: column;
     gap: 6px;
     padding: 12px 0;
-    border-bottom: 1px solid #dce1de;
+    border-bottom: 1px solid var(--dk-line);
 
     span {
       display: flex;
       justify-content: space-between;
       font-size: 12px;
       font-weight: 700;
-      color: #59635f;
+      color: var(--dk-ink2);
     }
 
     small {
       font-weight: 500;
       padding: 2px 7px;
       border-radius: 99px;
-      background: #edf0ee;
-      color: #8c9591;
+      background: var(--dk-sunk);
+      color: var(--dk-ink3);
     }
 
     textarea {
       width: 100%;
       resize: vertical;
       border-radius: 10px;
-      border: 1.5px solid #dce1de;
+      border: 1.5px solid var(--dk-line);
+      background: var(--dk-surface);
+      color: var(--dk-ink);
       padding: 9px 11px;
       font:
         16px/1.45 'Noto Sans JP',
@@ -232,7 +234,7 @@
 
       &[readonly] {
         border-color: transparent;
-        background: #edf0ee;
+        background: var(--dk-sunk);
       }
     }
   }
@@ -241,7 +243,7 @@
     margin-top: 10px;
     padding: 10px 12px;
     border-radius: 12px;
-    background: #fbefd8;
+    background: var(--dk-warn-soft);
     font-size: 14px;
 
     button {
@@ -255,8 +257,8 @@
   }
 
   .dokusho-editor__aviso--erro {
-    background: #f8e1dd;
-    color: #b93a2e;
+    background: var(--dk-err-soft);
+    color: var(--dk-err);
   }
 
   .dokusho-editor__audios {
@@ -268,8 +270,8 @@
       flex: 1;
       min-height: 44px;
       border-radius: 12px;
-      background: #e2e8f3;
-      color: #2d4f86;
+      background: var(--dk-accent-soft);
+      color: var(--dk-accent);
       font-weight: 700;
 
       &:disabled {
@@ -282,15 +284,15 @@
     margin-top: 18px;
     padding: 14px;
     border-radius: 14px;
-    background: #fff;
+    background: var(--dk-surface);
 
     button {
       min-height: 44px;
       width: 100%;
       margin-top: 8px;
       border-radius: 12px;
-      background: #2d4f86;
-      color: #fff;
+      background: var(--dk-accent);
+      color: var(--dk-accent-ink);
       font-weight: 700;
 
       &:disabled {
@@ -304,9 +306,9 @@
     min-height: 44px;
     margin-top: 18px;
     border-radius: 12px;
-    box-shadow: inset 0 0 0 1.5px #dce1de;
+    box-shadow: inset 0 0 0 1.5px var(--dk-line);
     font-weight: 700;
-    color: #b93a2e;
+    color: var(--dk-err);
 
     &:disabled {
       opacity: 0.45;
@@ -315,6 +317,6 @@
 
   .dokusho-editor__mensagem {
     margin-top: 12px;
-    color: #b93a2e;
+    color: var(--dk-err);
   }
 </style>

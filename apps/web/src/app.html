@@ -27,6 +27,13 @@
     <meta name="apple-mobile-web-app-title" content="Dokusho" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="mask-icon" href="%sveltekit.assets%/safari-pinned-tab.svg" color="#2d4f86" />
+    <script>
+      // Dokusho: tema escolhido nas Configurações, antes de desenhar (lib/data/tema.ts).
+      try {
+        var tema = localStorage.getItem('dokusho-tema');
+        if (tema === 'claro' || tema === 'escuro') document.documentElement.dataset.tema = tema;
+      } catch (e) {}
+    </script>
     %sveltekit.head%
   </head>
   <body class="h-full w-full break-words font-sans">

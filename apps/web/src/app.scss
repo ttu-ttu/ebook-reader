@@ -8,6 +8,58 @@
   --font-color: rgba(0, 0, 0, 0.87);
   --background-color: #eceff1;
   scrollbar-color: #c1c1c1 #c1c1c100;
+
+  // Dokusho: cores das telas Início, Biblioteca, Fila e Configurações (as do protótipo D1). O leitor
+  // segue o tema do ttu.
+  --dk-surface: #ffffff;
+  --dk-sunk: #edf0ee;
+  --dk-ink: #1b2220;
+  --dk-ink2: #59635f;
+  --dk-ink3: #8c9591;
+  --dk-line: #dce1de;
+  --dk-accent: #2d4f86;
+  --dk-accent-ink: #ffffff;
+  --dk-accent-soft: #e2e8f3;
+  --dk-read: #3a9866;
+  --dk-read-soft: #e0f1e7;
+  --dk-warn: #a66a12;
+  --dk-warn-soft: #fbefd8;
+  --dk-err: #b93a2e;
+  --dk-err-soft: #f8e1dd;
+  --dk-shadow: rgba(20, 32, 28, 0.16);
+}
+
+@mixin dokusho-escuro {
+  --font-color: #e6ebe8;
+  --background-color: #141918;
+  scrollbar-color: #3a4341 #3a434100;
+  color-scheme: dark;
+  --dk-surface: #1c2221;
+  --dk-sunk: #111514;
+  --dk-ink: #e6ebe8;
+  --dk-ink2: #a3ada9;
+  --dk-ink3: #6f7975;
+  --dk-line: #2b3331;
+  --dk-accent: #93b2e8;
+  --dk-accent-ink: #0e1413;
+  --dk-accent-soft: #223049;
+  --dk-read: #5cc08b;
+  --dk-read-soft: #1b3125;
+  --dk-warn: #e2ae58;
+  --dk-warn-soft: #382d18;
+  --dk-err: #ef7b6d;
+  --dk-err-soft: #3b211f;
+  --dk-shadow: rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) {
+    @include dokusho-escuro;
+  }
+}
+
+:root[data-tema='escuro'] {
+  @include dokusho-escuro;
 }
 
 .book-cover {
@@ -252,25 +304,25 @@
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  background: #edf0ee;
-  color: #59635f;
+  background: var(--dk-sunk);
+  color: var(--dk-ink2);
 }
 
 .dokusho-estado--gerando {
-  background: #e2e8f3;
-  color: #2d4f86;
+  background: var(--dk-accent-soft);
+  color: var(--dk-accent);
 }
 
 .dokusho-estado--gerada {
-  background: #e0f1e7;
-  color: #3a9866;
+  background: var(--dk-read-soft);
+  color: var(--dk-read);
 }
 
 .dokusho-estado--erro {
-  background: #f8e1dd;
-  color: #b93a2e;
+  background: var(--dk-err-soft);
+  color: var(--dk-err);
 }
 
 .dokusho-estado--exportada {
-  color: #8c9591;
+  color: var(--dk-ink3);
 }
