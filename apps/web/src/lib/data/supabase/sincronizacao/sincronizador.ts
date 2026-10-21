@@ -296,6 +296,40 @@ export class Sincronizador {
     await sinc.delete('marcadoresRemotos', linha.book_id);
   }
 
+  /** Alcance do livro: o ponto mais distante já lido, em caracteres (GLOSSARY). */
+  async alcanceDe(titulo: string) {
+    const sinc = await this.opcoes.sinc;
+    const mapa = await sinc.getFromIndex('livros', 'titulo', titulo);
+
+    return mapa ? ((await sinc.get('alcances', mapa.id))?.valor ?? 0) : 0;
+  }
+
+  /** A leitura só aumenta o Alcance. Devolve o Alcance depois. */
+  async registrarAlcance(titulo: string, explorado: number) {
+    const sinc = await this.opcoes.sinc;
+    const mapa = await sinc.getFromIndex('livros', 'titulo', titulo);
+
+    if (!mapa) return explorado;
+
+    const atual = await sinc.get('alcances', mapa.id);
+    const valor = alcancePelaLeitura(atual?.valor, explorado);
+
+    if (valor !== atual?.valor) await sinc.put('alcances', { ...atual, valor }, mapa.id);
+
+    return valor;
+  }
+
+  /**
+   * "Desmarcar a partir daqui": o Alcance volta para o ponto dado. Vale nos outros aparelhos com o
+   * próximo marcador enviado (o leitor grava o marcador logo depois).
+   */
+  async desmarcarAPartirDe(titulo: string, valor: number) {
+    const sinc = await this.opcoes.sinc;
+    const mapa = await sinc.getFromIndex('livros', 'titulo', titulo);
+
+    if (mapa) await sinc.put('alcances', { valor, baixadoEm: Date.now() }, mapa.id);
+  }
+
   /** Estatísticas dos outros aparelhos num intervalo de datas (inclusive). */
   async estatisticasDeOutrosAparelhos(inicio = '', fim = '￿') {
     const sinc = await this.opcoes.sinc;
