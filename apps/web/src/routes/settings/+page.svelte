@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { tap } from 'rxjs';
+  import { browser } from '$app/environment';
   import { afterNavigate } from '$app/navigation';
   import SettingsContent from '$lib/components/settings/settings-content.svelte';
   import SettingsHeader from '$lib/components/settings/settings-header.svelte';
@@ -89,7 +90,9 @@
 
   let prevPage = `${pagePath}${mergeEntries.MANAGE.routeId}`;
 
-  let activeSettings = 'Reader';
+  // Dokusho: ?aba=Statistics abre direto na aba (o "Definir meta" da tela Início).
+  let activeSettings =
+    (browser && new URLSearchParams(window.location.search).get('aba')) || 'Reader';
 
   let storageQuota = '';
 

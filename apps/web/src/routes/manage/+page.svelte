@@ -4,6 +4,7 @@
   import BookCardList from '$lib/components/book-card/book-card-list.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import BookManagerHeader from '$lib/components/book-card/book-manager-header.svelte';
+  import NavegacaoInferior from '$lib/components/navegacao/navegacao-inferior.svelte';
   import BookExportDialog from '$lib/components/book-export/book-export-dialog.svelte';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
   import ExternalReadDialog from '$lib/components/external-read-dialog.svelte';
@@ -785,7 +786,7 @@
 <div
   tabindex="0"
   role="button"
-  class="{pxScreen} h-full pt-16 xl:pt-14"
+  class="{pxScreen} h-full pt-16 pb-24 xl:pt-14"
   on:dragenter={(ev) => ev.preventDefault()}
   on:dragover={(ev) => ev.preventDefault()}
   on:dragend={(ev) => ev.preventDefault()}
@@ -819,3 +820,5 @@
     </label>
   {/if}
 </div>
+
+<NavegacaoInferior />
