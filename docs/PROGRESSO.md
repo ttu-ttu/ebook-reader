@@ -280,6 +280,20 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   Claro ou Escuro (`lib/data/tema.ts`, aplicado no app.html antes de desenhar). Vale para Início,
   Fila, edição, navegação e as telas do ttu que usam --background-color/--font-color (Biblioteca,
   Configurações). O leitor e o painel da palavra seguem o tema do ttu (aba Reader).
+- 2026-10-21: "Por livro" vazio: o rastreador do ttu começa pausado e o `trackerAutoStartTime` era 0, então
+  só contava tempo depois de tocar no ▶ do rodapé. Agora começa sozinho 1 s depois da primeira virada
+  de página (pausa e volta sozinho com o app em segundo plano, como já fazia). O marcador (posição)
+  já era salvo pelo auto-marcador do ttu.
+- 2026-10-21: leitor como no protótipo D1 (pedido do Igor): barra do topo própria
+  (`barra-leitor.svelte`: ‹ Biblioteca, título com capítulo e %, Aa 20→23→17, ふ liga/desliga o
+  furigana do livro, menu ⋯ com Desmarcar a partir daqui, Sumário, Marcar este ponto, Ir para o
+  marcador, Estatísticas, Opções de leitura e "Mais ferramentas do leitor", que abre a barra do ttu);
+  sem o rodapé do ttu; padrões: Shippori Mincho, altura de linha 2,15, tema claro/escuro seguindo o
+  app, e em tela de toque horizontal com rolagem (no PC, vertical com páginas, como o ESCOPO
+  sugere). No celular: margens laterais maiores, 1,15 em entre parágrafos, folga de 55vh no fim, barra
+  verde a 14 px do texto. Os padrões entram **uma vez por aparelho** (marca
+  `dokusho-padroes-do-leitor` no localStorage), porque a tela de configurações do ttu já tinha gravado
+  os antigos; depois, o que você mudar fica.
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
