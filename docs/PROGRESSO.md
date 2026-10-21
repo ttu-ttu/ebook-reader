@@ -7,20 +7,20 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | Item      | Status   | Data       | Observação                                                                  |
 | --------- | -------- | ---------- | --------------------------------------------------------------------------- |
 | S1        | feito    | 2026-10-20 | ttu roda; vitest; supabase init + link                                      |
-| S2        | quase    | 2026-10-20 | schema aplicado, login ok; falta conta + cadastro desligado (👤)            |
+| S2        | feito    | 2026-10-20 | schema aplicado, login ok, conta criada e cadastro desligado                |
 | D1        | feito    | 2026-10-20 | telas aprovadas; regra dos toques B; protótipo no branch prototype/d1-telas |
 | R1        | quase    | 2026-10-20 | guid e .apkg batem com o genanki; Anki do PC ok; falta AnkiMobile e iPhone  |
 | R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
 | R3        | quase    | 2026-10-20 | lindera; 32 MB; PC pelo bucket dentro das metas; falta iPhone (👤)          |
 | R4        | feito    | 2026-10-20 | 97,5% do texto acha entrada; 0 Cards sem entrada; regras ajustadas          |
 | R5        | feito    | 2026-10-21 | 30 cartas aprovadas; US$ 0,0038/carta; 31 MB/100 cartas; falta alerta (👤)  |
-| V1.1      | feito    | 2026-10-21 | sincronização por linha (ADR 0014); falta o teste em dois aparelhos (👤)    |
-| V1.2      | feito    | 2026-10-21 | 103/103 formas com o JMdict inteiro; falta medir no iPhone (👤)             |
-| V1.3      | feito    | 2026-10-21 | toque, painel, carta local, barra verde; falta o teste de 30 toques (👤)    |
-| V1.4      | feito    | 2026-10-21 | Início somando os aparelhos; navegação inferior; raiz abre o Início         |
-| V1.5      | feito    | 2026-10-21 | Fila, geração, edição, Refazer áudio; falta gerar 10 cartas logado (👤)     |
-| V1.6      | feito    | 2026-10-21 | .apkg do Lote, Lotes, reexportar, áudio sai após 30 dias; falta Anki (👤)   |
-| V1.7      | parcial  | 2026-10-21 | PWA, nova versão, ícone, backup, telas sem ttu-sync; falta servidor pausado |
+| V1.1      | feito    | 2026-10-21 | sincronização por linha (ADR 0014); teste em dois aparelhos dispensado      |
+| V1.2      | feito    | 2026-10-21 | 103/103 formas com o JMdict inteiro; medida no iPhone dispensada            |
+| V1.3      | feito    | 2026-10-21 | toque, painel, carta local, barra verde; teste de 30 toques dispensado      |
+| V1.4      | feito    | 2026-10-21 | Início somando os aparelhos; números conferidos no PC pelo Igor             |
+| V1.5      | feito    | 2026-10-21 | Fila, geração, edição, Refazer áudio; 10 cartas geradas no PC pelo Igor     |
+| V1.6      | feito    | 2026-10-21 | .apkg importa no Anki do PC e reimportar não duplica (Igor)                 |
+| V1.7      | quase    | 2026-10-21 | código pronto; falta só o deploy na Vercel (👤)                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
@@ -294,6 +294,14 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   verde a 14 px do texto. Os padrões entram **uma vez por aparelho** (marca
   `dokusho-padroes-do-leitor` no localStorage), porque a tela de configurações do ttu já tinha gravado
   os antigos; depois, o que você mudar fica.
+- 2026-10-21: V1.7 fechado no código: aviso "Servidor pausado ou fora do ar" (estado `sem-servidor` da
+  sincronização quando há rede e o servidor não responde: "Failed to fetch", 54x, "paused") no topo de
+  Início, Biblioteca e Fila, com o link do painel do projeto (ref tirado do PUBLIC_SUPABASE_URL) e
+  "Tentar". O app segue com o que está no aparelho.
+- 2026-10-21: teste da v1 no PC feito pelo Igor (10 cartas geradas, .apkg no Anki do PC sem duplicar,
+  Início batendo). Teste no iPhone (dicionário, 30 toques, AnkiMobile) e entre dois aparelhos (mesmo
+  ponto, soma do tempo, apagar livro): **dispensados pelo Igor** ("deve estar certo"); cobertos só
+  pelos testes automáticos (sincronizador com dois aparelhos, deflexão, .apkg).
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
@@ -415,7 +423,6 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Executar docs/MANHA.md e depois apagá-lo
 - [ ] Reorganizar docs/: PROGRESSO.md está longo; mover as 'Decisões' e 'Testes de risco' já
       resolvidas para um histórico (ou ADRs) e deixar no PROGRESSO só estado e pendências
-- [ ] V1.7: terminar a mensagem de servidor pausado (próximo chat)
 - [ ] Voltar o teto do Gemini: `npx supabase secrets set GEMINI_TETO_DIARIO=300` (hoje está 100000)
 
 - [x] docs/CARDS.md
@@ -427,25 +434,21 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [x] Criar a conta, entrar em `/login` e desligar o cadastro (S2)
 - [ ] Colar `supabase/tests/rls_check.sql` no SQL Editor e conferir dono = 1, outro = 0 (S2)
 - [x] R1: importar o Lote de teste no Anki do PC, reimportar e conferir tipos de nota
-- [ ] R1 e V1.6: no iPhone pela PWA (depois de ligar a Vercel), exportar o Lote das cartas do V1.5
-      para o AnkiMobile; "Baixar este Lote de novo" e reimportar não duplica; no PC, o mesmo com o
-      Anki do Windows (as 10 cartas importam com áudio). Lote de 100 quando a fila tiver 100
+- [ ] R1: AnkiMobile no iPhone pela PWA e Lote de 100 (dispensado por enquanto; o .apkg já importa no
+      Anki do PC sem duplicar)
 - [x] R2: rodar `/teste/anki` com o Anki aberto
 - [ ] V1.7: pôr a URL de produção no `webCorsOriginList` (docs/ANKI-CONNECT.md)
 - [x] R3: na raiz, `node tools/subir-dicionario.ts` (e-mail e senha no terminal); depois, logado no
       app, `/teste/dicionario` → "Baixar dicionário" e anotar download e preparação
-- [ ] R3 e V1.2: na PWA do iPhone (depois da Vercel), Configurações › Data › Dicionário: "Baixar"
-      (anotar o tempo) e "Medir velocidade"; anotar em "Testes de risco" › R3 e marcar R3 como feito
-      (a página `/teste/dicionario` saiu no V1.2)
+- [ ] R3 e V1.2: medir o dicionário no iPhone (dispensado por enquanto; quando quiser: Configurações ›
+      Data › Dicionário › "Medir velocidade")
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_API_KEY é do projeto pago (R5)
 - [x] R5: rodada final das 30 cartas e veredito
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
-- [ ] V1.1: importar um livro no PC, abrir no iPad no mesmo ponto; ler o mesmo livro no mesmo dia nos
-      dois e conferir a soma do tempo (V1.4); apagar um livro e ver sumir no outro
-- [ ] V1.3: teste de 30 toques no iPhone (horizontal com rolagem) e no PC (modo que for usar);
-      anotar quantas seleções saíram erradas em "Testes de risco"
-- [ ] V1.4: conferir os números do Início contra a tela de estatísticas do ttu (um aparelho só)
-- [ ] V1.5: logado, criar 10 cartas no leitor e ver as 10 virarem "gerada" com significado em
+- [ ] Supabase › Authentication › URL Configuration: Site URL = a URL da Vercel (V1.7)
+- [ ] Juntar o PR do `v1-autonomo` no `main` (a Vercel publica o `main`)
+- [x] V1.4: conferir os números do Início contra a tela de estatísticas do ttu (um aparelho só)
+- [x] V1.5: logado, criar 10 cartas no leitor e ver as 10 virarem "gerada" com significado em
       português e os dois áudios; editar uma; "Refazer áudio" numa
 
 ## Sem decisão (da entrevista de 20/10)
