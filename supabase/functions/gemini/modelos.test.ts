@@ -18,6 +18,11 @@ describe('usuarioPermitido', () => {
     expect(usuarioPermitido('u2', 'u1')).toBe(false);
   });
 
+  it('ignora espaços e aspas nas pontas do secret', () => {
+    expect(usuarioPermitido('u1', ' "u1"\n')).toBe(true);
+    expect(usuarioPermitido('u1', "'u1'")).toBe(true);
+  });
+
   it('ninguém quando a configuração falta', () => {
     expect(usuarioPermitido('u1', undefined)).toBe(false);
     expect(usuarioPermitido('', '')).toBe(false);

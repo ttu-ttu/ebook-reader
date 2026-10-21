@@ -22,7 +22,9 @@ export function lerLista(nome: string, valor: string | undefined) {
 }
 
 export function usuarioPermitido(usuario: string, permitido: string | undefined) {
-  return !!permitido && usuario === permitido;
+  // Espaços e aspas de um secret colado no terminal não contam.
+  const limpo = (permitido ?? '').trim().replace(/^["']|["']$/g, '');
+  return !!limpo && usuario === limpo;
 }
 
 // Modelo fora do ar, sem cota ou inexistente: tenta o próximo da lista.
