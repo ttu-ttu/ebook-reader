@@ -17,6 +17,7 @@
   import SettingsFontSelector from '$lib/components/settings/settings-font-selector.svelte';
   import SettingsReadingGoals from '$lib/components/settings/settings-reading-goals.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
+  import SettingsDicionario from '$lib/components/settings/settings-dicionario.svelte';
   import SettingsStorageSourceList from '$lib/components/settings/settings-storage-source-list.svelte';
   import SettingsUserFontDialog from '$lib/components/settings/settings-user-font-dialog.svelte';
   import { inputClasses } from '$lib/css-classes';
@@ -949,6 +950,9 @@
   {:else if activeSettings === 'Data'}
     <SettingsItemGroup title="Conta" tooltip="Login no Supabase, usado na sincronização">
       <a class="underline" href="{pagePath}/login">Entrar ou sair</a>
+    </SettingsItemGroup>
+    <SettingsItemGroup title="Dicionário" tooltip="JMdict + JPDB + JmdictFurigana, do bucket dicts">
+      <SettingsDicionario />
     </SettingsItemGroup>
     <SettingsItemGroup title="Persistent storage" tooltip={persistentStorageTooltip}>
       <div class="flex items-center">
