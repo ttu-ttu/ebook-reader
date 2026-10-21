@@ -212,8 +212,12 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 ### R5 · Edge Function `gemini` (2026-10-20)
 
 - Testes de regra: 29 (WAV, corte de silêncio, nomes, pedidos, reserva, acesso). ✅
-- Recusa (chamada real): sem token → 401 do gateway; chave pública sem usuário → 401 `sem login`; JWT
-  falso → 401. A recusa de outro usuário logado (403) só pelo teste unitário: o cadastro está desligado. ✅
+- Primeira rodada das 30: todas recusadas pelo gateway. Os tokens do Auth são ES256 (chaves de
+  assinatura novas) e o `verify_jwt` do gateway só aceita os antigos (HS256). Corrigido:
+  `verify_jwt = false` em `[functions.gemini]` do config.toml; a função confere o login com
+  `auth.getUser`. Toda função nova deste projeto precisa do mesmo.
+- Recusa (chamada real, depois da correção): sem token, chave pública sem usuário e JWT falso → 401
+  `sem login` da própria função. A recusa de outro usuário logado (403) só pelo teste unitário: o cadastro está desligado. ✅
 - 30 cartas: `dicts/r5/cartas.json` (fora do git) com palavras do また、同じ夢を見ていた, várias de leitura
   ambígua (辛い つらい, 開く あく, 風 ふう, 上手い うまい, 一日 いちにち, 明日 あした, 何度, 下手 へた).
   Preços de `dicts/r5/precos.json` (US$/1M tokens, tabela de out/2026). 👤 Falta rodar e anotar aqui:
