@@ -7,8 +7,9 @@
 import type { Entrada } from '$lib/data/dicionario/formato';
 import { paraHiragana, type Pedaco } from '$lib/data/dicionario/tokenizador';
 
-// Casamento texto ↔ Anki pela entrada do JMdict (ADR 0008): o Card e a palavra do texto são a
-// mesma Palavra quando caem na mesma entrada (seq) com a mesma leitura.
+// Casamento texto ↔ Anki pela entrada do JMdict (ADR 0008, 0013): o Card e a palavra do texto são
+// a mesma Palavra quando caem na mesma entrada (seq), com qualquer leitura. A leitura só escolhe a
+// entrada no texto (方 かた × 方 ほう).
 
 /** Palavra do lado do hub: entrada do JMdict + leitura em hiragana. */
 export interface PalavraJmdict {
@@ -20,6 +21,28 @@ export interface PalavraJmdict {
 export type Consulta = (termo: string) => Promise<Entrada[]>;
 
 export const chavePalavra = ({ seq, leitura }: PalavraJmdict) => `${seq}|${leitura}`;
+
+/** Palavras dos Cards por entrada: seq → leituras que o Anki tem. */
+export type IndiceAnki = Map<number, string[]>;
+
+export function indexarAnki(palavras: Iterable<PalavraJmdict>): IndiceAnki {
+  const indice: IndiceAnki = new Map();
+  for (const { seq, leitura } of palavras) {
+    const leituras = indice.get(seq);
+    if (!leituras) indice.set(seq, [leitura]);
+    else if (!leituras.includes(leitura)) leituras.push(leitura);
+  }
+  return indice;
+}
+
+/**
+ * Leituras do Anki para a entrada da palavra do texto; `outraLeitura` quando nenhuma é a do texto
+ * (o painel mostra "no Anki como <leitura>"). undefined: a entrada não está no Anki.
+ */
+export function noAnki(indice: IndiceAnki, { seq, leitura }: PalavraJmdict) {
+  const leituras = indice.get(seq);
+  return leituras && { leituras, outraLeitura: !leituras.includes(leitura) };
+}
 
 const JAPONES = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}々〆]/u;
 const SO_KANA = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;

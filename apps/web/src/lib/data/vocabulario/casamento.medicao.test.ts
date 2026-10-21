@@ -22,6 +22,8 @@ import { criarTokenizador } from '$lib/data/dicionario/tokenizador';
 import { criarAnkiConnect } from '$lib/functions/anki/anki-connect';
 import {
   casarCard,
+  indexarAnki,
+  noAnki,
   casarPedaco,
   chavePalavra,
   type Consulta,
@@ -113,7 +115,7 @@ describe.skipIf(!EPUB)('medição do casamento (R4)', () => {
         leitura: c.wordReading,
         deck: c.deck
       });
-    const noAnki = new Map<string, string>();
+    const palavrasAnki: PalavraJmdict[] = [];
     const seqsAnki = new Map<number, string>();
     const escritasAnki = new Set<string>();
     const cardsSemEntrada: string[] = [];
@@ -124,11 +126,13 @@ describe.skipIf(!EPUB)('medição do casamento (R4)', () => {
       if (!palavras.length) cardsSemEntrada.push(`${word}【${leitura}】 ${deck}`);
       if (ambiguo)
         cardsAmbiguos.push(`${word}【${leitura}】 → ${palavras.map((p) => p.seq).join(', ')}`);
-      for (const p of palavras) {
-        noAnki.set(chavePalavra(p), word);
-        seqsAnki.set(p.seq, `${word}【${leitura}】`);
-      }
+      palavrasAnki.push(...palavras);
+      for (const p of palavras) seqsAnki.set(p.seq, `${word}【${leitura}】`);
     }
+    const indice = indexarAnki(palavrasAnki);
+    // ADR 0013: pela entrada; `mesmaLeitura` é a regra antiga do ADR 0008, só para comparar.
+    const estaNoAnki = (p: PalavraJmdict) => !!noAnki(indice, p);
+    const mesmaLeitura = (p: PalavraJmdict) => noAnki(indice, p)?.outraLeitura === false;
 
     // Texto.
     const texto = await textoDoEpub(EPUB!);
@@ -169,20 +173,16 @@ describe.skipIf(!EPUB)('medição do casamento (R4)', () => {
 
     // Texto ↔ Anki.
     const distintas = [...palavras.values()];
-    const casaAnki = distintas.filter((x) => noAnki.has(chavePalavra(x.p)));
-    const casaAnkiQualquer = distintas.filter((x) =>
-      x.candidatas.some((c) => noAnki.has(chavePalavra(c)))
-    );
+    const casaAnki = distintas.filter((x) => estaNoAnki(x.p));
+    const casaAnkiQualquer = distintas.filter((x) => x.candidatas.some((c) => estaNoAnki(c)));
     const soPelaEscrita = distintas.filter((x) => escritasAnki.has(x.base));
     const ganhoDoJmdict = casaAnki.filter((x) => !escritasAnki.has(x.base));
-    const perdaDoJmdict = soPelaEscrita.filter((x) => !noAnki.has(chavePalavra(x.p)));
-    const ambiguasNoAnki = casaAnkiQualquer.filter((x) => !noAnki.has(chavePalavra(x.p)));
+    const perdaDoJmdict = soPelaEscrita.filter((x) => !estaNoAnki(x.p));
+    const ambiguasNoAnki = casaAnkiQualquer.filter((x) => !estaNoAnki(x.p));
     const ambiguasDistintas = distintas.filter((x) => x.candidatas.length > 1);
-    const outraLeitura = distintas.filter(
-      (x) => !noAnki.has(chavePalavra(x.p)) && seqsAnki.has(x.p.seq)
-    );
+    const outraLeitura = casaAnki.filter((x) => !mesmaLeitura(x.p));
     const descrever = (x: (typeof distintas)[number]) =>
-      `${x.base}【${x.p.leitura}】×${x.n}${noAnki.has(chavePalavra(x.p)) ? ` = ${noAnki.get(chavePalavra(x.p))}` : ''}`;
+      `${x.base}【${x.p.leitura}】×${x.n}${estaNoAnki(x.p) ? ` = ${seqsAnki.get(x.p.seq)}` : ''}`;
     const porN = <T extends { n: number }>(lista: T[]) => [...lista].sort((a, b) => b.n - a.n);
 
     const relatorio = {
@@ -191,7 +191,7 @@ describe.skipIf(!EPUB)('medição do casamento (R4)', () => {
         pares: pares.size,
         semEntrada: cardsSemEntrada.length,
         ambiguos: cardsAmbiguos.length,
-        palavras: noAnki.size
+        entradas: indice.size
       },
       texto: {
         caracteres: texto.length,
@@ -207,12 +207,13 @@ describe.skipIf(!EPUB)('medição do casamento (R4)', () => {
       },
       textoAnki: {
         palavrasNoAnki: casaAnki.length,
+        palavrasNoAnkiMesmaLeitura: casaAnki.length - outraLeitura.length,
         ocorrenciasNoAnki: casaAnki.reduce((s, x) => s + x.n, 0),
         comQualquerCandidata: casaAnkiQualquer.length,
         pelaEscrita: soPelaEscrita.length,
         ganhoDoJmdict: ganhoDoJmdict.length,
         perdaDoJmdict: perdaDoJmdict.length,
-        mesmaEntradaOutraLeitura: `${outraLeitura.length} (${outraLeitura.reduce((s, x) => s + x.n, 0)} ocorrências)`
+        outraLeitura: `${outraLeitura.length} (${outraLeitura.reduce((s, x) => s + x.n, 0)} ocorrências)`
       }
     };
     console.log(JSON.stringify(relatorio, null, 2));
@@ -224,21 +225,16 @@ describe.skipIf(!EPUB)('medição do casamento (R4)', () => {
       ),
       ambiguasNoTexto: porN(ambiguasDistintas).map(
         (x) =>
-          `${descrever(x)} | ${x.candidatas.map((c) => `${c.seq}【${c.leitura}】${noAnki.get(chavePalavra(c)) ?? ''}`).join(' / ')}`
+          `${descrever(x)} | ${x.candidatas.map((c) => `${c.seq}【${c.leitura}】${seqsAnki.get(c.seq) ?? ''}`).join(' / ')}`
       ),
       ganhoDoJmdict: porN(ganhoDoJmdict).map(descrever),
-      perdaDoJmdict: porN(perdaDoJmdict).map(
-        (x) =>
-          `${descrever(x)}${seqsAnki.has(x.p.seq) ? ` | mesma entrada no Anki: ${seqsAnki.get(x.p.seq)}` : ''}`
-      ),
-      mesmaEntradaOutraLeitura: porN(outraLeitura).map(
-        (x) => `${descrever(x)} | ${seqsAnki.get(x.p.seq)}`
-      ),
+      perdaDoJmdict: porN(perdaDoJmdict).map(descrever),
+      outraLeitura: porN(outraLeitura).map(descrever),
       ambiguasQueCairiamNoAnki: porN(ambiguasNoAnki).map(
         (x) =>
           `${descrever(x)} | ${x.candidatas
-            .filter((c) => noAnki.has(chavePalavra(c)))
-            .map((c) => noAnki.get(chavePalavra(c)))
+            .filter((c) => estaNoAnki(c))
+            .map((c) => seqsAnki.get(c.seq))
             .join(', ')}`
       ),
       soKanaNoAnki: porN(casaAnki.filter((x) => x.soKana)).map(descrever)

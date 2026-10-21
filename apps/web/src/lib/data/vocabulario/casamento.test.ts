@@ -13,7 +13,9 @@ import {
   casarPedaco,
   chavePalavra,
   ehGramatica,
+  indexarAnki,
   leiturasDoCampo,
+  noAnki,
   limparCampo,
   type Consulta
 } from './casamento';
@@ -36,7 +38,8 @@ const SEQ = {
   au: 8,
   tsukuru: 9,
   naru: 1375610,
-  naruRara: 10
+  naruRara: 10,
+  minna: 1202150
 };
 
 const entrada = (seq: number, ...formas: Forma[]): Entrada => ({
@@ -68,6 +71,7 @@ const entradas: Entrada[] = [
   entrada(SEQ.sanNumero, { e: '三', l: 'さん', f: 100, fk: 5000 }),
   entrada(SEQ.naru, { e: '成る', l: 'なる', f: 400, fk: 20 }),
   entrada(SEQ.naruRara, { e: 'なる', l: 'なる', fk: 9000 }),
+  entrada(SEQ.minna, { e: '皆', l: 'みんな', f: 70, fk: 30 }, { e: '皆', l: 'みな', f: 120 }),
   entrada(SEQ.au, { e: '会う', l: 'あう', f: 90 }),
   entrada(SEQ.tsukuru, { e: '作る', l: 'つくる', f: 150 })
 ];
@@ -239,5 +243,35 @@ describe('pedaço do texto → entrada do JMdict', () => {
 
   it('gramática não é casada', async () => {
     expect(await casarPedaco(consultar, pedaco('は', 'は', 'は', '助詞', '係助詞'))).toBeNull();
+  });
+});
+
+describe('texto ↔ Anki pela entrada (ADR 0013)', () => {
+  const indiceDe = async (...cards: [string, string][]) =>
+    indexarAnki(
+      (await Promise.all(cards.map(([w, r]) => casarCard(consultar, w, r)))).flatMap(
+        (c) => c.palavras
+      )
+    );
+
+  it('mesma entrada com outra leitura casa e avisa a leitura do Anki', async () => {
+    const indice = await indiceDe(['みんな', 'みんな']);
+    const texto = await casarPedaco(consultar, pedaco('皆', '皆', 'みな', '名詞', '代名詞'));
+    expect(noAnki(indice, texto!.palavra!)).toEqual({ leituras: ['みんな'], outraLeitura: true });
+  });
+
+  it('mesma leitura: casa sem aviso', async () => {
+    const indice = await indiceDe(['何', 'なに・なん']);
+    const texto = await casarPedaco(consultar, pedaco('何', '何', 'なん', '名詞', '代名詞'));
+    expect(noAnki(indice, texto!.palavra!)).toEqual({
+      leituras: ['なに', 'なん'],
+      outraLeitura: false
+    });
+  });
+
+  it('homógrafo em outra entrada continua separado', async () => {
+    const indice = await indiceDe(['方', 'ほう']);
+    const texto = await casarPedaco(consultar, pedaco('方', '方', 'かた', '名詞', '一般'));
+    expect(noAnki(indice, texto!.palavra!)).toBeUndefined();
   });
 });
