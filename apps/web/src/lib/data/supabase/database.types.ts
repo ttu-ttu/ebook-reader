@@ -102,6 +102,8 @@ export type Database = {
         Row: {
           book_id: string;
           deleted_at: string | null;
+          device_id: string | null;
+          device_name: string | null;
           explored_char_count: number | null;
           modified_at: string;
           progress: string | null;
@@ -114,6 +116,8 @@ export type Database = {
         Insert: {
           book_id: string;
           deleted_at?: string | null;
+          device_id?: string | null;
+          device_name?: string | null;
           explored_char_count?: number | null;
           modified_at?: string;
           progress?: string | null;
@@ -126,6 +130,8 @@ export type Database = {
         Update: {
           book_id?: string;
           deleted_at?: string | null;
+          device_id?: string | null;
+          device_name?: string | null;
           explored_char_count?: number | null;
           modified_at?: string;
           progress?: string | null;
@@ -146,6 +152,7 @@ export type Database = {
           modified_at: string;
           original_path: string | null;
           processed_path: string | null;
+          processed_size: number | null;
           title: string;
           updated_at: string;
           user_id: string;
@@ -158,6 +165,7 @@ export type Database = {
           modified_at?: string;
           original_path?: string | null;
           processed_path?: string | null;
+          processed_size?: number | null;
           title: string;
           updated_at?: string;
           user_id?: string;
@@ -170,6 +178,7 @@ export type Database = {
           modified_at?: string;
           original_path?: string | null;
           processed_path?: string | null;
+          processed_size?: number | null;
           title?: string;
           updated_at?: string;
           user_id?: string;
@@ -241,6 +250,7 @@ export type Database = {
           character_goal: number;
           deleted_at: string | null;
           goal_end_date: string | null;
+          goal_frequency: string | null;
           goal_original_end_date: string | null;
           goal_start_date: string;
           modified_at: string;
@@ -252,6 +262,7 @@ export type Database = {
           character_goal?: number;
           deleted_at?: string | null;
           goal_end_date?: string | null;
+          goal_frequency?: string | null;
           goal_original_end_date?: string | null;
           goal_start_date: string;
           modified_at?: string;
@@ -263,6 +274,7 @@ export type Database = {
           character_goal?: number;
           deleted_at?: string | null;
           goal_end_date?: string | null;
+          goal_frequency?: string | null;
           goal_original_end_date?: string | null;
           goal_start_date?: string;
           modified_at?: string;
