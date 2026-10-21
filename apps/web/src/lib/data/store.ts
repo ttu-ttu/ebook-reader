@@ -62,7 +62,52 @@ import type { WritingMode } from './writing-mode';
 import { writableSetLocalStorageSubject } from './internal/writable-set-local-storage-subject';
 import { writableStringLocalStorageSubject } from './internal/writable-string-local-storage-subject';
 
-export const theme$ = writableStringLocalStorageSubject()('theme', 'light-theme');
+// Dokusho: padrões do leitor como no protótipo D1. Celular e tablet (toque): horizontal com rolagem
+// (ESCOPO "Toque e painel"); o tema do leitor acompanha o claro/escuro do app (lib/data/tema.ts).
+const telaDeToque = browser && window.matchMedia('(pointer: coarse)').matches;
+
+// Uma vez por aparelho: a tela de configurações do ttu grava todos os valores, então os padrões
+// novos só valem se os antigos saírem. Depois disso, o que você mudar fica.
+const PADROES_DO_DOKUSHO = 'dokusho-padroes-do-leitor';
+
+if (browser) {
+  try {
+    if (!localStorage.getItem(PADROES_DO_DOKUSHO)) {
+      [
+        'theme',
+        'fontFamilyGroupOne',
+        'lineHeight',
+        'writingMode',
+        'viewMode',
+        'trackerAutoStartTime'
+      ].forEach((chave) => localStorage.removeItem(chave));
+      localStorage.setItem(PADROES_DO_DOKUSHO, '1');
+    }
+  } catch {
+    // Sem localStorage, valem os padrões.
+  }
+}
+const temaEscuro = (() => {
+  if (!browser) return false;
+
+  let escolhido: string | null = null;
+
+  try {
+    escolhido = localStorage.getItem('dokusho-tema');
+  } catch {
+    // Sem localStorage: segue o sistema.
+  }
+
+  return (
+    escolhido === 'escuro' ||
+    (escolhido !== 'claro' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  );
+})();
+
+export const theme$ = writableStringLocalStorageSubject()(
+  'theme',
+  temaEscuro ? 'dark-theme' : 'light-theme'
+);
 export const customThemes$ = writableObjectLocalStorageSubject<Record<string, ThemeOption>>()(
   'customThemes',
   {}
@@ -70,7 +115,7 @@ export const customThemes$ = writableObjectLocalStorageSubject<Record<string, Th
 export const multiplier$ = writableNumberLocalStorageSubject()('autoScrollMultiplier', 20);
 export const fontFamilyGroupOne$ = writableStringLocalStorageSubject()(
   'fontFamilyGroupOne',
-  'Noto Serif JP'
+  'Shippori Mincho'
 );
 export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()(
   'fontFamilyGroupTwo',
@@ -78,7 +123,7 @@ export const fontFamilyGroupTwo$ = writableStringLocalStorageSubject()(
 );
 export const fontWeight$ = writableNumberOrNullLocalStorageSubject()('fontWeight', null);
 export const fontSize$ = writableNumberLocalStorageSubject()('fontSize', 20);
-export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 1.65);
+export const lineHeight$ = writableNumberLocalStorageSubject()('lineHeight', 2.15);
 export const textIndentation$ = writableNumberLocalStorageSubject()('textIndentation', 0);
 export const textMarginValue$ = writableNumberLocalStorageSubject()('textMarginValue', 0);
 export const hideSpoilerImage$ = writableBooleanLocalStorageSubject()('hideSpoilerImage', true);
@@ -93,7 +138,7 @@ export const furiganaStyle$ = writableStringLocalStorageSubject<FuriganaStyle>()
 );
 export const writingMode$ = writableStringLocalStorageSubject<WritingMode>()(
   'writingMode',
-  'vertical-rl'
+  telaDeToque ? 'horizontal-tb' : 'vertical-rl'
 );
 export const enableVerticalFontKerning$ = writableBooleanLocalStorageSubject()(
   'enableVerticalFontKerning',
@@ -138,7 +183,7 @@ export const showFooterChapterPercentage$ = writableBooleanLocalStorageSubject()
 );
 export const viewMode$ = writableStringLocalStorageSubject<ViewMode>()(
   'viewMode',
-  ViewMode.Paginated
+  telaDeToque ? ViewMode.Continuous : ViewMode.Paginated
 );
 
 export const secondDimensionMaxValue$ = writableNumberLocalStorageSubject()(
@@ -287,7 +332,9 @@ export const addCharactersOnCompletion$ = writableBooleanLocalStorageSubject()(
   false
 );
 
-export const trackerAutostartTime$ = writableNumberLocalStorageSubject()('trackerAutoStartTime', 0);
+// Dokusho: o tempo de leitura conta sozinho, 1 s depois da primeira virada de página (o ttu
+// começava pausado até tocar no ▶ do rodapé, que o leitor do Dokusho não mostra).
+export const trackerAutostartTime$ = writableNumberLocalStorageSubject()('trackerAutoStartTime', 1);
 
 export const trackerIdleTime$ = writableNumberLocalStorageSubject()('trackerIdleTime', 0);
 
