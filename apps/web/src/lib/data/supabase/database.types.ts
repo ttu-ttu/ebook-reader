@@ -36,6 +36,7 @@ export type Database = {
           user_id: string;
           voice_text: string | null;
           word: string;
+          word_audio_check: string | null;
           word_audio_path: string | null;
           word_furigana: string | null;
           word_meaning: string | null;
@@ -62,6 +63,7 @@ export type Database = {
           user_id?: string;
           voice_text?: string | null;
           word: string;
+          word_audio_check?: string | null;
           word_audio_path?: string | null;
           word_furigana?: string | null;
           word_meaning?: string | null;
@@ -88,6 +90,7 @@ export type Database = {
           user_id?: string;
           voice_text?: string | null;
           word?: string;
+          word_audio_check?: string | null;
           word_audio_path?: string | null;
           word_furigana?: string | null;
           word_meaning?: string | null;
@@ -469,6 +472,7 @@ export type Database = {
           user_id: string;
           voice_text: string | null;
           word: string;
+          word_audio_check: string | null;
           word_audio_path: string | null;
           word_furigana: string | null;
           word_meaning: string | null;
