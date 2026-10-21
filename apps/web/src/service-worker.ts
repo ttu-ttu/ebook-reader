@@ -20,9 +20,15 @@ const assetsToCache = build
   .concat(prerendered);
 const cachedAssets = new Set(assetsToCache);
 
+// Sem skipWaiting automático (ADR 0011): a versão nova espera até você tocar em "Nova versão:
+// atualizar" (fora do leitor) ou até o app abrir do zero. Trocar no meio da leitura deixaria o
+// código ainda não carregado (o painel da palavra) sem arquivo no cache nem na Vercel.
 worker.addEventListener('install', (event) => {
-  worker.skipWaiting();
   event.waitUntil(caches.open(BUILD_CACHE_NAME).then((cache) => cache.addAll(assetsToCache)));
+});
+
+worker.addEventListener('message', (event) => {
+  if (event.data?.type === 'ATUALIZAR') worker.skipWaiting();
 });
 
 worker.addEventListener('activate', (event) => {

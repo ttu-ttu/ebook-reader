@@ -5,7 +5,7 @@
  */
 
 export function formatPageTitle(title: string) {
-  const appName = 'ッツ Ebook Reader';
+  const appName = 'Dokusho';
   if (!title) return appName;
   return `${title} | ${appName}`;
 }

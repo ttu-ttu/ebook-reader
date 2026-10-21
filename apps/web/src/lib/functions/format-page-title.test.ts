@@ -9,10 +9,10 @@ import { formatPageTitle } from './format-page-title';
 
 describe('formatPageTitle', () => {
   it('junta o título ao nome do app', () => {
-    expect(formatPageTitle('Home')).toBe('Home | ッツ Ebook Reader');
+    expect(formatPageTitle('Home')).toBe('Home | Dokusho');
   });
 
   it('sem título, devolve só o nome do app', () => {
-    expect(formatPageTitle('')).toBe('ッツ Ebook Reader');
+    expect(formatPageTitle('')).toBe('Dokusho');
   });
 });

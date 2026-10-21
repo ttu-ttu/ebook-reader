@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import AvisoNovaVersao from '$lib/components/navegacao/aviso-nova-versao.svelte';
   import { pagePath } from '$lib/data/env';
   import { cartasRecebidas$, sincronizador } from '$lib/data/supabase/sincronizacao/iniciar';
 
@@ -39,6 +40,8 @@
 
   $: atual = $page.url.pathname.replace(pagePath, '');
 </script>
+
+<AvisoNovaVersao />
 
 <nav class="dokusho-nav writing-horizontal-tb">
   {#each itens as item}
