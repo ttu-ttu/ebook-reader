@@ -16,7 +16,8 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | R5        | feito    | 2026-10-21 | 30 cartas aprovadas; US$ 0,0038/carta; 31 MB/100 cartas; falta alerta (👤)  |
 | V1.1      | feito    | 2026-10-21 | sincronização por linha (ADR 0014); falta o teste em dois aparelhos (👤)    |
 | V1.2      | feito    | 2026-10-21 | 103/103 formas com o JMdict inteiro; falta medir no iPhone (👤)             |
-| V1.3–V1.7 | pendente |            |                                                                             |
+| V1.3      | feito    | 2026-10-21 | toque, painel, carta local, barra verde; falta o teste de 30 toques (👤)    |
+| V1.4–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
@@ -183,6 +184,41 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   Baixar/Atualizar (compara com `atual.json`), Apagar deste aparelho, Medir velocidade (substitui a
   `/teste/dicionario`, que saiu). `dialog-template.svelte` ganhou `<script lang="ts">`: `pnpm check`
   caiu de 27 para **15** erros, todos antigos do ttu.
+- 2026-10-21: V1.3 (autônomo, revisar). `lib/components/painel-palavra/`: `leitor-dokusho.svelte`
+  (entra no leitor do ttu ao lado do BookReader) escuta o clique na janela; `caractereNoPonto`
+  (caretRangeFromPoint/caretPositionFromPoint, 6 px de folga) acha o caractere; o parágrafo (p, h\*,
+  li…) vira texto sem `<rt>` com o mapa de volta aos nós e os `<ruby>`; o tokenizador corta o
+  parágrafo (guardado por parágrafo) e `selecionar` (V1.2) escolhe a palavra. Realce pela CSS Custom
+  Highlight API (`::highlight(dokusho-selecao)`; Safari 17.2+); sem ela, sem realce. Regra B: palavra
+  abre ou troca o painel; pontuação, margem ou fora do texto só fecham; arrastar a alça fecha. O
+  primeiro toque sem dicionário abre o aviso de download (V1.2). Painel (`painel-palavra.svelte`, no
+  desenho do D1): inferior até 767 px; na tela larga, lateral (360 px) **do lado oposto ao da palavra
+  tocada** (com texto vertical o começo fica à direita). Mostra leitura e escrita da entrada aberta,
+  "seleção: X → Y", entradas pela frequência (a que bate com o `<ruby>` do EPUB ou com a leitura do
+  tokenizador primeiro, marcada "furigana do livro"), até 6 sentidos com etiquetas, JPDB, "não está no
+  dicionário", "gramática · fora da cobertura", "Traduzir frase" (cache local de `translations`,
+  depois a ação `translate`; desativado offline), "Na fila · <estado>" ou "Exportada em <data>",
+  "Já sei" desativado (v2), "Criar carta" (ou "Na fila · abrir", que vai para `/fila?carta=<id>`);
+  carta já exportada pede "Criar mesmo assim". Setas: ‹ e › mexem só no fim, por pedaço.
+  Carta (`lib/data/cartas/palavra.ts`, `frase.ts`, `furigana.ts`): Word é a escrita da entrada (texto
+  em kana pega a escrita mais frequente com a leitura: わかる → 分かる; entrada "uk" do JMdict fica em
+  kana); Word Furigana pelo JmdictFurigana ou pelo alinhamento do okurigana (立[た]ち 止[ど]まる);
+  Frase pelo ESCOPO (。！？ fora de 「」, corte em ~150 caracteres num 、 com "…"); Sentence com `<b>` na
+  forma conjugada; Sentence Furigana pelos pedaços do tokenizador, com JmdictFurigana quando a escrita
+  e a leitura batem; contexto (frase anterior e seguinte, inclusive dos parágrafos vizinhos); Frequency;
+  `jmdict_id`; `book_id` = hash do livro. Gravada como `pendente` no `dokusho-sinc` (lojas novas
+  `cartas`, `lotes`, `traducoes`, banco v2) e sincronizada por linha com `batch_items`/`lotes`
+  (`translations` só desce). Barra do topo: no modo contínuo aparece ao rolar para trás (para cima, ou
+  para a direita no vertical) e some ao avançar; no modo de páginas e no começo do capítulo vale a
+  faixa do topo do ttu (32 px), que já existia. Barra verde: `alcance-dom.ts` conta o fim de cada
+  parágrafo como o ttu conta o marcador, no HTML inteiro do livro (por seção, para o modo de páginas);
+  `::before` com propriedades lógicas (à esquerda no horizontal, em cima no vertical), sem mudar o
+  layout. O Alcance sobe com o `exploredCharCount`; "Desmarcar a partir daqui" é um ícone de borracha
+  na barra do leitor (baixa o Alcance para o ponto atual e grava o marcador, que leva o Alcance aos
+  outros aparelhos). Testado no painel do navegador com o dicionário local e um EPUB de teste
+  (substituindo o `requestAnimationFrame`, que não roda com a janela oculta): 食べた → 食べる,
+  気がついた → 気がつく, 漢字 com o furigana do livro, setas, pontuação fechando, carta gravada como o
+  CARDS.md pede.
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
@@ -323,11 +359,12 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 - [ ] V1.1: importar um livro no PC, abrir no iPad no mesmo ponto; ler o mesmo livro no mesmo dia nos
       dois e conferir a soma do tempo (V1.4); apagar um livro e ver sumir no outro
+- [ ] V1.3: teste de 30 toques no iPhone (horizontal com rolagem) e no PC (modo que for usar);
+      anotar quantas seleções saíram erradas em "Testes de risco"
 
 ## Sem decisão (da entrevista de 20/10)
 
-- Modo de leitura no PC; como mostrar a barra do topo onde não há rolagem (modo de páginas, começo de
-  capítulo): decidir no V1.3 (sugestão: faixa do topo ou mouse no topo).
+- Modo de leitura no PC (o toque e o painel funcionam nos dois; a barra do topo foi resolvida no V1.3).
 - Números: frequência N do "Já sei" inicial, teto diário do Gemini, valor do alerta, corte da frase,
   intervalo do marcador, prazo do áudio.
 - Não discutidos: detalhes da tela inicial (início da semana, virada do dia, fuso em viagem), metas,
