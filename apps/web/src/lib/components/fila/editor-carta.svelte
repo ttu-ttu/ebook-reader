@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { LinhaCarta } from '$lib/data/supabase/sincronizacao/regras';
   import { geracao, salvarCarta, tirarDaFila, urlDoAudio } from '$lib/data/cartas/fila';
+  import { reexportarCarta } from '$lib/data/cartas/lotes';
   import { sincronizarEmBreve } from '$lib/data/supabase/sincronizacao/iniciar';
 
   // Edição da carta (D1 "tela de edição"): cada campo mostra de onde vem; "Texto para a voz" e
@@ -77,6 +78,11 @@
   const refazerAudio = () =>
     executar(() => geracao.refazerAudio(carta.id, { voice_text: carta.voice_text }));
   const tentarDeNovo = () => executar(() => geracao.tentarDeNovo(carta.id));
+  const reexportar = () =>
+    executar(async () => {
+      await reexportarCarta(carta);
+      dispatch('voltar');
+    });
   const tirar = () =>
     executar(async () => {
       await tirarDaFila(carta);
@@ -112,6 +118,9 @@
   {#if somenteLeitura}
     <div class="dokusho-editor__aviso">
       Exportada. Corrigir agora é no Anki; reexportar sobrescreve o Card.
+      <button disabled={ocupado} on:click={reexportar}>
+        Reexportar (sobrescreve o Card no Anki)
+      </button>
     </div>
   {/if}
 

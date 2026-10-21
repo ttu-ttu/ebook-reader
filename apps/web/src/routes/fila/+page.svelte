@@ -9,14 +9,19 @@
   import { isOnline$ } from '$lib/data/store';
   import { geracao, gerandoAgora$, gerarPendentes, htmlDaFrase } from '$lib/data/cartas/fila';
   import { cartasRecebidas$, sincronizador } from '$lib/data/supabase/sincronizacao/iniciar';
-  import type { LinhaCarta } from '$lib/data/supabase/sincronizacao/regras';
+  import type { LinhaCarta, LinhaLote } from '$lib/data/supabase/sincronizacao/regras';
+  import BarraExportar from '$lib/components/fila/barra-exportar.svelte';
+  import ListaLotes from '$lib/components/fila/lista-lotes.svelte';
+  import { limparAudiosAntigos } from '$lib/data/cartas/lotes';
   import { formatPageTitle } from '$lib/functions/format-page-title';
 
   // Fila de cartas (ESCOPO "Cards"; desenho do D1; ADR 0010).
 
   let cartas: LinhaCarta[] = [];
+  let lotes: LinhaLote[] = [];
   let carregado = false;
   let tentando = '';
+  let aba: 'fila' | 'lotes' = 'fila';
 
   $: idAberto = browser ? $page.url.searchParams.get('carta') : null;
   $: aberta = idAberto ? cartas.find((carta) => carta.id === idAberto) : undefined;
@@ -26,6 +31,7 @@
 
   async function carregar() {
     cartas = await sincronizador().listar('cartas');
+    lotes = await sincronizador().listar('lotes');
     carregado = true;
   }
 
@@ -50,6 +56,7 @@
 
     carregar();
     gerarPendentes();
+    limparAudiosAntigos().catch(() => undefined);
 
     return () => assinaturas.forEach((assinatura) => assinatura.unsubscribe());
   });
@@ -65,6 +72,15 @@
   {:else}
     <header><h1>Fila de cartas</h1></header>
 
+    <div class="dokusho-fila__abas">
+      <button class:ativa={aba === 'fila'} on:click={() => (aba = 'fila')}>Na fila</button>
+      <button class:ativa={aba === 'lotes'} on:click={() => (aba = 'lotes')}>Lotes</button>
+    </div>
+  {/if}
+
+  {#if !aberta && aba === 'lotes'}
+    <ListaLotes {lotes} {cartas} />
+  {:else if !aberta}
     {#each naFila as carta (carta.id)}
       {@const gerando = $gerandoAgora$ === carta.id || carta.state === 'gerando'}
       <div
@@ -117,13 +133,17 @@
   {/if}
 </main>
 
+{#if !aberta && aba === 'fila'}
+  <BarraExportar {cartas} />
+{/if}
+
 <NavegacaoInferior />
 
 <style lang="scss">
   .dokusho-fila {
     max-width: 640px;
     margin: 0 auto;
-    padding: 0 18px calc(110px + env(safe-area-inset-bottom, 0px));
+    padding: 0 18px calc(200px + env(safe-area-inset-bottom, 0px));
     font-family: 'Noto Sans JP', system-ui, sans-serif;
     color: #1b2220;
 
@@ -134,6 +154,28 @@
     h1 {
       font-size: 28px;
       font-weight: 700;
+    }
+  }
+
+  .dokusho-fila__abas {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 11px;
+    background: #edf0ee;
+
+    button {
+      flex: 1;
+      min-height: 34px;
+      border-radius: 9px;
+      font-size: 14px;
+      color: #59635f;
+
+      &.ativa {
+        background: #fff;
+        color: #1b2220;
+        box-shadow: 0 1px 3px rgba(20, 32, 28, 0.16);
+      }
     }
   }
 

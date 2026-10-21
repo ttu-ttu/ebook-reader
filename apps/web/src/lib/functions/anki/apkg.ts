@@ -10,15 +10,7 @@
 import type { SqlJsStatic } from 'sql.js';
 import { BlobWriter, Uint8ArrayReader, BlobReader, ZipWriter } from '@zip.js/zip.js';
 import { guidFor } from './guid';
-import {
-  CAMPOS,
-  DECK,
-  MODEL_ID,
-  deckJson,
-  modeloJson,
-  type CamposCarta,
-  type DeckAnki
-} from './modelo';
+import { CAMPOS, DECK, MODEL_ID, deckJson, modeloJson, type CamposCarta } from './modelo';
 
 export interface NotaApkg {
   campos: CamposCarta;
@@ -35,8 +27,6 @@ export interface EntradaApkg {
   midias: MidiaApkg[];
   /** Segundos desde a época; padrão: agora. Reimportar o mesmo arquivo não altera as notas. */
   timestamp?: number;
-  /** Só para testes; o app usa sempre DECK (o Anki casa o deck pelo nome). */
-  deck?: DeckAnki;
 }
 
 const SCHEMA = `
@@ -143,7 +133,8 @@ const COL_DCONF = {
 
 export async function gerarApkg(SQL: SqlJsStatic, entrada: EntradaApkg): Promise<Blob> {
   const timestamp = entrada.timestamp ?? Date.now() / 1000;
-  const deck = entrada.deck ?? DECK;
+  // O Anki casa o deck pelo nome (CARDS.md): sempre DECK.
+  const deck = DECK;
   const mod = Math.floor(timestamp);
   let proximoId = Math.floor(timestamp * 1000);
 

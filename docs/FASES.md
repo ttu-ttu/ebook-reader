@@ -174,10 +174,11 @@ Resultados de cada teste vão para docs/PROGRESSO.md, na seção "Testes de risc
   do Auth no Supabase.
 - Configurações: esconder Drive, OneDrive, pasta local, audiobook e legendas; "Baixar backup",
   "Restaurar backup", "último backup: há N dias"; mensagem de servidor pausado.
-- 👤 Assim que o deploy estiver no ar, fechar o R1: na PWA instalada no iPhone, abrir `/teste/apkg`,
-  "Gerar" (100 cartas) e "Exportar" → Anki na folha de compartilhamento; conferir que não trava,
-  importa no AnkiMobile e reimportar não duplica; apagar o deck `日本語::0. Dokusho teste`; anotar em
-  PROGRESSO "Testes de risco" › R1 e marcar R1 como feito.
+- 👤 Assim que o deploy estiver no ar, fechar o R1 pela exportação de verdade (a `/teste/apkg` saiu
+  no V1.6): na PWA instalada no iPhone, Fila › "Exportar .apkg" → "Compartilhar com o Anki";
+  conferir que não trava, importa no AnkiMobile e reimportar ("Baixar este Lote de novo") não
+  duplica; anotar em PROGRESSO "Testes de risco" › R1 e marcar R1 como feito. O Lote de 100 cartas
+  fica para quando a fila tiver 100.
 - **Pronto quando:** critério da v1 no ESCOPO ("Roadmap por versão") cumprido de ponta a ponta.
 
 ## 2. v2
