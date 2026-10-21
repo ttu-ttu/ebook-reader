@@ -16,6 +16,10 @@ Atualizado em 2026-10-20 depois da entrevista de escopo (docs/ENTREVISTA.md, doc
    Leia CLAUDE.md, docs/PROGRESSO.md, GLOSSARY.md, os ADRs que o item cita e só as seções do
    docs/ESCOPO.md que o item cita. Faça um plano curto, espere eu aprovar, implemente com commits
    pequenos, rode os testes/checagens e, no fim, atualize docs/PROGRESSO.md.
+   Sempre que algo depender de mim (login, chave, painel de site, teste em aparelho, comando que só
+   eu posso rodar), pare e me dê um passo a passo numerado: onde clicar ou qual comando colar (em
+   bloco próprio), o que devo ver como resultado e o que te devolver. Uma ação por passo, sem
+   pressupor que eu conheço a ferramenta. No fim, liste o que ficou pendente comigo.
    ```
 
 3. Leia o plano antes de aprovar. Se o Sonnet travar duas vezes no mesmo bug, troque para Opus
