@@ -32,6 +32,12 @@ export function isStorageSourceAvailable(
   storageSourceManager: string,
   window: Window
 ) {
+  // Dokusho: a sincronização é pelo Supabase (ADR 0014); Drive, OneDrive e pasta local saem da
+  // interface (o código fica).
+  const soNavegador: StorageKey[] = [StorageKey.BROWSER];
+
+  if (!soNavegador.includes(storageSource)) return false;
+
   let hasValidEnvironment = false;
 
   switch (storageSource) {

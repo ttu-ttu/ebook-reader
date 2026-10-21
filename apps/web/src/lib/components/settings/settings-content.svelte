@@ -18,6 +18,11 @@
   import SettingsReadingGoals from '$lib/components/settings/settings-reading-goals.svelte';
   import SettingsItemGroup from '$lib/components/settings/settings-item-group.svelte';
   import SettingsDicionario from '$lib/components/settings/settings-dicionario.svelte';
+  import SettingsBackup from '$lib/components/settings/settings-backup.svelte';
+
+  // Dokusho: a sincronização do ttu (Drive, OneDrive, pasta local, merge por arquivo) sai da
+  // interface; a do Supabase não tem opções (ADR 0014).
+  const MOSTRAR_SINCRONIZACAO_DO_TTU = false;
   import SettingsStorageSourceList from '$lib/components/settings/settings-storage-source-list.svelte';
   import SettingsUserFontDialog from '$lib/components/settings/settings-user-font-dialog.svelte';
   import { inputClasses } from '$lib/css-classes';
@@ -985,28 +990,34 @@
         />
       </SettingsItemGroup>
     {/if}
-    <SettingsItemGroup title="Cache Data" tooltip={cacheStorageDataTooltip}>
-      <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={cacheStorageData} />
+    <SettingsItemGroup title="Backup" tooltip="Todas as tabelas em JSON (sem EPUBs e áudios)">
+      <SettingsBackup />
     </SettingsItemGroup>
-    <SettingsItemGroup title="Auto Import/Export" tooltip={autoReplicationTypeTooltip}>
-      <ButtonToggleGroup
-        options={optionsForAutoReplicationType}
-        bind:selectedOptionId={autoReplication}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Import/Export Behavior" tooltip={replicationSaveBehaviorTooltip}>
-      <ButtonToggleGroup
-        options={optionsForReplicationSaveBehavior}
-        bind:selectedOptionId={replicationSaveBehavior}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup title="Show Placeholder" tooltip={showExternalPlaceholderToolTip}>
-      <ButtonToggleGroup
-        options={optionsForToggle}
-        bind:selectedOptionId={showExternalPlaceholder}
-      />
-    </SettingsItemGroup>
-    <SettingsStorageSourceList storageSources={$storageSources$} />
+    <!-- Dokusho: sincronização do ttu (Drive, OneDrive, pasta local) fora da interface (ADR 0014). -->
+    {#if MOSTRAR_SINCRONIZACAO_DO_TTU}
+      <SettingsItemGroup title="Cache Data" tooltip={cacheStorageDataTooltip}>
+        <ButtonToggleGroup options={optionsForToggle} bind:selectedOptionId={cacheStorageData} />
+      </SettingsItemGroup>
+      <SettingsItemGroup title="Auto Import/Export" tooltip={autoReplicationTypeTooltip}>
+        <ButtonToggleGroup
+          options={optionsForAutoReplicationType}
+          bind:selectedOptionId={autoReplication}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup title="Import/Export Behavior" tooltip={replicationSaveBehaviorTooltip}>
+        <ButtonToggleGroup
+          options={optionsForReplicationSaveBehavior}
+          bind:selectedOptionId={replicationSaveBehavior}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup title="Show Placeholder" tooltip={showExternalPlaceholderToolTip}>
+        <ButtonToggleGroup
+          options={optionsForToggle}
+          bind:selectedOptionId={showExternalPlaceholder}
+        />
+      </SettingsItemGroup>
+      <SettingsStorageSourceList storageSources={$storageSources$} />
+    {/if}
   {:else}
     <SettingsItemGroup
       title="Keep Local Data on Deletion"
@@ -1066,24 +1077,26 @@
         bind:value={startDayHoursForTracker}
       />
     </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Statistics Merge"
-      tooltip={`Determines if statistics will be merged entry by entry or replaced completely on a sync`}
-    >
-      <ButtonToggleGroup
-        options={optionsForMergeMode}
-        bind:selectedOptionId={statisticsMergeMode}
-      />
-    </SettingsItemGroup>
-    <SettingsItemGroup
-      title="Reading Goals Merge"
-      tooltip={`Determines if reading goals will be merged entry by entry or replaced completely on a sync`}
-    >
-      <ButtonToggleGroup
-        options={optionsForMergeMode}
-        bind:selectedOptionId={readingGoalsMergeMode}
-      />
-    </SettingsItemGroup>
+    {#if MOSTRAR_SINCRONIZACAO_DO_TTU}
+      <SettingsItemGroup
+        title="Statistics Merge"
+        tooltip={`Determines if statistics will be merged entry by entry or replaced completely on a sync`}
+      >
+        <ButtonToggleGroup
+          options={optionsForMergeMode}
+          bind:selectedOptionId={statisticsMergeMode}
+        />
+      </SettingsItemGroup>
+      <SettingsItemGroup
+        title="Reading Goals Merge"
+        tooltip={`Determines if reading goals will be merged entry by entry or replaced completely on a sync`}
+      >
+        <ButtonToggleGroup
+          options={optionsForMergeMode}
+          bind:selectedOptionId={readingGoalsMergeMode}
+        />
+      </SettingsItemGroup>
+    {/if}
     <SettingsItemGroup
       title="Enable Statistics"
       tooltip="Enables the tracker icon in the bottom left corner of the reader which you need to use to start tracking your reading session"
