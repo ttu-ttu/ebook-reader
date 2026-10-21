@@ -5,6 +5,7 @@
  */
 
 import type { Entrada } from '$lib/data/dicionario/formato';
+import { ehGramaticaPedaco, verboDoPotencial } from '$lib/data/dicionario/busca';
 import { paraHiragana, type Pedaco } from '$lib/data/dicionario/tokenizador';
 
 // Casamento texto ↔ Anki pela entrada do JMdict (ADR 0008, 0013): o Card e a palavra do texto são
@@ -44,7 +45,6 @@ export function noAnki(indice: IndiceAnki, { seq, leitura }: PalavraJmdict) {
   return leituras && { leituras, outraLeitura: !leituras.includes(leitura) };
 }
 
-const JAPONES = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}々〆]/u;
 const SO_KANA = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 
 /** Campo do Anki sem HTML, espaços e o til de sufixo (〜さん). */
@@ -99,20 +99,7 @@ export async function casarCard(consultar: Consulta, word: string, wordReading: 
   return { palavras: sem(palavras, chavePalavra), ambiguo };
 }
 
-const CLASSES_GRAMATICA = new Set(['助詞', '助動詞', '記号', 'フィラー', 'その他', '接頭詞']);
-
-/**
- * Partículas, auxiliares, símbolos, prefixos (お, ご), 非自立 (ている, こと), verbos sufixo (せる de
- * させる, れる) e o que não tem kana nem kanji (ADR 0007). Substantivo sufixo (さん) conta.
- */
-export function ehGramatica({ classe, subclasse, superficie }: Pedaco) {
-  return (
-    CLASSES_GRAMATICA.has(classe) ||
-    subclasse === '非自立' ||
-    (classe === '動詞' && subclasse === '接尾') ||
-    !JAPONES.test(superficie)
-  );
-}
+export { ehGramaticaPedaco as ehGramatica };
 
 /** Parte da leitura antes do okurigana que a escrita e a leitura têm em comum (行く/いく → い). */
 function radical(escrita: string, leitura: string) {
@@ -122,24 +109,11 @@ function radical(escrita: string, leitura: string) {
   return l.slice(0, l.length - comum);
 }
 
-// O IPADIC dá a forma potencial como verbo próprio (会える, 作れる), que o JMdict não tem.
-const POTENCIAL: Record<string, string> = {
-  える: 'う',
-  ける: 'く',
-  げる: 'ぐ',
-  せる: 'す',
-  てる: 'つ',
-  ねる: 'ぬ',
-  べる: 'ぶ',
-  める: 'む',
-  れる: 'る'
-};
-
 /** Termos a consultar, em ordem: forma de dicionário, verbo de origem do potencial, superfície. */
 function termosDoPedaco({ base, superficie, classe }: Pedaco) {
   const termos = [base];
-  const fim = POTENCIAL[base.slice(-2)];
-  if (classe === '動詞' && fim && base.length > 2) termos.push(base.slice(0, -2) + fim);
+  const potencial = classe === '動詞' ? verboDoPotencial(base) : undefined;
+  if (potencial) termos.push(potencial);
   if (superficie !== base) termos.push(superficie);
   return termos;
 }
@@ -151,7 +125,7 @@ function termosDoPedaco({ base, superficie, classe }: Pedaco) {
  * mais frequente. Devolve null para gramática.
  */
 export async function casarPedaco(consultar: Consulta, pedaco: Pedaco) {
-  if (ehGramatica(pedaco)) return null;
+  if (ehGramaticaPedaco(pedaco)) return null;
   let termo = pedaco.base;
   let entradas: Entrada[] = [];
   for (termo of termosDoPedaco(pedaco)) {
