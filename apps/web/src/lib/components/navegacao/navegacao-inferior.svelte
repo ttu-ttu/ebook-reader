@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import AvisoNovaVersao from '$lib/components/navegacao/aviso-nova-versao.svelte';
+  import AvisoServidor from '$lib/components/navegacao/aviso-servidor.svelte';
   import { pagePath } from '$lib/data/env';
   import { cartasRecebidas$, sincronizador } from '$lib/data/supabase/sincronizacao/iniciar';
 
@@ -41,7 +42,10 @@
   $: atual = $page.url.pathname.replace(pagePath, '');
 </script>
 
-<AvisoNovaVersao />
+<div class="dokusho-avisos">
+  <AvisoNovaVersao />
+  <AvisoServidor />
+</div>
 
 <nav class="dokusho-nav writing-horizontal-tb">
   {#each itens as item}
@@ -68,6 +72,24 @@
 </nav>
 
 <style lang="scss">
+  .dokusho-avisos {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    right: 12px;
+    z-index: 35;
+    max-width: 616px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+
+    > :global(*) {
+      pointer-events: auto;
+    }
+  }
+
   .dokusho-nav {
     position: fixed;
     left: 0;

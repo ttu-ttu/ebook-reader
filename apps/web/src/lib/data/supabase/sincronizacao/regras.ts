@@ -211,6 +211,17 @@ export function textoMarcadorRemoto(
   return `Você parou no ${linha.device_name || 'outro aparelho'}${capitulo} (${porcentagem}%). Ir para lá?`;
 }
 
+/** Link do painel do projeto (o ref é o subdomínio da URL pública do Supabase). */
+export function painelDoSupabase(urlDoSupabase: string) {
+  try {
+    const ref = new URL(urlDoSupabase).hostname.split('.')[0];
+
+    return `https://supabase.com/dashboard/project/${ref}`;
+  } catch {
+    return 'https://supabase.com/dashboard';
+  }
+}
+
 /** Nome do aparelho pelo navegador. O iPadOS se apresenta como Mac, mas tem toque. */
 export function nomeDoAparelho(userAgent: string, pontosDeToque: number) {
   if (/iPhone/.test(userAgent)) return 'iPhone';

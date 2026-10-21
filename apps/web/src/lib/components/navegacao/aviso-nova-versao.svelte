@@ -13,13 +13,6 @@
 
 <style lang="scss">
   .dokusho-nova-versao {
-    position: fixed;
-    top: calc(8px + env(safe-area-inset-top, 0px));
-    left: 12px;
-    right: 12px;
-    z-index: 35;
-    max-width: 616px;
-    margin: 0 auto;
     box-shadow: 0 4px 16px var(--dk-shadow);
     display: flex;
     align-items: center;

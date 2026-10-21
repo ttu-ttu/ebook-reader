@@ -17,6 +17,7 @@ import {
   marcadorParaLinha,
   metaParaLinha,
   nomeDoAparelho,
+  painelDoSupabase,
   paraIso,
   precisaEnviar,
   remotoVence,
@@ -198,6 +199,15 @@ describe('pergunta do marcador de outro aparelho', () => {
     expect(
       textoMarcadorRemoto({ device_name: 'iPhone', explored_char_count: 50 }, { characters: 0 })
     ).toBe('Você parou no iPhone (0%). Ir para lá?');
+  });
+});
+
+describe('servidor pausado', () => {
+  it('link do painel pelo subdomínio do projeto', () => {
+    expect(painelDoSupabase('https://abcdefgh.supabase.co')).toBe(
+      'https://supabase.com/dashboard/project/abcdefgh'
+    );
+    expect(painelDoSupabase('não é url')).toBe('https://supabase.com/dashboard');
   });
 });
 

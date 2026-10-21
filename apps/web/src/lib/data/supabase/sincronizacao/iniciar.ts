@@ -21,7 +21,11 @@ export type EstadoSinc =
   | { tipo: 'sincronizando' }
   | { tipo: 'sem-login' }
   | { tipo: 'offline' }
+  /** Com rede, mas o servidor não responde: em geral o projeto pausou por inatividade (ESCOPO). */
+  | { tipo: 'sem-servidor'; mensagem: string }
   | { tipo: 'erro'; mensagem: string };
+
+const SEM_RESPOSTA = /failed to fetch|networkerror|load failed|fetch failed|\b54\d\b|paused/i;
 
 export const estadoSinc$ = new BehaviorSubject<EstadoSinc>({ tipo: 'parado' });
 
@@ -113,9 +117,11 @@ export async function sincronizarAgora() {
       resultado === 'sem-login' ? { tipo: 'sem-login' } : { tipo: 'parado', quando: Date.now() }
     );
   } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : String(erro);
+
     estadoSinc$.next({
-      tipo: 'erro',
-      mensagem: erro instanceof Error ? erro.message : String(erro)
+      tipo: navigator.onLine && SEM_RESPOSTA.test(mensagem) ? 'sem-servidor' : 'erro',
+      mensagem
     });
   }
 }
