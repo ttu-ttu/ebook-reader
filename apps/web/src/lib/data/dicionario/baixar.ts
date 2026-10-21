@@ -5,7 +5,7 @@
  */
 
 import type { DokushoSupabaseClient } from '$lib/data/supabase/create-client';
-import { gravarDicionario, versaoGravada, type BancoDicionario } from './banco';
+import { gravarDicionario, type BancoDicionario } from './banco';
 import type { Cabecalho } from './formato';
 
 // Download do dicionário preparado pelo tools/ (ADR 0004) a partir do bucket privado `dicts`.
@@ -84,8 +84,4 @@ export async function prepararArquivo(
     new TextDecoderStream()
   );
   return gravarDicionario(db, linhasDoFluxo(texto), aoProgredir);
-}
-
-export async function dicionarioEmDia(db: BancoDicionario, atual: DicionarioAtual) {
-  return (await versaoGravada(db)) === atual.versao;
 }

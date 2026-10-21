@@ -30,6 +30,28 @@ export const NOME_BANCO = 'dokusho-dicionario';
 const POR_TRANSACAO = 500;
 const cabecalhos = new WeakMap<BancoDicionario, Cabecalho>();
 
+// Blocos já lidos ficam na memória: a seleção do toque consulta vários trechos em seguida, quase
+// sempre nos mesmos blocos (R3: ler e fazer o parse de um bloco custa alguns ms no iPhone).
+const BLOCOS_NA_MEMORIA = 64;
+const memorias = new WeakMap<
+  BancoDicionario,
+  { indice: Map<number, BlocoIndice>; entradas: Map<number, Entrada[]> }
+>();
+
+function memoriaDe(db: BancoDicionario) {
+  let memoria = memorias.get(db);
+  if (!memoria) {
+    memoria = { indice: new Map(), entradas: new Map() };
+    memorias.set(db, memoria);
+  }
+  return memoria;
+}
+
+function lembrar<T>(mapa: Map<number, T>, chave: number, valor: T) {
+  mapa.set(chave, valor);
+  if (mapa.size > BLOCOS_NA_MEMORIA) mapa.delete(mapa.keys().next().value as number);
+}
+
 export function abrirDicionario(nome = NOME_BANCO) {
   return openDB<DicionarioDb>(nome, 3, {
     upgrade(db) {
@@ -63,6 +85,7 @@ export async function gravarDicionario(
   aoProgredir?: (fracao: number) => void
 ) {
   cabecalhos.delete(db);
+  memorias.delete(db);
   await db.clear('meta');
   await db.clear('entradas');
   await db.clear('indice');
@@ -124,15 +147,26 @@ export async function consultar(db: BancoDicionario, termo: string): Promise<Ent
   }
   const bloco = blocoDoTermo(cabecalho.limitesIndice, termo);
   if (bloco < 0) return [];
-  const blocoIndice = await db.get('indice', bloco);
-  const ids = blocoIndice ? (JSON.parse(blocoIndice) as BlocoIndice)[termo] : undefined;
+  const memoria = memoriaDe(db);
+  let blocoIndice = memoria.indice.get(bloco);
+  if (!blocoIndice) {
+    const json = await db.get('indice', bloco);
+    blocoIndice = json ? (JSON.parse(json) as BlocoIndice) : {};
+    lembrar(memoria.indice, bloco, blocoIndice);
+  }
+  const ids = blocoIndice[termo];
   if (!ids?.length) return [];
   const blocos = new Map<number, Entrada[]>();
   const tx = db.transaction('entradas');
   await Promise.all(
     [...new Set(ids.map((id) => Math.floor(id / TAMANHO_BLOCO)))].map(async (bloco) => {
-      const json = await tx.store.get(bloco);
-      blocos.set(bloco, json ? JSON.parse(json) : []);
+      let entradas = memoria.entradas.get(bloco);
+      if (!entradas) {
+        const json = await tx.store.get(bloco);
+        entradas = json ? (JSON.parse(json) as Entrada[]) : [];
+        lembrar(memoria.entradas, bloco, entradas);
+      }
+      blocos.set(bloco, entradas);
     })
   );
   const entradas = ids
