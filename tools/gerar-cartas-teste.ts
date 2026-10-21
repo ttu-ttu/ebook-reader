@@ -85,7 +85,30 @@ const custo = (m?: Medida) => {
   return p ? (m.uso.entrada * p.entrada + (m.uso.total - m.uso.entrada) * p.saida) / 1e6 : 0;
 };
 
+// Sobras de uma rodada interrompida.
+{
+  const agora = new Date().toISOString();
+  const { error } = await supabase
+    .from('batch_items')
+    .update({ deleted_at: agora, modified_at: agora })
+    .eq('book_id', 'r5-teste')
+    .is('deleted_at', null);
+  if (error) throw error;
+}
+
+// Corpo do erro HTTP da função (o supabase-js só diz "non-2xx").
+async function corpoDoErro(erro: { context?: Response; message: string } | null) {
+  if (!erro) return undefined;
+  try {
+    const corpo = await erro.context?.json();
+    return `${erro.context?.status} ${corpo?.erro ?? corpo?.message ?? JSON.stringify(corpo)}`;
+  } catch {
+    return erro.message;
+  }
+}
+
 const resultados: Resultado[] = [];
+let errosSeguidos = 0;
 for (const [i, carta] of cartas.entries()) {
   const { data: linha, error } = await supabase
     .from('batch_items')
@@ -111,7 +134,7 @@ for (const [i, carta] of cartas.entries()) {
     ...carta,
     id: linha.id,
     estado: data?.estado ?? 'erro',
-    motivo: data?.motivo ?? erroFuncao?.message,
+    motivo: data?.motivo ?? (await corpoDoErro(erroFuncao)),
     segundosGeracao,
     significado: data?.campos?.word_meaning,
     traducao: data?.campos?.sentence_meaning,
@@ -138,6 +161,11 @@ for (const [i, carta] of cartas.entries()) {
       (total ? ` US$ ${total.toFixed(5)}` : '') +
       (resultado.motivo ? ` (${resultado.motivo})` : '')
   );
+  errosSeguidos = resultado.estado === 'gerada' ? 0 : errosSeguidos + 1;
+  if (errosSeguidos === 3) {
+    console.log('3 erros seguidos; parando.');
+    break;
+  }
 }
 
 if (!manter) {
