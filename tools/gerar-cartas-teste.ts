@@ -67,7 +67,7 @@ if (erroLogin) throw erroLogin;
 
 const anterior = continuar
   ? readdirSync(pasta)
-      .filter((d) => /^d{4}-/.test(d) && existsSync(join(pasta, d, 'medidas.json')))
+      .filter((d) => /^\d{4}-/.test(d) && existsSync(join(pasta, d, 'medidas.json')))
       .sort()
       .at(-1)
   : undefined;
