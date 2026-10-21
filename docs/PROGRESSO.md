@@ -211,7 +211,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 
 ### R5 · Edge Function `gemini` (2026-10-20)
 
-- Testes de regra: 22 (WAV, corte de silêncio, nomes, pedidos, reserva, acesso). ✅
+- Testes de regra: 29 (WAV, corte de silêncio, nomes, pedidos, reserva, acesso). ✅
 - Recusa (chamada real): sem token → 401 do gateway; chave pública sem usuário → 401 `sem login`; JWT
   falso → 401. A recusa de outro usuário logado (403) só pelo teste unitário: o cadastro está desligado. ✅
 - 30 cartas: `dicts/r5/cartas.json` (fora do git) com palavras do また、同じ夢を見ていた, várias de leitura
