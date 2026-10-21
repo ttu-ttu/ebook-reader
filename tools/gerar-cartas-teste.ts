@@ -161,6 +161,14 @@ for (const [i, carta] of cartas.entries()) {
       (total ? ` US$ ${total.toFixed(5)}` : '') +
       (resultado.motivo ? ` (${resultado.motivo})` : '')
   );
+  if (resultado.motivo?.startsWith('403')) {
+    const { data: login } = await supabase.auth.getUser();
+    console.log(
+      '\nO secret ALLOWED_USER_ID não é o seu usuário. Na raiz, rode e depois este script de novo:\n' +
+        `npx supabase secrets set ALLOWED_USER_ID=${login.user.id}`
+    );
+    break;
+  }
   errosSeguidos = resultado.estado === 'gerada' ? 0 : errosSeguidos + 1;
   if (errosSeguidos === 3) {
     console.log('3 erros seguidos; parando.');
