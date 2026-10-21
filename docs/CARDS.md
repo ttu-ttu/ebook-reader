@@ -45,8 +45,8 @@ Confira a leitura de cada kanji: furigana errado no card ensina errado, e um kan
 
 - Gemini TTS, voz Orus, pela Edge Function `gemini`. Os nomes dos modelos ficam na configuração da função, com lista de reserva.
 - O Gemini devolve PCM (24 kHz, 16 bits, mono); a função grava WAV (cabeçalho de 44 bytes) com o silêncio das pontas cortado. Sem conversão para MP3.
-- Nome do arquivo: `leituras-<sha1("Orus|" + texto)[:12]>.wav`, o que evita colisão com a mídia do Kaishi. `texto` é o que vai ao TTS: na palavra, o pedido com a instrução de pronúncia (開く あく e ひらく dão arquivos diferentes); na frase, a frase sem HTML ou o "Texto para a voz".
-- A voz lê a palavra e a frase sem HTML. O pedido da palavra leva a leitura como instrução de pronúncia. Quando a voz ainda erra (大家さん lido たいか), o campo "Texto para a voz" da carta recebe o trecho em kana (`おおやさんはすぐに濃いコーヒーを作ってくれた。`) e "Refazer áudio" gera de novo.
+- Nome do arquivo: `leituras-<sha1("Orus|" + texto)[:12]>.wav`, o que evita colisão com a mídia do Kaishi. `texto` é o que vai ao TTS: na palavra, a leitura em kana (palavras com a mesma leitura dividem o arquivo, que tem o mesmo som); na frase, a frase sem HTML ou o "Texto para a voz".
+- A voz da palavra lê só a leitura em kana (`つらい` para 辛い); a da frase, a frase sem HTML. Instrução de pronúncia junto do texto não serve: o TTS lê a instrução em voz alta (R5). Quando a voz ainda erra (大家さん lido たいか), o campo "Texto para a voz" da carta recebe o trecho em kana (`おおやさんはすぐに濃いコーヒーを作ってくれた。`) e "Refazer áudio" gera de novo.
 
 ## Modelo do tipo de nota
 
