@@ -7,6 +7,7 @@
 import { BehaviorSubject } from 'rxjs';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '$lib/data/supabase/client';
+import { mensagemDaFuncao } from '$lib/data/supabase/erro-da-funcao';
 import { sincronizador, sincronizarAgora } from '$lib/data/supabase/sincronizacao/iniciar';
 import type { LinhaCarta } from '$lib/data/supabase/sincronizacao/regras';
 import { criarGeracao, type RespostaGerar } from './geracao';
@@ -33,7 +34,8 @@ async function invocar(id: string, refazer?: ('texto' | 'audio')[]): Promise<Res
       return { estado: 'ocupada' };
     }
 
-    if (error || !data) throw new Error(error?.message || 'A função não respondeu');
+    if (error) throw new Error(await mensagemDaFuncao(error));
+    if (!data) throw new Error('A função não respondeu');
 
     return data;
   } finally {

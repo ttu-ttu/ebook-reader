@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '$lib/data/supabase/client';
+import { mensagemDaFuncao } from '$lib/data/supabase/erro-da-funcao';
 import { sincronizador } from '$lib/data/supabase/sincronizacao/iniciar';
 import { hashDoArquivo } from '$lib/data/supabase/sincronizacao/regras';
 
@@ -42,9 +43,8 @@ export async function traduzirFrase(frase: string, antes?: string, depois?: stri
     { body: { action: 'translate', frase, antes, depois } }
   );
 
-  if (error || !data?.traducao) {
-    throw new Error(error?.message || 'A tradução não chegou');
-  }
+  if (error) throw new Error(await mensagemDaFuncao(error));
+  if (!data?.traducao) throw new Error('A tradução não chegou');
 
   return data;
 }
