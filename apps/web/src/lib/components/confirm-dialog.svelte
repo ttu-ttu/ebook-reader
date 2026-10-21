@@ -8,6 +8,8 @@
   export let dialogMessage: string;
   export let contentStyles: string = '';
   export let showCancel = true;
+  export let cancelLabel = 'Cancel';
+  export let confirmLabel = 'Confirm';
   export let resolver: (arg0: boolean) => void;
 
   const dispatch = createEventDispatcher<{
@@ -27,11 +29,11 @@
   </svelte:fragment>
   <div class="flex grow justify-between" slot="footer">
     <button class={buttonClasses} class:invisible={!showCancel} on:click={() => closeDialog(true)}>
-      Cancel
+      {cancelLabel}
       <Ripple />
     </button>
     <button class={buttonClasses} on:click={() => closeDialog()}>
-      Confirm
+      {confirmLabel}
       <Ripple />
     </button>
   </div>

@@ -119,6 +119,8 @@
   } from '$lib/components/book-reader/book-toc/book-toc';
   import BookToc from '$lib/components/book-reader/book-toc/book-toc.svelte';
   import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+  import { sincronizador } from '$lib/data/supabase/sincronizacao/iniciar';
+  import { textoMarcadorRemoto } from '$lib/data/supabase/sincronizacao/regras';
   import NumberDialog from '$lib/components/number-dialog.svelte';
   import { mergeEntries } from '$lib/components/merged-header-icon/merged-entries';
   import { preFilteredTitlesForStatistics$ } from '$lib/components/statistics/statistics-types';
@@ -282,6 +284,7 @@
 
         await localStorageHandler.updateLastRead(bookData);
         await syncDownData(externalStorageHandler, currentContext);
+        await perguntarMarcadorDeOutroAparelho(bookData);
 
         if (!$statisticsEnabled$) {
           const wasNew = (
@@ -1127,6 +1130,39 @@
       document.activeElement.blur();
     }
     ev.preventDefault();
+  }
+
+  /** Outro aparelho tem marcador mais novo: pergunta antes de pular (ESCOPO "Outros comportamentos"). */
+  async function perguntarMarcadorDeOutroAparelho(livro: BooksDbBookData) {
+    const linha = await sincronizador()
+      .marcadorDeOutroAparelho(livro.id)
+      .catch(() => undefined);
+
+    if (!linha) return;
+
+    const ficar = await new Promise<boolean>((resolver) => {
+      dialogManager.dialogs$.next([
+        {
+          component: ConfirmDialog,
+          props: {
+            dialogHeader: 'Continuar de outro aparelho',
+            dialogMessage: textoMarcadorRemoto(linha, livro),
+            cancelLabel: 'Ficar aqui',
+            confirmLabel: 'Ir para lá',
+            resolver
+          },
+          disableCloseOnClick: true
+        }
+      ]);
+    });
+
+    dialogManager.dialogs$.next([]);
+
+    if (ficar) {
+      await sincronizador().dispensarMarcadorRemoto(linha);
+    } else {
+      await sincronizador().aplicarMarcadorRemoto(livro.id, linha);
+    }
   }
 
   function getBookIdSync() {

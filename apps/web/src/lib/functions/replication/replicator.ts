@@ -9,6 +9,7 @@ import { BaseStorageHandler, FilePrefix } from '$lib/data/storage/handler/base-h
 import { storage } from '$lib/data/window/navigator/storage';
 import { StorageDataType, StorageKey } from '$lib/data/storage/storage-types';
 import { database, requestPersistentStorage$ } from '$lib/data/store';
+import { sincronizador } from '$lib/data/supabase/sincronizacao/iniciar';
 import loadEpub from '$lib/functions/file-loaders/epub/load-epub';
 import loadHtmlz from '$lib/functions/file-loaders/htmlz/load-htmlz';
 import loadTxt from '$lib/functions/file-loaders/txt/load-txt';
@@ -94,6 +95,11 @@ export async function importData(
             { title: bookContent.title, imagePath: bookContent.coverImage || '' },
             cancelSignal
           );
+
+          if (targetHandler.storageType === StorageKey.BROWSER && file.name.endsWith('.epub')) {
+            // Livro pelo hash do EPUB, que fica guardado até subir para a nuvem (ADR 0001).
+            await sincronizador().registrarImportado(file, bookContent.title);
+          }
 
           dataIds.push(await targetHandler.saveBook(bookContent, false));
 

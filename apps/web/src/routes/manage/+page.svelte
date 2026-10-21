@@ -37,6 +37,7 @@
     showExternalPlaceholder$,
     statisticsMergeMode$
   } from '$lib/data/store';
+  import { sincronizador, sincronizarAgora } from '$lib/data/supabase/sincronizacao/iniciar';
   import { cloneMutateSet } from '$lib/functions/clone-mutate-set';
   import { getDropEventFiles } from '$lib/functions/file-dom/get-drop-event-files';
   import { inputFile } from '$lib/functions/file-dom/input-file';
@@ -193,6 +194,10 @@
           handler.clearData(false);
         }
 
+        if (isForBrowser && bookItem.isPlaceholder) {
+          await baixarDaNuvem(bookItem);
+        }
+
         handler.startContext({
           id: isForBrowser ? bookItem.id : 0,
           title: bookItem.title,
@@ -258,6 +263,36 @@
       }
       set.add(bookId);
     });
+  }
+
+  /** Livro que está só na nuvem: baixa o processado, mostrando o tamanho e o progresso. */
+  async function baixarDaNuvem(bookItem: BookCardProps) {
+    if (!$isOnline$) {
+      throw new Error('Sem conexão: o livro ainda não foi baixado neste aparelho');
+    }
+
+    const tamanho = await sincronizador().tamanhoNaNuvem(bookItem.title);
+
+    initializeReplicationProgressData();
+    cancelTooltip = `Baixando ${bookItem.title}${tamanho ? ` (${formatarTamanho(tamanho)})` : ''}`;
+    replicationProgress$.next({ progressBase: 1, maxProgress: 1 });
+
+    let anterior = 0;
+
+    try {
+      await sincronizador().baixarLivro(bookItem.id, (feito, total) => {
+        const fracao = (total || tamanho || 0) > 0 ? feito / (total || tamanho || 1) : 0;
+
+        replicationProgress$.next({ progressToAdd: Math.max(0, fracao - anterior) });
+        anterior = fracao;
+      });
+    } finally {
+      resetProgress();
+    }
+  }
+
+  function formatarTamanho(bytes: number) {
+    return bytes >= 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : `${Math.ceil(bytes / 1e3)} KB`;
   }
 
   function operationAllowed() {
@@ -398,22 +433,56 @@
       return;
     }
 
+    const titles = $bookCards$.reduce((toDelete, card) => {
+      if (bookIds.includes(card.id)) {
+        toDelete.push(card.title);
+      }
+      return toDelete;
+    }, [] as string[]);
+
+    if ($storageSource$ === StorageKey.BROWSER) {
+      const canceled = await new Promise<boolean>((resolver) => {
+        dialogManager.dialogs$.next([
+          {
+            component: ConfirmDialog,
+            props: {
+              dialogHeader: 'Apagar livro',
+              dialogMessage: `${
+                titles.length === 1 ? titles[0] : `${titles.length} livros`
+              }\n\nO livro some de todos os aparelhos e os arquivos na nuvem são apagados. As estatísticas e as cartas do livro ficam.`,
+              contentStyles: 'white-space: pre-line;',
+              cancelLabel: 'Cancelar',
+              confirmLabel: 'Apagar',
+              resolver
+            }
+          }
+        ]);
+      });
+
+      if (canceled) {
+        return;
+      }
+    }
+
     cancelTooltip = `Cancels the Deletion\nAlready deleted data will not be restored`;
 
     initializeReplicationProgressData();
 
     const currentBookCount = $bookCards$.length;
+    const titleById = new Map($bookCards$.map((card) => [card.id, card.title]));
     const handler = getStorageHandler(window, $storageSource$, '');
     const { error, deleted } = await handler.deleteBookData(
-      $bookCards$.reduce((toDelete, card) => {
-        if (bookIds.includes(card.id)) {
-          toDelete.push(card.title);
-        }
-        return toDelete;
-      }, [] as string[]),
+      titles,
       cancelSignal,
       $keepLocalStatisticsOnDeletion$
     );
+
+    if ($storageSource$ === StorageKey.BROWSER) {
+      await sincronizador().apagarLivros(
+        deleted.map((id) => titleById.get(id)).filter((title): title is string => !!title)
+      );
+      sincronizarAgora();
+    }
 
     resetProgress();
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { faCheckCircle, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+  import { faCheckCircle, faCircleInfo, faCloud } from '@fortawesome/free-solid-svg-icons';
   import BookCard from '$lib/components/book-card/book-card.svelte';
   import type { BookCardProps } from '$lib/components/book-card/book-card-props';
   import Popover from '$lib/components/popover/popover.svelte';
@@ -46,6 +46,15 @@
         class:mdc-elevation--z4={selectedBookIds.has(bookCard.id) || bookCard.id === currentBookId}
       >
         <BookCard {...bookCard} on:click={() => onBookCardClick(bookCard.id)} />
+
+        {#if bookCard.isPlaceholder}
+          <div
+            class="pointer-events-none absolute right-2 bottom-2 rounded-full bg-gray-700 bg-opacity-70 p-1.5"
+            title="Na nuvem: toque para baixar"
+          >
+            <Fa class="text-sm text-white" icon={faCloud} />
+          </div>
+        {/if}
 
         {#if selectedBookIds.has(bookCard.id)}
           <div

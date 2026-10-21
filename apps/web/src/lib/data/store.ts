@@ -224,9 +224,10 @@ export const replicationSaveBehavior$ =
     ReplicationSaveBehavior.NewOnly
   );
 
+// Dokusho: livros na nuvem ainda não baixados aparecem na biblioteca (ADR 0014).
 export const showExternalPlaceholder$ = writableBooleanLocalStorageSubject()(
   'showExternalPlaceholder',
-  false
+  true
 );
 
 export const gDriveStorageSource$ = writableStringLocalStorageSubject()(
@@ -258,7 +259,8 @@ export const startDayHoursForTracker$ = writableNumberLocalStorageSubject()(
   0
 );
 
-export const statisticsEnabled$ = writableBooleanLocalStorageSubject()('statisticsEnabled', false);
+// Dokusho: as estatísticas alimentam a tela inicial.
+export const statisticsEnabled$ = writableBooleanLocalStorageSubject()('statisticsEnabled', true);
 
 export const statisticsMergeMode$ = writableStringLocalStorageSubject<MergeMode>()(
   'statisticsMergeMode',
