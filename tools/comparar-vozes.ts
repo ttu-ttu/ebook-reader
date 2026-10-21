@@ -4,8 +4,8 @@
 //   kana:  lê só a leitura (つらい)
 // Cada áudio passa pela conferência (o modelo de texto escreve em hiragana o que ouviu).
 // Uso (na raiz): node tools/comparar-vozes.ts [pasta]   (padrão: dicts/r5)
-// Lê as palavras de <pasta>/cartas.json e soma pares que só o acento separa. Pede e-mail e senha no
-// terminal; grava <pasta>/vozes-<data-hora>/relatorio.html com os WAV.
+// 20 palavras: 11 de leitura ambígua e 9 que só o acento separa. Pede e-mail e senha no terminal;
+// grava <pasta>/vozes-<data-hora>/relatorio.html com os WAV (preços de <pasta>/precos.json).
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -38,12 +38,21 @@ const PARES_DE_ACENTO = [
   ['柿', 'かき'],
   ['牡蠣', 'かき']
 ];
-const palavras: [string, string][] = [
-  ...JSON.parse(readFileSync(join(pasta, 'cartas.json'), 'utf8')).map(
-    (c: { word: string; reading: string }) => [c.word, c.reading]
-  ),
-  ...PARES_DE_ACENTO
+// Palavras do livro do R5 com mais de uma leitura possível.
+const AMBIGUAS = [
+  ['方', 'ほう'],
+  ['上手い', 'うまい'],
+  ['下手', 'へた'],
+  ['今日', 'きょう'],
+  ['一日', 'いちにち'],
+  ['明日', 'あした'],
+  ['辛い', 'つらい'],
+  ['開く', 'あく'],
+  ['風', 'ふう'],
+  ['色', 'いろ'],
+  ['何度', 'なんど']
 ];
+const palavras = [...AMBIGUAS, ...PARES_DE_ACENTO] as [string, string][];
 const precos: Record<string, { entrada: number; saida: number }> = existsSync(
   join(pasta, 'precos.json')
 )
