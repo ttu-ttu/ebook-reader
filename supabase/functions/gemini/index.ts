@@ -26,11 +26,19 @@ import { cortarSilencio, duracaoSegundos, extrairPcm, pcmParaWav } from './wav.t
 const VOZ = 'Orus';
 const API = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  { auth: { persistSession: false } }
-);
+// Chave de serviço: a legada (SUPABASE_SERVICE_ROLE_KEY) ou a nova (SUPABASE_SECRET_KEYS, JSON).
+function chaveServico() {
+  const legada = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (legada) return legada;
+  const novas = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}');
+  const chave = novas.default ?? Object.values(novas)[0];
+  if (!chave) throw new Error('Sem chave de serviço no ambiente da função');
+  return chave as string;
+}
+
+const supabase = createClient(Deno.env.get('SUPABASE_URL')!, chaveServico(), {
+  auth: { persistSession: false }
+});
 
 const cors = {
   'Access-Control-Allow-Origin': '*',

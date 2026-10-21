@@ -413,3 +413,8 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# Os tokens do Auth são ES256 (chaves de assinatura novas) e o verify_jwt do gateway só aceita os
+# antigos: a função confere o login ela mesma (auth.getUser + ALLOWED_USER_ID).
+[functions.gemini]
+verify_jwt = false
