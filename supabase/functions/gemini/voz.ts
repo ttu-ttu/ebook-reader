@@ -130,3 +130,46 @@ export function mesmaLeitura(esperada: string, ouvida: string) {
       c === b[i] || (c === '*' && 'うお'.includes(b[i])) || (b[i] === '*' && 'うお'.includes(c))
   );
 }
+
+type Medida = { modelo: string; uso: Uso };
+type Voz = { wav: Uint8Array; segundos: number; medida: Medida };
+type Tentativa = { via: 'dica' | 'kana'; ouvido?: string; erro?: string };
+
+// Cadeia da voz da palavra (R5): a dica dá o acento da palavra escrita, mas às vezes o modelo lê
+// outra leitura; a kana acerta a leitura, mas sem a palavra o acento fica no chute. A conferência
+// decide: dica que bate fica; senão kana; kana que não bate fica com a marca "confira".
+export async function vozDaPalavra(
+  leitura: string,
+  passos: {
+    dica: () => Promise<Voz>;
+    kana: () => Promise<Voz>;
+    ouvir: (wav: Uint8Array) => Promise<{ ouvido: string; medida: Medida }>;
+  }
+) {
+  const tentativas: Tentativa[] = [];
+  const medidas: Medida[] = [];
+  const mensagem = (erro: unknown) => (erro instanceof Error ? erro.message : String(erro));
+
+  try {
+    const voz = await passos.dica();
+    medidas.push(voz.medida);
+    const { ouvido, medida } = await passos.ouvir(voz.wav);
+    medidas.push(medida);
+    tentativas.push({ via: 'dica', ouvido });
+    if (mesmaLeitura(leitura, ouvido)) return { voz, via: 'dica' as const, tentativas, medidas };
+  } catch (erro) {
+    tentativas.push({ via: 'dica', erro: mensagem(erro) });
+  }
+
+  const voz = await passos.kana();
+  medidas.push(voz.medida);
+  try {
+    const { ouvido, medida } = await passos.ouvir(voz.wav);
+    medidas.push(medida);
+    tentativas.push({ via: 'kana', ouvido });
+    if (mesmaLeitura(leitura, ouvido)) return { voz, via: 'kana' as const, tentativas, medidas };
+  } catch (erro) {
+    tentativas.push({ via: 'kana', erro: mensagem(erro) });
+  }
+  return { voz, via: 'confira' as const, tentativas, medidas };
+}

@@ -1,11 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   estiloPalavra,
   lerAudioInteraction,
   mesmaLeitura,
   paraHiragana,
   pedidoConferencia,
-  pedidoVozInteraction
+  pedidoVozInteraction,
+  vozDaPalavra
 } from './voz.ts';
 
 describe('pedidoVozInteraction', () => {
@@ -66,5 +67,94 @@ describe('paraHiragana e mesmaLeitura', () => {
     expect(mesmaLeitura('おおや', 'おーや')).toBe(true);
     expect(mesmaLeitura('つらい', 'からい')).toBe(false);
     expect(mesmaLeitura('あく', 'ひらく')).toBe(false);
+  });
+});
+
+describe('vozDaPalavra', () => {
+  const voz = (nome: string) => ({
+    wav: new TextEncoder().encode(nome),
+    segundos: 0.6,
+    medida: { modelo: nome, uso: { entrada: 1, saida: 1, total: 2 } }
+  });
+  const ouvirComo = (respostas: Record<string, string>) => async (wav: Uint8Array) => {
+    const ouvido = respostas[new TextDecoder().decode(wav)];
+    if (ouvido === undefined) throw new Error('conferência caiu');
+    return { ouvido, medida: { modelo: 'texto', uso: { entrada: 1, saida: 1, total: 2 } } };
+  };
+
+  it('fica com a dica quando a conferência bate', async () => {
+    const kana = vi.fn(async () => voz('kana'));
+    const r = await vozDaPalavra('つらい', {
+      dica: async () => voz('dica'),
+      kana,
+      ouvir: ouvirComo({ dica: 'つらい' })
+    });
+    expect(r.via).toBe('dica');
+    expect(new TextDecoder().decode(r.voz.wav)).toBe('dica');
+    expect(kana).not.toHaveBeenCalled();
+    expect(r.medidas).toHaveLength(2);
+  });
+
+  it('cai para a kana quando a dica sai com outra leitura', async () => {
+    const r = await vozDaPalavra('ほう', {
+      dica: async () => voz('dica'),
+      kana: async () => voz('kana'),
+      ouvir: ouvirComo({ dica: 'かた', kana: 'ほう' })
+    });
+    expect(r.via).toBe('kana');
+    expect(new TextDecoder().decode(r.voz.wav)).toBe('kana');
+    expect(r.tentativas).toEqual([
+      { via: 'dica', ouvido: 'かた' },
+      { via: 'kana', ouvido: 'ほう' }
+    ]);
+    expect(r.medidas).toHaveLength(4);
+  });
+
+  it('cai para a kana quando a dica ou a conferência dela falham', async () => {
+    const semDica = await vozDaPalavra('あく', {
+      dica: async () => {
+        throw new Error('interactions fora');
+      },
+      kana: async () => voz('kana'),
+      ouvir: ouvirComo({ kana: 'あく' })
+    });
+    expect(semDica.via).toBe('kana');
+    expect(semDica.tentativas[0]).toEqual({ via: 'dica', erro: 'interactions fora' });
+
+    const semConferencia = await vozDaPalavra('あく', {
+      dica: async () => voz('dica'),
+      kana: async () => voz('kana'),
+      ouvir: ouvirComo({ kana: 'あく' })
+    });
+    expect(semConferencia.via).toBe('kana');
+  });
+
+  it('marca confira quando nem a kana bate (ou a conferência dela cai)', async () => {
+    const r = await vozDaPalavra('ふう', {
+      dica: async () => voz('dica'),
+      kana: async () => voz('kana'),
+      ouvir: ouvirComo({ dica: 'ふ', kana: 'ふぁー' })
+    });
+    expect(r.via).toBe('confira');
+    expect(new TextDecoder().decode(r.voz.wav)).toBe('kana');
+
+    const caiu = await vozDaPalavra('ふう', {
+      dica: async () => voz('dica'),
+      kana: async () => voz('kana'),
+      ouvir: ouvirComo({ dica: 'ふ' })
+    });
+    expect(caiu.via).toBe('confira');
+  });
+
+  it('erro na voz da kana é erro da carta', async () => {
+    await expect(
+      vozDaPalavra('ふう', {
+        dica: async () => voz('dica'),
+        kana: async () => {
+          throw new Error('tts fora');
+        },
+        ouvir: ouvirComo({ dica: 'ふ' })
+      })
+    ).rejects.toThrow('tts fora');
   });
 });
