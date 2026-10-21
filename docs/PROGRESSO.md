@@ -20,7 +20,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | V1.4      | feito    | 2026-10-21 | Início somando os aparelhos; navegação inferior; raiz abre o Início         |
 | V1.5      | feito    | 2026-10-21 | Fila, geração, edição, Refazer áudio; falta gerar 10 cartas logado (👤)     |
 | V1.6      | feito    | 2026-10-21 | .apkg do Lote, Lotes, reexportar, áudio sai após 30 dias; falta Anki (👤)   |
-| V1.7      | pendente |            |                                                                             |
+| V1.7      | parcial  | 2026-10-21 | PWA, nova versão, ícone, backup, telas sem ttu-sync; falta servidor pausado |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
 ## Decisões tomadas durante a construção
@@ -260,6 +260,17 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   o `wav-teste.ts` e a opção `deck` do `gerarApkg`; o R1 no iPhone passa a ser pela exportação de
   verdade (FASES V1.7 atualizado). Testado no navegador: o .apkg de uma carta abre no sql.js com o deck
   `日本語::1. Dokusho`, as etiquetas e os campos certos; o Lote aparece na aba.
+- 2026-10-21: V1.7 (autônomo, revisar; **parcial**: o limite de uso acabou). Feito: service worker sem
+  skipWaiting automático (espera a mensagem ATUALIZAR) e aviso "Nova versão do app · Atualizar" no topo
+  de Início, Biblioteca e Fila, nunca no leitor (ADR 0011; `lib/data/atualizacao.ts`, verifica a cada
+  hora e ao voltar ao app); manifesto do Dokusho (standalone, start_url ./inicio) e ícone próprio
+  (livro aberto com marcador verde, gerado por script descartável); metas do iOS; título "Dokusho".
+  Configurações: Drive, OneDrive e pasta local saem (`isStorageSourceAvailable` só aceita o
+  navegador; grupos de sincronização do ttu escondidos); Backup (`lib/data/backup/`): zip com as 9
+  tabelas em JSON, restauração por mescla (upsert; a última escrita vence, nada é apagado), "último
+  backup: há N dias" (por aparelho). **Falta**: mensagem "servidor pausado; reative no painel" (ideia:
+  erro de rede com navigator.onLine → aviso com o link do painel, ref tirado do PUBLIC_SUPABASE_URL);
+  tudo o que é 👤 (Vercel, subdomínio, redirect do Auth, webCorsOriginList, testes no iPhone).
 - 2026-10-21: o leitor não desenha o texto no painel do navegador do Claude quando a janela está oculta
   (o livro está no IndexedDB, mas a página não pinta). Teste visual do leitor fica para o Igor.
 
@@ -377,6 +388,11 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - Teto: subiu para 2000 só durante os testes; de volta a 300.
 
 ## Pendências do usuário
+
+- [ ] Executar docs/MANHA.md e depois apagá-lo
+- [ ] Reorganizar docs/: PROGRESSO.md está longo; mover as 'Decisões' e 'Testes de risco' já
+      resolvidas para um histórico (ou ADRs) e deixar no PROGRESSO só estado e pendências
+- [ ] V1.7: terminar a mensagem de servidor pausado (próximo chat)
 
 - [x] docs/CARDS.md
 - [x] apps/web/.env com URL e anon key
