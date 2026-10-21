@@ -13,7 +13,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 | R2        | feito    | 2026-10-20 | Chrome lê 1514 Cards pelo AnkiConnect; falta repetir pela Vercel no V1.7    |
 | R3        | quase    | 2026-10-20 | lindera; 32 MB; PC pelo bucket dentro das metas; falta iPhone (👤)          |
 | R4        | feito    | 2026-10-20 | 97,5% do texto acha entrada; 0 Cards sem entrada; regras ajustadas          |
-| R5        | quase    | 2026-10-21 | cadeia da voz da palavra decidida; falta a rodada final e o veredito        |
+| R5        | feito    | 2026-10-21 | 30 cartas aprovadas; US$ 0,0038/carta; 31 MB/100 cartas; falta alerta (👤)  |
 | V1.1–V1.7 | pendente |            |                                                                             |
 | V2.1–V2.4 | pendente |            |                                                                             |
 
@@ -237,9 +237,13 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
   a 20 cartas/dia. ~4,3 chamadas por carta: teto de 300 ≈ 70 cartas/dia. Storage: ~31 MB por 100 cartas.
 - Para o V1.5: mostrar a marca `confira` na fila (ouvir, "Texto para a voz", "Refazer áudio";
   `refazer: [audio]` limpa a marca). Para o V1.6: o .apkg de 100 cartas fica perto de 31 MB.
-- 👤 Falta a rodada final das 30 com a cadeia e o veredito do texto (significados e traduções).
-- `GEMINI_TETO_DIARIO` está em **2000** durante os testes (a rodada final bateu nos 300 do dia, gastos
-  nos testes anteriores). Voltar para 300 ao fechar o R5: `npx supabase secrets set GEMINI_TETO_DIARIO=300`.
+- Rodada final (2026-10-21, com a cadeia; 11 cartas de uma rodada que bateu no teto + 19 com
+  `--continuar`): 30/30 geradas. Voz da palavra: **dica 27, kana 3, confira 0** (a dica errou 方 → ほ,
+  風 → かぜ, 寂しい → さみしい; a kana acertou as três). Áudio: palavra 36 KB (0,8 s), frase 279 KB (5,9 s);
+  **30,7 MB por 100 cartas**. Tokens: texto 671, voz da palavra 203 (com a conferência), voz da frase 180.
+  **US$ 0,00375 por carta** (US$ 0,38 por 100). 16 s por carta. Veredito do Igor: significados,
+  traduções e vozes bons ("não acho que dê para ficar melhor"). ✅
+- Teto: subiu para 2000 só durante os testes; de volta a 300.
 
 ## Pendências do usuário
 
@@ -260,8 +264,7 @@ Atualize ao fim de cada chat. Curto: o próximo chat lê isto primeiro.
 - [ ] R3: na PWA do iPhone (depois da Vercel), `/teste/dicionario`: baixar, carregar tokenizador,
       "Medir consultas"; anotar em "Testes de risco" › R3 e marcar R3 como feito
 - [ ] Alerta de orçamento no Google Cloud e confirmar que a GEMINI_API_KEY é do projeto pago (R5)
-- [ ] R5: rodada final, `node tools/gerar-cartas-teste.ts` (e-mail e senha; ~10 min); ouvir e ler as 30
-      no `relatorio.html` e dar o veredito do texto e das vozes
+- [x] R5: rodada final das 30 cartas e veredito
 - [ ] Escolher o subdomínio da Vercel e desligar previews (V1.7)
 
 ## Sem decisão (da entrevista de 20/10)
