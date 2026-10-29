@@ -30,6 +30,7 @@ import { StorageSourceDefault, StorageKey } from '$lib/data/storage/storage-type
 import { database } from '$lib/data/store';
 import { convertAuthErrorResponse } from '$lib/functions/replication/error-handler';
 import { isMobile } from '$lib/functions/utils';
+import { AuthType, type StorageAuthManager } from './storage-auth-manager';
 
 interface OAuthTokenData {
   accessToken: string;
@@ -40,7 +41,7 @@ interface OAuthTokenData {
 
 export const storageOAuthTokens = new Map<string, OAuthTokenData>();
 
-export class StorageOAuthManager {
+export class StorageOAuthManager implements StorageAuthManager {
   private storageType: StorageKey;
 
   private refreshEndpoint;
@@ -72,6 +73,10 @@ export class StorageOAuthManager {
   constructor(type: StorageKey, refreshEndpoint: string) {
     this.storageType = type;
     this.refreshEndpoint = refreshEndpoint;
+  }
+
+  getAuthType() {
+    return AuthType.OAUTH;
   }
 
   async getToken(

@@ -9,7 +9,12 @@ import {
   StorageSourceDefault,
   internalStorageSourceName
 } from '$lib/data/storage/storage-types';
-import { fsStorageSource$, gDriveStorageSource$, oneDriveStorageSource$ } from '$lib/data/store';
+import {
+  fsStorageSource$,
+  gDriveStorageSource$,
+  oneDriveStorageSource$,
+  ttsuRemoteStorageSource$
+} from '$lib/data/store';
 
 import type { BooksDbStorageSource } from '$lib/data/database/books-db/versions/books-db';
 import StorageUnlock from '$lib/components/storage-unlock.svelte';
@@ -65,6 +70,7 @@ export function isAppDefault(name: string) {
   return (
     name === StorageSourceDefault.GDRIVE_DEFAULT ||
     name === StorageSourceDefault.ONEDRIVE_DEFAULT ||
+    name === StorageSourceDefault.TTSU_REMOTE_DEFAULT ||
     internalStorageSourceName.has(name)
   );
 }
@@ -76,6 +82,9 @@ export function setStorageSourceDefault(name: string, type: StorageKey) {
       break;
     case StorageKey.ONEDRIVE:
       oneDriveStorageSource$.next(name || StorageSourceDefault.ONEDRIVE_DEFAULT);
+      break;
+    case StorageKey.TTSU_REMOTE:
+      ttsuRemoteStorageSource$.next(name || StorageSourceDefault.TTSU_REMOTE_DEFAULT);
       break;
     case StorageKey.FS:
       fsStorageSource$.next(name);

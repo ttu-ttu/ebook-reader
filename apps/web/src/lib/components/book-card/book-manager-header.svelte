@@ -27,6 +27,7 @@
     fileCountData$,
     fsStorageSource$,
     gDriveStorageSource$,
+    ttsuRemoteStorageSource$,
     isOnline$,
     oneDriveStorageSource$
   } from '$lib/data/store';
@@ -135,6 +136,15 @@
               label: 'Filesystem',
               key: StorageKey.FS,
               requiresConnectivity: false
+            }
+          ]
+        : []),
+      ...(isStorageSourceAvailable(StorageKey.TTSU_REMOTE, $ttsuRemoteStorageSource$, window)
+        ? [
+            {
+              label: 'Ttsu Remote',
+              key: StorageKey.TTSU_REMOTE,
+              requiresConnectivity: true
             }
           ]
         : [])
