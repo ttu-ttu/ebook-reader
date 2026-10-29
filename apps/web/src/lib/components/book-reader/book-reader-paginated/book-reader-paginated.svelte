@@ -814,7 +814,7 @@
         > *
         > *:has(ruby):has(rt)
     ) {
-      padding-right: 10px !important;
+      overflow: hidden;
     }
   }
 
@@ -827,7 +827,7 @@
         > *
         > *:has(ruby):has(rt)
     ) {
-      padding-top: 10px !important;
+      overflow: hidden;
     }
   }
 </style>
